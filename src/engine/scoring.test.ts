@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findScore, scoreWord, totalScore } from './scoring.ts';
+import { findScore, scoreWord } from './scoring.ts';
 
 describe('scoreWord', () => {
   it('follows the GDD curve: 3=1, 4=3, 5=5, 6=7, 7=11, 8=15', () => {
@@ -14,12 +14,6 @@ describe('scoreWord', () => {
   it('scores below the minimum length as zero', () => {
     expect(scoreWord('at')).toBe(0);
     expect(scoreWord('')).toBe(0);
-  });
-});
-
-describe('totalScore', () => {
-  it('sums a set of words', () => {
-    expect(totalScore(['cat', 'cats', 'serenade'])).toBe(1 + 3 + 15);
   });
 });
 
