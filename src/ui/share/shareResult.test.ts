@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { Puzzle } from '@/engine/index.ts';
+import { computeTier, type Puzzle } from '@/engine/index.ts';
 import { dailyShareResult } from './shareResult.ts';
 
 /**
@@ -46,10 +46,76 @@ describe('dailyShareResult', () => {
     expect(result.uncommon).toBe(1);
     expect(result.rare).toBe(1);
     expect(result.mythic).toBe(0);
-    // NOTECASE 15 + NOTE 3 = 18 set points; OCAS 3 + NAE 1 = 4 off-page.
+    // NOTECASE 15 + NOTE 3 = 18 set points (no bonus on the set). Off-page carries
+    // the rarity bonus, matching the display: OCAS 3+1 uncommon, NAE 1+2 rare = 7.
     expect(result.setPoints).toBe(18);
-    expect(result.offPagePoints).toBe(4);
-    expect(result.totalPoints).toBe(22);
+    expect(result.offPagePoints).toBe(7);
+    expect(result.totalPoints).toBe(25);
+  });
+
+  describe('reads its points from the tier standing the display renders', () => {
+    // reachableScore is irrelevant to the point totals (they are the summed
+    // findScore, not a fraction), but set it to a real value so the tier we
+    // compare against is built exactly as useGame builds state.tier.
+    const puzzle: Puzzle = { ...testPuzzle(), reachableScore: 40 };
+
+    test('total equals the tier score for a rack with off-page finds', () => {
+      const found = ['NOTECASE', 'NOTE', 'OCAS', 'NAE', 'ETA'];
+      const tier = computeTier(new Set(found), puzzle);
+      const result = dailyShareResult(
+        puzzle,
+        found,
+        new Date(2026, 5, 18),
+        'Peach of a Word',
+        'cute',
+      );
+      expect(result.totalPoints).toBe(tier.score);
+    });
+
+    test('set and off-page split match the tier split', () => {
+      const found = ['NOTECASE', 'NOTE', 'OCAS', 'NAE', 'ETA'];
+      const tier = computeTier(new Set(found), puzzle);
+      const result = dailyShareResult(
+        puzzle,
+        found,
+        new Date(2026, 5, 18),
+        'Peach of a Word',
+        'cute',
+      );
+      expect(result.setPoints).toBe(tier.setPoints);
+      expect(result.offPagePoints).toBe(tier.offPagePoints);
+    });
+
+    test('total still matches the tier when there are no off-page finds', () => {
+      const found = ['NOTECASE', 'NOTE', 'CAT'];
+      const tier = computeTier(new Set(found), puzzle);
+      const result = dailyShareResult(
+        puzzle,
+        found,
+        new Date(2026, 5, 18),
+        'Peach of a Word',
+        'cute',
+      );
+      expect(result.totalPoints).toBe(tier.score);
+      expect(result.offPagePoints).toBe(0);
+    });
+
+    test('total is not the length-only sum when off-page finds exist', () => {
+      const found = ['NOTECASE', 'NOTE', 'OCAS', 'NAE', 'ETA'];
+      // The exact bug that shipped: the length-only sum omits the rarity bonus.
+      const lengthOnly = found.reduce((sum, w) => {
+        const byLength: Record<number, number> = { 3: 1, 4: 3, 8: 15 };
+        return sum + (byLength[w.length] ?? 0);
+      }, 0);
+      const result = dailyShareResult(
+        puzzle,
+        found,
+        new Date(2026, 5, 18),
+        'Peach of a Word',
+        'cute',
+      );
+      expect(result.totalPoints).not.toBe(lengthOnly);
+    });
   });
 
   test('counts the source word toward the set, never off-page', () => {

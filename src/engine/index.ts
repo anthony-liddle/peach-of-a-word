@@ -1,7 +1,7 @@
 /** Public surface of the pure engine. Framework-free, fully unit-tested. */
 export * from './types.ts';
 export * from './config.ts';
-export { scoreWord, totalScore, findScore } from './scoring.ts';
+export { scoreWord, findScore } from './scoring.ts';
 export { canForm, formableFrom, letterCounts } from './formability.ts';
 export { createPuzzle } from './puzzle.ts';
 export {

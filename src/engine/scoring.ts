@@ -9,16 +9,9 @@ export function scoreWord(word: string): number {
 /**
  * Points for a found word: its length score plus the rarity bonus for its rung.
  * This is the single scoring path for everything the player earns, so the score,
- * the bar, the glossary, and the reachable total all agree. A set word gets no
- * bonus (the on-page baseline); off-page rungs pay more.
+ * the bar, the glossary, the share, and the reachable total all agree. A set
+ * word gets no bonus (the on-page baseline); off-page rungs pay more.
  */
 export function findScore(word: string, rung: Rung): number {
   return scoreForLength(word.length) + RARITY_BONUS[rung];
-}
-
-/** Summed score of a collection of words. */
-export function totalScore(words: Iterable<string>): number {
-  let total = 0;
-  for (const w of words) total += scoreWord(w);
-  return total;
 }

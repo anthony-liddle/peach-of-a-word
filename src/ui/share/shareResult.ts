@@ -1,10 +1,4 @@
-import {
-  classifyWord,
-  computeTier,
-  scoreWord,
-  totalScore,
-  type Puzzle,
-} from '@/engine/index.ts';
+import { classifyWord, computeTier, type Puzzle } from '@/engine/index.ts';
 import type { Theme } from '../useTheme.ts';
 import { crownName, tierName } from '../tierNames.ts';
 import type { DailyShareResult } from './shareText.ts';
@@ -31,12 +25,10 @@ export function dailyShareResult(
   let uncommon = 0;
   let rare = 0;
   let mythic = 0;
-  let setPoints = 0;
 
   for (const word of found) {
     if (puzzle.commonWords.has(word)) {
       setFound += 1;
-      setPoints += scoreWord(word);
       continue;
     }
     switch (classifyWord(word, puzzle)) {
@@ -52,11 +44,15 @@ export function dailyShareResult(
     }
   }
 
-  const totalPoints = totalScore(found);
+  // The single source for every points surface. The bar and the totals already
+  // read this standing; the share reads it too, so the shared points and split
+  // are rarity-aware and identical to the display by construction. computeTier
+  // is pure in (found, puzzle), so this is value-identical to the state.tier the
+  // page renders, built from the same found array.
+  const tier = computeTier(new Set(found), puzzle);
 
   // The headline, exactly as TierMeter labels it: crown on completion (every
   // common word found), otherwise the current named rank.
-  const tier = computeTier(new Set(found), puzzle);
   const completed = tier.setTotal > 0 && tier.setFound >= tier.setTotal;
   const tierLabel = completed ? crownName(theme) : tierName(theme, tier.index);
 
@@ -69,9 +65,9 @@ export function dailyShareResult(
     uncommon,
     rare,
     mythic,
-    setPoints,
-    offPagePoints: totalPoints - setPoints,
-    totalPoints,
+    setPoints: tier.setPoints,
+    offPagePoints: tier.offPagePoints,
+    totalPoints: tier.score,
     sourceWord: puzzle.sourceWord,
     foundWords: found,
   };
