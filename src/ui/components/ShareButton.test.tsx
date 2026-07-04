@@ -65,6 +65,7 @@ describe('ShareButton', () => {
       <ShareButton
         puzzle={testPuzzle()}
         found={['NOTECASE', 'OCAS']}
+        mode="daily"
         date={new Date(2026, 5, 18)}
       />,
     );
@@ -89,6 +90,7 @@ describe('ShareButton', () => {
       <ShareButton
         puzzle={testPuzzle()}
         found={['NOTECASE', 'OCAS']}
+        mode="daily"
         date={new Date(2026, 5, 18)}
       />,
     );
@@ -96,6 +98,48 @@ describe('ShareButton', () => {
 
     const payload = share.mock.calls[0]![0] as ShareData;
     expect(payload.text?.split('\n')[1]).toBe('Blank Page');
+  });
+
+  test('shares an endless block labeled Endless, with the found source word', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    setShare(share);
+
+    render(
+      <ShareButton
+        puzzle={testPuzzle()}
+        found={['NOTECASE', 'OCAS']}
+        mode="endless"
+        date={new Date(2026, 5, 18)}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /share/i }));
+
+    const payload = share.mock.calls[0]![0] as ShareData;
+    const first = payload.text?.split('\n')[0] ?? '';
+    // Endless, never a date; and the found source word rides the identifier.
+    expect(first).toContain('Endless');
+    expect(first).toContain('NOTECASE');
+    expect(first).not.toMatch(/Jun|Jul/);
+  });
+
+  test('endless withholds the source word until it is found', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    setShare(share);
+
+    render(
+      <ShareButton
+        puzzle={testPuzzle()}
+        found={['NOTE', 'OCAS']}
+        mode="endless"
+        date={new Date(2026, 5, 18)}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /share/i }));
+
+    const payload = share.mock.calls[0]![0] as ShareData;
+    const first = payload.text?.split('\n')[0] ?? '';
+    expect(first).toContain('Endless');
+    expect(first).not.toContain('NOTECASE');
   });
 
   test('falls back to clipboard and shows the confirmation', async () => {
@@ -110,6 +154,7 @@ describe('ShareButton', () => {
       <ShareButton
         puzzle={testPuzzle()}
         found={['NOTECASE', 'OCAS']}
+        mode="daily"
         date={new Date(2026, 5, 18)}
       />,
     );

@@ -468,6 +468,15 @@ describe('Game mode state retention', () => {
     expect(within(glossary()).queryByText('sea')).not.toBeInTheDocument();
   });
 
+  it('offers the Share affordance in endless mode, not only daily', () => {
+    renderGame();
+    toEndless();
+    findWord('sea'); // a find in endless, so the summary and its Share appear
+    expect(
+      within(glossary()).getByRole('button', { name: /share/i }),
+    ).toBeInTheDocument();
+  });
+
   it('preserves the endless game across a reload (remount)', () => {
     const store = fakeStore();
     const first = renderGame(store);
