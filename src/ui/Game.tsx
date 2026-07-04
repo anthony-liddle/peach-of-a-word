@@ -142,14 +142,13 @@ export function Game({ data, audio, storage }: Props) {
           theme={theme}
           onWordTap={onWordTap}
           summaryExtra={
-            state.mode === 'daily' ? (
-              <ShareButton
-                puzzle={state.puzzle}
-                found={state.found}
-                date={new Date()}
-                buttonRef={shareRef}
-              />
-            ) : undefined
+            <ShareButton
+              puzzle={state.puzzle}
+              found={state.found}
+              mode={state.mode}
+              date={new Date()}
+              buttonRef={shareRef}
+            />
           }
         />
       </div>

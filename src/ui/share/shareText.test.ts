@@ -1,17 +1,49 @@
 import { describe, expect, test } from 'vitest';
-import { buildShareText, type DailyShareResult } from './shareText.ts';
+import {
+  buildShareText,
+  type DailyShareResult,
+  type EndlessShareResult,
+} from './shareText.ts';
 
 /**
- * A representative result, the worked example from the spec. Jun 18 is month
- * index 5; the date is built from local components so the short form is stable.
+ * A representative daily result, the worked example from the spec. Jun 18 is
+ * month index 5; the date is built from local components so the short form is
+ * stable.
  */
 function exampleResult(
   overrides: Partial<DailyShareResult> = {},
 ): DailyShareResult {
   return {
+    mode: 'daily',
     title: 'Peach of a Word',
     date: new Date(2026, 5, 18),
     tierLabel: 'Peachy Keen Supreme',
+    setFound: 37,
+    setTotal: 37,
+    uncommon: 29,
+    rare: 4,
+    mythic: 2,
+    setPoints: 113,
+    offPagePoints: 113,
+    totalPoints: 226,
+    sourceWord: 'PEACHING',
+    foundWords: ['PEACHING', 'PEACH', 'CHEAP', 'PINCH'],
+    ...overrides,
+  };
+}
+
+/**
+ * A representative endless result. No date (it labels itself Endless), and it
+ * may carry the found source word as the headline flex.
+ */
+function endlessExample(
+  overrides: Partial<EndlessShareResult> = {},
+): EndlessShareResult {
+  return {
+    mode: 'endless',
+    title: 'Peach of a Word',
+    tierLabel: 'Peachy Keen Supreme',
+    showSourceWord: true,
     setFound: 37,
     setTotal: 37,
     uncommon: 29,
@@ -117,6 +149,81 @@ describe('buildShareText', () => {
       const body = shareBody(out, result);
       expect(body).not.toContain('WORKS');
       expect(body).not.toContain('PEACH');
+    });
+
+    test('the daily identifier line never carries the source word', () => {
+      // The daily is reproducible, so the answer must stay hidden. The identifier
+      // line is the name and the date, never the source word, whatever the found
+      // list holds. This is the protection endless is allowed to relax and daily
+      // is not.
+      const out = buildShareText(
+        exampleResult({ sourceWord: 'PEACHING', foundWords: ['PEACHING'] }),
+      ).toUpperCase();
+      expect(out.split('\n')[0]).toBe('🍑 PEACH OF A WORD · JUN 18');
+      expect(out.split('\n')[0]).not.toContain('PEACHING');
+    });
+  });
+
+  describe('the endless share', () => {
+    /**
+     * The endless body: everything after the identifier line, stripped by
+     * position, not by value. Endless deliberately allows the source word in the
+     * identifier, so a value strip of the source word would blind this check to
+     * the very leak it must catch (the source word slipping into the bar or the
+     * counts). Dropping line 1 whole, then the tier line by value, leaves the
+     * lines that must stay abstract.
+     */
+    function endlessBody(out: string, result: EndlessShareResult): string {
+      const withoutIdentifier = out.split('\n').slice(1).join('\n');
+      return withoutIdentifier
+        .toUpperCase()
+        .replace(result.tierLabel.toUpperCase(), '');
+    }
+
+    test('labels itself Endless on the identifier line, never a date', () => {
+      const out = buildShareText(endlessExample({ showSourceWord: false }));
+      const first = out.split('\n')[0];
+      expect(first).toContain('Endless');
+      expect(first).not.toMatch(/Jun|Jul|\d{1,2}/);
+    });
+
+    test('leads with the name and Endless', () => {
+      const out = buildShareText(
+        endlessExample({ title: 'Peach of a Word', showSourceWord: false }),
+      );
+      expect(out.split('\n')[0]).toBe('🍑 Peach of a Word · Endless');
+    });
+
+    test('includes the found source word as the headline flex', () => {
+      const out = buildShareText(
+        endlessExample({ sourceWord: 'spaniel', showSourceWord: true }),
+      );
+      // The source word rides the identifier line, uppercase as a flex.
+      expect(out.split('\n')[0]).toBe('🍑 Peach of a Word · Endless · SPANIEL');
+    });
+
+    test('omits the source word until the player has found it', () => {
+      const out = buildShareText(
+        endlessExample({ sourceWord: 'spaniel', showSourceWord: false }),
+      );
+      expect(out.split('\n')[0]).toBe('🍑 Peach of a Word · Endless');
+      expect(out.toUpperCase()).not.toContain('SPANIEL');
+    });
+
+    test('leaks no found word into the body beyond the source in the identifier', () => {
+      const sourceWord = 'peaching';
+      const foundWords = ['peaching', 'peach', 'cheap', 'pinch', 'niche'];
+      const result = endlessExample({
+        sourceWord,
+        foundWords,
+        showSourceWord: true,
+      });
+      const body = endlessBody(buildShareText(result), result);
+      // The source word is allowed in the identifier, never in the body.
+      expect(body).not.toContain(sourceWord.toUpperCase());
+      for (const word of foundWords) {
+        expect(body).not.toContain(word.toUpperCase());
+      }
     });
   });
 

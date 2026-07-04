@@ -5,15 +5,13 @@
  * thin wrapper around this.
  */
 
-/** Everything the share block is built from. */
-export interface DailyShareResult {
+/** Fields every share block carries, whatever the mode. */
+interface ShareResultBase {
   /**
    * The app display name. Read from the single-source constant by the caller,
    * never hardcoded here, so the pending rename flows through for free.
    */
   readonly title: string;
-  /** The puzzle's date, shown short so the group compares the same rack. */
-  readonly date: Date;
   /**
    * The earned tier headline, theme-skinned: the completion crown once every
    * common word is found, otherwise the current named rank. Read from the
@@ -36,14 +34,42 @@ export interface DailyShareResult {
   /** The single summary number. */
   readonly totalPoints: number;
   /**
-   * The day's source word and every found word. The builder never reads these.
-   * They ride on the input so the spoiler-safety test can prove the output
-   * leaks neither, guarding against a careless future edit that interpolates a
-   * word into the block.
+   * The source word and every found word. In daily the builder never reads
+   * these: they ride on the input so the spoiler-safety test can prove the
+   * output leaks neither. In endless the builder reads sourceWord, but only when
+   * showSourceWord is set, and only into the identifier line.
    */
   readonly sourceWord: string;
   readonly foundWords: readonly string[];
 }
+
+/**
+ * The daily block. The daily is reproducible: a recipient can go play the same
+ * rack, so the answer must stay hidden. The source word never appears, and the
+ * identifier line is the name and the date. Gated by mode, so this protection
+ * cannot be relaxed by accident: a daily result has no source-word affordance to
+ * turn on.
+ */
+export interface DailyShareResult extends ShareResultBase {
+  readonly mode: 'daily';
+  /** The puzzle's date, shown short so the group compares the same rack. */
+  readonly date: Date;
+}
+
+/**
+ * The endless block. Endless is dealt on demand and is not reproducible, so
+ * there is no shared puzzle to spoil: the found source word may headline as a
+ * flex, and the identifier says Endless, not a date. showSourceWord stays false
+ * until the player has found the source word, so an unearned word is never
+ * shown.
+ */
+export interface EndlessShareResult extends ShareResultBase {
+  readonly mode: 'endless';
+  readonly showSourceWord: boolean;
+}
+
+/** A share block for either mode. buildShareText branches on the mode tag. */
+export type ShareResult = DailyShareResult | EndlessShareResult;
 
 const SET_SQUARE = '🟥';
 const OFF_PAGE_SQUARE = '🟪';
@@ -104,16 +130,36 @@ function rarityLine(
   return `✦ ${parts.join(' · ')}`;
 }
 
-/** Build the exact, spoiler-free share block for a day's result. */
-export function buildShareText(result: DailyShareResult): string {
-  // Lead with the name and the earned tier. The tier is the hook and the honest
-  // new model; the retired "Set X/Y" gate is gone. Points support, they do not
-  // lead. The tier label carries the completion signal on a finished board.
+/**
+ * The identifier line, which leads the block. The peach is the name's mark and
+ * the share's signature, the same in both themes and modes; it rides this line,
+ * never the body, so the spoiler guard (which treats the identifier and tier as
+ * chrome) is untouched.
+ *
+ * Daily shows the date, and never the source word: the daily is reproducible, so
+ * the answer stays hidden. Endless says Endless instead of a date and, once the
+ * player has found it, adds the source word as the headline flex, uppercase.
+ * This is the one place the mode changes the block, and the source word can
+ * reach the output only through the endless branch.
+ */
+function identifierLine(result: ShareResult): string {
+  if (result.mode === 'daily') {
+    return `🍑 ${result.title} · ${shortDate(result.date)}`;
+  }
+  const base = `🍑 ${result.title} · Endless`;
+  return result.showSourceWord
+    ? `${base} · ${result.sourceWord.toUpperCase()}`
+    : base;
+}
+
+/** Build the exact, spoiler-safe share block for a daily or endless result. */
+export function buildShareText(result: ShareResult): string {
+  // Lead with the identifier, then the earned tier. The tier is the hook and the
+  // honest new model; the retired "Set X/Y" gate is gone. Points support, they
+  // do not lead. The tier label carries the completion signal on a finished
+  // board. Everything below the identifier is identical across modes.
   const lines = [
-    // The peach leads the title line: the name's mark and the share's signature,
-    // the same in both themes. It stays on the title, never the body, so the
-    // spoiler guard (which strips the title as chrome) is untouched.
-    `🍑 ${result.title} · ${shortDate(result.date)}`,
+    identifierLine(result),
     result.tierLabel,
     scoreRow(result.setPoints, result.offPagePoints),
   ];

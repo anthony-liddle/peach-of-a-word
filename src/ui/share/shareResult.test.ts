@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { computeTier, type Puzzle } from '@/engine/index.ts';
-import { dailyShareResult } from './shareResult.ts';
+import { dailyShareResult, endlessShareResult } from './shareResult.ts';
 
 /**
  * A small hand-built puzzle. Set words score by length (3=1, 4=3, 8=15); the
@@ -191,5 +191,49 @@ describe('dailyShareResult', () => {
       expect(cute.tierLabel).toBe('Ripening');
       expect(classic.tierLabel).toBe('Press Run');
     });
+  });
+});
+
+describe('endlessShareResult', () => {
+  const puzzle: Puzzle = { ...testPuzzle(), reachableScore: 40 };
+
+  test('is an endless result, not a daily one', () => {
+    const result = endlessShareResult(
+      puzzle,
+      ['NOTECASE', 'OCAS'],
+      'Peach of a Word',
+      'cute',
+    );
+    expect(result.mode).toBe('endless');
+  });
+
+  test('shows the source word once the player has found it', () => {
+    const result = endlessShareResult(
+      puzzle,
+      ['NOTECASE', 'OCAS'],
+      'Peach of a Word',
+      'cute',
+    );
+    expect(result.showSourceWord).toBe(true);
+    expect(result.sourceWord).toBe('NOTECASE');
+  });
+
+  test('withholds the source word until the player has found it', () => {
+    const result = endlessShareResult(
+      puzzle,
+      ['NOTE', 'OCAS'],
+      'Peach of a Word',
+      'cute',
+    );
+    expect(result.showSourceWord).toBe(false);
+  });
+
+  test('reads its points from the tier standing, like the daily', () => {
+    const found = ['NOTECASE', 'NOTE', 'OCAS', 'NAE', 'ETA'];
+    const tier = computeTier(new Set(found), puzzle);
+    const result = endlessShareResult(puzzle, found, 'Peach of a Word', 'cute');
+    expect(result.totalPoints).toBe(tier.score);
+    expect(result.setPoints).toBe(tier.setPoints);
+    expect(result.offPagePoints).toBe(tier.offPagePoints);
   });
 });
