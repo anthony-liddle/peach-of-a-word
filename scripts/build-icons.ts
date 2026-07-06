@@ -51,7 +51,7 @@ const CUTE = {
 const SITE_NAME = 'Peach of a Word';
 const SHORT_NAME = 'Peach';
 const DESCRIPTION =
-  'Peach of a Word. Make words from eight scrambled letters, then find the source word they all came from. A quiet daily word game.';
+  'Make words from eight scrambled letters, then find the source word they all came from. A new puzzle daily.';
 const OG_ALT =
   'The wordmark Peach of a Word in the cute theme: a smiling cartoon peach above the name in rounded type, over a row of soft letter tiles, one in peach.';
 
@@ -141,7 +141,8 @@ function ogSvg(): string {
   </defs>
   <rect width="${W}" height="${H}" fill="url(#page)"/>
   ${peachMark(cx, 46, 150)}
-  <text x="${cx}" y="262" font-family="Nunito" font-weight="700" font-size="27" letter-spacing="7" fill="${CUTE.accentDeep}" text-anchor="middle">A QUIET DAILY WORD GAME</text>
+  <!-- Kicker: keep in sync with the masthead kicker in src/ui/Game.tsx. -->
+  <text x="${cx}" y="262" font-family="Nunito" font-weight="700" font-size="27" letter-spacing="7" fill="${CUTE.accentDeep}" text-anchor="middle">A GAME ABOUT FINDING WORDS IN WORDS</text>
   <text x="${cx}" y="366" font-family="Fredoka" font-weight="600" font-size="104" text-anchor="middle"><tspan fill="${CUTE.accent}">Peach</tspan><tspan fill="${CUTE.ink}"> of a Word</tspan></text>
   ${tiles}
 </svg>`;

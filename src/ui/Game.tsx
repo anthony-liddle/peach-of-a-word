@@ -193,7 +193,9 @@ export function Game({ data, audio, storage }: Props) {
 function Masthead() {
   return (
     <header className="masthead">
-      <p className="masthead__kicker">A game for finding the long word</p>
+      {/* Keep this line in sync with the OG card kicker baked by
+          scripts/build-icons.ts (rendered there in small caps). */}
+      <p className="masthead__kicker">A game about finding words in words</p>
       <h1 className="masthead__title">
         <em>Peach</em> of a Word
       </h1>
