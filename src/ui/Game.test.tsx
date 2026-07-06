@@ -134,6 +134,16 @@ describe('Game', () => {
     expect(emphasis?.textContent).toBe('Peach');
   });
 
+  it('frames the loop in the masthead kicker: finding words in words', () => {
+    renderGame();
+    const kicker = document.querySelector('.masthead__kicker') as HTMLElement;
+    // The source word contains every found word, so each find is a word in a
+    // word; the kicker names the whole loop, not just its peak.
+    expect(kicker.textContent).toBe('A game about finding words in words');
+    // The old line undersold the loop as the single long-word find.
+    expect(kicker.textContent).not.toMatch(/finding the long word/i);
+  });
+
   it('carries the quiet dedication in the footer', () => {
     renderGame();
     const footer = document.querySelector('.colophon') as HTMLElement;

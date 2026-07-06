@@ -15,6 +15,13 @@ const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
 const NEW_NAME = 'Peach of a Word';
 const OLD_NAME = '8 Letters in Search of a Word';
 
+// The decided tagline: the concrete mechanic plus the daily hook, no vague
+// "quiet" filler. The brand still lives in the title tags, so the description
+// carries the pitch, not the name. This copy is duplicated across the three
+// description tags and the generated manifest, so pin it in one place here.
+const DESCRIPTION =
+  'Make words from eight scrambled letters, then find the source word they all came from. A new puzzle daily.';
+
 describe('index.html', () => {
   test('the retired name appears nowhere', () => {
     expect(html).not.toContain(OLD_NAME);
@@ -25,25 +32,32 @@ describe('index.html', () => {
     expect(html).toContain(`<title>${NEW_NAME}</title>`);
   });
 
-  test('the Open Graph title, site name, and description carry the new name', () => {
+  test('the Open Graph and Twitter titles carry the name', () => {
     expect(html).toContain(
       `<meta property="og:title" content="${NEW_NAME}" />`,
     );
     expect(html).toContain(
       `<meta property="og:site_name" content="${NEW_NAME}" />`,
     );
-    expect(html).toMatch(/property="og:description"[\s\S]*?Peach of a Word/);
-  });
-
-  test('the Twitter title and description carry the new name', () => {
     expect(html).toContain(
       `<meta name="twitter:title" content="${NEW_NAME}" />`,
     );
-    expect(html).toMatch(/name="twitter:description"[\s\S]*?Peach of a Word/);
   });
 
-  test('the meta description carries the new name', () => {
-    expect(html).toMatch(/name="description"[\s\S]*?Peach of a Word/);
+  test('the meta, Open Graph, and Twitter descriptions carry the decided tagline', () => {
+    for (const attr of [
+      'name="description"',
+      'property="og:description"',
+      'name="twitter:description"',
+    ]) {
+      expect(html).toMatch(
+        new RegExp(`${attr}[\\s\\S]*?content="${DESCRIPTION}"`),
+      );
+    }
+  });
+
+  test('the vague "quiet" tagline is gone from the head', () => {
+    expect(html.toLowerCase()).not.toContain('quiet');
   });
 
   test('the OG image alt text describes the new wordmark', () => {
