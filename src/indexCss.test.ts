@@ -67,3 +67,39 @@ describe('index.css sizes: the supporting-text floor', () => {
     expect(Number(m![1])).toBeGreaterThanOrEqual(0.9);
   });
 });
+
+describe('index.css rack glyphs: proportional at phone width', () => {
+  // Phone tiles are larger than desktop tiles (the 4-column grid), so the
+  // glyph must be larger there too. A single vw clamp cannot express that:
+  // its cap is viewport-independent, so the base rule carries a strong vw
+  // term for the 4-column regime and the 540px query restores the desktop
+  // clamp when the grid goes to 8 columns.
+  function vwTerm(b: string): number {
+    const m = b.match(/font-size:\s*clamp\([^)]*?([\d.]+)vw/);
+    if (!m) throw new Error('No vw clamp term found');
+    return Number(m[1]);
+  }
+
+  test('the base rack glyph tracks the viewport strongly (4-column regime)', () => {
+    expect(vwTerm(block('.sort'))).toBeGreaterThanOrEqual(15);
+  });
+
+  test('the 8-column breakpoint restores the desktop glyph unchanged', () => {
+    // Capture each 540px media block up to its unindented closing brace, so
+    // the assertion cannot leak past a block into the base rules below it.
+    // The desktop glyph must live in one of them, and that block must come
+    // after the base .sort rule or the phone size would win on desktop too.
+    const blocks = [
+      ...css.matchAll(/@media \(min-width: 540px\) \{([\s\S]*?)\n\}/g),
+    ];
+    const sortRe =
+      /\.sort\s*\{[^}]*font-size:\s*clamp\(1\.75rem, 7vw, 2\.75rem\)/;
+    const withSort = blocks.find((b) => sortRe.test(b[1]!));
+    expect(withSort).toBeDefined();
+    expect(withSort!.index!).toBeGreaterThan(css.indexOf('.sort {'));
+  });
+
+  test('the composing slot reaches its cap by phone width', () => {
+    expect(vwTerm(block('.stick__slot'))).toBeGreaterThanOrEqual(10);
+  });
+});
