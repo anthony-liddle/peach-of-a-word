@@ -558,7 +558,9 @@ button {
 .stick__slot {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  /* The stick is 4rem tall at every width, so the slot aims for one cap
+     everywhere; 10vw just reaches it by phone width instead of at 693px. */
+  font-size: clamp(1.9rem, 10vw, 2.6rem);
   text-transform: lowercase;
   color: var(--ink);
   min-width: 0.7em;
@@ -603,7 +605,12 @@ button {
   box-shadow: var(--tile-shadow);
   font-family: var(--font-display);
   font-weight: var(--tile-letter-weight);
-  font-size: clamp(1.5rem, 6vw, 2.3rem);
+  /* The 4-column phone tiles are LARGER than the 8-column desktop tiles, so
+     the glyph must be larger there too. One vw clamp cannot express that (its
+     cap is viewport-independent), so this base rule tracks the 4-column tile,
+     which is proportional to the viewport, and the 540px query below restores
+     the desktop clamp when the grid goes to 8 columns. */
+  font-size: clamp(1.75rem, 16vw, 5rem);
   color: var(--ink);
   text-transform: lowercase;
   display: grid;
@@ -624,6 +631,14 @@ button {
   height: 2px;
   background: var(--tile-foot);
   border-radius: 2px;
+}
+/* Eight narrower tiles from 540px up: back to the desktop glyph. This block
+   must sit after the base .sort rule; at equal specificity the later rule
+   wins, so placing it earlier would let the phone size leak onto desktop. */
+@media (min-width: 540px) {
+  .sort {
+    font-size: clamp(1.75rem, 7vw, 2.75rem);
+  }
 }
 .sort:active:not(:disabled) {
   transform: translateY(1px);
@@ -847,12 +862,12 @@ button {
 .tier__ticks {
   display: flex;
   justify-content: space-between;
-  font-size: 0.66rem;
+  font-size: 0.875rem;
   color: var(--ink-soft);
   letter-spacing: 0.02em;
 }
 .tier__next {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--ink-soft);
   font-style: italic;
 }
@@ -863,7 +878,7 @@ button {
   flex-wrap: wrap;
   gap: 0.2rem 1.1rem;
   margin: 0;
-  font-size: 0.74rem;
+  font-size: 0.875rem;
 }
 .tier__keyitem {
   display: inline-flex;
@@ -925,7 +940,7 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 1.1rem;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   letter-spacing: 0.02em;
 }
 .summary__stat {
@@ -996,7 +1011,7 @@ button {
   color: var(--ink);
 }
 .found__groupcount {
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -1010,14 +1025,14 @@ button {
   gap: 0.3rem 0.75rem;
 }
 /* A quiet aside above the off-page list, shown only when a row has both a set
-   and an off-page find. Muted and small so it frames the extras without
-   competing with the count. Reads in both themes through --ink-soft. */
+   and an off-page find. Muted by color alone so it frames the extras without
+   competing with the count: ink-soft clears AA in both themes, and the old
+   opacity veil dropped it to 3.3:1, so mute with color or weight, never opacity. */
 .found__alsofound {
   margin: 0.5rem 0 0;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   letter-spacing: 0.08em;
   color: var(--ink-soft);
-  opacity: 0.7;
 }
 /* Off-page finds of a length sit just under the set list, set apart so the
    set count above never reads as describing them. */
@@ -1042,7 +1057,7 @@ button {
   cursor: pointer;
   text-align: left;
   /* Layout */
-  font-size: 1.02rem;
+  font-size: 1.1rem;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1213,12 +1228,13 @@ button {
   font-weight: 600;
   font-style: italic;
 }
-/* Points are the reward, so every off-page find shows them inline, in discovery blue. */
+/* Points are the reward, so every off-page find shows them inline, in discovery
+   blue at full strength: the token clears AA on its own, and the old opacity
+   veil pulled it under 4.5:1 at this size. */
 .found__points {
   color: var(--discovery);
   font-weight: 600;
-  font-size: 0.82em;
-  opacity: 0.85;
+  font-size: 0.9em;
 }
 .found__rung-note {
   margin-left: 0.4em;
@@ -1241,7 +1257,7 @@ button {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem 1rem;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   color: var(--ink-soft);
   margin-top: 1.5rem;
   padding-top: 0.8rem;
@@ -1250,7 +1266,7 @@ button {
 .legend__caption {
   width: 100%;
   margin-bottom: 0.15rem;
-  font-size: 0.66rem;
+  font-size: 0.74rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -1577,7 +1593,7 @@ footer.colophon {
   border-top: 1px solid var(--rule);
   padding-top: 1rem;
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   color: var(--ink-faint);
   letter-spacing: 0.04em;
   line-height: 1.6;
