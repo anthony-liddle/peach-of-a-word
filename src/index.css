@@ -131,7 +131,9 @@ body {
   background-image: var(--page-bg);
   background-attachment: fixed;
   min-height: 100vh;
-  overflow-x: hidden; /* keep cute motifs from nudging out a scrollbar */
+  /* No body-level overflow clip: it turned real content overflow at large
+     text sizes into invisible loss. The decorations layer clips itself
+     below, so the motifs still cannot nudge out a scrollbar. */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -180,6 +182,9 @@ button {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* The motifs clip here (the peach bleeds off the left edge) so they can
+     never widen the page; the body carries no overflow clip anymore. */
+  overflow: hidden;
 }
 [data-theme='letterpress'] .decorations {
   display: none;
@@ -389,7 +394,11 @@ button {
 }
 .modes {
   display: inline-flex;
-  height: var(--control-h);
+  /* Wrap inside the bordered unit at large text sizes: the pair stacks but
+     still reads as one segmented control. min-height (not height) lets the
+     unit grow when it wraps instead of clipping the second row. */
+  flex-wrap: wrap;
+  min-height: var(--control-h);
   border: 1px solid var(--ink);
   border-radius: var(--radius);
   overflow: hidden;
@@ -398,7 +407,7 @@ button {
   background: transparent;
   border: 0;
   padding: 0 0.95rem;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -412,6 +421,8 @@ button {
 }
 .toolbar__right {
   display: inline-flex;
+  /* Wrap between controls at large text sizes rather than overflowing. */
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
@@ -424,7 +435,7 @@ button {
   background: var(--paper-deep);
   border-radius: var(--radius);
   padding: 0 0.7rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   letter-spacing: 0.06em;
 }
 .chip strong {
@@ -469,7 +480,7 @@ button {
   border: 1px solid var(--ink);
   border-radius: var(--radius);
   background: var(--paper-deep);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   touch-action: manipulation;
@@ -483,7 +494,7 @@ button {
 /* Narrow widths: stack into two fixed rows (toggle, then controls) for both
    modes, so the wider New Puzzle cluster can never wrap differently from the
    Streak pill and shift everything below. Same structure, same height. */
-@media (max-width: 480px) {
+@media (max-width: 30em) {
   .toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -513,7 +524,7 @@ button {
   grid-template-columns: 1fr;
   gap: clamp(1.5rem, 4vw, 2.5rem);
 }
-@media (min-width: 820px) {
+@media (min-width: 51.25em) {
   .board {
     grid-template-columns: 1.4fr 1fr;
     align-items: start;
@@ -590,7 +601,7 @@ button {
   grid-template-columns: repeat(4, 1fr);
   gap: clamp(0.5rem, 2vw, 0.85rem);
 }
-@media (min-width: 540px) {
+@media (min-width: 33.75em) {
   .case {
     grid-template-columns: repeat(8, 1fr);
   }
@@ -635,7 +646,7 @@ button {
 /* Eight narrower tiles from 540px up: back to the desktop glyph. This block
    must sit after the base .sort rule; at equal specificity the later rule
    wins, so placing it earlier would let the phone size leak onto desktop. */
-@media (min-width: 540px) {
+@media (min-width: 33.75em) {
   .sort {
     font-size: clamp(1.75rem, 7vw, 2.75rem);
   }
@@ -700,7 +711,7 @@ button {
   border-radius: var(--radius);
   background: var(--paper-deep);
   padding: 0.65rem 1rem;
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   transition:
@@ -759,7 +770,7 @@ button {
    action flow already is. The visual swap is done with order, so the DOM and
    focus order stay Shuffle, Clear, Delete, Submit. Same structure in both themes.
    The 480px break matches the toolbar's. */
-@media (max-width: 480px) {
+@media (max-width: 30em) {
   .controls {
     flex-direction: column;
     align-items: stretch;

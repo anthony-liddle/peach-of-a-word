@@ -55,6 +55,10 @@ describe('index.css sizes: the supporting-text floor', () => {
     ['.tier__ticks', 0.875],
     ['.tier__next', 0.875],
     ['footer.colophon', 0.875],
+    ['.btn', 0.875],
+    ['.modes button', 0.875],
+    ['.chip', 0.875],
+    ['.theme-swap', 0.875],
   ];
 
   test.each(floors)('%s renders at or above %srem', (selector, minRem) => {
@@ -85,12 +89,13 @@ describe('index.css rack glyphs: proportional at phone width', () => {
   });
 
   test('the 8-column breakpoint restores the desktop glyph unchanged', () => {
-    // Capture each 540px media block up to its unindented closing brace, so
-    // the assertion cannot leak past a block into the base rules below it.
-    // The desktop glyph must live in one of them, and that block must come
-    // after the base .sort rule or the phone size would win on desktop too.
+    // Capture each 33.75em (540px at default) media block up to its
+    // unindented closing brace, so the assertion cannot leak past a block
+    // into the base rules below it. The desktop glyph must live in one of
+    // them, and that block must come after the base .sort rule or the phone
+    // size would win on desktop too.
     const blocks = [
-      ...css.matchAll(/@media \(min-width: 540px\) \{([\s\S]*?)\n\}/g),
+      ...css.matchAll(/@media \(min-width: 33\.75em\) \{([\s\S]*?)\n\}/g),
     ];
     const sortRe =
       /\.sort\s*\{[^}]*font-size:\s*clamp\(1\.75rem, 7vw, 2\.75rem\)/;
@@ -101,5 +106,32 @@ describe('index.css rack glyphs: proportional at phone width', () => {
 
   test('the composing slot reaches its cap by phone width', () => {
     expect(vwTerm(block('.stick__slot'))).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe('index.css narrow screens: em breakpoints and reachable overflow', () => {
+  test('no px width media queries remain', () => {
+    // px queries respond to page zoom but not text-only scaling; em queries
+    // resolve against the browser default font size and respond to both.
+    expect(css).not.toMatch(/@media[^{]*\((?:min|max)-width:\s*[\d.]+px/);
+  });
+
+  test('the em breakpoints are the exact px equivalents at a 16px root', () => {
+    expect(css).toMatch(/@media \(max-width: 30em\)/); // 480px
+    expect(css).toMatch(/@media \(min-width: 33\.75em\)/); // 540px
+    expect(css).toMatch(/@media \(min-width: 51\.25em\)/); // 820px
+  });
+
+  test('the toolbar clusters wrap instead of overflowing', () => {
+    expect(block('.modes')).toContain('flex-wrap: wrap');
+    expect(block('.toolbar__right')).toContain('flex-wrap: wrap');
+  });
+
+  test('the overflow clip is scoped to the decorations, not the body', () => {
+    // A body-level clip turns real content overflow into invisible loss;
+    // scoping it to the decorations keeps the motif bleed from spawning a
+    // scrollbar while oversized content stays reachable by scrolling.
+    expect(css).not.toContain('overflow-x: hidden');
+    expect(block('.decorations')).toContain('overflow: hidden');
   });
 });
