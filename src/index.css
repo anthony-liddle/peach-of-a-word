@@ -683,8 +683,17 @@ button {
     font-size: clamp(1.75rem, 7vw, 3.6rem);
   }
 }
-/* Two-column regime: the tiles shrink back down, so the original ceiling. */
-@media (min-width: 51.25em) {
+/* Near two-column band: the handoff shrinks the tiles below their settled
+   size (43x57 at 820px, back to 54x72 by 1024px), so the 44px ceiling sat
+   at 77 percent of tile height here with a tight letterpress m. The 4vw
+   term tracks the shrunken tiles at 57 to 60 percent through the band. */
+@media (51.25em <= width < 64em) {
+  .sort {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+  }
+}
+/* Wide regime: the tiles are settled at 54x72, so the original ceiling. */
+@media (min-width: 64em) {
   .sort {
     font-size: clamp(1.75rem, 7vw, 2.75rem);
   }

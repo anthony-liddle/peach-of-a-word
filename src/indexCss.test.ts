@@ -108,14 +108,28 @@ describe('index.css rack glyphs: proportional at phone width', () => {
     expect(m!.index!).toBeGreaterThan(css.indexOf('.sort {'));
   });
 
-  test('the two-column regime keeps the original desktop glyph unchanged', () => {
+  test('the near two-column band lowers the ceiling (fourth regime)', () => {
+    // Just past the two-column handoff the tiles start small (43x57 at
+    // 820px) and grow back to 54x72 by 1024px, so the 44px ceiling sat at
+    // 77 percent there with a tight letterpress m. A 4vw term tracks the
+    // shrunken tiles at 57 to 60 percent until they regain their settled
+    // size at 64em.
+    const m = css.match(/@media \(51\.25em <= width < 64em\) \{([\s\S]*?)\n\}/);
+    expect(m).not.toBeNull();
+    expect(m![1]).toMatch(
+      /\.sort\s*\{[^}]*font-size:\s*clamp\(1\.75rem, 4vw, 2\.75rem\)/,
+    );
+    expect(m!.index!).toBeGreaterThan(css.indexOf('.sort {'));
+  });
+
+  test('the wide regime keeps the original desktop glyph unchanged', () => {
     const blocks = [
-      ...css.matchAll(/@media \(min-width: 51\.25em\) \{([\s\S]*?)\n\}/g),
+      ...css.matchAll(/@media \(min-width: 64em\) \{([\s\S]*?)\n\}/g),
     ];
     const sortRe =
       /\.sort\s*\{[^}]*font-size:\s*clamp\(1\.75rem, 7vw, 2\.75rem\)/;
     const withSort = blocks.find((b) => sortRe.test(b[1]!));
-    // Both desktop regimes must still sit after the base phone rule, or the
+    // Every desktop regime must still sit after the base phone rule, or the
     // 4-column glyph would win everywhere at equal specificity (the cascade
     // trap pass 1b hit).
     expect(withSort).toBeDefined();
