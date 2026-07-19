@@ -80,6 +80,14 @@ describe('index.html theme default', () => {
     expect(html).not.toContain('data-theme="letterpress"');
   });
 
+  test('the pre-paint script applies a saved text size before first paint', () => {
+    // Same no-flash contract as the theme: the size lands on the root before
+    // any module runs. Only the larger steps set the attribute; regular means
+    // no override, which is also what an unknown saved value must mean.
+    expect(html).toContain("localStorage.getItem('e8-text-size')");
+    expect(html).toMatch(/dataset\.textSize/);
+  });
+
   test('the pre-paint script still lets a saved preference win', () => {
     // Saved preferences must keep overriding the default, so a letterpress
     // player still lands on letterpress. The script reads the stored key and

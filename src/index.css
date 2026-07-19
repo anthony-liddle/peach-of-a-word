@@ -12,6 +12,18 @@
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
+/* Text-size steps. Percentages, never px: a percentage MULTIPLIES with the
+   browser's default font size, so a player who set their browser to 24px and
+   picks the largest step gets 30px. A px value here would replace the browser
+   preference and undo the text-scaling support. Regular is no attribute and
+   no override at all. */
+:root[data-text-size='large'] {
+  font-size: 112.5%;
+}
+:root[data-text-size='largest'] {
+  font-size: 125%;
+}
+
 /* ===================== Letterpress (the default) ===================== */
 :root,
 [data-theme='letterpress'] {
@@ -458,6 +470,18 @@ button {
   place-content: center;
   font-size: 0.95rem;
   line-height: 1;
+}
+/* The text-size cycler. Visually one of the icon buttons; the pseudo-element
+   quietly widens the hit area to the 44px tap floor without growing the
+   36px control row it sits in (a pseudo participates in its button's hit
+   testing, so the extra ring is tappable). */
+.textsize {
+  position: relative;
+}
+.textsize::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
 }
 .iconbtn--accent[aria-pressed='true'] {
   border-color: var(--accent);
@@ -1322,7 +1346,7 @@ button {
   overflow-y: auto;
 }
 .reveal__kicker {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   letter-spacing: 0.4em;
   text-transform: uppercase;
   color: var(--crown-deep);
@@ -1350,7 +1374,7 @@ button {
   margin: 0.9rem 0;
 }
 .reveal__h {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -1373,7 +1397,7 @@ button {
   color: var(--paper);
   border-radius: var(--radius);
   padding: 0.55rem 1.4rem;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   min-height: 44px;
@@ -1538,7 +1562,7 @@ button {
   color: var(--paper);
   border-radius: var(--radius);
   padding: 0.5rem 1.3rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
