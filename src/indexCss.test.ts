@@ -92,18 +92,32 @@ describe('index.css rack glyphs: proportional at phone width', () => {
     expect(vwTerm(block('.sort'))).toBeGreaterThanOrEqual(15);
   });
 
-  test('the 8-column breakpoint restores the desktop glyph unchanged', () => {
-    // Capture each 33.75em (540px at default) media block up to its
-    // unindented closing brace, so the assertion cannot leak past a block
-    // into the base rules below it. The desktop glyph must live in one of
-    // them, and that block must come after the base .sort rule or the phone
-    // size would win on desktop too.
+  test('the single-column band raises the glyph ceiling (middle regime)', () => {
+    // Between the 8-column handoff and the two-column board the tiles keep
+    // growing with the viewport while the board stays one column, so the
+    // glyph needs a higher ceiling there than in the two-column regime. The
+    // half-open range query keeps the two desktop regimes disjoint, so their
+    // source order relative to each other cannot matter.
+    const m = css.match(
+      /@media \(33\.75em <= width < 51\.25em\) \{([\s\S]*?)\n\}/,
+    );
+    expect(m).not.toBeNull();
+    expect(m![1]).toMatch(
+      /\.sort\s*\{[^}]*font-size:\s*clamp\(1\.75rem, 7vw, 3\.6rem\)/,
+    );
+    expect(m!.index!).toBeGreaterThan(css.indexOf('.sort {'));
+  });
+
+  test('the two-column regime keeps the original desktop glyph unchanged', () => {
     const blocks = [
-      ...css.matchAll(/@media \(min-width: 33\.75em\) \{([\s\S]*?)\n\}/g),
+      ...css.matchAll(/@media \(min-width: 51\.25em\) \{([\s\S]*?)\n\}/g),
     ];
     const sortRe =
       /\.sort\s*\{[^}]*font-size:\s*clamp\(1\.75rem, 7vw, 2\.75rem\)/;
     const withSort = blocks.find((b) => sortRe.test(b[1]!));
+    // Both desktop regimes must still sit after the base phone rule, or the
+    // 4-column glyph would win everywhere at equal specificity (the cascade
+    // trap pass 1b hit).
     expect(withSort).toBeDefined();
     expect(withSort!.index!).toBeGreaterThan(css.indexOf('.sort {'));
   });
