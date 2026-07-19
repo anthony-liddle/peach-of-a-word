@@ -667,10 +667,24 @@ button {
   background: var(--tile-foot);
   border-radius: 2px;
 }
-/* Eight narrower tiles from 540px up: back to the desktop glyph. This block
-   must sit after the base .sort rule; at equal specificity the later rule
-   wins, so placing it earlier would let the phone size leak onto desktop. */
-@media (min-width: 33.75em) {
+/* Eight narrower tiles from 33.75em up, in two regimes. Both blocks must sit
+   after the base .sort rule (at equal specificity the later rule wins, the
+   cascade trap from the first attempt at this split), but the half-open range
+   keeps the two regimes disjoint from each other, so only order against the
+   base rule matters.
+
+   Middle regime, the single-column board: tiles keep growing with the
+   viewport all the way to the two-column handoff, so the ceiling is raised
+   to 3.6rem and 7vw runs uncapped through the band (57.3px at its top),
+   holding the glyph near 53 percent of tile height instead of decaying to
+   40 percent at iPad portrait. */
+@media (33.75em <= width < 51.25em) {
+  .sort {
+    font-size: clamp(1.75rem, 7vw, 3.6rem);
+  }
+}
+/* Two-column regime: the tiles shrink back down, so the original ceiling. */
+@media (min-width: 51.25em) {
   .sort {
     font-size: clamp(1.75rem, 7vw, 2.75rem);
   }
