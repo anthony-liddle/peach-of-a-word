@@ -59,6 +59,10 @@ describe('index.css sizes: the supporting-text floor', () => {
     ['.modes button', 0.875],
     ['.chip', 0.875],
     ['.theme-swap', 0.875],
+    ['.reveal__close', 0.875],
+    ['.edition__close', 0.875],
+    ['.reveal__h', 0.78],
+    ['.reveal__kicker', 0.78],
   ];
 
   test.each(floors)('%s renders at or above %srem', (selector, minRem) => {
@@ -125,6 +129,26 @@ describe('index.css narrow screens: em breakpoints and reachable overflow', () =
   test('the toolbar clusters wrap instead of overflowing', () => {
     expect(block('.modes')).toContain('flex-wrap: wrap');
     expect(block('.toolbar__right')).toContain('flex-wrap: wrap');
+  });
+
+  test('the text-size steps are percentages, never px', () => {
+    // A px root size would REPLACE the browser's default font size and undo
+    // the text-scaling support; a percentage multiplies with it, so a 24px
+    // browser default at the largest step lands on 30px. Non-negotiable.
+    const overrides = [
+      ...css.matchAll(/:root\[data-text-size='[^']+'\]\s*\{([^}]*)\}/g),
+    ];
+    expect(overrides.length).toBeGreaterThanOrEqual(2);
+    for (const m of overrides) {
+      expect(m[1]).toMatch(/font-size:\s*[\d.]+%/);
+      expect(m[1]).not.toMatch(/font-size:[^;]*px/);
+    }
+  });
+
+  test('no px font-size ever targets the document root', () => {
+    for (const m of css.matchAll(/(?:^|\n)(?:html|:root)[^{]*\{([^}]*)\}/g)) {
+      expect(m[1]).not.toMatch(/font-size:\s*[\d.]+px/);
+    }
   });
 
   test('the overflow clip is scoped to the decorations, not the body', () => {
