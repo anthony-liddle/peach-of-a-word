@@ -41,6 +41,17 @@
         if (icon)
           icon.href =
             theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+        // Saved text size, same no-flash contract as the theme. Only the
+        // larger steps set the attribute; regular (or anything unknown)
+        // means no override, so the browser default rules alone.
+        var size;
+        try {
+          size = localStorage.getItem('e8-text-size');
+        } catch (e) {
+          size = null;
+        }
+        if (size === 'large' || size === 'largest')
+          document.documentElement.dataset.textSize = size;
       })();
     </script>
 
