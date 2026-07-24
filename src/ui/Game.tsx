@@ -2,8 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameData } from '@/data/gameData.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
-import { useGame, type GameApi } from './useGame.ts';
+import {
+  messageText,
+  useAnnouncedText,
+  useGame,
+  type GameApi,
+} from './useGame.ts';
 import { useTheme, type Theme } from './useTheme.ts';
+import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
 import { FoundList } from './components/FoundList.tsx';
 import { ShareButton } from './components/ShareButton.tsx';
 import { Reveal, type QuietCategory } from './components/Reveal.tsx';
@@ -53,6 +59,12 @@ export function Game({ data, audio, storage }: Props) {
 
   const { state } = game;
   const [theme] = useTheme();
+  // Frozen at the moment of the find, so re-skinning never re-speaks it.
+  const spokenAnnouncement = useAnnouncedText(
+    state.announcement,
+    state.mode,
+    theme,
+  );
 
   const { getDefinition } = useDefinitions(state.puzzle.sourceWord);
 
@@ -131,7 +143,7 @@ export function Game({ data, audio, storage }: Props) {
             data-tone={state.message?.tone ?? 'info'}
             aria-hidden="true"
           >
-            {state.message?.text ?? ' '}
+            {state.message ? messageText(state.message, theme) : ' '}
           </p>
         </div>
 
@@ -155,9 +167,10 @@ export function Game({ data, audio, storage }: Props) {
 
       <Colophon triggerRef={howTriggerRef} onOpenHow={() => setHowOpen(true)} />
 
-      {/* Screen-reader announcements: found words, tier changes, the crown. */}
+      {/* Screen-reader announcements: found words, tier changes, the crown.
+          Settled when the find happens, never re-resolved under it. */}
       <div className="visually-hidden" role="status" aria-live="polite">
-        {state.announcement.text}
+        {spokenAnnouncement}
       </div>
 
       {state.editionOpen && (
@@ -169,6 +182,7 @@ export function Game({ data, audio, storage }: Props) {
       {state.revealOpen ? (
         <Reveal
           register="crown"
+          theme={theme}
           word={state.puzzle.sourceWord}
           entry={state.sourceEntry}
           onClose={game.closeReveal}
@@ -261,6 +275,7 @@ function Toolbar({ game }: { game: GameApi }) {
             ✦
           </button>
         )}
+        <TextSizeButton />
         <button
           className="iconbtn iconbtn--accent"
           aria-pressed={game.muted}
@@ -272,6 +287,44 @@ function Toolbar({ game }: { game: GameApi }) {
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * The three-step text-size cycler, for players who have not found (or do not
+ * know about) their browser's own text setting. Cycles regular, large,
+ * largest; the accessible name states the current step and the action, like
+ * ThemeSwap, and a local polite live region announces each change the way the
+ * share confirmation does. The growing page itself is the sighted feedback.
+ */
+function TextSizeButton() {
+  const [size, setSize] = useTextSize();
+  const [announced, setAnnounced] = useState('');
+  const labels: Record<TextSize, string> = {
+    regular: 'Regular',
+    large: 'Large',
+    largest: 'Largest',
+  };
+  const next = nextTextSize(size);
+  const cycle = () => {
+    setSize(next);
+    setAnnounced(`Text size: ${labels[next]}`);
+  };
+  return (
+    <>
+      <button
+        type="button"
+        className="iconbtn textsize"
+        onClick={cycle}
+        aria-label={`Text size: ${labels[size]}. Activate to switch to ${labels[next].toLowerCase()}.`}
+        title={`Text size: ${labels[size]}`}
+      >
+        <span aria-hidden="true">Aa</span>
+      </button>
+      <span className="visually-hidden" aria-live="polite" aria-atomic="true">
+        {announced}
+      </span>
+    </>
   );
 }
 

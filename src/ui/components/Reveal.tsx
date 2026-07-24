@@ -1,21 +1,31 @@
 import { useEffect, useId, useRef } from 'react';
 import type { SourceEntry } from '@/data/types.ts';
+import { revealKicker } from '../tierNames.ts';
+import type { Theme } from '../useTheme.ts';
 
 export type QuietCategory = 'set' | 'uncommon' | 'rare' | 'mythic';
 
 type RevealProps = {
   onClose: () => void;
   returnFocusTo?: HTMLElement | null;
-} & (
-  | { register: 'crown'; word: string; entry: SourceEntry | undefined }
-  | {
-      register: 'quiet';
-      word: string;
-      category: QuietCategory;
-      status: 'loading' | 'ready';
-      definition: string | null;
-    }
-);
+} &
+  // The theme rides with the crown alone: it skins the kicker, which the quiet
+  // register does not have. The quiet card takes its accent from the category.
+  (
+    | {
+        register: 'crown';
+        theme: Theme;
+        word: string;
+        entry: SourceEntry | undefined;
+      }
+    | {
+        register: 'quiet';
+        word: string;
+        category: QuietCategory;
+        status: 'loading' | 'ready';
+        definition: string | null;
+      }
+  );
 
 const NO_DEFINITION =
   'No definition on hand for this one. It is still a real word you found.';
@@ -63,7 +73,7 @@ export function Reveal(props: RevealProps) {
         aria-labelledby={wordId}
       >
         {props.register === 'crown' ? (
-          <p className="reveal__kicker">The word the type was cut for</p>
+          <p className="reveal__kicker">{revealKicker(props.theme)}</p>
         ) : null}
         <h2 className="reveal__word" id={wordId}>
           {props.word}

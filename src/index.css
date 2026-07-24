@@ -12,6 +12,18 @@
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
+/* Text-size steps. Percentages, never px: a percentage MULTIPLIES with the
+   browser's default font size, so a player who set their browser to 24px and
+   picks the largest step gets 30px. A px value here would replace the browser
+   preference and undo the text-scaling support. Regular is no attribute and
+   no override at all. */
+:root[data-text-size='large'] {
+  font-size: 112.5%;
+}
+:root[data-text-size='largest'] {
+  font-size: 125%;
+}
+
 /* ===================== Letterpress (the default) ===================== */
 :root,
 [data-theme='letterpress'] {
@@ -131,7 +143,9 @@ body {
   background-image: var(--page-bg);
   background-attachment: fixed;
   min-height: 100vh;
-  overflow-x: hidden; /* keep cute motifs from nudging out a scrollbar */
+  /* No body-level overflow clip: it turned real content overflow at large
+     text sizes into invisible loss. The decorations layer clips itself
+     below, so the motifs still cannot nudge out a scrollbar. */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -180,6 +194,9 @@ button {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* The motifs clip here (the peach bleeds off the left edge) so they can
+     never widen the page; the body carries no overflow clip anymore. */
+  overflow: hidden;
 }
 [data-theme='letterpress'] .decorations {
   display: none;
@@ -389,7 +406,11 @@ button {
 }
 .modes {
   display: inline-flex;
-  height: var(--control-h);
+  /* Wrap inside the bordered unit at large text sizes: the pair stacks but
+     still reads as one segmented control. min-height (not height) lets the
+     unit grow when it wraps instead of clipping the second row. */
+  flex-wrap: wrap;
+  min-height: var(--control-h);
   border: 1px solid var(--ink);
   border-radius: var(--radius);
   overflow: hidden;
@@ -398,7 +419,7 @@ button {
   background: transparent;
   border: 0;
   padding: 0 0.95rem;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -412,6 +433,8 @@ button {
 }
 .toolbar__right {
   display: inline-flex;
+  /* Wrap between controls at large text sizes rather than overflowing. */
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
 }
@@ -424,7 +447,7 @@ button {
   background: var(--paper-deep);
   border-radius: var(--radius);
   padding: 0 0.7rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   letter-spacing: 0.06em;
 }
 .chip strong {
@@ -448,6 +471,18 @@ button {
   font-size: 0.95rem;
   line-height: 1;
 }
+/* The text-size cycler. Visually one of the icon buttons; the pseudo-element
+   quietly widens the hit area to the 44px tap floor without growing the
+   36px control row it sits in (a pseudo participates in its button's hit
+   testing, so the extra ring is tappable). */
+.textsize {
+  position: relative;
+}
+.textsize::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
 .iconbtn--accent[aria-pressed='true'] {
   border-color: var(--accent);
   color: var(--accent);
@@ -469,7 +504,7 @@ button {
   border: 1px solid var(--ink);
   border-radius: var(--radius);
   background: var(--paper-deep);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   touch-action: manipulation;
@@ -483,7 +518,7 @@ button {
 /* Narrow widths: stack into two fixed rows (toggle, then controls) for both
    modes, so the wider New Puzzle cluster can never wrap differently from the
    Streak pill and shift everything below. Same structure, same height. */
-@media (max-width: 480px) {
+@media (max-width: 30em) {
   .toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -513,7 +548,7 @@ button {
   grid-template-columns: 1fr;
   gap: clamp(1.5rem, 4vw, 2.5rem);
 }
-@media (min-width: 820px) {
+@media (min-width: 51.25em) {
   .board {
     grid-template-columns: 1.4fr 1fr;
     align-items: start;
@@ -558,7 +593,9 @@ button {
 .stick__slot {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  /* The stick is 4rem tall at every width, so the slot aims for one cap
+     everywhere; 10vw just reaches it by phone width instead of at 693px. */
+  font-size: clamp(1.9rem, 10vw, 2.6rem);
   text-transform: lowercase;
   color: var(--ink);
   min-width: 0.7em;
@@ -588,7 +625,7 @@ button {
   grid-template-columns: repeat(4, 1fr);
   gap: clamp(0.5rem, 2vw, 0.85rem);
 }
-@media (min-width: 540px) {
+@media (min-width: 33.75em) {
   .case {
     grid-template-columns: repeat(8, 1fr);
   }
@@ -603,7 +640,12 @@ button {
   box-shadow: var(--tile-shadow);
   font-family: var(--font-display);
   font-weight: var(--tile-letter-weight);
-  font-size: clamp(1.5rem, 6vw, 2.3rem);
+  /* The 4-column phone tiles are LARGER than the 8-column desktop tiles, so
+     the glyph must be larger there too. One vw clamp cannot express that (its
+     cap is viewport-independent), so this base rule tracks the 4-column tile,
+     which is proportional to the viewport, and the 540px query below restores
+     the desktop clamp when the grid goes to 8 columns. */
+  font-size: clamp(1.75rem, 16vw, 5rem);
   color: var(--ink);
   text-transform: lowercase;
   display: grid;
@@ -624,6 +666,37 @@ button {
   height: 2px;
   background: var(--tile-foot);
   border-radius: 2px;
+}
+/* Eight narrower tiles from 33.75em up, in two regimes. Both blocks must sit
+   after the base .sort rule (at equal specificity the later rule wins, the
+   cascade trap from the first attempt at this split), but the half-open range
+   keeps the two regimes disjoint from each other, so only order against the
+   base rule matters.
+
+   Middle regime, the single-column board: tiles keep growing with the
+   viewport all the way to the two-column handoff, so the ceiling is raised
+   to 3.6rem and 7vw runs uncapped through the band (57.3px at its top),
+   holding the glyph near 53 percent of tile height instead of decaying to
+   40 percent at iPad portrait. */
+@media (33.75em <= width < 51.25em) {
+  .sort {
+    font-size: clamp(1.75rem, 7vw, 3.6rem);
+  }
+}
+/* Near two-column band: the handoff shrinks the tiles below their settled
+   size (43x57 at 820px, back to 54x72 by 1024px), so the 44px ceiling sat
+   at 77 percent of tile height here with a tight letterpress m. The 4vw
+   term tracks the shrunken tiles at 57 to 60 percent through the band. */
+@media (51.25em <= width < 64em) {
+  .sort {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+  }
+}
+/* Wide regime: the tiles are settled at 54x72, so the original ceiling. */
+@media (min-width: 64em) {
+  .sort {
+    font-size: clamp(1.75rem, 7vw, 2.75rem);
+  }
 }
 .sort:active:not(:disabled) {
   transform: translateY(1px);
@@ -685,7 +758,7 @@ button {
   border-radius: var(--radius);
   background: var(--paper-deep);
   padding: 0.65rem 1rem;
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   transition:
@@ -744,7 +817,7 @@ button {
    action flow already is. The visual swap is done with order, so the DOM and
    focus order stay Shuffle, Clear, Delete, Submit. Same structure in both themes.
    The 480px break matches the toolbar's. */
-@media (max-width: 480px) {
+@media (max-width: 30em) {
   .controls {
     flex-direction: column;
     align-items: stretch;
@@ -847,12 +920,12 @@ button {
 .tier__ticks {
   display: flex;
   justify-content: space-between;
-  font-size: 0.66rem;
+  font-size: 0.875rem;
   color: var(--ink-soft);
   letter-spacing: 0.02em;
 }
 .tier__next {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--ink-soft);
   font-style: italic;
 }
@@ -863,7 +936,7 @@ button {
   flex-wrap: wrap;
   gap: 0.2rem 1.1rem;
   margin: 0;
-  font-size: 0.74rem;
+  font-size: 0.875rem;
 }
 .tier__keyitem {
   display: inline-flex;
@@ -925,7 +998,7 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 1.1rem;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   letter-spacing: 0.02em;
 }
 .summary__stat {
@@ -996,7 +1069,7 @@ button {
   color: var(--ink);
 }
 .found__groupcount {
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -1010,14 +1083,14 @@ button {
   gap: 0.3rem 0.75rem;
 }
 /* A quiet aside above the off-page list, shown only when a row has both a set
-   and an off-page find. Muted and small so it frames the extras without
-   competing with the count. Reads in both themes through --ink-soft. */
+   and an off-page find. Muted by color alone so it frames the extras without
+   competing with the count: ink-soft clears AA in both themes, and the old
+   opacity veil dropped it to 3.3:1, so mute with color or weight, never opacity. */
 .found__alsofound {
   margin: 0.5rem 0 0;
-  font-size: 0.68rem;
+  font-size: 0.875rem;
   letter-spacing: 0.08em;
   color: var(--ink-soft);
-  opacity: 0.7;
 }
 /* Off-page finds of a length sit just under the set list, set apart so the
    set count above never reads as describing them. */
@@ -1042,7 +1115,7 @@ button {
   cursor: pointer;
   text-align: left;
   /* Layout */
-  font-size: 1.02rem;
+  font-size: 1.1rem;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1213,12 +1286,13 @@ button {
   font-weight: 600;
   font-style: italic;
 }
-/* Points are the reward, so every off-page find shows them inline, in discovery blue. */
+/* Points are the reward, so every off-page find shows them inline, in discovery
+   blue at full strength: the token clears AA on its own, and the old opacity
+   veil pulled it under 4.5:1 at this size. */
 .found__points {
   color: var(--discovery);
   font-weight: 600;
-  font-size: 0.82em;
-  opacity: 0.85;
+  font-size: 0.9em;
 }
 .found__rung-note {
   margin-left: 0.4em;
@@ -1241,7 +1315,7 @@ button {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem 1rem;
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   color: var(--ink-soft);
   margin-top: 1.5rem;
   padding-top: 0.8rem;
@@ -1250,7 +1324,7 @@ button {
 .legend__caption {
   width: 100%;
   margin-bottom: 0.15rem;
-  font-size: 0.66rem;
+  font-size: 0.74rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -1295,7 +1369,7 @@ button {
   overflow-y: auto;
 }
 .reveal__kicker {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   letter-spacing: 0.4em;
   text-transform: uppercase;
   color: var(--crown-deep);
@@ -1323,7 +1397,7 @@ button {
   margin: 0.9rem 0;
 }
 .reveal__h {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -1346,7 +1420,7 @@ button {
   color: var(--paper);
   border-radius: var(--radius);
   padding: 0.55rem 1.4rem;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   min-height: 44px;
@@ -1511,7 +1585,7 @@ button {
   color: var(--paper);
   border-radius: var(--radius);
   padding: 0.5rem 1.3rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -1577,7 +1651,7 @@ footer.colophon {
   border-top: 1px solid var(--rule);
   padding-top: 1rem;
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   color: var(--ink-faint);
   letter-spacing: 0.04em;
   line-height: 1.6;
