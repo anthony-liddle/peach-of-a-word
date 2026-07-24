@@ -3,8 +3,8 @@ import type { GameData } from '@/data/gameData.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
 import {
-  announcementText,
   messageText,
+  useAnnouncedText,
   useGame,
   type GameApi,
 } from './useGame.ts';
@@ -59,6 +59,12 @@ export function Game({ data, audio, storage }: Props) {
 
   const { state } = game;
   const [theme] = useTheme();
+  // Frozen at the moment of the find, so re-skinning never re-speaks it.
+  const spokenAnnouncement = useAnnouncedText(
+    state.announcement,
+    state.mode,
+    theme,
+  );
 
   const { getDefinition } = useDefinitions(state.puzzle.sourceWord);
 
@@ -161,9 +167,10 @@ export function Game({ data, audio, storage }: Props) {
 
       <Colophon triggerRef={howTriggerRef} onOpenHow={() => setHowOpen(true)} />
 
-      {/* Screen-reader announcements: found words, tier changes, the crown. */}
+      {/* Screen-reader announcements: found words, tier changes, the crown.
+          Settled when the find happens, never re-resolved under it. */}
       <div className="visually-hidden" role="status" aria-live="polite">
-        {announcementText(state.announcement, theme)}
+        {spokenAnnouncement}
       </div>
 
       {state.editionOpen && (

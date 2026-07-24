@@ -694,19 +694,65 @@ describe('Game source-word celebration', () => {
     expect(message().textContent).toBe('You found the source word.');
   });
 
-  it('announces the find in the framing on screen, in both themes', () => {
+  it('announces the find in the framing that was on screen when it landed', () => {
     document.documentElement.dataset.theme = 'cute';
     renderGame();
     findSource();
     expect(screen.getByRole('status').textContent).toMatch(
       /you found the peach of a word: serenade\./i,
     );
+  });
 
-    dismissReveal();
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+  it('announces the classic framing when the find lands in classic', () => {
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    findSource();
     expect(screen.getByRole('status').textContent).toMatch(
       /source word found: serenade\./i,
     );
+  });
+
+  it('does not speak the find a second time when only the theme changes', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findSource();
+    const spoken = screen.getByRole('status').textContent;
+    dismissReveal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    // A live region speaks whenever its text changes, so holding the text still
+    // is what "no second announcement" looks like from the outside. The find is
+    // a point in time; re-skinning the page is not a new one.
+    expect(screen.getByRole('status').textContent).toBe(spoken);
+    // The visible line is a label, not an event, so it re-skins in that same
+    // beat. The two live regions of this change move independently on purpose.
+    expect(message().textContent).toBe('You found the source word.');
+  });
+
+  it('speaks the next real find, so the region is held still and not stuck', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findSource();
+    dismissReveal();
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+
+    type('sea');
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(screen.getByRole('status').textContent).toMatch(/sea/i);
+    expect(screen.getByRole('status').textContent).not.toMatch(/serenade/i);
+  });
+
+  it('does not carry the daily announcement over into Endless', () => {
+    // Each mode counts its own announcements from zero, so the event key has to
+    // name the mode as well. Keyed on the count alone, the fresh Endless slice
+    // would look like the same event and keep speaking the daily's last find.
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findSource();
+    dismissReveal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Endless' }));
+    expect(screen.getByRole('status').textContent).toBe('');
   });
 
   it('keeps the rank cue after the themed celebration, in both themes', () => {

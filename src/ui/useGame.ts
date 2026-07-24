@@ -88,6 +88,33 @@ export function announcementText(
 }
 
 /**
+ * The text the live region holds. An announcement is a point in time, not a
+ * label: it is resolved in the theme that was on screen when it fired and then
+ * held still. A screen reader speaks a polite region whenever its text changes,
+ * so re-resolving on a theme switch would speak a stale find over again, with
+ * no new find behind it. The visible message is a label and does re-skin live.
+ *
+ * Keyed by the announcement itself, which the reducer already counts. The count
+ * is per mode (each slice starts its own at zero), so the key names the mode
+ * too, or a fresh Endless would read as the daily's last event.
+ */
+export function useAnnouncedText(
+  announcement: Announcement,
+  mode: Mode,
+  theme: Theme,
+): string {
+  const [spoken, setSpoken] = useState({ key: '', text: '' });
+  const key = `${mode}:${announcement.seq}`;
+  // Settling this during render (React's own adjust-state-on-change pattern)
+  // keeps the region and the visible message in one paint, so the two never
+  // disagree about which find is the current one.
+  if (spoken.key !== key) {
+    setSpoken({ key, text: announcementText(announcement, theme) });
+  }
+  return spoken.text;
+}
+
+/**
  * One mode's game. Daily and Endless each hold their own slice, so switching
  * modes is a view change and never disturbs the other.
  */
