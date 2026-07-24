@@ -3,6 +3,7 @@ import {
   CROWN_RANK,
   TIER_NAMES,
   crownName,
+  revealKicker,
   sourceFoundAnnouncement,
   sourceFoundMessage,
   tierName,
@@ -52,5 +53,21 @@ describe('theme-skinned source-word celebration', () => {
     // so every skin has to end in a full stop or the two cues would run together.
     expect(sourceFoundAnnouncement('letterpress', 'serenade')).toMatch(/\.$/);
     expect(sourceFoundAnnouncement('cute', 'serenade')).toMatch(/\.$/);
+  });
+});
+
+describe('theme-skinned reveal kicker', () => {
+  it('grows the peach in cute and leaves the letterpress line untouched', () => {
+    // Classic is pinned verbatim. Cute stops borrowing the metal-type metaphor
+    // and says the same thing about the rack in its own register.
+    expect(revealKicker('letterpress')).toBe('The word the type was cut for');
+    expect(revealKicker('cute')).toBe('The peach every word grew from');
+  });
+
+  it('keeps the kicker a kicker: no closing punctuation in either skin', () => {
+    // It sits above the word as a label, not a sentence, and the stylesheet
+    // sets it in spaced small caps where a full stop would read as a speck.
+    expect(revealKicker('letterpress')).not.toMatch(/[.!?]$/);
+    expect(revealKicker('cute')).not.toMatch(/[.!?]$/);
   });
 });

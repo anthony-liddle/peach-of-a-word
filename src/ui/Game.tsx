@@ -182,6 +182,7 @@ export function Game({ data, audio, storage }: Props) {
       {state.revealOpen ? (
         <Reveal
           register="crown"
+          theme={theme}
           word={state.puzzle.sourceWord}
           entry={state.sourceEntry}
           onClose={game.closeReveal}

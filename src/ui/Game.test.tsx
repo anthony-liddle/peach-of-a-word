@@ -742,6 +742,19 @@ describe('Game source-word celebration', () => {
     expect(screen.getByRole('status').textContent).not.toMatch(/serenade/i);
   });
 
+  it('heads the reveal card with the kicker of the theme on screen', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findSource();
+    const card = screen.getByRole('dialog');
+    expect(
+      within(card).getByText('The peach every word grew from'),
+    ).toBeInTheDocument();
+    expect(
+      within(card).queryByText('The word the type was cut for'),
+    ).toBeNull();
+  });
+
   it('does not carry the daily announcement over into Endless', () => {
     // Each mode counts its own announcements from zero, so the event key has to
     // name the mode as well. Keyed on the count alone, the fresh Endless slice
@@ -1087,6 +1100,7 @@ describe('Game word tap routing', () => {
     expect(
       document.querySelector('.reveal--quiet.reveal--rare'),
     ).not.toBeNull();
-    expect(screen.queryByText('The word the type was cut for')).toBeNull();
+    // Crown-only, so assert the element: the wording is theme-dependent now.
+    expect(document.querySelector('.reveal__kicker')).toBeNull();
   });
 });

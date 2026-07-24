@@ -59,12 +59,28 @@ const SOURCE_FOUND_ANNOUNCEMENTS: Record<Theme, (word: string) => string> = {
   cute: (word) => `You found the Peach of a Word: ${word}.`,
 };
 
+/**
+ * The kicker above the word on the source-word reveal card. Letterpress names
+ * the rack as the type a word was cut for. Cute says the same thing about the
+ * same rack in its own register: the eight letters every other find grew out
+ * of. A label, not a sentence, so neither skin closes with a full stop.
+ */
+export const REVEAL_KICKERS: Record<Theme, string> = {
+  letterpress: 'The word the type was cut for',
+  cute: 'The peach every word grew from',
+};
+
 /** The crown's rank index, one above the top named rank (5). */
 export const CROWN_RANK = TIER_NAMES.letterpress.length;
 
 /** The themed completion-crown name for the active theme. */
 export function crownName(theme: Theme): string {
   return CROWN_NAMES[theme];
+}
+
+/** The themed reveal-card kicker for the active theme. */
+export function revealKicker(theme: Theme): string {
+  return REVEAL_KICKERS[theme];
 }
 
 /** The themed source-word celebration for the active theme. */
