@@ -17,6 +17,7 @@ describe('Reveal crown register', () => {
     render(
       <Reveal
         register="crown"
+        theme="letterpress"
         word="serenade"
         entry={ENTRY}
         onClose={() => {}}
@@ -24,6 +25,69 @@ describe('Reveal crown register', () => {
     );
     expect(screen.getByText('noun. a love song.')).toBeInTheDocument();
     expect(screen.getByText('From Italian serenata.')).toBeInTheDocument();
+  });
+
+  it('keeps the letterpress kicker exactly as it is', () => {
+    render(
+      <Reveal
+        register="crown"
+        theme="letterpress"
+        word="serenade"
+        entry={ENTRY}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText('The word the type was cut for'),
+    ).toBeInTheDocument();
+  });
+
+  it('grows the peach kicker in cute instead of borrowing the type metaphor', () => {
+    render(
+      <Reveal
+        register="crown"
+        theme="cute"
+        word="serenade"
+        entry={ENTRY}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText('The peach every word grew from'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('The word the type was cut for')).toBeNull();
+  });
+
+  it('re-skins the kicker live on a theme switch, like the rank label', () => {
+    // The kicker is a persistent label on the card, not an announcement, so it
+    // describes the card under the theme showing now rather than the theme that
+    // was up when the word landed.
+    const { rerender } = render(
+      <Reveal
+        register="crown"
+        theme="letterpress"
+        word="serenade"
+        entry={ENTRY}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText('The word the type was cut for'),
+    ).toBeInTheDocument();
+
+    rerender(
+      <Reveal
+        register="crown"
+        theme="cute"
+        word="serenade"
+        entry={ENTRY}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText('The peach every word grew from'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('The word the type was cut for')).toBeNull();
   });
 });
 
@@ -43,7 +107,9 @@ describe('Reveal quiet register', () => {
     expect(
       container.querySelector('.reveal--quiet.reveal--rare'),
     ).not.toBeNull();
-    expect(screen.queryByText('The word the type was cut for')).toBeNull();
+    // The kicker is crown-only. Assert the element, not one theme's wording,
+    // since the wording now depends on the theme and would go absent for free.
+    expect(container.querySelector('.reveal__kicker')).toBeNull();
   });
 
   it('shows the exact no-definition copy when the gloss is null', () => {

@@ -21,6 +21,8 @@ import {
   type TierStanding,
 } from '@/engine/index.ts';
 import { RUNG_NAMES } from './rarity.ts';
+import { sourceFoundAnnouncement, sourceFoundMessage } from './tierNames.ts';
+import type { Theme } from './useTheme.ts';
 import type { GameData } from '@/data/gameData.ts';
 import type { SourceEntry } from '@/data/types.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
@@ -33,15 +35,83 @@ export interface Tile {
   readonly letter: string;
 }
 
+/**
+ * What a feedback line says. Most lines are fixed text, settled the moment they
+ * are produced. The source-word find is the one skinned line: state records the
+ * find, never its wording, so the view supplies the active theme's framing and a
+ * theme switch re-skins it live. The same split the rank label already uses.
+ */
+export type MessageBody =
+  | { readonly kind: 'plain'; readonly text: string }
+  | { readonly kind: 'source-found' };
+
 export interface Message {
-  readonly text: string;
+  readonly body: MessageBody;
   readonly tone: 'info' | 'success' | 'error';
 }
 
-interface Announcement {
-  readonly text: string;
+/**
+ * The spoken twin of a message body. The source-word find carries the word (the
+ * live region names it, the visible line leaves that to the reveal card) and the
+ * tail: the rank or completion cue that follows the framing and is never skinned.
+ */
+export type AnnouncementBody =
+  | { readonly kind: 'plain'; readonly text: string }
+  | {
+      readonly kind: 'source-found';
+      readonly word: string;
+      readonly tail: string;
+    };
+
+export interface Announcement {
+  readonly body: AnnouncementBody;
   /** Bumped each time so screen readers re-announce identical text. */
   readonly seq: number;
+}
+
+/** What the message line reads under the active theme. */
+export function messageText(message: Message, theme: Theme): string {
+  return message.body.kind === 'plain'
+    ? message.body.text
+    : sourceFoundMessage(theme);
+}
+
+/** What the live region announces under the active theme. */
+export function announcementText(
+  announcement: Announcement,
+  theme: Theme,
+): string {
+  const { body } = announcement;
+  return body.kind === 'plain'
+    ? body.text
+    : sourceFoundAnnouncement(theme, body.word) + body.tail;
+}
+
+/**
+ * The text the live region holds. An announcement is a point in time, not a
+ * label: it is resolved in the theme that was on screen when it fired and then
+ * held still. A screen reader speaks a polite region whenever its text changes,
+ * so re-resolving on a theme switch would speak a stale find over again, with
+ * no new find behind it. The visible message is a label and does re-skin live.
+ *
+ * Keyed by the announcement itself, which the reducer already counts. The count
+ * is per mode (each slice starts its own at zero), so the key names the mode
+ * too, or a fresh Endless would read as the daily's last event.
+ */
+export function useAnnouncedText(
+  announcement: Announcement,
+  mode: Mode,
+  theme: Theme,
+): string {
+  const [spoken, setSpoken] = useState({ key: '', text: '' });
+  const key = `${mode}:${announcement.seq}`;
+  // Settling this during render (React's own adjust-state-on-change pattern)
+  // keeps the region and the visible message in one paint, so the two never
+  // disagree about which find is the current one.
+  if (spoken.key !== key) {
+    setSpoken({ key, text: announcementText(announcement, theme) });
+  }
+  return spoken.text;
 }
 
 /**
@@ -137,7 +207,7 @@ function buildSlice(payload: SlicePayload): Slice {
     // Rehydrated games never reopen the card; it fires only on the live moment.
     editionOpen: false,
     message: null,
-    announcement: { text: '', seq: 0 },
+    announcement: { body: { kind: 'plain', text: '' }, seq: 0 },
   };
 }
 
@@ -145,8 +215,8 @@ function letterOf(slice: Slice, id: number): string {
   return slice.tiles[id]?.letter ?? '';
 }
 
-function bump(prev: Announcement, text: string): Announcement {
-  return { text, seq: prev.seq + 1 };
+function bump(prev: Announcement, body: AnnouncementBody): Announcement {
+  return { body, seq: prev.seq + 1 };
 }
 
 function messageForRejection(
@@ -195,8 +265,8 @@ function reduceSlice(slice: Slice, action: Action): Slice {
         return {
           ...slice,
           composing: [],
-          message: { text, tone: 'error' },
-          announcement: bump(slice.announcement, text),
+          message: { body: { kind: 'plain', text }, tone: 'error' },
+          announcement: bump(slice.announcement, { kind: 'plain', text }),
         };
       }
 
@@ -212,24 +282,35 @@ function reduceSlice(slice: Slice, action: Action): Slice {
         tier.setFound >= tier.setTotal;
 
       const points = `${result.score} ${result.score === 1 ? 'point' : 'points'}`;
-      // The screen reader hears the rung on every off-page find ("Rare find: ...").
-      const base = result.isSourceWord
-        ? `Source word found: ${result.word}.`
-        : result.rung === 'set'
-          ? `${result.word}, ${points}.`
-          : `${RUNG_NAMES[result.rung]} find: ${result.word}, ${points}.`;
       // Rank name is theme-skinned in the view; the spoken cue stays generic.
       // The crown name is theme-skinned in the view; the spoken cue stays
       // generic, like the tier-up cue. Completion is the word-count peak.
-      const announceText = justComplete
-        ? `${base} Completed. Every common word found.`
-        : base + (tier.index > slice.tier.index ? ' New rank.' : '');
+      const tail = justComplete
+        ? ' Completed. Every common word found.'
+        : tier.index > slice.tier.index
+          ? ' New rank.'
+          : '';
+      // The screen reader hears the rung on every off-page find ("Rare find: ...").
+      const announceBody: AnnouncementBody = result.isSourceWord
+        ? { kind: 'source-found', word: result.word, tail }
+        : {
+            kind: 'plain',
+            text:
+              (result.rung === 'set'
+                ? `${result.word}, ${points}.`
+                : `${RUNG_NAMES[result.rung]} find: ${result.word}, ${points}.`) +
+              tail,
+          };
 
-      const messageText = result.isSourceWord
-        ? 'You found the source word.'
-        : result.rung === 'set'
-          ? `${result.word}, in the set.`
-          : `${result.word}, ${RUNG_NAMES[result.rung].toLowerCase()} find.`;
+      const messageBody: MessageBody = result.isSourceWord
+        ? { kind: 'source-found' }
+        : {
+            kind: 'plain',
+            text:
+              result.rung === 'set'
+                ? `${result.word}, in the set.`
+                : `${result.word}, ${RUNG_NAMES[result.rung].toLowerCase()} find.`,
+          };
 
       return {
         ...slice,
@@ -241,8 +322,8 @@ function reduceSlice(slice: Slice, action: Action): Slice {
         sourceRevealed: slice.sourceRevealed || result.isSourceWord,
         revealOpen: justRevealed ? true : slice.revealOpen,
         editionOpen: justComplete ? true : slice.editionOpen,
-        message: { text: messageText, tone: 'success' },
-        announcement: bump(slice.announcement, announceText),
+        message: { body: messageBody, tone: 'success' },
+        announcement: bump(slice.announcement, announceBody),
       };
     }
 

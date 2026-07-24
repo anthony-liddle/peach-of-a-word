@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameData } from '@/data/gameData.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
-import { useGame, type GameApi } from './useGame.ts';
+import {
+  messageText,
+  useAnnouncedText,
+  useGame,
+  type GameApi,
+} from './useGame.ts';
 import { useTheme, type Theme } from './useTheme.ts';
 import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
 import { FoundList } from './components/FoundList.tsx';
@@ -54,6 +59,12 @@ export function Game({ data, audio, storage }: Props) {
 
   const { state } = game;
   const [theme] = useTheme();
+  // Frozen at the moment of the find, so re-skinning never re-speaks it.
+  const spokenAnnouncement = useAnnouncedText(
+    state.announcement,
+    state.mode,
+    theme,
+  );
 
   const { getDefinition } = useDefinitions(state.puzzle.sourceWord);
 
@@ -132,7 +143,7 @@ export function Game({ data, audio, storage }: Props) {
             data-tone={state.message?.tone ?? 'info'}
             aria-hidden="true"
           >
-            {state.message?.text ?? ' '}
+            {state.message ? messageText(state.message, theme) : ' '}
           </p>
         </div>
 
@@ -156,9 +167,10 @@ export function Game({ data, audio, storage }: Props) {
 
       <Colophon triggerRef={howTriggerRef} onOpenHow={() => setHowOpen(true)} />
 
-      {/* Screen-reader announcements: found words, tier changes, the crown. */}
+      {/* Screen-reader announcements: found words, tier changes, the crown.
+          Settled when the find happens, never re-resolved under it. */}
       <div className="visually-hidden" role="status" aria-live="polite">
-        {state.announcement.text}
+        {spokenAnnouncement}
       </div>
 
       {state.editionOpen && (
@@ -170,6 +182,7 @@ export function Game({ data, audio, storage }: Props) {
       {state.revealOpen ? (
         <Reveal
           register="crown"
+          theme={theme}
           word={state.puzzle.sourceWord}
           entry={state.sourceEntry}
           onClose={game.closeReveal}
