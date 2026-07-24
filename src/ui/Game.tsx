@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameData } from '@/data/gameData.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
-import { useGame, type GameApi } from './useGame.ts';
+import {
+  announcementText,
+  messageText,
+  useGame,
+  type GameApi,
+} from './useGame.ts';
 import { useTheme, type Theme } from './useTheme.ts';
 import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
 import { FoundList } from './components/FoundList.tsx';
@@ -132,7 +137,7 @@ export function Game({ data, audio, storage }: Props) {
             data-tone={state.message?.tone ?? 'info'}
             aria-hidden="true"
           >
-            {state.message?.text ?? ' '}
+            {state.message ? messageText(state.message, theme) : ' '}
           </p>
         </div>
 
@@ -158,7 +163,7 @@ export function Game({ data, audio, storage }: Props) {
 
       {/* Screen-reader announcements: found words, tier changes, the crown. */}
       <div className="visually-hidden" role="status" aria-live="polite">
-        {state.announcement.text}
+        {announcementText(state.announcement, theme)}
       </div>
 
       {state.editionOpen && (

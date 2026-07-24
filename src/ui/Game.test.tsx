@@ -648,6 +648,78 @@ describe('Game edition complete', () => {
   });
 });
 
+// Finding the source word is the game's biggest beat, so its celebration is
+// theme-skinned like the rank and crown names: classic keeps the plain line,
+// cute makes the game's own joke on its own name. State holds the fact of the
+// find; the skin is applied in the view, so a theme switch re-skins it live.
+describe('Game source-word celebration', () => {
+  const message = () => document.querySelector('.message') as HTMLElement;
+  const findSource = () => {
+    type('serenade');
+    fireEvent.keyDown(window, { key: 'Enter' });
+  };
+  const dismissReveal = () =>
+    fireEvent.click(screen.getByRole('button', { name: /back to the case/i }));
+
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.clear();
+  });
+
+  it('celebrates the peach in cute', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findSource();
+    expect(message().textContent).toBe('You found the Peach of a Word!');
+  });
+
+  it('keeps the classic wording exactly as it is', () => {
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    findSource();
+    expect(message().textContent).toBe('You found the source word.');
+  });
+
+  it('re-skins on a live theme switch, like the rank label', () => {
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    findSource();
+    dismissReveal();
+    expect(message().textContent).toBe('You found the source word.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    expect(message().textContent).toBe('You found the Peach of a Word!');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    expect(message().textContent).toBe('You found the source word.');
+  });
+
+  it('announces the find in the framing on screen, in both themes', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findSource();
+    expect(screen.getByRole('status').textContent).toMatch(
+      /you found the peach of a word: serenade\./i,
+    );
+
+    dismissReveal();
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    expect(screen.getByRole('status').textContent).toMatch(
+      /source word found: serenade\./i,
+    );
+  });
+
+  it('keeps the rank cue after the themed celebration, in both themes', () => {
+    // The source word is a set word worth the most points on the rack, so the
+    // find usually lifts a rank. Only the framing is skinned; the cue that
+    // follows it is not, and classic's announcement is unchanged by any of this.
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findSource();
+    expect(screen.getByRole('status').textContent).toMatch(/ new rank\.$/i);
+  });
+});
+
 describe('Game edition confetti', () => {
   const SET = ['sea', 'near', 'dean', 'eased', 'erase'];
   const enter = () => fireEvent.keyDown(window, { key: 'Enter' });

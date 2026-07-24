@@ -37,12 +37,44 @@ export const CROWN_NAMES: Record<Theme, string> = {
   cute: 'Peachy Keen Supreme',
 };
 
+/**
+ * The source-word celebration, the visible line at the moment the eight-letter
+ * word lands. Classic names the find plainly. Cute makes the game's own joke:
+ * "a peach of a" is an old phrase for a fine example of a thing, which is
+ * exactly what the source word is in a rack. Same per-theme structure as the
+ * ladder and the crown, so a theme switch re-skins the line live.
+ */
+export const SOURCE_FOUND_MESSAGES: Record<Theme, string> = {
+  letterpress: 'You found the source word.',
+  cute: 'You found the Peach of a Word!',
+};
+
+/**
+ * The spoken form of the same celebration: the theme's framing, plus the word
+ * itself, which the visible line leaves to the reveal card. Every skin ends in a
+ * full stop because the live region appends the rank and completion cues to it.
+ */
+const SOURCE_FOUND_ANNOUNCEMENTS: Record<Theme, (word: string) => string> = {
+  letterpress: (word) => `Source word found: ${word}.`,
+  cute: (word) => `You found the Peach of a Word: ${word}.`,
+};
+
 /** The crown's rank index, one above the top named rank (5). */
 export const CROWN_RANK = TIER_NAMES.letterpress.length;
 
 /** The themed completion-crown name for the active theme. */
 export function crownName(theme: Theme): string {
   return CROWN_NAMES[theme];
+}
+
+/** The themed source-word celebration for the active theme. */
+export function sourceFoundMessage(theme: Theme): string {
+  return SOURCE_FOUND_MESSAGES[theme];
+}
+
+/** The themed source-word celebration as the screen reader hears it. */
+export function sourceFoundAnnouncement(theme: Theme, word: string): string {
+  return SOURCE_FOUND_ANNOUNCEMENTS[theme](word);
 }
 
 /** The themed name for a rank index, clamped to the top name past the ladder. */
