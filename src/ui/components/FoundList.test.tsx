@@ -452,6 +452,34 @@ describe('FoundList rarity rung panels', () => {
     expect(inPanel).toEqual(inGroups);
   });
 
+  it('never shows an empty panel when a rung open from a past rack has no finds', () => {
+    // FoundList is not keyed by puzzle in Game, so the open-rung state outlives
+    // a new puzzle. A rung left open on the last rack must not reopen as an
+    // empty list on a rack with nothing at it.
+    const { rerender } = renderRungs(ALL_RUNG_FINDS);
+    fireEvent.click(screen.getByRole('button', { name: /1 mythic/i }));
+    expect(
+      screen.getByRole('group', { name: /mythic words you found/i }),
+    ).toBeInTheDocument();
+
+    const next = makeRungPuzzle([]);
+    const found = ['sea', 'sane'];
+    rerender(
+      <FoundList
+        puzzle={next}
+        found={found}
+        tier={computeTier(new Set(found), next)}
+        theme="letterpress"
+        onWordTap={() => {}}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('group', { name: /mythic words you found/i }),
+    ).toBeNull();
+    expect(screen.getByText(/0 mythic/i).closest('button')).toBeNull();
+  });
+
   it('exposes each open rung as a real button in the tab order', () => {
     renderRungs(ALL_RUNG_FINDS);
     const trigger = screen.getByRole('button', { name: /2 rare/i });

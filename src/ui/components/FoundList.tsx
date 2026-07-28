@@ -266,7 +266,13 @@ export function FoundList({
               a denominator here would turn open-ended discovery into a grind.
               The per-length grid below is untouched; that view answers a
               different question (what am I still missing) and both stay. */}
-          {LADDER_RUNGS.filter((r) => openRungs.has(r)).map((r) => (
+          {/* The count gates the panel as well as the trigger. FoundList is not
+              keyed by puzzle, so a rung left open on the last rack is still open
+              on this one; without the count test it would reopen as an empty
+              list on a rack with nothing at that rung. */}
+          {LADDER_RUNGS.filter(
+            (r) => openRungs.has(r) && rungWords[r].length > 0,
+          ).map((r) => (
             <div
               key={r}
               id={panelId(r)}
