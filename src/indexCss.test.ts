@@ -132,13 +132,26 @@ describe('index.css glossary inks: AA on both readout surfaces', () => {
 describe('index.css rarity rung triggers: tappable at the floor', () => {
   // The rung tallies became buttons that open the words found at that rung.
   // They are the smallest controls on the board, so the floors matter most
-  // here: a real 44px box (not an overhanging pseudo-ring, which would overlap
-  // the neighbouring rung in the wrapping tally row) and the inherited
+  // here: a real box (not an overhanging pseudo-ring, which would overlap the
+  // neighbouring rung in the wrapping tally row) and the inherited
   // .summary__stats size rather than the browser's small button default.
-  test('the rung trigger holds the 44px tap floor in its own box', () => {
+  test('the rung trigger holds the 24px inline tap floor in its own box', () => {
+    // WCAG 2.5.8 (AA) is 24 by 24, with an explicit exception for targets sized
+    // by the line-height of the non-target text around them. These sit inline
+    // beside "6 of 21 words", so that is the applicable floor. The 44px figure
+    // is 2.5.5 (AAA) and the Apple HIG, both aimed at standalone controls.
     const m = block('.summary__rung').match(/min-height:\s*(\d+)px/);
     expect(m).not.toBeNull();
-    expect(Number(m![1])).toBeGreaterThanOrEqual(44);
+    expect(Number(m![1])).toBeGreaterThanOrEqual(24);
+  });
+
+  test('the rung trigger uses the same floor as the word chip beside it', () => {
+    // Same kind of target, same floor: tappable text inline in a wrapping row.
+    // If one moves the other should, so this pins them together rather than
+    // pinning a number twice.
+    const rung = block('.summary__rung').match(/min-height:\s*(\d+)px/)![1];
+    const chip = block('.found__word').match(/min-height:\s*(\d+)px/)![1];
+    expect(rung).toBe(chip);
   });
 
   test('the rung trigger inherits its type, never shrinking below the tally row', () => {
@@ -157,35 +170,35 @@ describe('index.css rung panel: a separator, not a container', () => {
   // already uses, and nothing else. A fill, a border box, or a radius would put
   // back the card that made the panel the loudest thing on the page.
   const panel = block('.summary__rungpanel');
-  const junction = block('.summary__rungpanel + .summary__rungpanel');
 
   test('the divider is the group header rule: same token, 1px, no new colour', () => {
-    expect(junction).toMatch(/border-top:\s*1px solid var\(--rule\)/);
+    expect(panel).toMatch(/border-top:\s*1px solid var\(--rule\)/);
     expect(block('.found__grouphead')).toMatch(
       /border-bottom:\s*1px solid var\(--rule\)/,
     );
   });
 
-  test('the rule belongs to the junction, so the first panel never draws one', () => {
-    // A rule above the first panel would be a rule with no pre-existing gap to
-    // fit inside, so it could only add height. It also has nothing to separate:
-    // the tally line above it is already its label.
-    expect(panel).not.toMatch(/border/);
-    expect(panel).not.toMatch(/padding/);
+  test('every panel draws the rule, the first one included', () => {
+    // The rule above the first list divides it from the tally block, closing
+    // the readout's one unruled seam. It lives on the panel itself, so there is
+    // no adjacent-sibling rule that could exempt the first.
+    expect(css).not.toMatch(
+      /\.summary__rungpanel \+ \.summary__rungpanel\s*\{/,
+    );
   });
 
   test('the panel draws no box: no fill, no radius, no side or bottom edge', () => {
-    for (const b of [panel, junction]) {
+    for (const b of [panel]) {
       expect(b).not.toMatch(/background/);
       expect(b).not.toMatch(/border-radius/);
       expect(b).not.toMatch(/border-(left|right|bottom)/);
     }
   });
 
-  // Space below the rule is the junction's padding-top, which subtracts the
-  // rule's own 1px; space above it is the previous panel's tightened margin.
+  // Space below the rule is the panel's padding-top, which subtracts the rule's
+  // own 1px; space above it is the previous panel's tightened margin.
   const belowRem = Number(
-    junction.match(/padding-top:\s*calc\(([\d.]+)rem - 1px\)/)![1],
+    panel.match(/padding-top:\s*calc\(([\d.]+)rem - 1px\)/)![1],
   );
   const above = Number(
     block('.summary__rungpanel:has(+ .summary__rungpanel)').match(

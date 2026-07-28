@@ -1036,15 +1036,26 @@ button {
    rest saying there is more here, going solid on hover and focus exactly as a
    word chip does. The focus ring itself is the global :focus-visible outline.
 
-   min-height carries the 44px tap floor. The pseudo-element ring used by
-   .textsize would be wrong here: these tallies sit in a wrapping flex row with
-   a 0.35rem row gap, so an overhanging ring would overlap the rung above or
-   below and steal its taps. A real box cannot overlap its neighbours.
+   min-height carries the tap floor, and 24px is the right floor here, the same
+   one .found__word uses. These are the same kind of target: tappable text sitting
+   inline in a wrapping row of ordinary text, not a standalone control.
 
-   This does cost height: the tallies were ~20px, so every row carrying a rung
-   grows to 44px, and at narrow widths and large text they wrap to several such
-   rows. That is the price of the tap floor on a control this small, paid
-   deliberately. */
+   The 44px figure is WCAG 2.5.5 (AAA) and the Apple HIG, both written for
+   standalone controls. The AA requirement, WCAG 2.5.8, is 24 by 24, and it
+   carries an explicit inline exception for targets whose size is constrained by
+   the line-height of surrounding non-target text. That is exactly this row: the
+   tallies sit beside "6 of 21 words" and "20 words found", set at their
+   line-height, the same way the word chips sit in theirs. So 24px is the
+   applicable floor, not a lowered one.
+
+   It also stops the tallies inflating the block. At 44px every row of
+   .summary__stats carrying a rung grew from about 20px to 44px, which at large
+   text and narrow widths meant three stacked 44px rows above the word lists.
+
+   Whatever the floor, it has to be a real box rather than the pseudo-element
+   ring .textsize uses: these tallies sit in a wrapping flex row with a 0.35rem
+   row gap, so an overhanging ring would overlap the rung above or below and
+   steal its taps. A real box cannot overlap its neighbours. */
 .summary__rung {
   appearance: none;
   background: none;
@@ -1055,7 +1066,7 @@ button {
   text-align: left;
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 24px;
   text-decoration: underline dotted;
   text-underline-offset: 0.22em;
 }
@@ -1082,24 +1093,22 @@ button {
    So a hairline goes between them: the same --rule token, the same 1px, that
    the per-length group headers already use, and no new divider treatment.
 
-   Strictly between them. The rule belongs to the junction of two panels, not to
-   a panel, so it hangs off the adjacent sibling selector and the first open
-   panel never draws one. That leaves the gap under the tally line at the 0.9rem
-   .summary__stats always gave it, and it means one open panel renders exactly
-   as it did before any of this: no rule, no padding, one bottom margin.
+   On every panel, including the first. The rule above the first list divides it
+   from the tally block the same way the rules further down divide one list from
+   the next, and that top separator is worth the height it costs: it closes the
+   readout's one unruled seam.
 
-   The rule also has to fit inside the gap that was already there rather than
-   add to it: 0.4rem above, the rule, then the remainder below, so a junction
-   costs exactly the 0.75rem that separated the panels before the rule existed.
-   The remainder subtracts the rule's own 1px, which is why it is a calc. Plain
-   rem values cannot hold this at more than one text size, because the border is
-   an absolute pixel inside a rhythm that scales: 0.4rem plus 0.3rem plus 1px
-   lands exactly on 0.75rem at the largest step and 0.2px over at the default.
-   Subtracting the border makes the junction exact at every step. It works out
-   near enough to the chips' own 0.3rem row gap that the rule still reads as
-   sitting one row above the row it introduces. More room above than below keeps
-   it a separator rather than the top edge of a box, which an earlier pass
-   removed.
+   The rule fits inside the gap it sits in rather than adding to it: 0.4rem
+   above, the rule, then the remainder below, so a panel-to-panel junction costs
+   exactly the 0.75rem that separated the panels before the rule existed. The
+   remainder subtracts the rule's own 1px, which is why it is a calc. Plain rem
+   values cannot hold this at more than one text size, because the border is an
+   absolute pixel inside a rhythm that scales: 0.4rem plus 0.3rem plus 1px lands
+   exactly on 0.75rem at the largest step and 0.2px over at the default.
+   Subtracting the border makes it exact at every step. It works out near enough
+   to the chips' own 0.3rem row gap that the rule still reads as sitting one row
+   above the row it introduces. More room above than below keeps it a separator
+   rather than the top edge of a box, which an earlier pass removed.
 
    The bottom margin is that same pre-rule 0.75rem, so the tier meter under the
    last panel sits where it used to. It tightens only where a rule follows.
@@ -1108,10 +1117,6 @@ button {
    how many words the rung holds. */
 .summary__rungpanel {
   margin: 0 0 0.75rem;
-}
-/* The junction of two panels: the rule replaces whitespace instead of arriving
-   with its own, so the pair costs exactly what the plain gap used to. */
-.summary__rungpanel + .summary__rungpanel {
   padding-top: calc(0.35rem - 1px);
   border-top: 1px solid var(--rule);
 }
