@@ -1079,37 +1079,47 @@ button {
    Whitespace alone did not carry the grouping, though. The chips wrap, so the
    gap between panels competes with the row rhythm inside one, and the uncommon
    and rare inks are close enough that two open panels read as a single block.
-   So each panel takes a hairline above it: the same --rule token, the same 1px,
-   that the per-length group headers already use, and no new divider treatment.
+   So a hairline goes between them: the same --rule token, the same 1px, that
+   the per-length group headers already use, and no new divider treatment.
 
-   On the panel itself rather than between panels, so the first one is also
-   separated from the tally line above it, and so this stays one rule instead of
-   an nth-child special case.
+   Strictly between them. The rule belongs to the junction of two panels, not to
+   a panel, so it hangs off the adjacent sibling selector and the first open
+   panel never draws one. That leaves the gap under the tally line at the 0.9rem
+   .summary__stats always gave it, and it means one open panel renders exactly
+   as it did before any of this: no rule, no padding, one bottom margin.
 
-   The rule has to fit inside the gap that was already there, not add to it. The
-   space below it is 0.3rem, the same gap the chips use between their own wrapped
-   rows, and the space above it is 0.4rem, so the two plus the 1px rule come to
-   the 0.75rem that separated the panels before the rule existed. It stays a
-   separator rather than the top edge of a box, which is what the pass before
-   removed: more room above than below, so it reads as introducing what follows
-   rather than closing a lid over it.
+   The rule also has to fit inside the gap that was already there rather than
+   add to it: 0.4rem above, the rule, then the remainder below, so a junction
+   costs exactly the 0.75rem that separated the panels before the rule existed.
+   The remainder subtracts the rule's own 1px, which is why it is a calc. Plain
+   rem values cannot hold this at more than one text size, because the border is
+   an absolute pixel inside a rhythm that scales: 0.4rem plus 0.3rem plus 1px
+   lands exactly on 0.75rem at the largest step and 0.2px over at the default.
+   Subtracting the border makes the junction exact at every step. It works out
+   near enough to the chips' own 0.3rem row gap that the rule still reads as
+   sitting one row above the row it introduces. More room above than below keeps
+   it a separator rather than the top edge of a box, which an earlier pass
+   removed.
 
-   The bottom margin is the 0.75rem the last panel had before the rule existed,
-   so the tier meter sits exactly where it used to. It is tightened only between
-   two panels, where the rule is doing the separating.
+   The bottom margin is that same pre-rule 0.75rem, so the tier meter under the
+   last panel sits where it used to. It tightens only where a rule follows.
 
    It lists finds and nothing else: no count, no denominator, never a hint of
    how many words the rung holds. */
 .summary__rungpanel {
   margin: 0 0 0.75rem;
-  padding-top: 0.3rem;
+}
+/* The junction of two panels: the rule replaces whitespace instead of arriving
+   with its own, so the pair costs exactly what the plain gap used to. */
+.summary__rungpanel + .summary__rungpanel {
+  padding-top: calc(0.35rem - 1px);
   border-top: 1px solid var(--rule);
 }
-/* Panel-to-panel, the rule replaces whitespace instead of arriving with its own.
-   Only the last panel keeps the full bottom margin, since the tier meter follows
-   it. Matched on the following sibling rather than :last-of-type, which does not
-   work here: the share block is the last div in the summary, so the last panel
-   is never last-of-type. */
+/* The panel above a junction gives up part of its margin to make room for the
+   rule. Only that one: the last panel keeps the full margin, since the tier
+   meter follows it. Matched on the following sibling rather than :last-of-type,
+   which does not work here, because the share block is the last div in the
+   summary and so the last panel is never last-of-type. */
 .summary__rungpanel:has(+ .summary__rungpanel) {
   margin-bottom: 0.4rem;
 }

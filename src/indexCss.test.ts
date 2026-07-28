@@ -157,51 +157,67 @@ describe('index.css rung panel: a separator, not a container', () => {
   // already uses, and nothing else. A fill, a border box, or a radius would put
   // back the card that made the panel the loudest thing on the page.
   const panel = block('.summary__rungpanel');
+  const junction = block('.summary__rungpanel + .summary__rungpanel');
 
   test('the divider is the group header rule: same token, 1px, no new colour', () => {
-    expect(panel).toMatch(/border-top:\s*1px solid var\(--rule\)/);
+    expect(junction).toMatch(/border-top:\s*1px solid var\(--rule\)/);
     expect(block('.found__grouphead')).toMatch(
       /border-bottom:\s*1px solid var\(--rule\)/,
     );
   });
 
-  test('the panel draws no box: no fill, no radius, no border but the hairline', () => {
-    expect(panel).not.toMatch(/background/);
-    expect(panel).not.toMatch(/border-radius/);
-    expect(panel).not.toMatch(/border-(left|right|bottom)/);
+  test('the rule belongs to the junction, so the first panel never draws one', () => {
+    // A rule above the first panel would be a rule with no pre-existing gap to
+    // fit inside, so it could only add height. It also has nothing to separate:
+    // the tally line above it is already its label.
+    expect(panel).not.toMatch(/border/);
+    expect(panel).not.toMatch(/padding/);
   });
 
-  // Space below the rule is the panel's own padding-top; space above it is the
-  // previous panel's tightened bottom margin.
-  const below = Number(panel.match(/padding-top:\s*([\d.]+)rem/)![1]);
+  test('the panel draws no box: no fill, no radius, no side or bottom edge', () => {
+    for (const b of [panel, junction]) {
+      expect(b).not.toMatch(/background/);
+      expect(b).not.toMatch(/border-radius/);
+      expect(b).not.toMatch(/border-(left|right|bottom)/);
+    }
+  });
+
+  // Space below the rule is the junction's padding-top, which subtracts the
+  // rule's own 1px; space above it is the previous panel's tightened margin.
+  const belowRem = Number(
+    junction.match(/padding-top:\s*calc\(([\d.]+)rem - 1px\)/)![1],
+  );
   const above = Number(
     block('.summary__rungpanel:has(+ .summary__rungpanel)').match(
       /margin-bottom:\s*([\d.]+)rem/,
     )![1],
   );
+  const preRuleGap = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
 
   test('the rule reads as a separator: more room above it than below', () => {
     // Above must win, or the hairline starts to read as the top edge of a box.
-    expect(above).toBeGreaterThan(below);
+    // Compared at the default root, where the subtracted pixel counts for most.
+    expect(above * 16).toBeGreaterThan(belowRem * 16 - 1);
   });
 
-  test('the rule fits inside the old gap instead of adding to it', () => {
-    // Before the rule existed the panels were separated by 0.75rem (12px at the
-    // default root) of plain whitespace. The rule has to live inside that, so
-    // the space above it, the 1px rule, and the space below it still come to
-    // the same 12px. A rule that arrives with its own breathing room reads as
-    // padding, not a divider. Asserted in px, to within a pixel, because that
-    // is the scale the claim is made at.
-    const PRE_RULE_GAP_PX = 12;
-    const totalPx = above * 16 + 1 + below * 16;
-    expect(Math.abs(totalPx - PRE_RULE_GAP_PX)).toBeLessThanOrEqual(1);
+  test('a junction costs exactly the gap it replaced, at every text size', () => {
+    // Before the rule existed the panels were separated by plain whitespace.
+    // The rule has to live inside that, so the space above it, the 1px rule,
+    // and the space below it still come to the same total. Because the padding
+    // subtracts the border, the pixels cancel and the identity is exact in rem,
+    // which means it holds at every text-size step rather than only at one.
+    // A rule that arrives with its own breathing room reads as padding.
+    expect(above + belowRem).toBe(preRuleGap);
   });
 
-  test('the gap under the rule matches the chips own row rhythm', () => {
+  test('the gap under the rule stays within a pixel of the chips row rhythm', () => {
     // The chips wrap at this gap, so the rule sits one row apart from the row
-    // it introduces: the same rhythm, not a second spacing system.
-    const rowGap = block('.found__words').match(/gap:\s*([\d.]+)rem/)![1];
-    expect(below).toBe(Number(rowGap));
+    // it introduces: the same rhythm, not a second spacing system. It is the
+    // border's pixel short of exact, which is the price of the identity above.
+    const rowGap = Number(
+      block('.found__words').match(/gap:\s*([\d.]+)rem/)![1],
+    );
+    expect(Math.abs(belowRem * 16 - 1 - rowGap * 16)).toBeLessThanOrEqual(1);
   });
 
   test('the last panel leaves the tier meter where it was before the rule', () => {
