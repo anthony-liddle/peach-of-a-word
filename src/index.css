@@ -1027,35 +1027,15 @@ button {
 }
 
 /* A rarity tally is also the way in to the words behind it: tap a rung to open
-   the list of finds at it. Button reset so the tally keeps the look it had as
-   text, with `font: inherit` holding it at the .summary__stats size rather than
-   the browser's small button default. The rung colour still comes from
-   .summary__stat--rare .summary__statline, which outranks this rule.
+   the list of finds at it. Button reset, so it keeps the look it had as text.
 
-   The tap affordance borrows the glossary's language: a dotted underline at
-   rest saying there is more here, going solid on hover and focus exactly as a
-   word chip does. The focus ring itself is the global :focus-visible outline.
+   24px, matching .found__word, is the right floor and not a lowered one: WCAG
+   2.5.8 (AA) is 24 by 24 and excepts targets sized by the line-height of the
+   text around them, which is these. The 44px of 2.5.5 (AAA) is for standalone
+   controls, and using it here inflated every tally row to 44px.
 
-   min-height carries the tap floor, and 24px is the right floor here, the same
-   one .found__word uses. These are the same kind of target: tappable text sitting
-   inline in a wrapping row of ordinary text, not a standalone control.
-
-   The 44px figure is WCAG 2.5.5 (AAA) and the Apple HIG, both written for
-   standalone controls. The AA requirement, WCAG 2.5.8, is 24 by 24, and it
-   carries an explicit inline exception for targets whose size is constrained by
-   the line-height of surrounding non-target text. That is exactly this row: the
-   tallies sit beside "6 of 21 words" and "20 words found", set at their
-   line-height, the same way the word chips sit in theirs. So 24px is the
-   applicable floor, not a lowered one.
-
-   It also stops the tallies inflating the block. At 44px every row of
-   .summary__stats carrying a rung grew from about 20px to 44px, which at large
-   text and narrow widths meant three stacked 44px rows above the word lists.
-
-   Whatever the floor, it has to be a real box rather than the pseudo-element
-   ring .textsize uses: these tallies sit in a wrapping flex row with a 0.35rem
-   row gap, so an overhanging ring would overlap the rung above or below and
-   steal its taps. A real box cannot overlap its neighbours. */
+   A real box, not the pseudo-ring .textsize uses: the 0.35rem row gap means an
+   overhanging ring would overlap the next rung and steal its taps. */
 .summary__rung {
   appearance: none;
   background: none;
@@ -1075,56 +1055,25 @@ button {
   text-decoration: underline solid;
 }
 
-/* The list a rung opens, directly under the tally block it came from.
+/* The list a rung opens, hairline-ruled off from whatever precedes it. Finds
+   only: no count, no denominator, never a hint of how many words a rung holds.
 
-   No container. The per-length groups below solve the same problem the same
-   way, chips on the page with whitespace around them, and that is the
-   established pattern for "here is a group of found words". The first attempt
-   at this panel gave it a filled card, which was wrong three ways: white is
-   reserved for the surfaces you type into (the compose field, the letter
-   tiles), so a white block in the readout read as an input and became the
-   loudest thing on the page; --radius is the pill-button token (999px in cute),
-   so a three-line block came out a lozenge; and the border added a weight the
-   readout does not otherwise use.
+   No container, matching the per-length groups below. A filled card here read
+   as an input (white is reserved for the compose field and tiles) and came out
+   a lozenge, since --radius is the pill-button token, 999px in cute.
 
-   Whitespace alone did not carry the grouping, though. The chips wrap, so the
-   gap between panels competes with the row rhythm inside one, and the uncommon
-   and rare inks are close enough that two open panels read as a single block.
-   So a hairline goes between them: the same --rule token, the same 1px, that
-   the per-length group headers already use, and no new divider treatment.
-
-   On every panel, including the first. The rule above the first list divides it
-   from the tally block the same way the rules further down divide one list from
-   the next, and that top separator is worth the height it costs: it closes the
-   readout's one unruled seam.
-
-   The rule fits inside the gap it sits in rather than adding to it: 0.4rem
-   above, the rule, then the remainder below, so a panel-to-panel junction costs
-   exactly the 0.75rem that separated the panels before the rule existed. The
-   remainder subtracts the rule's own 1px, which is why it is a calc. Plain rem
-   values cannot hold this at more than one text size, because the border is an
-   absolute pixel inside a rhythm that scales: 0.4rem plus 0.3rem plus 1px lands
-   exactly on 0.75rem at the largest step and 0.2px over at the default.
-   Subtracting the border makes it exact at every step. It works out near enough
-   to the chips' own 0.3rem row gap that the rule still reads as sitting one row
-   above the row it introduces. More room above than below keeps it a separator
-   rather than the top edge of a box, which an earlier pass removed.
-
-   The bottom margin is that same pre-rule 0.75rem, so the tier meter under the
-   last panel sits where it used to. It tightens only where a rule follows.
-
-   It lists finds and nothing else: no count, no denominator, never a hint of
-   how many words the rung holds. */
+   The rule sits inside the gap rather than adding one: 0.4rem above it and the
+   rest below sum to the 0.75rem the panels were spaced by beforehand. The calc
+   subtracts the rule's own pixel, which is what keeps that sum exact at every
+   text size, an absolute border being immune to the rem scaling around it. */
 .summary__rungpanel {
   margin: 0 0 0.75rem;
   padding-top: calc(0.35rem - 1px);
   border-top: 1px solid var(--rule);
 }
-/* The panel above a junction gives up part of its margin to make room for the
-   rule. Only that one: the last panel keeps the full margin, since the tier
-   meter follows it. Matched on the following sibling rather than :last-of-type,
-   which does not work here, because the share block is the last div in the
-   summary and so the last panel is never last-of-type. */
+/* Every panel but the last gives up margin to make room for the rule below it;
+   the last keeps it all, since the tier meter follows. Not :last-of-type, which
+   silently never matches: the share block is the summary's last div. */
 .summary__rungpanel:has(+ .summary__rungpanel) {
   margin-bottom: 0.4rem;
 }
