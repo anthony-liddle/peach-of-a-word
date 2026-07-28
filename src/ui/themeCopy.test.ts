@@ -61,8 +61,8 @@ describe('theme-skinned source-word celebration', () => {
 
 describe('theme-skinned reveal kicker', () => {
   it('grows the peach in cute and leaves the letterpress line untouched', () => {
-    // Classic is pinned verbatim. Cute stops borrowing the metal-type metaphor
-    // and says the same thing about the rack in its own register.
+    // Letterpress is pinned verbatim. Cute stops borrowing the metal-type
+    // metaphor and says the same thing about the rack in its own register.
     expect(revealKicker('letterpress')).toBe('The word the type was cut for');
     expect(revealKicker('cute')).toBe('The peach every word grew from');
   });

@@ -39,8 +39,8 @@ export const CROWN_NAMES: Record<Theme, string> = {
 
 /**
  * The source-word celebration, the visible line at the moment the eight-letter
- * word lands. Classic names the find plainly. Cute makes the game's own joke:
- * "a peach of a" is an old phrase for a fine example of a thing, which is
+ * word lands. Letterpress names the find plainly. Cute makes the game's own
+ * joke: "a peach of a" is an old phrase for a fine example of a thing, which is
  * exactly what the source word is in a rack. Same per-theme structure as the
  * ladder and the crown, so a theme switch re-skins the line live.
  */

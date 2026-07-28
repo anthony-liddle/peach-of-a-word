@@ -406,27 +406,40 @@ describe('Game', () => {
     expect(colophon()).toContain(copy('cute').typeCredit);
     expect(colophon()).not.toMatch(/Set in Fredoka/i);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
     expect(document.documentElement.dataset.theme).toBe('letterpress');
     expect(colophon()).toContain(copy('letterpress').typeCredit);
+  });
+
+  it('labels the theme Letterpress, and stores it under the unchanged value', () => {
+    // Display label only. "Classic" implied it was the original game's look;
+    // the original was blue, glossy and plastic, and this one is invented here.
+    // The stored value was already letterpress, so nothing migrates.
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
+
+    expect(screen.queryByRole('button', { name: 'Classic' })).toBeNull();
+    expect(document.documentElement.dataset.theme).toBe('letterpress');
+    expect(localStorage.getItem('e8-theme')).toBe('letterpress');
   });
 
   it('swaps the theme from the compact button and keeps name and label in sync', () => {
     document.documentElement.dataset.theme = 'letterpress';
     renderGame();
 
-    // In classic it shows the current theme and offers to switch to cute.
-    const fromClassic = screen.getByRole('button', {
-      name: /theme: classic\. activate to switch to cute/i,
+    // In letterpress it shows the current theme and offers to switch to cute.
+    const fromLetterpress = screen.getByRole('button', {
+      name: /theme: letterpress\. activate to switch to cute/i,
     });
-    expect(fromClassic).toHaveTextContent(/classic/i);
+    expect(fromLetterpress).toHaveTextContent(/letterpress/i);
 
-    fireEvent.click(fromClassic);
+    fireEvent.click(fromLetterpress);
     expect(document.documentElement.dataset.theme).toBe('cute');
 
-    // Now it shows Cute and offers the way back to Classic.
+    // Now it shows Cute and offers the way back to Letterpress.
     const fromCute = screen.getByRole('button', {
-      name: /theme: cute\. activate to switch to classic/i,
+      name: /theme: cute\. activate to switch to letterpress/i,
     });
     expect(fromCute).toHaveTextContent(/cute/i);
 
@@ -713,7 +726,7 @@ describe('Game source-word celebration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
     expect(message().textContent).toBe('You found the Peach of a Word!');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
     expect(message().textContent).toBe('You found the source word.');
   });
 
@@ -729,7 +742,7 @@ describe('Game source-word celebration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
     expect(message().textContent).toBe('sea, in the basket.');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
     expect(message().textContent).toBe('sea, in the set.');
   });
 
@@ -789,7 +802,7 @@ describe('Game source-word celebration', () => {
     const spoken = screen.getByRole('status').textContent;
     dismissReveal();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
     // A live region speaks whenever its text changes, so holding the text still
     // is what "no second announcement" looks like from the outside. The find is
     // a point in time; re-skinning the page is not a new one.
@@ -804,7 +817,7 @@ describe('Game source-word celebration', () => {
     renderGame();
     findSource();
     dismissReveal();
-    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
 
     type('sea');
     fireEvent.keyDown(window, { key: 'Enter' });

@@ -249,7 +249,7 @@ function Toolbar({ game }: { game: GameApi }) {
             aria-pressed={theme === 'letterpress'}
             onClick={() => setTheme('letterpress')}
           >
-            Classic
+            Letterpress
           </button>
           <button
             aria-pressed={theme === 'cute'}
@@ -345,8 +345,10 @@ function ThemeSwap({
   setTheme: (theme: Theme) => void;
 }) {
   const isCute = theme === 'cute';
-  const currentName = isCute ? 'Cute' : 'Classic';
-  const nextName = isCute ? 'Classic' : 'Cute';
+  // Display labels only. The stored value stays 'letterpress', so renaming the
+  // label migrates nothing and saved preferences are untouched.
+  const currentName = isCute ? 'Cute' : 'Letterpress';
+  const nextName = isCute ? 'Letterpress' : 'Cute';
   return (
     <button
       type="button"
