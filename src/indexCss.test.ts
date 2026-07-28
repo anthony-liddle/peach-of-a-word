@@ -14,7 +14,9 @@ const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
 
 /** The declaration block of the first rule whose selector list ends with `sel {`. */
 function block(sel: string): string {
-  const escaped = sel.replace(/[.[\]$]/g, '\\$&');
+  // Every regex metacharacter a CSS selector can contain, so combinators and
+  // functional pseudo-classes (:has(+ .foo)) match literally.
+  const escaped = sel.replace(/[.[\]$()+*?^|{}\\]/g, '\\$&');
   const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
   if (!match) throw new Error(`No rule found for selector: ${sel}`);
   return match[1]!;
@@ -169,32 +171,45 @@ describe('index.css rung panel: a separator, not a container', () => {
     expect(panel).not.toMatch(/border-(left|right|bottom)/);
   });
 
+  // Space below the rule is the panel's own padding-top; space above it is the
+  // previous panel's tightened bottom margin.
+  const below = Number(panel.match(/padding-top:\s*([\d.]+)rem/)![1]);
+  const above = Number(
+    block('.summary__rungpanel:has(+ .summary__rungpanel)').match(
+      /margin-bottom:\s*([\d.]+)rem/,
+    )![1],
+  );
+
   test('the rule reads as a separator: more room above it than below', () => {
-    // Space below is the panel's own padding-top; space above comes from the
-    // previous panel's margin-bottom. Above must win, or the hairline starts to
-    // read as the top edge of a box.
-    const below = Number(panel.match(/padding-top:\s*([\d.]+)rem/)![1]);
-    const above = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
+    // Above must win, or the hairline starts to read as the top edge of a box.
     expect(above).toBeGreaterThan(below);
   });
 
-  test('the gap under the rule matches the per-length group header exactly', () => {
-    const below = panel.match(/padding-top:\s*([\d.]+)rem/)![1];
-    const groupGap = block('.found__grouphead').match(
-      /margin-bottom:\s*([\d.]+)rem/,
-    )![1];
-    expect(below).toBe(groupGap);
+  test('the rule fits inside the old gap instead of adding to it', () => {
+    // Before the rule existed the panels were separated by 0.75rem (12px at the
+    // default root) of plain whitespace. The rule has to live inside that, so
+    // the space above it, the 1px rule, and the space below it still come to
+    // the same 12px. A rule that arrives with its own breathing room reads as
+    // padding, not a divider. Asserted in px, to within a pixel, because that
+    // is the scale the claim is made at.
+    const PRE_RULE_GAP_PX = 12;
+    const totalPx = above * 16 + 1 + below * 16;
+    expect(Math.abs(totalPx - PRE_RULE_GAP_PX)).toBeLessThanOrEqual(1);
   });
 
-  test('the block ends the same distance above the meter, open or collapsed', () => {
-    // The tier meter follows whatever the summary block ends with: the stats
-    // when every rung is collapsed, the last panel when one is open. If the two
-    // bottom margins differ, the meter shifts as she opens rungs.
-    const panelBottom = panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1];
-    const statsBottom = block('.summary__stats').match(
-      /margin:\s*0 0 ([\d.]+)rem/,
-    )![1];
-    expect(panelBottom).toBe(statsBottom);
+  test('the gap under the rule matches the chips own row rhythm', () => {
+    // The chips wrap at this gap, so the rule sits one row apart from the row
+    // it introduces: the same rhythm, not a second spacing system.
+    const rowGap = block('.found__words').match(/gap:\s*([\d.]+)rem/)![1];
+    expect(below).toBe(Number(rowGap));
+  });
+
+  test('the last panel leaves the tier meter where it was before the rule', () => {
+    // Only the between-panel margin is tightened. The last panel keeps the full
+    // 0.75rem it had when the panels were separated by whitespace alone, so
+    // adding the rule did not drag the meter up under it.
+    const panelBottom = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
+    expect(panelBottom).toBe(0.75);
   });
 });
 

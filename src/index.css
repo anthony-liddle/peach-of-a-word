@@ -1086,23 +1086,32 @@ button {
    separated from the tally line above it, and so this stays one rule instead of
    an nth-child special case.
 
-   The spacing keeps it a separator rather than the top edge of a box, which is
-   what the last pass removed: the space above the rule is larger than the space
-   below it, so the rule reads as introducing what follows rather than closing a
-   lid over it. Below it is 0.55rem, the exact gap .found__grouphead already
-   puts between its rule and its chips.
+   The rule has to fit inside the gap that was already there, not add to it. The
+   space below it is 0.3rem, the same gap the chips use between their own wrapped
+   rows, and the space above it is 0.4rem, so the two plus the 1px rule come to
+   the 0.75rem that separated the panels before the rule existed. It stays a
+   separator rather than the top edge of a box, which is what the pass before
+   removed: more room above than below, so it reads as introducing what follows
+   rather than closing a lid over it.
 
-   The bottom margin matches .summary__stats, so whatever ends the block sits
-   the same distance above the tier meter whether panels are open or not. At
-   0.75rem an open panel pulled the meter 2px tighter than the collapsed stats
-   did, which read as the meter creeping up as she opened rungs.
+   The bottom margin is the 0.75rem the last panel had before the rule existed,
+   so the tier meter sits exactly where it used to. It is tightened only between
+   two panels, where the rule is doing the separating.
 
    It lists finds and nothing else: no count, no denominator, never a hint of
    how many words the rung holds. */
 .summary__rungpanel {
-  margin: 0 0 0.9rem;
-  padding-top: 0.55rem;
+  margin: 0 0 0.75rem;
+  padding-top: 0.3rem;
   border-top: 1px solid var(--rule);
+}
+/* Panel-to-panel, the rule replaces whitespace instead of arriving with its own.
+   Only the last panel keeps the full bottom margin, since the tier meter follows
+   it. Matched on the following sibling rather than :last-of-type, which does not
+   work here: the share block is the last div in the summary, so the last panel
+   is never last-of-type. */
+.summary__rungpanel:has(+ .summary__rungpanel) {
+  margin-bottom: 0.4rem;
 }
 
 /* The daily share, sitting under the score it brags about. A quiet outlined
