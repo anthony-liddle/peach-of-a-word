@@ -11,6 +11,8 @@ import type { SourceEntry } from '@/data/types.ts';
 import { NullAudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage, type KeyValueStore } from '@/persistence/storage.ts';
 import { useDefinitions } from './useDefinitions.ts';
+import { copy } from './themeCopy.ts';
+import { DEFAULT_THEME, type Theme } from './useTheme.ts';
 
 vi.mock('./useDefinitions.ts', () => ({
   useDefinitions: vi.fn(),
@@ -91,6 +93,26 @@ function countingStore(): { store: KeyValueStore; writes: () => number } {
 
 function type(word: string) {
   for (const ch of word) fireEvent.keyDown(window, { key: ch });
+}
+
+/**
+ * The theme the board is actually rendering in. Read from the document rather
+ * than assumed, because tests in this file set it both ways and the app writes
+ * it on mount: a helper that guessed the default would look for the wrong
+ * wording after any test that switched.
+ */
+function activeTheme(): Theme {
+  return document.documentElement.dataset.theme === 'letterpress'
+    ? 'letterpress'
+    : DEFAULT_THEME;
+}
+
+/**
+ * The reveal's way back. Its wording is theme copy (the case in letterpress,
+ * the basket in cute), so it is resolved rather than spelled out here.
+ */
+function closeReveal() {
+  return screen.getByRole('button', { name: copy(activeTheme()).revealClose });
 }
 
 function renderGame(store = fakeStore()) {
@@ -378,13 +400,15 @@ describe('Game', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
     expect(document.documentElement.dataset.theme).toBe('cute');
     expect(localStorage.getItem('e8-theme')).toBe('cute');
-    expect(screen.getByText(/Set in Fredoka and Nunito/i)).toBeInTheDocument();
+    // Cute credits the typefaces in its own verb: it writes, it does not set.
+    const colophon = () =>
+      (document.querySelector('.colophon') as HTMLElement).textContent ?? '';
+    expect(colophon()).toContain(copy('cute').typeCredit);
+    expect(colophon()).not.toMatch(/Set in Fredoka/i);
 
     fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
     expect(document.documentElement.dataset.theme).toBe('letterpress');
-    expect(
-      screen.getByText(/Set in Fraunces and Spectral/i),
-    ).toBeInTheDocument();
+    expect(colophon()).toContain(copy('letterpress').typeCredit);
   });
 
   it('swaps the theme from the compact button and keeps name and label in sync', () => {
@@ -514,7 +538,7 @@ describe('Game edition complete', () => {
 
   function completeTheSet() {
     findWord('serenade'); // the source word; dismiss its amber reveal first
-    fireEvent.click(screen.getByRole('button', { name: /back to the case/i }));
+    fireEvent.click(closeReveal());
     SET.slice(0, -1).forEach(findWord);
     findWord(SET[SET.length - 1]!); // the last set word completes the edition
   }
@@ -522,7 +546,7 @@ describe('Game edition complete', () => {
   it('does not celebrate before the set is finished', () => {
     renderGame();
     findWord('serenade');
-    fireEvent.click(screen.getByRole('button', { name: /back to the case/i }));
+    fireEvent.click(closeReveal());
     findWord('sea');
     expect(editionCard()).not.toBeInTheDocument();
   });
@@ -565,7 +589,7 @@ describe('Game edition complete', () => {
   it('completes by word count, not points: top rank but missing common words does not fire it', () => {
     renderGame();
     findWord('serenade'); // source, also a common word; dismiss its reveal
-    fireEvent.click(screen.getByRole('button', { name: /back to the case/i }));
+    fireEvent.click(closeReveal());
     // Heavy off-page points push well past par (the top named rank) ...
     ['denar', 'sneer', 'sane'].forEach(findWord);
     const bar = screen.getByRole('progressbar');
@@ -585,7 +609,7 @@ describe('Game edition complete', () => {
     findWord('serenade');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(editionCard()).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /back to the case/i }));
+    fireEvent.click(closeReveal());
     // Completing fires the crown but does not re-open the source reveal.
     SET.slice(0, -1).forEach(findWord);
     findWord(SET[SET.length - 1]!);
@@ -658,8 +682,7 @@ describe('Game source-word celebration', () => {
     type('serenade');
     fireEvent.keyDown(window, { key: 'Enter' });
   };
-  const dismissReveal = () =>
-    fireEvent.click(screen.getByRole('button', { name: /back to the case/i }));
+  const dismissReveal = () => fireEvent.click(closeReveal());
 
   afterEach(() => {
     document.documentElement.removeAttribute('data-theme');
@@ -692,6 +715,53 @@ describe('Game source-word celebration', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
     expect(message().textContent).toBe('You found the source word.');
+  });
+
+  it('re-skins an ordinary set find live, the same as the source word does', () => {
+    // This one passes through the reducer, so it is the case that breaks if a
+    // string is resolved at find time instead of in the view.
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    type('sea');
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(message().textContent).toBe('sea, in the set.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    expect(message().textContent).toBe('sea, in the basket.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Classic' }));
+    expect(message().textContent).toBe('sea, in the set.');
+  });
+
+  it('re-skins the whole board live, with nothing frozen from before the switch', () => {
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    const board = () => document.body.textContent ?? '';
+
+    for (const s of [
+      copy('letterpress').mastheadSubline,
+      copy('letterpress').submitWord,
+      copy('letterpress').glossaryTitle,
+      copy('letterpress').emptyGlossary,
+      copy('letterpress').typeCredit,
+    ]) {
+      expect(board()).toContain(s);
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    for (const s of [
+      copy('cute').mastheadSubline,
+      copy('cute').submitWord,
+      copy('cute').glossaryTitle,
+      copy('cute').emptyGlossary,
+      copy('cute').typeCredit,
+    ]) {
+      expect(board()).toContain(s);
+    }
+    // And none of the letterpress wording survives the switch.
+    expect(board()).not.toContain(copy('letterpress').mastheadSubline);
+    expect(board()).not.toContain(copy('letterpress').emptyGlossary);
+    expect(board()).not.toContain(copy('letterpress').typeCredit);
   });
 
   it('announces the find in the framing that was on screen when it landed', () => {
@@ -789,7 +859,7 @@ describe('Game edition confetti', () => {
   const confetti = () => document.querySelector('canvas.confetti');
   function completeTheSet() {
     findWord('serenade');
-    fireEvent.click(screen.getByRole('button', { name: /back to the case/i }));
+    fireEvent.click(closeReveal());
     SET.forEach(findWord);
   }
 
@@ -894,6 +964,10 @@ describe('Controls layout', () => {
   const controls = () => document.querySelector('.controls') as HTMLElement;
   const stickText = () =>
     document.querySelector('.stick')?.textContent?.trim() ?? '';
+  // The submit label is theme copy, so these layout tests resolve it rather
+  // than hardcoding it. The literal per-theme wording is pinned in
+  // themeCopy.test.ts, which is where a copy change should show up.
+  const submitLabel = () => copy(activeTheme()).submitWord;
   const controlNames = () =>
     within(controls())
       .getAllByRole('button')
@@ -906,11 +980,11 @@ describe('Controls layout', () => {
       'Shuffle',
       'Clear',
       'Delete last letter',
-      'Set word',
+      submitLabel(),
     ]);
     // Delete sits before Submit: Bea's "delete before submit".
     expect(names.indexOf('Delete last letter')).toBeLessThan(
-      names.indexOf('Set word'),
+      names.indexOf(submitLabel()),
     );
   });
 
@@ -931,7 +1005,7 @@ describe('Controls layout', () => {
       within(primary).getByRole('button', { name: 'Delete last letter' }),
     ).toBeInTheDocument();
     expect(
-      within(primary).getByRole('button', { name: 'Set word' }),
+      within(primary).getByRole('button', { name: submitLabel() }),
     ).toBeInTheDocument();
   });
 
@@ -943,7 +1017,7 @@ describe('Controls layout', () => {
       screen.getByRole('button', { name: 'Delete last letter' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Set word' }),
+      screen.getByRole('button', { name: submitLabel() }),
     ).toBeInTheDocument();
   });
 
@@ -959,13 +1033,13 @@ describe('Controls layout', () => {
     renderGame();
     type('sea');
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
-    expect(stickText()).toBe('Set letters to make a word');
+    expect(stickText()).toBe(copy(activeTheme()).inputPlaceholder);
   });
 
   it('Submit sets the composed word into the glossary', () => {
     renderGame();
     type('sea');
-    fireEvent.click(screen.getByRole('button', { name: 'Set word' }));
+    fireEvent.click(screen.getByRole('button', { name: submitLabel() }));
     const glossary = screen.getByRole('region', { name: /words found/i });
     expect(within(glossary).getByText('sea')).toBeInTheDocument();
   });
@@ -1001,14 +1075,23 @@ describe('Controls layout', () => {
   });
 
   it('renders one shared structure for both themes (skin differs, not layout)', () => {
+    // The submit label is vocabulary and differs by design, so it is normalised
+    // out. Everything else, every tag, class and attribute, must still match
+    // exactly: the themes are one layout wearing two skins, not two layouts.
+    const skeleton = (html: string, theme: Theme) =>
+      html.replaceAll(copy(theme).submitWord, '{submit}');
+
     document.documentElement.dataset.theme = 'letterpress';
     renderGame();
-    const classic = controls().innerHTML;
+    const letterpress = skeleton(controls().innerHTML, 'letterpress');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
-    const cute = controls().innerHTML;
+    const cute = skeleton(controls().innerHTML, 'cute');
 
-    expect(cute).toBe(classic);
+    expect(cute).toBe(letterpress);
+    // Guard against the normalisation hiding a real difference by matching
+    // nothing: both sides must actually carry the placeholder.
+    expect(cute).toContain('{submit}');
   });
 });
 

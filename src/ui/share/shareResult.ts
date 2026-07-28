@@ -1,6 +1,6 @@
 import { classifyWord, computeTier, type Puzzle } from '@/engine/index.ts';
 import type { Theme } from '../useTheme.ts';
-import { crownName, tierName } from '../tierNames.ts';
+import { crownName, tierName } from '../themeCopy.ts';
 import type { DailyShareResult, EndlessShareResult } from './shareText.ts';
 
 /**

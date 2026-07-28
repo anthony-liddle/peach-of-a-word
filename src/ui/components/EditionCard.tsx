@@ -1,5 +1,5 @@
 import type { Theme } from '../useTheme.ts';
-import { crownName } from '../tierNames.ts';
+import { crownName, copy } from '../themeCopy.ts';
 
 interface Props {
   theme: Theme;
@@ -22,9 +22,7 @@ export function EditionCard({ theme, onClose }: Props) {
         ❧
       </p>
       <h2 className="edition__title">{crown}</h2>
-      <p className="edition__line">
-        Every common word the rack can spell, found.
-      </p>
+      <p className="edition__line">{copy(theme).completionLine}</p>
       <button className="edition__close" onClick={onClose}>
         Keep going
       </button>

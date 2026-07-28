@@ -8,6 +8,8 @@ import {
 import type { GameData } from '@/data/gameData.ts';
 import { NullAudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage, type KeyValueStore } from '@/persistence/storage.ts';
+import { copy } from '../themeCopy.ts';
+import { DEFAULT_THEME } from '../useTheme.ts';
 
 const ENABLE = ['serenade', 'sea', 'near', 'sane', 'eased'];
 const COMMON = ['serenade', 'sea', 'near', 'eased'];
@@ -165,7 +167,11 @@ describe('How the Words Work popup', () => {
     fireEvent.keyDown(window, { key: 'Enter' });
 
     const stick = document.querySelector('.stick') as HTMLElement;
-    expect(stick.textContent?.trim()).toBe('Set letters to make a word');
+    const theme =
+      document.documentElement.dataset.theme === 'letterpress'
+        ? 'letterpress'
+        : DEFAULT_THEME;
+    expect(stick.textContent?.trim()).toBe(copy(theme).inputPlaceholder);
     const glossary = screen.getByRole('region', { name: /words found/i });
     expect(within(glossary).queryByText('sea')).not.toBeInTheDocument();
   });

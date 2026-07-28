@@ -21,7 +21,11 @@ import {
   type TierStanding,
 } from '@/engine/index.ts';
 import { RUNG_NAMES } from './rarity.ts';
-import { sourceFoundAnnouncement, sourceFoundMessage } from './tierNames.ts';
+import {
+  copy,
+  sourceFoundAnnouncement,
+  sourceFoundMessage,
+} from './themeCopy.ts';
 import type { Theme } from './useTheme.ts';
 import type { GameData } from '@/data/gameData.ts';
 import type { SourceEntry } from '@/data/types.ts';
@@ -43,7 +47,11 @@ export interface Tile {
  */
 export type MessageBody =
   | { readonly kind: 'plain'; readonly text: string }
-  | { readonly kind: 'source-found' };
+  | { readonly kind: 'source-found' }
+  // A find inside the set. The word is structure, the framing is a skin, so the
+  // reducer records which word landed and the view says it in the active
+  // theme's vocabulary. Resolving here would freeze it at find time.
+  | { readonly kind: 'set-found'; readonly word: string };
 
 export interface Message {
   readonly body: MessageBody;
@@ -71,9 +79,10 @@ export interface Announcement {
 
 /** What the message line reads under the active theme. */
 export function messageText(message: Message, theme: Theme): string {
-  return message.body.kind === 'plain'
-    ? message.body.text
-    : sourceFoundMessage(theme);
+  const { body } = message;
+  if (body.kind === 'plain') return body.text;
+  if (body.kind === 'set-found') return copy(theme).setFind(body.word);
+  return sourceFoundMessage(theme);
 }
 
 /** What the live region announces under the active theme. */
@@ -304,13 +313,12 @@ function reduceSlice(slice: Slice, action: Action): Slice {
 
       const messageBody: MessageBody = result.isSourceWord
         ? { kind: 'source-found' }
-        : {
-            kind: 'plain',
-            text:
-              result.rung === 'set'
-                ? `${result.word}, in the set.`
-                : `${result.word}, ${RUNG_NAMES[result.rung].toLowerCase()} find.`,
-          };
+        : result.rung === 'set'
+          ? { kind: 'set-found', word: result.word }
+          : {
+              kind: 'plain',
+              text: `${result.word}, ${RUNG_NAMES[result.rung].toLowerCase()} find.`,
+            };
 
       return {
         ...slice,
