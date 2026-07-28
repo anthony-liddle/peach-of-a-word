@@ -84,24 +84,30 @@ export function HowItWorks({ onClose }: Props) {
             <a href={ENABLE_URL} target="_blank" rel="noopener noreferrer">
               ENABLE
             </a>{' '}
-            is the dictionary that decides what counts as a word. It is a large,
-            public-domain word list, so almost anything real you type is
-            accepted. You will rarely be told a real word is not a word.
-          </p>
-          <p>
+            and{' '}
             <a href={SCOWL_URL} target="_blank" rel="noopener noreferrer">
               SCOWL
-            </a>{' '}
-            is a list that sorts words into bands by how common they are, from
-            everyday to obscure. We use it to decide which words make up the
-            set, and how rare the others are.
+            </a>
+            , together with a small patch list we keep by hand, decide what
+            counts as a word: about 430,000 of them. Almost anything real you
+            type is accepted. You will rarely be told a real word is not a word.
+          </p>
+          <p>
+            SCOWL also sorts those words into bands by how common they are, from
+            everyday to obscure. The common band makes up the day's set, and the
+            bands past it decide how rare everything else is.
           </p>
           <p>
             The day's eight letters come from a common eight-letter word, chosen
             and checked ahead of time, and the same for everyone that day. The
-            set is every common word those letters can spell. Finding all of
-            them is the goal, the thing the bar fills toward and Edition
-            Complete celebrates.
+            set is every common word those letters can spell.
+          </p>
+          <p>
+            The goal is a ladder of named ranks, climbed by points. Every valid
+            word moves you up, and rarer words move you further. Above the
+            ladder sits completion: finding every common word the letters can
+            spell. It is reachable, rare, and never required for a day to feel
+            good.
           </p>
           <p>
             Words you find beyond the set are graded by how far past common they

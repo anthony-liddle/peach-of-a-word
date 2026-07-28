@@ -95,6 +95,7 @@ describe('Reveal quiet register', () => {
   it('shows the gloss with the category accent and not the crown amber', () => {
     const { container } = render(
       <Reveal
+        theme="letterpress"
         register="quiet"
         word="sneer"
         category="rare"
@@ -115,6 +116,7 @@ describe('Reveal quiet register', () => {
   it('shows the exact no-definition copy when the gloss is null', () => {
     render(
       <Reveal
+        theme="letterpress"
         register="quiet"
         word="udon"
         category="mythic"
@@ -133,6 +135,7 @@ describe('Reveal quiet register', () => {
   it('shows a loading state before the gloss resolves', () => {
     render(
       <Reveal
+        theme="letterpress"
         register="quiet"
         word="sneer"
         category="rare"
@@ -148,6 +151,7 @@ describe('Reveal quiet register', () => {
     const onClose = vi.fn();
     render(
       <Reveal
+        theme="letterpress"
         register="quiet"
         word="sneer"
         category="rare"
@@ -168,6 +172,7 @@ describe('Reveal quiet register', () => {
       document.documentElement.dataset.theme = theme;
       render(
         <Reveal
+          theme="letterpress"
           register="quiet"
           word="sneer"
           category="rare"
@@ -186,6 +191,7 @@ describe('Reveal quiet register', () => {
     document.body.appendChild(trigger);
     const { unmount } = render(
       <Reveal
+        theme="letterpress"
         register="quiet"
         word="sneer"
         category="rare"

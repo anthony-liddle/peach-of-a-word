@@ -539,6 +539,16 @@ button {
   .theme-swap {
     display: inline-flex;
   }
+  /* Tighten the swap button here, and only here. Its label is the theme name,
+     and Letterpress is half again as long as the Cute it alternates with, so at
+     the narrowest width and the largest text step the untightened control ran
+     11px past the toolbar. Trimming the padding, the gap and a little of the
+     tracking buys about 24px, which clears the longest label with room over. */
+  .theme-swap {
+    gap: 0.3rem;
+    padding: 0 0.55rem;
+    letter-spacing: 0.06em;
+  }
 }
 
 /* ---- Layout ------------------------------------------------------------- */

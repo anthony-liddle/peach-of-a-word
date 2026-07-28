@@ -69,7 +69,7 @@ export interface TierDef {
  * score, low to high. DRAFT, TUNABLE thresholds. The top named rank sits at 0.80,
  * not 1.00: finding everything is the completion peak (Stage 2), which sits above
  * this whole ladder. There is no source-word gate on the named ranks; the crown
- * is its own separate moment. The per-theme names live in ui/tierNames.ts, keyed
+ * is its own separate moment. The per-theme names live in ui/themeCopy.ts, keyed
  * to these six rungs by index, so the ladder structure and the names are separate.
  */
 export const TIERS: readonly TierDef[] = [

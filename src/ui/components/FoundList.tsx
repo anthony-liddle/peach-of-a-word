@@ -6,6 +6,7 @@ import {
   type TierStanding,
 } from '@/engine/index.ts';
 import { LADDER_RUNGS, RUNG_NAMES, type LadderRung } from '../rarity.ts';
+import { copy } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
 import { TierMeter } from './TierMeter.tsx';
 
@@ -205,7 +206,7 @@ export function FoundList({
 
   return (
     <section className="found" aria-label="Words found">
-      <h2 className="found__title">The glossary</h2>
+      <h2 className="found__title">{copy(theme).glossaryTitle}</h2>
 
       {/* Nothing to summarise on an empty board; the summary appears with the
           first find, so the start stays an invitation, not a wall of zeros. */}
@@ -295,7 +296,7 @@ export function FoundList({
       )}
 
       {found.length === 0 ? (
-        <p className="found__empty">No words set yet. The case is full.</p>
+        <p className="found__empty">{copy(theme).emptyGlossary}</p>
       ) : (
         groups.map((g) => (
           <section className="found__group" key={g.length}>
@@ -332,7 +333,7 @@ export function FoundList({
       <div className="legend" aria-hidden="true">
         <span className="legend__caption">Key</span>
         <span>
-          <span className="mark mark--set" /> in the set
+          <span className="mark mark--set" /> {copy(theme).keyOnPage}
         </span>
         {LADDER_RUNGS.map((r) => (
           <span key={r}>

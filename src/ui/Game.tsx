@@ -9,6 +9,7 @@ import {
   type GameApi,
 } from './useGame.ts';
 import { useTheme, type Theme } from './useTheme.ts';
+import { copy } from './themeCopy.ts';
 import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
 import { FoundList } from './components/FoundList.tsx';
 import { ShareButton } from './components/ShareButton.tsx';
@@ -189,6 +190,7 @@ export function Game({ data, audio, storage }: Props) {
         />
       ) : quiet ? (
         <Reveal
+          theme={theme}
           register="quiet"
           word={quiet.word}
           category={quiet.category}
@@ -205,6 +207,7 @@ export function Game({ data, audio, storage }: Props) {
 }
 
 function Masthead() {
+  const [theme] = useTheme();
   return (
     <header className="masthead">
       {/* Keep this line in sync with the OG card kicker baked by
@@ -213,7 +216,7 @@ function Masthead() {
       <h1 className="masthead__title">
         <em>Peach</em> of a Word
       </h1>
-      <p className="masthead__rule">Set the type</p>
+      <p className="masthead__rule">{copy(theme).mastheadSubline}</p>
     </header>
   );
 }
@@ -246,7 +249,7 @@ function Toolbar({ game }: { game: GameApi }) {
             aria-pressed={theme === 'letterpress'}
             onClick={() => setTheme('letterpress')}
           >
-            Classic
+            Letterpress
           </button>
           <button
             aria-pressed={theme === 'cute'}
@@ -342,8 +345,10 @@ function ThemeSwap({
   setTheme: (theme: Theme) => void;
 }) {
   const isCute = theme === 'cute';
-  const currentName = isCute ? 'Cute' : 'Classic';
-  const nextName = isCute ? 'Classic' : 'Cute';
+  // Display labels only. The stored value stays 'letterpress', so renaming the
+  // label migrates nothing and saved preferences are untouched.
+  const currentName = isCute ? 'Cute' : 'Letterpress';
+  const nextName = isCute ? 'Letterpress' : 'Cute';
   return (
     <button
       type="button"
@@ -364,10 +369,11 @@ function ThemeSwap({
 
 function ComposingStick({ game }: { game: GameApi }) {
   const { state, composedWord } = game;
+  const [theme] = useTheme();
   return (
     <div className="stick" data-tone={state.message?.tone ?? 'info'}>
       {composedWord.length === 0 ? (
-        <span className="stick__empty">Set letters to make a word</span>
+        <span className="stick__empty">{copy(theme).inputPlaceholder}</span>
       ) : (
         [...composedWord].map((letter, i) => (
           <span className="stick__slot" key={i}>
@@ -411,6 +417,7 @@ function TypeCase({ game }: { game: GameApi }) {
  * the two rows break at exactly the same widths.
  */
 function Controls({ game }: { game: GameApi }) {
+  const [theme] = useTheme();
   const { composedWord } = game;
   const empty = composedWord.length === 0;
   return (
@@ -441,7 +448,7 @@ function Controls({ game }: { game: GameApi }) {
           onClick={game.submit}
           disabled={composedWord.length < 3}
         >
-          Set word
+          {copy(theme).submitWord}
         </button>
       </div>
     </div>
@@ -456,15 +463,13 @@ function Colophon({
   onOpenHow: () => void;
 }) {
   const [theme] = useTheme();
-  const fonts =
-    theme === 'cute' ? 'Fredoka and Nunito' : 'Fraunces and Spectral';
   return (
     <footer className="colophon">
       Validation by ENABLE and SCOWL, public domain, with a curated patch layer.
       Common words from SCOWL. Definitions and etymologies from Wiktionary, CC
       BY-SA 4.0.
       <br />
-      Set in {fonts}.
+      {copy(theme).typeCredit}
       <br />
       {/* The quiet expansion of the colophon: where a curious person already
           looks. Kept out of the play surface on purpose. */}

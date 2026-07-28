@@ -1,6 +1,6 @@
 import { TIERS, type TierStanding } from '@/engine/index.ts';
 import type { Theme } from '../useTheme.ts';
-import { crownName, tierName } from '../tierNames.ts';
+import { crownName, tierName, copy } from '../themeCopy.ts';
 
 interface Props {
   tier: TierStanding;
@@ -81,9 +81,7 @@ export function TierMeter({ tier, theme }: Props) {
             {Math.round(tier.next.threshold * 100)}%
           </span>
         ) : (
-          <span className="tier__next">
-            Top rank. The full set is the peak.
-          </span>
+          <span className="tier__next">{copy(theme).ladderPeak}</span>
         )}
       </div>
       {/* The explicit split beneath the bar: the same set-versus-off-page points
@@ -92,14 +90,14 @@ export function TierMeter({ tier, theme }: Props) {
       <p className="tier__key">
         <span className="tier__keyitem tier__keyitem--set">
           <span className="tier__swatch tier__swatch--set" aria-hidden="true" />
-          Set {tier.setPoints}
+          {copy(theme).onPageLabel} {tier.setPoints}
         </span>
         <span className="tier__keyitem tier__keyitem--offpage">
           <span
             className="tier__swatch tier__swatch--offpage"
             aria-hidden="true"
           />
-          Off-page {tier.offPagePoints}
+          {copy(theme).offPageLabel} {tier.offPagePoints}
         </span>
       </p>
     </section>
