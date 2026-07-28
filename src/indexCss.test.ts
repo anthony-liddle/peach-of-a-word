@@ -76,6 +76,53 @@ describe('index.css sizes: the supporting-text floor', () => {
   });
 });
 
+/** The value of a custom property inside the given theme's token block. */
+function token(theme: 'letterpress' | 'cute', name: string): string {
+  const head =
+    theme === 'letterpress'
+      ? ":root,\\s*\\[data-theme='letterpress'\\]"
+      : "\\[data-theme='cute'\\]";
+  const b = css.match(new RegExp(`${head}\\s*\\{([\\s\\S]*?)\\n\\}`))?.[1];
+  if (!b) throw new Error(`No token block for theme: ${theme}`);
+  const m = b.match(new RegExp(`${name}:\\s*(#[0-9a-f]{6})`, 'i'));
+  if (!m) throw new Error(`No ${name} in the ${theme} tokens`);
+  return m[1]!;
+}
+
+function relativeLuminance(hex: string): number {
+  const parts = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = parts.map((c) =>
+    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
+  ) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort(
+    (x, y) => y - x,
+  ) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe('index.css rung panel: AA on the surface it actually sits on', () => {
+  // The rung panel is the first place glossary chips render on --paper-deep
+  // rather than the page paper. The published ratios for these inks were
+  // measured against --paper, so they do not carry over on their own. Measured
+  // here instead of assumed, in both themes, because the two define the deep
+  // surface in opposite directions: cute goes lighter (white), letterpress
+  // darker. The veil tests above cannot catch a token change; this can.
+  const surface = '--paper-deep';
+  const inks: string[] = ['--discovery', '--ink-soft', '--ink'];
+
+  describe.each(['letterpress', 'cute'] as const)('%s', (theme) => {
+    test.each(inks)(`%s clears AA on ${surface}`, (ink) => {
+      expect(
+        contrast(token(theme, ink), token(theme, surface)),
+      ).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+});
+
 describe('index.css rarity rung triggers: tappable at the floor', () => {
   // The rung tallies became buttons that open the words found at that rung.
   // They are the smallest controls on the board, so the floors matter most

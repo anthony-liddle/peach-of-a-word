@@ -1039,9 +1039,12 @@ button {
    min-height carries the 44px tap floor. The pseudo-element ring used by
    .textsize would be wrong here: these tallies sit in a wrapping flex row with
    a 0.35rem row gap, so an overhanging ring would overlap the rung above or
-   below and steal its taps. A real box cannot overlap its neighbours, and it
-   costs no extra height in practice, since the summary row is already set by
-   its tallest item. */
+   below and steal its taps. A real box cannot overlap its neighbours.
+
+   This does cost height: the tallies were ~20px, so every row carrying a rung
+   grows to 44px, and at narrow widths and large text they wrap to several such
+   rows. That is the price of the tap floor on a control this small, paid
+   deliberately. */
 .summary__rung {
   appearance: none;
   background: none;
