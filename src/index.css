@@ -1026,6 +1026,53 @@ button {
   font-weight: 600;
 }
 
+/* A rarity tally is also the way in to the words behind it: tap a rung to open
+   the list of finds at it. Button reset so the tally keeps the look it had as
+   text, with `font: inherit` holding it at the .summary__stats size rather than
+   the browser's small button default. The rung colour still comes from
+   .summary__stat--rare .summary__statline, which outranks this rule.
+
+   The tap affordance borrows the glossary's language: a dotted underline at
+   rest saying there is more here, going solid on hover and focus exactly as a
+   word chip does. The focus ring itself is the global :focus-visible outline.
+
+   min-height carries the 44px tap floor. The pseudo-element ring used by
+   .textsize would be wrong here: these tallies sit in a wrapping flex row with
+   a 0.35rem row gap, so an overhanging ring would overlap the rung above or
+   below and steal its taps. A real box cannot overlap its neighbours, and it
+   costs no extra height in practice, since the summary row is already set by
+   its tallest item. */
+.summary__rung {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.22em;
+}
+.summary__rung:hover,
+.summary__rung:focus-visible {
+  text-decoration: underline solid;
+}
+
+/* The list a rung opens, directly under the tally block it came from. Inset and
+   ruled in the discovery ink so it reads as an aside belonging to the rung, not
+   as a second glossary. It lists finds and nothing else: no count, no
+   denominator, never a hint of how many words the rung holds. */
+.summary__rungpanel {
+  margin: 0 0 0.9rem;
+  padding: 0.55rem 0.7rem;
+  border-left: 2px solid var(--discovery);
+  border-radius: var(--radius);
+  background: var(--paper-deep);
+}
+
 /* The daily share, sitting under the score it brags about. A quiet outlined
    button, not the accent fill: the boast is the block it produces, not the
    control. */

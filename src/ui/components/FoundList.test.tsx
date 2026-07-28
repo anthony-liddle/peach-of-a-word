@@ -263,3 +263,207 @@ describe('FoundList word tap', () => {
     expect(document.activeElement).toBe(btn);
   });
 });
+
+/**
+ * A rack with two finds on each of the low rungs, so "exactly the words at this
+ * rung" is a real claim rather than one word standing in for a list. The mythic
+ * band is a parameter: passing an empty list gives the zero-find rung the inert
+ * case needs, without a second puzzle factory to keep in step.
+ */
+function makeRungPuzzle(mythic: readonly string[] = ['denar']): Puzzle {
+  const common = ['serenade', 'sea', 'near', 'dean', 'eased', 'erase'];
+  const uncommon = ['sane', 'anes'];
+  const rare = ['sneer', 'ernes'];
+  const setPoints = common.reduce((s, w) => s + findScore(w, 'set'), 0);
+  return {
+    sourceWord: 'serenade',
+    letters: 'adeenrs',
+    validationWords: new Set([...common, ...uncommon, ...rare, ...mythic]),
+    commonWords: new Set(common),
+    uncommonWords: new Set(uncommon),
+    rareWords: new Set(rare),
+    mythicWords: new Set(mythic),
+    reachableScore: setPoints,
+  };
+}
+
+function renderRungs(
+  found: string[],
+  puzzle: Puzzle = makeRungPuzzle(),
+  onWordTap: (word: string, trigger: HTMLElement) => void = () => {},
+) {
+  return render(
+    <FoundList
+      puzzle={puzzle}
+      found={found}
+      tier={computeTier(new Set(found), puzzle)}
+      theme="letterpress"
+      onWordTap={onWordTap}
+    />,
+  );
+}
+
+/** Every off-page find on the rack, so each rung has something to show. */
+const ALL_RUNG_FINDS = ['sea', 'sane', 'anes', 'sneer', 'ernes', 'denar'];
+
+describe('FoundList rarity rung panels', () => {
+  it('expands exactly the words found at that rung, and no others', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    fireEvent.click(screen.getByRole('button', { name: /2 rare/i }));
+
+    const panel = screen.getByRole('group', { name: /rare words you found/i });
+    expect(within(panel).getByText('sneer')).toBeInTheDocument();
+    expect(within(panel).getByText('ernes')).toBeInTheDocument();
+    // Not the other rungs, and not the set.
+    expect(within(panel).queryByText('sane')).toBeNull();
+    expect(within(panel).queryByText('denar')).toBeNull();
+    expect(within(panel).queryByText('sea')).toBeNull();
+    expect(within(panel).getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('collapses the list when the rung is tapped again', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    const trigger = () => screen.getByRole('button', { name: /2 rare/i });
+
+    fireEvent.click(trigger());
+    expect(
+      screen.getByRole('group', { name: /rare words you found/i }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(trigger());
+    expect(
+      screen.queryByRole('group', { name: /rare words you found/i }),
+    ).toBeNull();
+  });
+
+  it('opens each rung independently, so one list never closes another', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    fireEvent.click(screen.getByRole('button', { name: /2 rare/i }));
+    fireEvent.click(screen.getByRole('button', { name: /2 uncommon/i }));
+
+    expect(
+      screen.getByRole('group', { name: /rare words you found/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('group', { name: /uncommon words you found/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('leaves a rung with no finds inert: not a button, and never expandable', () => {
+    renderRungs(['sea', 'sane', 'sneer'], makeRungPuzzle([]));
+
+    const zero = screen.getByText(/0 mythic/i);
+    expect(zero.closest('button')).toBeNull();
+    expect(screen.queryByRole('button', { name: /mythic/i })).toBeNull();
+    expect(
+      screen.queryByRole('group', { name: /mythic words you found/i }),
+    ).toBeNull();
+  });
+
+  it('states the rung, the count, and the expanded state in the accessible name', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    const trigger = () => screen.getByRole('button', { name: /2 rare/i });
+
+    expect(trigger()).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger()).toHaveAccessibleName(/2 rare.*show/i);
+
+    fireEvent.click(trigger());
+    expect(trigger()).toHaveAttribute('aria-expanded', 'true');
+    expect(trigger()).toHaveAccessibleName(/2 rare.*hide/i);
+  });
+
+  it('points the trigger at the panel it controls', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    const trigger = screen.getByRole('button', { name: /2 rare/i });
+    fireEvent.click(trigger);
+
+    const panel = screen.getByRole('group', { name: /rare words you found/i });
+    expect(trigger).toHaveAttribute('aria-controls', panel.id);
+    expect(panel.id).not.toBe('');
+  });
+
+  it('never shows a denominator, on the trigger or in the expanded list', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    const trigger = screen.getByRole('button', { name: /2 rare/i });
+    fireEvent.click(trigger);
+    const panel = screen.getByRole('group', { name: /rare words you found/i });
+
+    for (const text of [
+      trigger.textContent ?? '',
+      trigger.getAttribute('aria-label') ?? '',
+      panel.textContent ?? '',
+    ]) {
+      expect(text).not.toMatch(/\bof\b/i);
+      expect(text).not.toMatch(/\d+\s*\/\s*\d+/);
+      expect(text).not.toMatch(/\bout of\b/i);
+      expect(text).not.toMatch(/\bremaining\b|\bleft\b|\btotal\b/i);
+    }
+  });
+
+  it('opens a definition from the expanded list, the same path as anywhere else', () => {
+    const onWordTap = vi.fn();
+    renderRungs(ALL_RUNG_FINDS, makeRungPuzzle(), onWordTap);
+    fireEvent.click(screen.getByRole('button', { name: /2 rare/i }));
+
+    const panel = screen.getByRole('group', { name: /rare words you found/i });
+    const chip = within(panel).getByRole('button', {
+      name: /sneer, show definition/i,
+    });
+    fireEvent.click(chip);
+    expect(onWordTap).toHaveBeenCalledWith('sneer', chip);
+  });
+
+  it('marks a word the same rung in the panel as in its per-length group', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    fireEvent.click(screen.getByRole('button', { name: /2 rare/i }));
+
+    // sneer is five letters, so it also sits in the 5-letter group's off-page
+    // row. Both readouts derive from one classification pass, so the rarity
+    // class on the chip must match.
+    const panel = screen.getByRole('group', { name: /rare words you found/i });
+    const inPanel = within(panel).getByText('sneer').closest('button')!;
+
+    const head = screen.getByRole('heading', { name: '5 letters' });
+    const group = head.closest('section') as HTMLElement;
+    const offRow = group.querySelector('.found__words--offpage') as HTMLElement;
+    const inGroup = within(offRow).getByText('sneer').closest('button')!;
+
+    expect(inPanel.className).toBe(inGroup.className);
+    expect(inPanel.className).toMatch(/found__word--rare/);
+  });
+
+  it('lists in the panel every off-page find the per-length groups show at that rung', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    fireEvent.click(screen.getByRole('button', { name: /2 uncommon/i }));
+    const panel = screen.getByRole('group', {
+      name: /uncommon words you found/i,
+    });
+
+    const text = (root: ParentNode, selector: string) =>
+      [...root.querySelectorAll(selector)]
+        .map((el) => el.querySelector('.found__wordtext')?.textContent)
+        .sort();
+
+    // The panel is not inside a length group, so this scopes to the grid.
+    const inGroups = text(document, '.found__group .found__word--uncommon');
+    const inPanel = text(panel, '.found__word');
+
+    expect(inPanel).toEqual(['anes', 'sane']);
+    expect(inPanel).toEqual(inGroups);
+  });
+
+  it('exposes each open rung as a real button in the tab order', () => {
+    renderRungs(ALL_RUNG_FINDS);
+    const trigger = screen.getByRole('button', { name: /2 rare/i });
+
+    // A native button, so Space and Enter activate it without a key handler,
+    // and it is reachable by Tab without a tabindex of its own.
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger).toHaveAttribute('type', 'button');
+    expect(trigger).not.toBeDisabled();
+    expect(trigger).not.toHaveAttribute('tabindex');
+
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+  });
+});

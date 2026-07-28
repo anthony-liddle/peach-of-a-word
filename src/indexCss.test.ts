@@ -76,6 +76,29 @@ describe('index.css sizes: the supporting-text floor', () => {
   });
 });
 
+describe('index.css rarity rung triggers: tappable at the floor', () => {
+  // The rung tallies became buttons that open the words found at that rung.
+  // They are the smallest controls on the board, so the floors matter most
+  // here: a real 44px box (not an overhanging pseudo-ring, which would overlap
+  // the neighbouring rung in the wrapping tally row) and the inherited
+  // .summary__stats size rather than the browser's small button default.
+  test('the rung trigger holds the 44px tap floor in its own box', () => {
+    const m = block('.summary__rung').match(/min-height:\s*(\d+)px/);
+    expect(m).not.toBeNull();
+    expect(Number(m![1])).toBeGreaterThanOrEqual(44);
+  });
+
+  test('the rung trigger inherits its type, never shrinking below the tally row', () => {
+    expect(block('.summary__rung')).toMatch(/font:\s*inherit/);
+    expect(block('.summary__rung')).not.toMatch(/font-size/);
+  });
+
+  test('the rung trigger and its panel carry no opacity veil', () => {
+    expect(block('.summary__rung')).not.toContain('opacity');
+    expect(block('.summary__rungpanel')).not.toContain('opacity');
+  });
+});
+
 describe('index.css rack glyphs: proportional at phone width', () => {
   // Phone tiles are larger than desktop tiles (the 4-column grid), so the
   // glyph must be larger there too. A single vw clamp cannot express that:

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useId, useMemo, useState, type ReactNode } from 'react';
 import {
   classifyWord,
   findScore,
@@ -48,14 +48,28 @@ interface Group {
   offPageWords: Word[];
 }
 
-function categorize(word: string, puzzle: Puzzle): Category {
-  if (word === puzzle.sourceWord) return 'source';
-  // The source word aside, the rung is the single source of truth: set, or one
-  // of the three off-page rungs.
-  return classifyWord(word, puzzle);
+/**
+ * Classify every find once. Everything downstream (the per-length grid, the rung
+ * tallies, the rung panels, the inline points) reads this one array, so the
+ * readouts cannot disagree with each other: they are views of a single pass, not
+ * separate passes that happen to call the same function.
+ */
+function classifyFound(puzzle: Puzzle, found: readonly string[]): Word[] {
+  return found.map((word) => {
+    const rung = classifyWord(word, puzzle);
+    return {
+      word,
+      // The source word is a set word that also carries its own mark, so the
+      // display category splits it out while the score still reads the rung.
+      category: word === puzzle.sourceWord ? 'source' : rung,
+      // Score by the single rarity-aware path, so an off-page word's inline +N
+      // shows the bonus Bea earned, matching the bar and the total.
+      score: findScore(word, rung),
+    };
+  });
 }
 
-function buildGroups(puzzle: Puzzle, found: readonly string[]): Group[] {
+function buildGroups(puzzle: Puzzle, words: readonly Word[]): Group[] {
   // Set words per length: the honest "of Y" denominator, the same set the
   // top-level completion count totals, just sliced by length.
   const setTotalByLen = new Map<number, number>();
@@ -64,16 +78,10 @@ function buildGroups(puzzle: Puzzle, found: readonly string[]): Group[] {
   }
 
   const foundByLen = new Map<number, Word[]>();
-  for (const word of found) {
-    const list = foundByLen.get(word.length) ?? [];
-    // Score by the single rarity-aware path, so an off-page word's inline +N
-    // shows the bonus Bea earned, matching the bar and the total.
-    list.push({
-      word,
-      category: categorize(word, puzzle),
-      score: findScore(word, classifyWord(word, puzzle)),
-    });
-    foundByLen.set(word.length, list);
+  for (const w of words) {
+    const list = foundByLen.get(w.word.length) ?? [];
+    list.push(w);
+    foundByLen.set(w.word.length, list);
   }
 
   // Every length with set words, plus any length she has off-page finds in: the
@@ -116,27 +124,54 @@ export function FoundList({
   onWordTap,
   summaryExtra,
 }: Props) {
-  const groups = useMemo(() => buildGroups(puzzle, found), [puzzle, found]);
+  // The one classification pass. The grid below and the rung panels above are
+  // both derived from it, so a word is never Rare in one readout and not the
+  // other.
+  const words = useMemo(() => classifyFound(puzzle, found), [puzzle, found]);
+  const groups = useMemo(() => buildGroups(puzzle, words), [puzzle, words]);
 
   // Completion is the set, the one place an X of Y belongs. The count comes from
   // the tier, the same source the bar reads, so the two can never diverge.
   const setFound = tier.setFound;
   const setTotal = tier.setTotal;
 
-  // Open-ended counts per rung: a tally, never a denominator. All three rungs
-  // always show in the summary, so it reads as a stable totals block.
-  const rungCounts = useMemo(() => {
-    const counts: Record<LadderRung, number> = {
-      uncommon: 0,
-      rare: 0,
-      mythic: 0,
+  /**
+   * The off-page finds bucketed by rung, alphabetical within each. The length of
+   * a bucket is the summary tally, so the number on the trigger and the list it
+   * opens are the same data: the count can never overstate the list.
+   */
+  const rungWords = useMemo(() => {
+    const buckets: Record<LadderRung, Word[]> = {
+      uncommon: [],
+      rare: [],
+      mythic: [],
     };
-    for (const w of found) {
-      const c = categorize(w, puzzle);
-      if (isLadder(c)) counts[c] += 1;
+    for (const w of words) {
+      if (isLadder(w.category)) buckets[w.category].push(w);
     }
-    return counts;
-  }, [found, puzzle]);
+    for (const r of LADDER_RUNGS) {
+      buckets[r].sort((a, b) => a.word.localeCompare(b.word));
+    }
+    return buckets;
+  }, [words]);
+
+  /**
+   * Which rung lists are open. Independent by rung: opening Rare never collapses
+   * Mythic, so a list she is reading is only ever closed by her own tap.
+   */
+  const [openRungs, setOpenRungs] = useState<ReadonlySet<LadderRung>>(
+    () => new Set(),
+  );
+  const toggleRung = (rung: LadderRung) =>
+    setOpenRungs((open) => {
+      const next = new Set(open);
+      if (!next.delete(rung)) next.add(rung);
+      return next;
+    });
+
+  // Stable ids so each trigger can point at the panel it controls.
+  const idBase = useId();
+  const panelId = (rung: LadderRung) => `${idBase}-rung-${rung}`;
 
   const renderChip = (w: Word) => (
     <li key={w.word} className="found__word-item" role="listitem">
@@ -183,20 +218,70 @@ export function FoundList({
                 {setFound} of {setTotal} words
               </span>
             </li>
-            {LADDER_RUNGS.map((r) => (
-              <li key={r} className={`summary__stat summary__stat--${r}`}>
-                <span className={`mark mark--${r}`} aria-hidden="true" />
-                <span className="summary__statline">
-                  {rungCounts[r]} {RUNG_NAMES[r]}
-                </span>
-              </li>
-            ))}
+            {LADDER_RUNGS.map((r) => {
+              const count = rungWords[r].length;
+              const open = openRungs.has(r);
+              return (
+                <li key={r} className={`summary__stat summary__stat--${r}`}>
+                  <span className={`mark mark--${r}`} aria-hidden="true" />
+                  {/* A rung she has nothing at is a tally, not a control: a
+                      plain span, so it neither looks tappable nor appears in
+                      the accessibility tree as a button that does nothing. */}
+                  {count === 0 ? (
+                    <span className="summary__statline">
+                      {count} {RUNG_NAMES[r]}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="summary__statline summary__rung"
+                      aria-expanded={open}
+                      aria-controls={panelId(r)}
+                      onClick={() => toggleRung(r)}
+                    >
+                      {count} {RUNG_NAMES[r]}
+                      {/* The state and the action, spoken but not printed: the
+                          visible tally stays a tally. */}
+                      <span className="visually-hidden">
+                        {open
+                          ? ', hide the words you found'
+                          : ', show the words you found'}
+                      </span>
+                    </button>
+                  )}
+                </li>
+              );
+            })}
             <li className="summary__stat summary__stat--total">
               <span className="summary__statline">
                 {found.length} {found.length === 1 ? 'word' : 'words'} found
               </span>
             </li>
           </ul>
+
+          {/* The trophy case: the words she found at a rung, opened from the
+              tally above and sitting directly under it. A list of finds only.
+              It never says how many words exist at the rung, because the size
+              of the obscure tail is the one number the ladder must never show:
+              a denominator here would turn open-ended discovery into a grind.
+              The per-length grid below is untouched; that view answers a
+              different question (what am I still missing) and both stay. */}
+          {LADDER_RUNGS.filter((r) => openRungs.has(r)).map((r) => (
+            <div
+              key={r}
+              id={panelId(r)}
+              // A named group, not a landmark region: three panels toggling in
+              // and out of a screen reader's landmark list is noise for lists
+              // this short, and the name still announces what opened.
+              role="group"
+              aria-label={`${RUNG_NAMES[r]} words you found`}
+              className="summary__rungpanel"
+            >
+              {/* The same chip and the same definition path as the grid, so a
+                  word behaves identically wherever she taps it. */}
+              <ul className="found__words">{rungWords[r].map(renderChip)}</ul>
+            </div>
+          ))}
 
           {/* The one progress bar, here in the glossary where the totals live.
               It carries the named tier, the bold points total, the two-color
