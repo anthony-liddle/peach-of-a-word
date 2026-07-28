@@ -107,15 +107,9 @@ function contrast(a: string, b: string): number {
 }
 
 describe('index.css glossary inks: AA on both readout surfaces', () => {
-  // The rung panel originally drew itself a filled card, which put glossary
-  // chips on --paper-deep for the first time. The card is gone and the chips
-  // sit on the page paper like every other group of words, so --paper is the
-  // surface that matters now. Both are asserted anyway: --paper-deep is still
-  // the fill under other surfaces, and keeping it pinned means a panel that
-  // ever regains a fill cannot quietly fail. Measured rather than assumed in
-  // both themes, since the two move the deep surface in opposite directions
-  // (cute to white, letterpress darker). The veil tests above cannot catch a
-  // token change; this can.
+  // Chips sit on --paper; --paper-deep is pinned too so anything that ever
+  // gains a fill cannot quietly fail. Both themes, since they move the deep
+  // surface opposite ways (cute to white, letterpress darker).
   const surfaces = ['--paper', '--paper-deep'];
   const inks = ['--discovery', '--ink-soft', '--ink'];
   const pairs = surfaces.flatMap((s) => inks.map((i) => [s, i] as const));
@@ -130,25 +124,18 @@ describe('index.css glossary inks: AA on both readout surfaces', () => {
 });
 
 describe('index.css rarity rung triggers: tappable at the floor', () => {
-  // The rung tallies became buttons that open the words found at that rung.
-  // They are the smallest controls on the board, so the floors matter most
-  // here: a real box (not an overhanging pseudo-ring, which would overlap the
-  // neighbouring rung in the wrapping tally row) and the inherited
-  // .summary__stats size rather than the browser's small button default.
+  // The smallest controls on the board, so the floors matter most here.
   test('the rung trigger holds the 24px inline tap floor in its own box', () => {
-    // WCAG 2.5.8 (AA) is 24 by 24, with an explicit exception for targets sized
-    // by the line-height of the non-target text around them. These sit inline
-    // beside "6 of 21 words", so that is the applicable floor. The 44px figure
-    // is 2.5.5 (AAA) and the Apple HIG, both aimed at standalone controls.
+    // WCAG 2.5.8 (AA), which excepts targets sized by the line-height around
+    // them. The 44px of 2.5.5 (AAA) is for standalone controls.
     const m = block('.summary__rung').match(/min-height:\s*(\d+)px/);
     expect(m).not.toBeNull();
     expect(Number(m![1])).toBeGreaterThanOrEqual(24);
   });
 
   test('the rung trigger uses the same floor as the word chip beside it', () => {
-    // Same kind of target, same floor: tappable text inline in a wrapping row.
-    // If one moves the other should, so this pins them together rather than
-    // pinning a number twice.
+    // Pinned to each other, not to the number twice: if one moves, so should
+    // the other.
     const rung = block('.summary__rung').match(/min-height:\s*(\d+)px/)![1];
     const chip = block('.found__word').match(/min-height:\s*(\d+)px/)![1];
     expect(rung).toBe(chip);
@@ -166,9 +153,8 @@ describe('index.css rarity rung triggers: tappable at the floor', () => {
 });
 
 describe('index.css rung panel: a separator, not a container', () => {
-  // The panel separates from its neighbours with the one divider the readout
-  // already uses, and nothing else. A fill, a border box, or a radius would put
-  // back the card that made the panel the loudest thing on the page.
+  // One hairline and nothing else. A fill, a box, or a radius would put back
+  // the card that made the panel the loudest thing on the page.
   const panel = block('.summary__rungpanel');
 
   test('the divider is the group header rule: same token, 1px, no new colour', () => {
@@ -179,24 +165,21 @@ describe('index.css rung panel: a separator, not a container', () => {
   });
 
   test('every panel draws the rule, the first one included', () => {
-    // The rule above the first list divides it from the tally block, closing
-    // the readout's one unruled seam. It lives on the panel itself, so there is
-    // no adjacent-sibling rule that could exempt the first.
+    // An adjacent-sibling rule would exempt the first and leave the seam under
+    // the tally block unruled.
     expect(css).not.toMatch(
       /\.summary__rungpanel \+ \.summary__rungpanel\s*\{/,
     );
   });
 
   test('the panel draws no box: no fill, no radius, no side or bottom edge', () => {
-    for (const b of [panel]) {
-      expect(b).not.toMatch(/background/);
-      expect(b).not.toMatch(/border-radius/);
-      expect(b).not.toMatch(/border-(left|right|bottom)/);
-    }
+    expect(panel).not.toMatch(/background/);
+    expect(panel).not.toMatch(/border-radius/);
+    expect(panel).not.toMatch(/border-(left|right|bottom)/);
   });
 
-  // Space below the rule is the panel's padding-top, which subtracts the rule's
-  // own 1px; space above it is the previous panel's tightened margin.
+  // Below the rule is the panel's padding-top, less the rule's own 1px; above
+  // it is the previous panel's tightened margin.
   const belowRem = Number(
     panel.match(/padding-top:\s*calc\(([\d.]+)rem - 1px\)/)![1],
   );
@@ -208,25 +191,19 @@ describe('index.css rung panel: a separator, not a container', () => {
   const preRuleGap = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
 
   test('the rule reads as a separator: more room above it than below', () => {
-    // Above must win, or the hairline starts to read as the top edge of a box.
-    // Compared at the default root, where the subtracted pixel counts for most.
+    // Or the hairline starts to read as the top edge of a box.
     expect(above * 16).toBeGreaterThan(belowRem * 16 - 1);
   });
 
   test('a junction costs exactly the gap it replaced, at every text size', () => {
-    // Before the rule existed the panels were separated by plain whitespace.
-    // The rule has to live inside that, so the space above it, the 1px rule,
-    // and the space below it still come to the same total. Because the padding
-    // subtracts the border, the pixels cancel and the identity is exact in rem,
-    // which means it holds at every text-size step rather than only at one.
-    // A rule that arrives with its own breathing room reads as padding.
+    // The padding subtracts the border, so the pixels cancel and the identity
+    // is exact in rem rather than only at one root size.
     expect(above + belowRem).toBe(preRuleGap);
   });
 
   test('the gap under the rule stays within a pixel of the chips row rhythm', () => {
-    // The chips wrap at this gap, so the rule sits one row apart from the row
-    // it introduces: the same rhythm, not a second spacing system. It is the
-    // border's pixel short of exact, which is the price of the identity above.
+    // One row apart from the row it introduces: the same rhythm, not a second
+    // spacing system. The odd pixel is the border's, per the test above.
     const rowGap = Number(
       block('.found__words').match(/gap:\s*([\d.]+)rem/)![1],
     );
@@ -234,9 +211,7 @@ describe('index.css rung panel: a separator, not a container', () => {
   });
 
   test('the last panel leaves the tier meter where it was before the rule', () => {
-    // Only the between-panel margin is tightened. The last panel keeps the full
-    // 0.75rem it had when the panels were separated by whitespace alone, so
-    // adding the rule did not drag the meter up under it.
+    // Only the between-panel margin tightens; this one still clears the meter.
     const panelBottom = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
     expect(panelBottom).toBe(0.75);
   });

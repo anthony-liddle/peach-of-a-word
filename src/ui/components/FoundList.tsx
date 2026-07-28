@@ -259,17 +259,12 @@ export function FoundList({
             </li>
           </ul>
 
-          {/* The trophy case: the words she found at a rung, opened from the
-              tally above and sitting directly under it. A list of finds only.
-              It never says how many words exist at the rung, because the size
-              of the obscure tail is the one number the ladder must never show:
-              a denominator here would turn open-ended discovery into a grind.
-              The per-length grid below is untouched; that view answers a
-              different question (what am I still missing) and both stay. */}
-          {/* The count gates the panel as well as the trigger. FoundList is not
-              keyed by puzzle, so a rung left open on the last rack is still open
-              on this one; without the count test it would reopen as an empty
-              list on a rack with nothing at that rung. */}
+          {/* The trophy case: her finds at a rung, and never how many exist
+              there. A denominator would turn open-ended discovery into a grind.
+
+              The count gates the panel as well as the trigger: FoundList is not
+              keyed by puzzle, so a rung left open on the last rack would
+              otherwise reopen empty on a rack with nothing at it. */}
           {LADDER_RUNGS.filter(
             (r) => openRungs.has(r) && rungWords[r].length > 0,
           ).map((r) => (
