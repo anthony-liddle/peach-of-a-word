@@ -189,3 +189,68 @@ describe('How the Words Work popup', () => {
     expect(document.activeElement).toBe(first);
   });
 });
+
+/**
+ * The panel is the one place in the app that teaches the model to a new player,
+ * so these pin it to the model the game actually runs. Each assertion names a
+ * claim the panel used to make and no longer should: they are regression pins
+ * against the retired pre-Phase-3 framing creeping back in a copy edit.
+ */
+describe('How the Words Work explains the current model', () => {
+  const body = () => (popup() as HTMLElement).textContent ?? '';
+
+  it('never names the retired Edition Complete win state', () => {
+    renderGame();
+    openPopup();
+    expect(body()).not.toMatch(/edition complete/i);
+  });
+
+  it('does not call completion the goal, nor what the bar fills toward', () => {
+    renderGame();
+    openPopup();
+    // The bar fills toward par in points. Completion is a separate word-count
+    // peak above the named ladder, which is exactly what the goal rebuild split.
+    expect(body()).not.toMatch(/is the goal/i);
+    expect(body()).not.toMatch(/bar fills toward/i);
+  });
+
+  it('says the ladder is climbed by points, with rarer words worth more', () => {
+    renderGame();
+    openPopup();
+    expect(body()).toMatch(/points/i);
+    expect(body()).toMatch(/rarer/i);
+  });
+
+  it('puts completion above the ladder and never calls it required', () => {
+    renderGame();
+    openPopup();
+    expect(body()).toMatch(/every common word/i);
+    expect(body()).toMatch(/never required|not required/i);
+  });
+
+  it('names the real validation boundary, not ENABLE alone', () => {
+    renderGame();
+    openPopup();
+    // ENABLE union SCOWL 95 plus the curated patch layer, since Phase 1.
+    expect(body()).not.toMatch(/ENABLE is the dictionary that decides/i);
+    expect(body()).toMatch(/ENABLE/);
+    expect(body()).toMatch(/SCOWL/);
+    expect(body()).toMatch(/patch/i);
+  });
+
+  it('keeps the paragraph on a common-feeling word landing outside the set', () => {
+    renderGame();
+    openPopup();
+    expect(body()).toMatch(/common here is a statistical line/i);
+    expect(body()).toMatch(/It simply was not on today's short list\./);
+  });
+
+  it('still grades the off-page finds and calls them extra, not lesser', () => {
+    renderGame();
+    openPopup();
+    expect(body()).toMatch(/Uncommon/);
+    expect(body()).toMatch(/Rare/);
+    expect(body()).toMatch(/Mythic/);
+    expect(body()).toMatch(/not lesser, they are\s+extra/i);
+  });
+});
