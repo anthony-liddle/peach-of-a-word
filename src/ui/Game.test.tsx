@@ -1069,6 +1069,34 @@ describe('Game word tap routing', () => {
     expect(document.querySelector('.reveal--quiet')).not.toBeNull();
   });
 
+  it('tapping a word inside an opened rarity rung list opens the same modal', async () => {
+    render(
+      <Game
+        data={fakeData()}
+        audio={new NullAudioEngine()}
+        storage={new GameStorage(fakeStore())}
+      />,
+    );
+    submitWord('sane'); // off-page, uncommon
+
+    // The rung tally opens the words found at that rung, and a chip in that
+    // list runs the one definition path, not a second one of its own.
+    fireEvent.click(screen.getByRole('button', { name: /1 uncommon/i }));
+    const panel = screen.getByRole('group', {
+      name: /uncommon words you found/i,
+    });
+    fireEvent.click(
+      within(panel).getByRole('button', { name: /sane, show definition/i }),
+    );
+
+    expect(
+      await screen.findByText(
+        'No definition on hand for this one. It is still a real word you found.',
+      ),
+    ).toBeInTheDocument();
+    expect(document.querySelector('.reveal--quiet')).not.toBeNull();
+  });
+
   it('a word with no definition shows the exact no-definition copy', async () => {
     render(
       <Game

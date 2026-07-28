@@ -1026,6 +1026,58 @@ button {
   font-weight: 600;
 }
 
+/* A rarity tally is also the way in to the words behind it: tap a rung to open
+   the list of finds at it. Button reset, so it keeps the look it had as text.
+
+   24px, matching .found__word, is the right floor and not a lowered one: WCAG
+   2.5.8 (AA) is 24 by 24 and excepts targets sized by the line-height of the
+   text around them, which is these. The 44px of 2.5.5 (AAA) is for standalone
+   controls, and using it here inflated every tally row to 44px.
+
+   A real box, not the pseudo-ring .textsize uses: the 0.35rem row gap means an
+   overhanging ring would overlap the next rung and steal its taps. */
+.summary__rung {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.22em;
+}
+.summary__rung:hover,
+.summary__rung:focus-visible {
+  text-decoration: underline solid;
+}
+
+/* The list a rung opens, hairline-ruled off from whatever precedes it. Finds
+   only: no count, no denominator, never a hint of how many words a rung holds.
+
+   No container, matching the per-length groups below. A filled card here read
+   as an input (white is reserved for the compose field and tiles) and came out
+   a lozenge, since --radius is the pill-button token, 999px in cute.
+
+   The rule sits inside the gap rather than adding one: 0.4rem above it and the
+   rest below sum to the 0.75rem the panels were spaced by beforehand. The calc
+   subtracts the rule's own pixel, which is what keeps that sum exact at every
+   text size, an absolute border being immune to the rem scaling around it. */
+.summary__rungpanel {
+  margin: 0 0 0.75rem;
+  padding-top: calc(0.35rem - 1px);
+  border-top: 1px solid var(--rule);
+}
+/* Every panel but the last gives up margin to make room for the rule below it;
+   the last keeps it all, since the tier meter follows. Not :last-of-type, which
+   silently never matches: the share block is the summary's last div. */
+.summary__rungpanel:has(+ .summary__rungpanel) {
+  margin-bottom: 0.4rem;
+}
+
 /* The daily share, sitting under the score it brags about. A quiet outlined
    button, not the accent fill: the boast is the block it produces, not the
    control. */

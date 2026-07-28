@@ -14,7 +14,9 @@ const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
 
 /** The declaration block of the first rule whose selector list ends with `sel {`. */
 function block(sel: string): string {
-  const escaped = sel.replace(/[.[\]$]/g, '\\$&');
+  // Every regex metacharacter a CSS selector can contain, so combinators and
+  // functional pseudo-classes (:has(+ .foo)) match literally.
+  const escaped = sel.replace(/[.[\]$()+*?^|{}\\]/g, '\\$&');
   const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
   if (!match) throw new Error(`No rule found for selector: ${sel}`);
   return match[1]!;
@@ -73,6 +75,145 @@ describe('index.css sizes: the supporting-text floor', () => {
     const m = block('.found__points').match(/font-size:\s*([\d.]+)em/);
     expect(m).not.toBeNull();
     expect(Number(m![1])).toBeGreaterThanOrEqual(0.9);
+  });
+});
+
+/** The value of a custom property inside the given theme's token block. */
+function token(theme: 'letterpress' | 'cute', name: string): string {
+  const head =
+    theme === 'letterpress'
+      ? ":root,\\s*\\[data-theme='letterpress'\\]"
+      : "\\[data-theme='cute'\\]";
+  const b = css.match(new RegExp(`${head}\\s*\\{([\\s\\S]*?)\\n\\}`))?.[1];
+  if (!b) throw new Error(`No token block for theme: ${theme}`);
+  const m = b.match(new RegExp(`${name}:\\s*(#[0-9a-f]{6})`, 'i'));
+  if (!m) throw new Error(`No ${name} in the ${theme} tokens`);
+  return m[1]!;
+}
+
+function relativeLuminance(hex: string): number {
+  const parts = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = parts.map((c) =>
+    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
+  ) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort(
+    (x, y) => y - x,
+  ) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe('index.css glossary inks: AA on both readout surfaces', () => {
+  // Chips sit on --paper; --paper-deep is pinned too so anything that ever
+  // gains a fill cannot quietly fail. Both themes, since they move the deep
+  // surface opposite ways (cute to white, letterpress darker).
+  const surfaces = ['--paper', '--paper-deep'];
+  const inks = ['--discovery', '--ink-soft', '--ink'];
+  const pairs = surfaces.flatMap((s) => inks.map((i) => [s, i] as const));
+
+  describe.each(['letterpress', 'cute'] as const)('%s', (theme) => {
+    test.each(pairs)('%s carries %s at AA', (surface, ink) => {
+      expect(
+        contrast(token(theme, ink), token(theme, surface)),
+      ).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+});
+
+describe('index.css rarity rung triggers: tappable at the floor', () => {
+  // The smallest controls on the board, so the floors matter most here.
+  test('the rung trigger holds the 24px inline tap floor in its own box', () => {
+    // WCAG 2.5.8 (AA), which excepts targets sized by the line-height around
+    // them. The 44px of 2.5.5 (AAA) is for standalone controls.
+    const m = block('.summary__rung').match(/min-height:\s*(\d+)px/);
+    expect(m).not.toBeNull();
+    expect(Number(m![1])).toBeGreaterThanOrEqual(24);
+  });
+
+  test('the rung trigger uses the same floor as the word chip beside it', () => {
+    // Pinned to each other, not to the number twice: if one moves, so should
+    // the other.
+    const rung = block('.summary__rung').match(/min-height:\s*(\d+)px/)![1];
+    const chip = block('.found__word').match(/min-height:\s*(\d+)px/)![1];
+    expect(rung).toBe(chip);
+  });
+
+  test('the rung trigger inherits its type, never shrinking below the tally row', () => {
+    expect(block('.summary__rung')).toMatch(/font:\s*inherit/);
+    expect(block('.summary__rung')).not.toMatch(/font-size/);
+  });
+
+  test('the rung trigger and its panel carry no opacity veil', () => {
+    expect(block('.summary__rung')).not.toContain('opacity');
+    expect(block('.summary__rungpanel')).not.toContain('opacity');
+  });
+});
+
+describe('index.css rung panel: a separator, not a container', () => {
+  // One hairline and nothing else. A fill, a box, or a radius would put back
+  // the card that made the panel the loudest thing on the page.
+  const panel = block('.summary__rungpanel');
+
+  test('the divider is the group header rule: same token, 1px, no new colour', () => {
+    expect(panel).toMatch(/border-top:\s*1px solid var\(--rule\)/);
+    expect(block('.found__grouphead')).toMatch(
+      /border-bottom:\s*1px solid var\(--rule\)/,
+    );
+  });
+
+  test('every panel draws the rule, the first one included', () => {
+    // An adjacent-sibling rule would exempt the first and leave the seam under
+    // the tally block unruled.
+    expect(css).not.toMatch(
+      /\.summary__rungpanel \+ \.summary__rungpanel\s*\{/,
+    );
+  });
+
+  test('the panel draws no box: no fill, no radius, no side or bottom edge', () => {
+    expect(panel).not.toMatch(/background/);
+    expect(panel).not.toMatch(/border-radius/);
+    expect(panel).not.toMatch(/border-(left|right|bottom)/);
+  });
+
+  // Below the rule is the panel's padding-top, less the rule's own 1px; above
+  // it is the previous panel's tightened margin.
+  const belowRem = Number(
+    panel.match(/padding-top:\s*calc\(([\d.]+)rem - 1px\)/)![1],
+  );
+  const above = Number(
+    block('.summary__rungpanel:has(+ .summary__rungpanel)').match(
+      /margin-bottom:\s*([\d.]+)rem/,
+    )![1],
+  );
+  const preRuleGap = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
+
+  test('the rule reads as a separator: more room above it than below', () => {
+    // Or the hairline starts to read as the top edge of a box.
+    expect(above * 16).toBeGreaterThan(belowRem * 16 - 1);
+  });
+
+  test('a junction costs exactly the gap it replaced, at every text size', () => {
+    // The padding subtracts the border, so the pixels cancel and the identity
+    // is exact in rem rather than only at one root size.
+    expect(above + belowRem).toBe(preRuleGap);
+  });
+
+  test('the gap under the rule stays within a pixel of the chips row rhythm', () => {
+    // One row apart from the row it introduces: the same rhythm, not a second
+    // spacing system. The odd pixel is the border's, per the test above.
+    const rowGap = Number(
+      block('.found__words').match(/gap:\s*([\d.]+)rem/)![1],
+    );
+    expect(Math.abs(belowRem * 16 - 1 - rowGap * 16)).toBeLessThanOrEqual(1);
+  });
+
+  test('the last panel leaves the tier meter where it was before the rule', () => {
+    // Only the between-panel margin tightens; this one still clears the meter.
+    const panelBottom = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
+    expect(panelBottom).toBe(0.75);
   });
 });
 
