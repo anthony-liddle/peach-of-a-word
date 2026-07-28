@@ -150,6 +150,54 @@ describe('index.css rarity rung triggers: tappable at the floor', () => {
   });
 });
 
+describe('index.css rung panel: a separator, not a container', () => {
+  // The panel separates from its neighbours with the one divider the readout
+  // already uses, and nothing else. A fill, a border box, or a radius would put
+  // back the card that made the panel the loudest thing on the page.
+  const panel = block('.summary__rungpanel');
+
+  test('the divider is the group header rule: same token, 1px, no new colour', () => {
+    expect(panel).toMatch(/border-top:\s*1px solid var\(--rule\)/);
+    expect(block('.found__grouphead')).toMatch(
+      /border-bottom:\s*1px solid var\(--rule\)/,
+    );
+  });
+
+  test('the panel draws no box: no fill, no radius, no border but the hairline', () => {
+    expect(panel).not.toMatch(/background/);
+    expect(panel).not.toMatch(/border-radius/);
+    expect(panel).not.toMatch(/border-(left|right|bottom)/);
+  });
+
+  test('the rule reads as a separator: more room above it than below', () => {
+    // Space below is the panel's own padding-top; space above comes from the
+    // previous panel's margin-bottom. Above must win, or the hairline starts to
+    // read as the top edge of a box.
+    const below = Number(panel.match(/padding-top:\s*([\d.]+)rem/)![1]);
+    const above = Number(panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1]);
+    expect(above).toBeGreaterThan(below);
+  });
+
+  test('the gap under the rule matches the per-length group header exactly', () => {
+    const below = panel.match(/padding-top:\s*([\d.]+)rem/)![1];
+    const groupGap = block('.found__grouphead').match(
+      /margin-bottom:\s*([\d.]+)rem/,
+    )![1];
+    expect(below).toBe(groupGap);
+  });
+
+  test('the block ends the same distance above the meter, open or collapsed', () => {
+    // The tier meter follows whatever the summary block ends with: the stats
+    // when every rung is collapsed, the last panel when one is open. If the two
+    // bottom margins differ, the meter shifts as she opens rungs.
+    const panelBottom = panel.match(/margin:\s*0 0 ([\d.]+)rem/)![1];
+    const statsBottom = block('.summary__stats').match(
+      /margin:\s*0 0 ([\d.]+)rem/,
+    )![1];
+    expect(panelBottom).toBe(statsBottom);
+  });
+});
+
 describe('index.css rack glyphs: proportional at phone width', () => {
   // Phone tiles are larger than desktop tiles (the 4-column grid), so the
   // glyph must be larger there too. A single vw clamp cannot express that:
