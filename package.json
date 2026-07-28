@@ -1,7 +1,7 @@
 {
-  "name": "eight-letters",
+  "name": "peach-of-a-word",
   "version": "1.0.0",
-  "description": "8 Letters in Search of a Word. A lo-fi word game built around finding the long word.",
+  "description": "Make words from eight scrambled letters, then find the source word they all came from. A new puzzle daily.",
   "type": "module",
   "private": true,
   "scripts": {
