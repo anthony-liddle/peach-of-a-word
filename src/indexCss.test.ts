@@ -104,18 +104,22 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-describe('index.css rung panel: AA on the surface it actually sits on', () => {
-  // The rung panel is the first place glossary chips render on --paper-deep
-  // rather than the page paper. The published ratios for these inks were
-  // measured against --paper, so they do not carry over on their own. Measured
-  // here instead of assumed, in both themes, because the two define the deep
-  // surface in opposite directions: cute goes lighter (white), letterpress
-  // darker. The veil tests above cannot catch a token change; this can.
-  const surface = '--paper-deep';
-  const inks: string[] = ['--discovery', '--ink-soft', '--ink'];
+describe('index.css glossary inks: AA on both readout surfaces', () => {
+  // The rung panel originally drew itself a filled card, which put glossary
+  // chips on --paper-deep for the first time. The card is gone and the chips
+  // sit on the page paper like every other group of words, so --paper is the
+  // surface that matters now. Both are asserted anyway: --paper-deep is still
+  // the fill under other surfaces, and keeping it pinned means a panel that
+  // ever regains a fill cannot quietly fail. Measured rather than assumed in
+  // both themes, since the two move the deep surface in opposite directions
+  // (cute to white, letterpress darker). The veil tests above cannot catch a
+  // token change; this can.
+  const surfaces = ['--paper', '--paper-deep'];
+  const inks = ['--discovery', '--ink-soft', '--ink'];
+  const pairs = surfaces.flatMap((s) => inks.map((i) => [s, i] as const));
 
   describe.each(['letterpress', 'cute'] as const)('%s', (theme) => {
-    test.each(inks)(`%s clears AA on ${surface}`, (ink) => {
+    test.each(pairs)('%s carries %s at AA', (surface, ink) => {
       expect(
         contrast(token(theme, ink), token(theme, surface)),
       ).toBeGreaterThanOrEqual(4.5);

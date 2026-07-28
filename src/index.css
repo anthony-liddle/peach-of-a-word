@@ -1064,16 +1064,24 @@ button {
   text-decoration: underline solid;
 }
 
-/* The list a rung opens, directly under the tally block it came from. Inset and
-   ruled in the discovery ink so it reads as an aside belonging to the rung, not
-   as a second glossary. It lists finds and nothing else: no count, no
-   denominator, never a hint of how many words the rung holds. */
+/* The list a rung opens, directly under the tally block it came from.
+
+   No container. The per-length groups below solve the same problem the same
+   way, chips on the page with whitespace around them, and that is the
+   established pattern for "here is a group of found words". The first attempt
+   at this panel gave it a filled card, which was wrong three ways: white is
+   reserved for the surfaces you type into (the compose field, the letter
+   tiles), so a white block in the readout read as an input and became the
+   loudest thing on the page; --radius is the pill-button token (999px in cute),
+   so a three-line block came out a lozenge; and the border added a weight the
+   readout does not otherwise use.
+
+   The chips carry the rung themselves, by mark shape and by their own ink, so
+   with two panels open the rungs stay legible with nothing drawn around them.
+   It lists finds and nothing else: no count, no denominator, never a hint of
+   how many words the rung holds. */
 .summary__rungpanel {
-  margin: 0 0 0.9rem;
-  padding: 0.55rem 0.7rem;
-  border-left: 2px solid var(--discovery);
-  border-radius: var(--radius);
-  background: var(--paper-deep);
+  margin: 0 0 0.75rem;
 }
 
 /* The daily share, sitting under the score it brags about. A quiet outlined
