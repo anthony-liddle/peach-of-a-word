@@ -101,9 +101,10 @@ describe('theme-skinned vocabulary', () => {
       'Every common word the rack can spell, found.',
     );
     expect(lp.setFind('sea')).toBe('sea, in the set.');
+    expect(lp.loadingLine).toBe('Setting the type.');
   });
 
-  it('gives cute its own vocabulary for the same thirteen strings', () => {
+  it('gives cute its own vocabulary for the same fourteen strings', () => {
     expect(cute.mastheadSubline).toBe('Pick the peaches');
     expect(cute.submitWord).toBe('Pick word');
     expect(cute.inputPlaceholder).toBe('Pick letters to make a word');
@@ -121,6 +122,17 @@ describe('theme-skinned vocabulary', () => {
       'Every common word these letters can grow, picked.',
     );
     expect(cute.setFind('sea')).toBe('sea, in the basket.');
+    expect(cute.loadingLine).toBe('Picking the peaches.');
+  });
+
+  it('pairs the loading line with the masthead subline in both themes', () => {
+    // The first line the app ever shows is the subline in the continuous
+    // present. Both skins have to move together or the app opens in one
+    // vocabulary and settles into another a moment later.
+    expect(lp.mastheadSubline).toBe('Set the type');
+    expect(lp.loadingLine).toBe('Setting the type.');
+    expect(cute.mastheadSubline).toBe('Pick the peaches');
+    expect(cute.loadingLine).toBe('Picking the peaches.');
   });
 
   it('does not translate the empty state literally, because the metaphor inverts', () => {
