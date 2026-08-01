@@ -83,6 +83,7 @@ describe('index.css sizes: the supporting-text floor', () => {
     ['.found__groupcount', 0.875],
     ['.found__word', 1.1],
     ['.summary__stats', 0.9],
+    ['.summary__bestlabel', 0.9],
     ['.legend', 0.875],
     ['.legend__caption', 0.74],
     ['.tier__key', 0.875],

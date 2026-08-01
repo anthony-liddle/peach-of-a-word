@@ -117,6 +117,34 @@ function isLadder(category: Category): category is LadderRung {
   return category !== 'set' && category !== 'source';
 }
 
+/**
+ * The category in words, for a chip's accessible name. The mark carries the
+ * category visually and is decorative, so this is the only place a screen reader
+ * can learn it. The set reads in the theme's own vocabulary, the same string the
+ * legend prints, so what is spoken and what is printed cannot drift apart.
+ */
+function categoryName(category: Category, theme: Theme): string {
+  if (category === 'source') return 'source word';
+  if (category === 'set') return copy(theme).keyOnPage;
+  return RUNG_NAMES[category];
+}
+
+/**
+ * The best-scoring find: the highest score across everything found, the source
+ * word included. Ties resolve to the first found, so the line holds steady when
+ * an equal-scoring word lands later rather than flickering to the newcomer; the
+ * found list is append-ordered, so a strict > keeps the incumbent.
+ *
+ * Derived from the same classified array the length groups and the rung buckets
+ * read, so the best word cannot be one category here and another there.
+ */
+function bestOf(words: readonly Word[]): Word | null {
+  return words.reduce<Word | null>(
+    (best, w) => (best === null || w.score > best.score ? w : best),
+    null,
+  );
+}
+
 export function FoundList({
   puzzle,
   found,
@@ -130,6 +158,9 @@ export function FoundList({
   // other.
   const words = useMemo(() => classifyFound(puzzle, found), [puzzle, found]);
   const groups = useMemo(() => buildGroups(puzzle, words), [puzzle, words]);
+
+  // Her best find, from that same pass rather than a third walk over found.
+  const bestWord = useMemo(() => bestOf(words), [words]);
 
   // Completion is the set, the one place an X of Y belongs. The count comes from
   // the tier, the same source the bar reads, so the two can never diverge.
@@ -179,7 +210,7 @@ export function FoundList({
       <button
         type="button"
         className={`found__word found__word--${w.category}`}
-        aria-label={`${w.word}, show definition`}
+        aria-label={`${w.word}, ${categoryName(w.category, theme)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}, show definition`}
         onClick={(e) => {
           e.currentTarget.focus();
           onWordTap(w.word, e.currentTarget);
@@ -291,6 +322,23 @@ export function FoundList({
               set-versus-off-page climb, and the explicit Set and Off-page numbers
               beneath it. There is no second bar under the input. */}
           <TierMeter tier={tier} theme={theme} />
+
+          {/* Her best find, sitting with the tier and the points it belongs
+              beside. Deliberately not announced: it changes often during normal
+              play, and a stream of announcements for a frequently-changing stat
+              is noise. It is a stat to read, not an event to hear, so the two
+              existing live regions stay as they are and no third one is added.
+
+              The label carries no metaphor, so it stays shared across themes
+              rather than going through themeCopy. */}
+          {bestWord !== null && (
+            <div className="summary__best">
+              <span className="summary__bestlabel">Best word</span>
+              {/* The same chip the word list below renders, so the mark, the
+                  colour and the points agree by construction, not by copying. */}
+              <ul className="found__words">{renderChip(bestWord)}</ul>
+            </div>
+          )}
 
           {summaryExtra}
         </div>

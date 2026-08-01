@@ -257,7 +257,11 @@ describe('FoundList word tap', () => {
         onWordTap={onWordTap}
       />,
     );
-    const btn = screen.getByRole('button', { name: /sea, show definition/i });
+    // Scoped to the grid: the summary's best-word line renders the same chip,
+    // so a lone find appears twice by design.
+    const btn = screen
+      .getByText('sea', { selector: '.found__group .found__wordtext' })
+      .closest('button') as HTMLElement;
     fireEvent.click(btn);
     expect(onWordTap).toHaveBeenCalledWith('sea', btn);
     expect(document.activeElement).toBe(btn);
@@ -291,13 +295,14 @@ function renderRungs(
   found: string[],
   puzzle: Puzzle = makeRungPuzzle(),
   onWordTap: (word: string, trigger: HTMLElement) => void = () => {},
+  theme: Theme = 'letterpress',
 ) {
   return render(
     <FoundList
       puzzle={puzzle}
       found={found}
       tier={computeTier(new Set(found), puzzle)}
-      theme="letterpress"
+      theme={theme}
       onWordTap={onWordTap}
     />,
   );
@@ -407,7 +412,7 @@ describe('FoundList rarity rung panels', () => {
 
     const panel = screen.getByRole('group', { name: /rare words you found/i });
     const chip = within(panel).getByRole('button', {
-      name: /sneer, show definition/i,
+      name: /^sneer,.*show definition/i,
     });
     fireEvent.click(chip);
     expect(onWordTap).toHaveBeenCalledWith('sneer', chip);
@@ -516,9 +521,14 @@ function makePointsPuzzle(): Puzzle {
   };
 }
 
-/** The chip for a word: the button its visible word text sits inside. */
+/**
+ * The chip for a word as the per-length grid renders it. Scoped to the grid
+ * because the summary's best-word line renders the same chip for the best find.
+ */
 function chipFor(word: string): HTMLElement {
-  const text = screen.getAllByText(word, { selector: '.found__wordtext' })[0]!;
+  const text = screen.getByText(word, {
+    selector: '.found__group .found__wordtext',
+  });
   return text.closest('button') as HTMLElement;
 }
 
@@ -561,5 +571,143 @@ describe('FoundList inline points', () => {
         /^\+\d+$/,
       );
     }
+  });
+});
+
+/**
+ * A rack where a seven-letter mythic (11 for the length, plus the +4 rung bonus)
+ * scores exactly 15, tying the eight-letter source word. The tie is the real
+ * case, not a contrived one: it is how an off-page find draws level with the
+ * crown, and it is where "first found wins" has to hold.
+ */
+function makeTiePuzzle(): Puzzle {
+  const common = ['serenade', 'sea', 'near', 'eased'];
+  const mythic = ['endears'];
+  const setPoints = common.reduce((s, w) => s + findScore(w, 'set'), 0);
+  return {
+    sourceWord: 'serenade',
+    letters: 'adeenrs',
+    validationWords: new Set([...common, ...mythic]),
+    commonWords: new Set(common),
+    uncommonWords: new Set(),
+    rareWords: new Set(),
+    mythicWords: new Set(mythic),
+    reachableScore: setPoints,
+  };
+}
+
+/** The best-word line in the summary, or null when it is not rendered. */
+function bestLine(): HTMLElement | null {
+  return document.querySelector('.summary__best');
+}
+
+describe('FoundList best word', () => {
+  it('shows the highest-scoring find, the source word included', () => {
+    renderRungs(['sea', 'near', 'serenade', 'sane'], makePointsPuzzle());
+
+    const line = bestLine()!;
+    expect(within(line).getByText('serenade')).toBeInTheDocument();
+    expect(within(line).getByText('+15')).toBeInTheDocument();
+  });
+
+  it('picks an off-page find when it outscores everything in the set', () => {
+    // endears is mythic here: 11 for the length plus 4, against sea's 1.
+    renderRungs(['sea', 'endears'], makeTiePuzzle());
+
+    expect(within(bestLine()!).getByText('endears')).toBeInTheDocument();
+  });
+
+  it('resolves a tie to the first found', () => {
+    // Both score 15. serenade was found first, so it holds the line.
+    expect(findScore('endears', 'mythic')).toBe(15);
+    expect(findScore('serenade', 'set')).toBe(15);
+
+    renderRungs(['serenade', 'endears'], makeTiePuzzle());
+    expect(within(bestLine()!).getByText('serenade')).toBeInTheDocument();
+  });
+
+  it('stays put when an equal-scoring word is found afterwards', () => {
+    const puzzle = makeTiePuzzle();
+    const { rerender } = renderRungs(['serenade'], puzzle);
+    expect(within(bestLine()!).getByText('serenade')).toBeInTheDocument();
+
+    const found = ['serenade', 'endears'];
+    rerender(
+      <FoundList
+        puzzle={puzzle}
+        found={found}
+        tier={computeTier(new Set(found), puzzle)}
+        theme="letterpress"
+        onWordTap={() => {}}
+      />,
+    );
+
+    // The newcomer ties but does not take the line: a stat that flickers on an
+    // equal find is a stat she cannot read.
+    expect(within(bestLine()!).getByText('serenade')).toBeInTheDocument();
+    expect(within(bestLine()!).queryByText('endears')).toBeNull();
+  });
+
+  it('is absent with nothing found', () => {
+    renderRungs([], makePointsPuzzle());
+    expect(bestLine()).toBeNull();
+  });
+
+  it('carries the category colour and the category mark, never colour alone', () => {
+    renderRungs(['sea', 'endears'], makeTiePuzzle());
+    const chip = within(bestLine()!).getByText('endears').closest('button')!;
+
+    // The colour, and the mark that survives colour-blind play beside it.
+    expect(chip.className).toMatch(/found__word--mythic/);
+    expect(chip.querySelector('.mark--mythic')).not.toBeNull();
+  });
+
+  it('names the category in words, since the mark is decorative', () => {
+    renderRungs(['sea', 'endears'], makeTiePuzzle());
+    const chip = within(bestLine()!).getByText('endears').closest('button')!;
+
+    expect(chip.querySelector('.mark')).toHaveAttribute('aria-hidden', 'true');
+    expect(chip).toHaveAccessibleName(
+      'endears, Mythic, 15 points, show definition',
+    );
+  });
+
+  it('speaks the set category in the theme own vocabulary', () => {
+    renderRungs(['sea'], makePointsPuzzle(), () => {}, 'cute');
+    const chip = within(bestLine()!).getByText('sea').closest('button')!;
+
+    // The legend prints "in the basket" for a cute set word; the spoken name
+    // says the same thing rather than inventing a second word for it.
+    expect(chip).toHaveAccessibleName(
+      'sea, in the basket, 1 point, show definition',
+    );
+  });
+
+  it('renders the same chip the glossary renders, not a parallel one', () => {
+    renderRungs(['sea', 'endears'], makeTiePuzzle());
+
+    const inLine = within(bestLine()!).getByText('endears').closest('button')!;
+    const group = screen
+      .getByRole('heading', { name: '7 letters' })
+      .closest('section') as HTMLElement;
+    const inGroup = within(group).getByText('endears').closest('button')!;
+
+    // Same construction, so the mark, the colour and the points cannot drift
+    // apart between the two readouts.
+    expect(inLine.className).toBe(inGroup.className);
+    expect(inLine.getAttribute('aria-label')).toBe(
+      inGroup.getAttribute('aria-label'),
+    );
+  });
+
+  it('is a stat to read, not an event to hear: nothing announces it', () => {
+    renderRungs(['sea', 'endears'], makeTiePuzzle());
+    const line = bestLine()!;
+
+    // No third announcement mechanism: the line updates often during normal
+    // play, and a stream of announcements for it would be noise.
+    expect(line.closest('[aria-live]')).toBeNull();
+    expect(line.closest('[role="status"]')).toBeNull();
+    expect(line.querySelector('[aria-live]')).toBeNull();
   });
 });

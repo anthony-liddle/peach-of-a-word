@@ -1088,6 +1088,31 @@ button {
   margin-bottom: 0.4rem;
 }
 
+/* Her best find, under the bar and beside the points it belongs with. The chip
+   is the glossary's own, so the mark and the colour arrive with it and nothing
+   here restyles them.
+
+   Wraps rather than shrinks: at the largest text step a long word plus its mark
+   and its number will not sit beside the label on a 320px column, so the label
+   takes its own line instead of squeezing the chip. */
+.summary__best {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+}
+/* A label, so it stays quieter than the word it introduces. Muted with colour
+   and size, never opacity: the veil dropped ink-soft to 3.3:1 elsewhere in this
+   file, and this text is smaller than that was. */
+.summary__bestlabel {
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
 /* The daily share, sitting under the score it brags about. A quiet outlined
    button, not the accent fill: the boast is the block it produces, not the
    control. */
