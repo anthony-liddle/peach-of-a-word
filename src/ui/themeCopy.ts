@@ -105,6 +105,12 @@ const CUTE_GLOSSARY_TITLE = `The ${BASKET}`;
 export interface ThemeCopy {
   /** Under the masthead: what you do here. */
   readonly mastheadSubline: string;
+  /**
+   * The line held on screen while the word lists load, before the board exists.
+   * The subline in the continuous present: the app is doing the thing it is
+   * about to invite you to do.
+   */
+  readonly loadingLine: string;
   /** The submit control. Uppercased by CSS, so it is sentence case here. */
   readonly submitWord: string;
   /** The composing stick before a letter is picked. */
@@ -134,6 +140,7 @@ export interface ThemeCopy {
 export const THEME_COPY: Record<Theme, ThemeCopy> = {
   letterpress: {
     mastheadSubline: 'Set the type',
+    loadingLine: 'Setting the type.',
     submitWord: 'Set word',
     inputPlaceholder: 'Set letters to make a word',
     // A full case means none of the type has been set yet: it is all still in
@@ -151,6 +158,7 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
   },
   cute: {
     mastheadSubline: 'Pick the peaches',
+    loadingLine: 'Picking the peaches.',
     submitWord: 'Pick word',
     inputPlaceholder: 'Pick letters to make a word',
     // Mirrored, not translated: fruit leaves the tree and goes into the basket,
