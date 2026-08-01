@@ -1348,13 +1348,29 @@ button {
   font-weight: 600;
   font-style: italic;
 }
-/* Points are the reward, so every off-page find shows them inline, in discovery
-   blue at full strength: the token clears AA on its own, and the old opacity
-   veil pulled it under 4.5:1 at this size. */
+/* Points are the reward, so every find shows them inline. The ink follows the
+   chip's category rather than being one colour for all of them: discovery ink
+   means off-page throughout this stylesheet (it is the one colour the whole
+   rarity ladder shares, and the rung tallies take it too), so a set word printing
+   a discovery-blue score would be the one place colour stopped meaning one thing.
+
+   The default is therefore the muted ink, which is also the quieter reading now
+   that the majority of the list carries a number. Muted by colour and size,
+   never opacity: the veil that used to sit here pulled the ink under 4.5:1.
+   The rung and source rules below restore each category's own colour, so the
+   off-page chips are unchanged and the source word stays one amber unit. */
 .found__points {
-  color: var(--discovery);
+  color: var(--ink-soft);
   font-weight: 600;
   font-size: 0.9em;
+}
+.found__word--uncommon .found__points,
+.found__word--rare .found__points,
+.found__word--mythic .found__points {
+  color: var(--discovery);
+}
+.found__word--source .found__points {
+  color: var(--crown-deep);
 }
 .found__rung-note {
   margin-left: 0.4em;

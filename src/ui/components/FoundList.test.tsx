@@ -483,7 +483,6 @@ describe('FoundList rarity rung panels', () => {
   it('exposes each open rung as a real button in the tab order', () => {
     renderRungs(ALL_RUNG_FINDS);
     const trigger = screen.getByRole('button', { name: /2 rare/i });
-
     // A native button, so Space and Enter activate it without a key handler,
     // and it is reachable by Tab without a tabindex of its own.
     expect(trigger.tagName).toBe('BUTTON');
@@ -493,5 +492,74 @@ describe('FoundList rarity rung panels', () => {
 
     trigger.focus();
     expect(document.activeElement).toBe(trigger);
+  });
+});
+
+/**
+ * A rack carrying a seven-letter set word, so the two numbers Bea asked about
+ * (11 for a seven-letter set word, 15 for the eight-letter source word) are both
+ * real finds on one board rather than arithmetic asserted in the abstract.
+ */
+function makePointsPuzzle(): Puzzle {
+  const common = ['serenade', 'endears', 'sea', 'near', 'eased'];
+  const uncommon = ['sane'];
+  const setPoints = common.reduce((s, w) => s + findScore(w, 'set'), 0);
+  return {
+    sourceWord: 'serenade',
+    letters: 'adeenrs',
+    validationWords: new Set([...common, ...uncommon]),
+    commonWords: new Set(common),
+    uncommonWords: new Set(uncommon),
+    rareWords: new Set(),
+    mythicWords: new Set(),
+    reachableScore: setPoints,
+  };
+}
+
+/** The chip for a word: the button its visible word text sits inside. */
+function chipFor(word: string): HTMLElement {
+  const text = screen.getAllByText(word, { selector: '.found__wordtext' })[0]!;
+  return text.closest('button') as HTMLElement;
+}
+
+describe('FoundList inline points', () => {
+  it('shows the points on a set word, not only on the off-page finds', () => {
+    renderRungs(['sea', 'near', 'sane'], makePointsPuzzle());
+
+    // sea is three letters (1 point), near is four (3). Neither carries a rarity
+    // bonus, and both are in the set, which is exactly why they showed nothing.
+    expect(within(chipFor('sea')).getByText('+1')).toBeInTheDocument();
+    expect(within(chipFor('near')).getByText('+3')).toBeInTheDocument();
+  });
+
+  it('shows 11 on a seven-letter set word and 15 on the source word', () => {
+    renderRungs(['endears', 'serenade'], makePointsPuzzle());
+
+    expect(within(chipFor('endears')).getByText('+11')).toBeInTheDocument();
+    expect(within(chipFor('serenade')).getByText('+15')).toBeInTheDocument();
+  });
+
+  it('reads the number from the shared scoring path, rarity bonus included', () => {
+    renderRungs(['sane'], makePointsPuzzle());
+
+    // sane is a four-letter uncommon: 3 for the length plus the +1 rung bonus.
+    // Unchanged from before, so the off-page chip format is untouched.
+    expect(findScore('sane', 'uncommon')).toBe(4);
+    expect(within(chipFor('sane')).getByText('+4')).toBeInTheDocument();
+  });
+
+  it('gives every found word a number, none left silent', () => {
+    renderRungs(
+      ['serenade', 'endears', 'sea', 'near', 'sane'],
+      makePointsPuzzle(),
+    );
+
+    const chips = [...document.querySelectorAll('.found__group .found__word')];
+    expect(chips).toHaveLength(5);
+    for (const chip of chips) {
+      expect(chip.querySelector('.found__points')?.textContent).toMatch(
+        /^\+\d+$/,
+      );
+    }
   });
 });

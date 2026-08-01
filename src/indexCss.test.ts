@@ -42,6 +42,38 @@ describe('index.css contrast: no opacity veils on text', () => {
   });
 });
 
+describe('index.css inline points: the ink follows the category', () => {
+  // Discovery ink means off-page in this stylesheet: it is the one colour the
+  // whole rarity ladder shares, and the rung tallies take it too. Now that every
+  // chip carries a number, the default must not be that ink, or a set word would
+  // print an off-page-coloured score and colour would stop meaning one thing.
+  test('the default points ink is the muted one, not the discovery ink', () => {
+    const b = block('.found__points');
+    expect(b).toMatch(/color:\s*var\(--ink-soft\)/);
+    expect(b).not.toMatch(/color:\s*var\(--discovery\)/);
+  });
+
+  test('every off-page rung keeps the discovery ink on its points', () => {
+    // The off-page chip format is unchanged: the rungs restore exactly the ink
+    // they had before the number reached the rest of the chips.
+    for (const rung of ['uncommon', 'rare', 'mythic']) {
+      expect(css).toMatch(
+        new RegExp(
+          `\\.found__word--${rung} \\.found__points[^{]*\\{[^}]*var\\(--discovery\\)`,
+        ),
+      );
+    }
+  });
+
+  test('the source word carries its own crown ink through to its points', () => {
+    // The chip is crown-deep, so its number is too: the one word Bea asked about
+    // reads as a single amber unit rather than a word with a foreign number.
+    expect(css).toMatch(
+      /\.found__word--source \.found__points\s*\{[^}]*var\(--crown-deep\)/,
+    );
+  });
+});
+
 describe('index.css sizes: the supporting-text floor', () => {
   // The audit's fix raised the glossary and supporting text so nothing a
   // player reads during play renders below 14px (0.875rem at the default

@@ -187,14 +187,15 @@ export function FoundList({
       >
         <span className={`mark mark--${w.category}`} aria-hidden="true" />
         <span className="found__wordtext">{w.word}</span>
+        {/* Every find shows what it is worth, set words included. The score is
+            the one already classified above, so the number on a chip is the
+            same number the bar and the total counted, never a local sum. */}
+        <span className="found__points">+{w.score}</span>
         {isLadder(w.category) && (
-          <>
-            <span className="found__points">+{w.score}</span>
-            {/* Hiding rung-note for now */}
-            <span className="found__rung-note">
-              {RUNG_NAMES[w.category].toLowerCase()}
-            </span>
-          </>
+          /* Hiding rung-note for now */
+          <span className="found__rung-note">
+            {RUNG_NAMES[w.category].toLowerCase()}
+          </span>
         )}
         {/* hiding for now */}
         <span className="found__disclosure" aria-hidden="true">
