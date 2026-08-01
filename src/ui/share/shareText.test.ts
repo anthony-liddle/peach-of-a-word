@@ -76,7 +76,7 @@ describe('buildShareText', () => {
   test('produces the exact block for the worked example', () => {
     const expected = [
       '🍑 Peach of a Word · Jun 18',
-      'Peachy Keen Supreme',
+      'Peachy Keen Supreme · 37 of 37 words',
       '🟥🟥🟥🟥🟥🟪🟪🟪🟪🟪',
       '✦ 29 Uncommon · 4 Rare · 2 Mythic',
       '226 pts',
@@ -103,11 +103,59 @@ describe('buildShareText', () => {
       const out = buildShareText(
         exampleResult({ tierLabel: 'The Complete Works' }),
       );
-      expect(out.split('\n')[1]).toBe('The Complete Works');
+      expect(out.split('\n')[1]).toBe('The Complete Works · 37 of 37 words');
     });
 
     test('never prints the retired Set X/Y line', () => {
       expect(buildShareText(exampleResult())).not.toMatch(/Set \d+\/\d+/);
+    });
+
+    test('carries the completion count, so the points have something to measure against', () => {
+      const out = buildShareText(exampleResult());
+      expect(out.split('\n')[1]).toBe('Peachy Keen Supreme · 37 of 37 words');
+    });
+
+    test('reads correctly mid-climb, where the count is arguably more use', () => {
+      const out = buildShareText(
+        exampleResult({ tierLabel: 'Blossom', setFound: 12, setTotal: 21 }),
+      );
+      expect(out.split('\n')[1]).toBe('Blossom · 12 of 21 words');
+    });
+
+    test('carries the count on an untouched board too', () => {
+      const out = buildShareText(
+        exampleResult({ tierLabel: 'First Sprout', setFound: 0, setTotal: 21 }),
+      );
+      expect(out.split('\n')[1]).toBe('First Sprout · 0 of 21 words');
+    });
+
+    test('keeps the tier line short enough for a text message', () => {
+      // The longest crown either theme can print, against the largest set a rack
+      // carries. A tier line that wraps in a message undoes the point of adding
+      // the count, so this is a real bound, not a decorative one.
+      const out = buildShareText(
+        exampleResult({
+          tierLabel: 'Peachy Keen Supreme',
+          setFound: 100,
+          setTotal: 100,
+        }),
+      );
+      const tierLine = out.split('\n')[1]!;
+      expect(tierLine).toBe('Peachy Keen Supreme · 100 of 100 words');
+      expect(tierLine.length).toBeLessThanOrEqual(40);
+    });
+  });
+
+  describe('the rarity ladder keeps its open end', () => {
+    test('counts the rungs with no denominator, even beside a counted set', () => {
+      const out = buildShareText(exampleResult());
+      const rarity = out.split('\n').find((l) => l.startsWith('✦'))!;
+
+      // The set count is the one honest denominator; the ladder gets none, so
+      // the share never advertises how many obscure words a rack holds.
+      expect(rarity).toBe('✦ 29 Uncommon · 4 Rare · 2 Mythic');
+      expect(rarity).not.toMatch(/\bof\b/);
+      expect(rarity).not.toMatch(/\//);
     });
   });
 
@@ -224,6 +272,15 @@ describe('buildShareText', () => {
       for (const word of foundWords) {
         expect(body).not.toContain(word.toUpperCase());
       }
+    });
+
+    test('carries the completion count on the same tier line the daily uses', () => {
+      // Endless has its own identifier line, but the tier line is shared, so the
+      // count reaches both without a second format to keep in step.
+      const out = buildShareText(
+        endlessExample({ tierLabel: 'Ripening', setFound: 9, setTotal: 18 }),
+      );
+      expect(out.split('\n')[1]).toBe('Ripening · 9 of 18 words');
     });
   });
 

@@ -152,6 +152,25 @@ function identifierLine(result: ShareResult): string {
     : base;
 }
 
+/**
+ * The tier line: the earned headline, then how much of the set was completed.
+ * Without the count the block prints a point total with nothing to measure it
+ * against, which is what a recipient (and the player) actually wants to read.
+ *
+ * This is not the denominator the rarity ladder is protected from. That rule
+ * keeps the share from advertising how many obscure words a rack holds, so the
+ * discovery stays open-ended. The completion count is the game's one honest
+ * denominator: the app shows it from the first second of play, so a recipient
+ * learns nothing a player would not see immediately. It reads just as well
+ * mid-climb ("Blossom · 12 of 21 words"), where it is arguably more use.
+ *
+ * Shared by both modes. Endless has its own identifier line above, but the tier
+ * line is the same one, so there is no second format to keep in step.
+ */
+function tierLine(result: ShareResult): string {
+  return `${result.tierLabel} · ${result.setFound} of ${result.setTotal} words`;
+}
+
 /** Build the exact, spoiler-safe share block for a daily or endless result. */
 export function buildShareText(result: ShareResult): string {
   // Lead with the identifier, then the earned tier. The tier is the hook and the
@@ -160,7 +179,7 @@ export function buildShareText(result: ShareResult): string {
   // board. Everything below the identifier is identical across modes.
   const lines = [
     identifierLine(result),
-    result.tierLabel,
+    tierLine(result),
     scoreRow(result.setPoints, result.offPagePoints),
   ];
   const rarity = rarityLine(result.uncommon, result.rare, result.mythic);
