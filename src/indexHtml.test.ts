@@ -63,6 +63,22 @@ describe('index.html', () => {
   test('the OG image alt text describes the new wordmark', () => {
     expect(html).toMatch(/property="og:image:alt"[\s\S]*?Peach of a Word/);
   });
+
+  test('the OG image alt text is the description the generator bakes', () => {
+    // There is exactly one baked card and it has been the cute peach-cream one
+    // since PR #55, so the alt text cannot be theme-skinned; it simply has to
+    // describe the image that ships. scripts/build-icons.ts draws that image
+    // and is the source of truth for what is in it. Read as text rather than
+    // imported, because importing the generator would run it.
+    const generator = readFileSync(
+      resolve(process.cwd(), 'scripts/build-icons.ts'),
+      'utf8',
+    );
+    const declared = /const OG_ALT =\s*'([^']*)'/.exec(generator);
+    expect(declared).not.toBeNull();
+    const alt = declared![1];
+    expect(html).toContain(`content="${alt}"`);
+  });
 });
 
 describe('index.html theme default', () => {
