@@ -86,6 +86,23 @@ describe('dailyShareResult', () => {
       expect(result.offPagePoints).toBe(tier.offPagePoints);
     });
 
+    test('completion count comes from the tier the in-app readout reads', () => {
+      // The count now reaches the share's tier line, so it must come from the
+      // same standing the glossary counter and the bar read, not a second tally
+      // that could drift from it.
+      const found = ['NOTECASE', 'NOTE', 'OCAS', 'NAE', 'ETA'];
+      const tier = computeTier(new Set(found), puzzle);
+      const result = dailyShareResult(
+        puzzle,
+        found,
+        new Date(2026, 5, 18),
+        'Peach of a Word',
+        'cute',
+      );
+      expect(result.setFound).toBe(tier.setFound);
+      expect(result.setTotal).toBe(tier.setTotal);
+    });
+
     test('total still matches the tier when there are no off-page finds', () => {
       const found = ['NOTECASE', 'NOTE', 'CAT'];
       const tier = computeTier(new Set(found), puzzle);

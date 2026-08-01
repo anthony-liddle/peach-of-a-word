@@ -96,6 +96,14 @@ function type(word: string) {
 }
 
 /**
+ * Scopes a word lookup to the per-length grid. The summary's best-word line
+ * renders the same chip the grid does, so a lone find legitimately appears twice
+ * inside the glossary region; without this, "did the word reach the list" would
+ * fail on the duplicate rather than on the behaviour it means to check.
+ */
+const GRID = { selector: '.found__group .found__wordtext' } as const;
+
+/**
  * The theme the board is actually rendering in. Read from the document rather
  * than assumed, because tests in this file set it both ways and the app writes
  * it on mount: a helper that guessed the default would look for the wrong
@@ -189,7 +197,7 @@ describe('Game', () => {
     fireEvent.keyDown(window, { key: 'Enter' });
 
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).getByText('sea')).toBeInTheDocument();
+    expect(within(glossary).getByText('sea', GRID)).toBeInTheDocument();
   });
 
   it('rejects a non-word with direction, not an apology', () => {
@@ -205,7 +213,9 @@ describe('Game', () => {
 
   function findWord(text: string): HTMLElement {
     const glossary = screen.getByRole('region', { name: /words found/i });
-    return within(glossary).getByText(text).closest('button') as HTMLElement;
+    return within(glossary)
+      .getByText(text, GRID)
+      .closest('button') as HTMLElement;
   }
 
   it('renders an uncommon find with its mark and inline points', () => {
@@ -383,7 +393,7 @@ describe('Game', () => {
     // A fresh mount with the same store restores the found word.
     renderGame(store);
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).getByText('sea')).toBeInTheDocument();
+    expect(within(glossary).getByText('sea', GRID)).toBeInTheDocument();
   });
 
   it('toggles mute', () => {
@@ -490,7 +500,7 @@ describe('Game mode state retention', () => {
     expect(within(glossary()).queryByText('sea')).not.toBeInTheDocument();
 
     toEndless();
-    expect(within(glossary()).getByText('sea')).toBeInTheDocument();
+    expect(within(glossary()).getByText('sea', GRID)).toBeInTheDocument();
   });
 
   it('keeps daily and endless progress separate', () => {
@@ -501,7 +511,7 @@ describe('Game mode state retention', () => {
 
     findWord('sea'); // found in endless
     toDaily();
-    expect(within(glossary()).getByText('near')).toBeInTheDocument();
+    expect(within(glossary()).getByText('near', GRID)).toBeInTheDocument();
     expect(within(glossary()).queryByText('sea')).not.toBeInTheDocument();
   });
 
@@ -509,7 +519,7 @@ describe('Game mode state retention', () => {
     renderGame();
     toEndless();
     findWord('sea');
-    expect(within(glossary()).getByText('sea')).toBeInTheDocument();
+    expect(within(glossary()).getByText('sea', GRID)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /new puzzle/i }));
     expect(within(glossary()).queryByText('sea')).not.toBeInTheDocument();
@@ -534,7 +544,7 @@ describe('Game mode state retention', () => {
     // Fresh mount, same store: endless rehydrates with its progress.
     renderGame(store);
     toEndless();
-    expect(within(glossary()).getByText('sea')).toBeInTheDocument();
+    expect(within(glossary()).getByText('sea', GRID)).toBeInTheDocument();
   });
 });
 
@@ -578,7 +588,7 @@ describe('Game edition complete', () => {
     // Play continues: a bonus word can still be set.
     findWord('sane');
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).getByText('sane')).toBeInTheDocument();
+    expect(within(glossary).getByText('sane', GRID)).toBeInTheDocument();
 
     // Dismiss, and it does not return (fires once).
     fireEvent.click(screen.getByRole('button', { name: /keep going/i }));
@@ -1054,7 +1064,7 @@ describe('Controls layout', () => {
     type('sea');
     fireEvent.click(screen.getByRole('button', { name: submitLabel() }));
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).getByText('sea')).toBeInTheDocument();
+    expect(within(glossary).getByText('sea', GRID)).toBeInTheDocument();
   });
 
   it('Shuffle rearranges the rack', () => {
@@ -1084,7 +1094,7 @@ describe('Controls layout', () => {
     fireEvent.keyDown(window, { key: 'a' });
     fireEvent.keyDown(window, { key: 'Enter' });
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).getByText('sea')).toBeInTheDocument();
+    expect(within(glossary).getByText('sea', GRID)).toBeInTheDocument();
   });
 
   it('renders one shared structure for both themes (skin differs, not layout)', () => {
@@ -1115,9 +1125,7 @@ describe('Game word tap routing', () => {
   }
 
   function findWordButton(word: string) {
-    return screen.getByRole('button', {
-      name: new RegExp(`${word}, show definition`, 'i'),
-    });
+    return screen.getByText(word, GRID).closest('button') as HTMLElement;
   }
 
   afterEach(() => {
@@ -1182,7 +1190,9 @@ describe('Game word tap routing', () => {
       name: /uncommon words you found/i,
     });
     fireEvent.click(
-      within(panel).getByRole('button', { name: /sane, show definition/i }),
+      within(panel).getByRole('button', {
+        name: /^sane,.*show definition/i,
+      }),
     );
 
     expect(

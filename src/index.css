@@ -1088,6 +1088,31 @@ button {
   margin-bottom: 0.4rem;
 }
 
+/* Her best find, under the bar and beside the points it belongs with. The chip
+   is the glossary's own, so the mark and the colour arrive with it and nothing
+   here restyles them.
+
+   Wraps rather than shrinks: at the largest text step a long word plus its mark
+   and its number will not sit beside the label on a 320px column, so the label
+   takes its own line instead of squeezing the chip. */
+.summary__best {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+}
+/* A label, so it stays quieter than the word it introduces. Muted with colour
+   and size, never opacity: the veil dropped ink-soft to 3.3:1 elsewhere in this
+   file, and this text is smaller than that was. */
+.summary__bestlabel {
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
 /* The daily share, sitting under the score it brags about. A quiet outlined
    button, not the accent fill: the boast is the block it produces, not the
    control. */
@@ -1348,13 +1373,29 @@ button {
   font-weight: 600;
   font-style: italic;
 }
-/* Points are the reward, so every off-page find shows them inline, in discovery
-   blue at full strength: the token clears AA on its own, and the old opacity
-   veil pulled it under 4.5:1 at this size. */
+/* Points are the reward, so every find shows them inline. The ink follows the
+   chip's category rather than being one colour for all of them: discovery ink
+   means off-page throughout this stylesheet (it is the one colour the whole
+   rarity ladder shares, and the rung tallies take it too), so a set word printing
+   a discovery-blue score would be the one place colour stopped meaning one thing.
+
+   The default is therefore the muted ink, which is also the quieter reading now
+   that the majority of the list carries a number. Muted by colour and size,
+   never opacity: the veil that used to sit here pulled the ink under 4.5:1.
+   The rung and source rules below restore each category's own colour, so the
+   off-page chips are unchanged and the source word stays one amber unit. */
 .found__points {
-  color: var(--discovery);
+  color: var(--ink-soft);
   font-weight: 600;
   font-size: 0.9em;
+}
+.found__word--uncommon .found__points,
+.found__word--rare .found__points,
+.found__word--mythic .found__points {
+  color: var(--discovery);
+}
+.found__word--source .found__points {
+  color: var(--crown-deep);
 }
 .found__rung-note {
   margin-left: 0.4em;

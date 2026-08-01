@@ -25,16 +25,14 @@ function baseResult(
   title: string,
   theme: Theme,
 ) {
-  let setFound = 0;
   let uncommon = 0;
   let rare = 0;
   let mythic = 0;
 
   for (const word of found) {
-    if (puzzle.commonWords.has(word)) {
-      setFound += 1;
-      continue;
-    }
+    // Set words are counted from the tier below, not here; they still short
+    // circuit so a set word is never handed to the rung classifier.
+    if (puzzle.commonWords.has(word)) continue;
     switch (classifyWord(word, puzzle)) {
       case 'uncommon':
         uncommon += 1;
@@ -55,8 +53,11 @@ function baseResult(
   return {
     title,
     tierLabel,
-    setFound,
-    setTotal: puzzle.commonWords.size,
+    // The completion count reaches the share's tier line, so it comes from the
+    // standing the in-app counter and the bar already read, never a second
+    // tally alongside it.
+    setFound: tier.setFound,
+    setTotal: tier.setTotal,
     uncommon,
     rare,
     mythic,

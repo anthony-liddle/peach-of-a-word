@@ -97,7 +97,9 @@ describe('ShareButton', () => {
     fireEvent.click(screen.getByRole('button', { name: /share/i }));
 
     const payload = share.mock.calls[0]![0] as ShareData;
-    expect(payload.text?.split('\n')[1]).toBe('Blank Page');
+    // The rank is letterpress-skinned, and the tier line carries the completion
+    // count beside it: one of the four common words found.
+    expect(payload.text?.split('\n')[1]).toBe('Blank Page · 1 of 4 words');
   });
 
   test('shares an endless block labeled Endless, with the found source word', async () => {
