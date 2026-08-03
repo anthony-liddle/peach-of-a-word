@@ -59,9 +59,36 @@ function assertNotMarkup(name: string, res: Response): void {
   }
 }
 
+/** A data asset the deploy did not serve, carrying the status that said so. */
+export class AssetHttpError extends Error {
+  constructor(
+    name: string,
+    readonly status: number,
+  ) {
+    super(`Failed to load ${name}: HTTP ${status}`);
+    this.name = 'AssetHttpError';
+  }
+}
+
+/**
+ * Whether a load failure means this bundle is stale rather than something else.
+ *
+ * Only a 404 on a data asset says that, and it says it unambiguously: the data
+ * directory is named for its own contents, so a path that is absent from the
+ * deploy is one this bundle was built against and the deploy has moved past.
+ *
+ * Deliberately narrow. A dropped connection, a 500, or an asset served as HTML
+ * are all load failures too, and none of them is fixed by fetching the page
+ * again. Reloading on those would turn one broken deploy into a reload for every
+ * visitor against an origin that is already failing.
+ */
+export function isStaleBundleError(err: unknown): boolean {
+  return err instanceof AssetHttpError && err.status === 404;
+}
+
 async function fetchText(name: string): Promise<string> {
   const res = await fetch(assetUrl(name));
-  if (!res.ok) throw new Error(`Failed to load ${name}: HTTP ${res.status}`);
+  if (!res.ok) throw new AssetHttpError(name, res.status);
   assertNotMarkup(name, res);
   return res.text();
 }

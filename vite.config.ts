@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
-import { rename } from 'node:fs/promises';
+import { rename, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { dataVersion } from './scripts/lib/dataVersion.ts';
 
@@ -32,7 +32,12 @@ function versionedData(isBuild: boolean): Plugin {
     closeBundle: async () => {
       if (!isBuild) return;
       const out = resolve(__dirname, './dist');
-      await rename(resolve(out, 'data'), resolve(out, `data${suffix}`));
+      const target = resolve(out, `data${suffix}`);
+      // Vite empties the output directory by default, so the target is normally
+      // absent. Clearing it anyway keeps a build into a dirty dist from either
+      // merging two deploys' data or failing on a rename onto a live directory.
+      await rm(target, { recursive: true, force: true });
+      await rename(resolve(out, 'data'), target);
     },
   };
 }

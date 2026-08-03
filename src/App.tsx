@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Analytics } from '@vercel/analytics/react';
-import { loadGameData, type GameData } from '@/data/gameData.ts';
+import {
+  isStaleBundleError,
+  loadGameData,
+  type GameData,
+} from '@/data/gameData.ts';
 import { WebAudioEngine } from '@/audio/WebAudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
 import { Game } from '@/ui/Game.tsx';
@@ -24,13 +28,13 @@ type LoadState =
 const RELOAD_KEY = 'peach:reloaded-for-stale-data';
 
 /**
- * Reload once when the data will not load, because the likeliest cause is a
- * stale bundle.
+ * Reload once when a data asset 404s, because that means this bundle is stale.
  *
  * The data directory is versioned by its contents, so a bundle that survives a
- * data change asks for a directory the deploy no longer serves and the fetch
- * fails. The fix for that is simply to fetch the current page again, which is
- * something the app can do for the player rather than asking them to.
+ * data change asks for a directory the deploy no longer serves. The fix is
+ * simply to fetch the current page again, which the app can do for the player
+ * rather than asking them to. The caller decides what qualifies; see
+ * isStaleBundleError, which is narrow on purpose.
  *
  * Guarded by a sessionStorage flag so it cannot loop: if the reload does not
  * help, which is what a genuinely broken deploy looks like, the second attempt
@@ -66,7 +70,7 @@ export function App() {
       .then((data) => active && setLoad({ status: 'ready', data }))
       .catch((err: unknown) => {
         console.error('Game data failed to load.', err);
-        if (reloadForStaleBundle()) return;
+        if (isStaleBundleError(err) && reloadForStaleBundle()) return;
         if (active) setLoad({ status: 'error' });
       });
     return () => {

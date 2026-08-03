@@ -12,11 +12,15 @@ const load = vi.hoisted(() => ({
   next: () => new Promise<never>(() => {}),
 }));
 
-vi.mock('@/data/gameData.ts', () => ({
+vi.mock('@/data/gameData.ts', async (importOriginal) => ({
+  // Only the loader is faked. AssetHttpError and isStaleBundleError are the
+  // real ones, so these tests exercise the same staleness check the app uses.
+  ...(await importOriginal<typeof import('@/data/gameData.ts')>()),
   loadGameData: () => load.next(),
 }));
 
 import { App } from './App.tsx';
+import { AssetHttpError } from './data/gameData.ts';
 import { useTheme, type Theme } from './ui/useTheme.ts';
 
 /**
@@ -151,8 +155,10 @@ describe('the error screen', () => {
  * than asking the player to.
  */
 describe('the stale-bundle reload', () => {
-  it('reloads once on the first failure instead of showing an error', async () => {
-    const reload = await renderFailedLoad(new Error('HTTP 404'), {
+  const missing = () => new AssetHttpError('common-pool.txt', 404);
+
+  it('reloads once on a 404 instead of showing an error', async () => {
+    const reload = await renderFailedLoad(missing(), {
       alreadyReloaded: false,
     });
 
@@ -162,13 +168,35 @@ describe('the stale-bundle reload', () => {
   });
 
   it('shows the error rather than reloading again, so it cannot loop', async () => {
-    const reload = await renderFailedLoad(new Error('HTTP 404'));
+    const reload = await renderFailedLoad(missing());
 
     expect(reload).not.toHaveBeenCalled();
     expect(
       screen.getByText('The word lists did not load. Reload to try again.'),
     ).toBeInTheDocument();
   });
+
+  it.each([
+    ['a server error', new AssetHttpError('common-pool.txt', 500)],
+    ['a dropped connection', new TypeError('Failed to fetch')],
+    [
+      'an asset served as HTML',
+      new Error('Asset x came back as HTML, not data.'),
+    ],
+  ])(
+    'does not reload for %s, which reloading would not fix',
+    async (_case, err) => {
+      // Narrow on purpose. Only a 404 says this bundle is stale. Reloading on
+      // every failure would turn one broken deploy into a reload for every
+      // visitor against an origin that is already failing.
+      const reload = await renderFailedLoad(err, { alreadyReloaded: false });
+
+      expect(reload).not.toHaveBeenCalled();
+      expect(
+        screen.getByText('The word lists did not load. Reload to try again.'),
+      ).toBeInTheDocument();
+    },
+  );
 
   it('falls through to the error screen when sessionStorage is unavailable', async () => {
     // Private mode and blocked storage partitions both throw here. Without a
@@ -177,7 +205,7 @@ describe('the stale-bundle reload', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    const reload = await renderFailedLoad(new Error('HTTP 404'), {
+    const reload = await renderFailedLoad(missing(), {
       alreadyReloaded: false,
     });
 
