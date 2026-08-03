@@ -64,6 +64,14 @@ export function extractNwl2020Purged(html: string): string[] {
 export interface DenyExclusion {
   readonly word: string;
   readonly reason: string;
+  /**
+   * The 1-based line this entry was read from, carried so later errors can name
+   * the row without quoting it. These files are slur lists, so an error that
+   * echoes an entry carries a slur wherever it goes, and a position counted over
+   * parsed entries would leave a developer hand-counting non-comment rows to
+   * find it.
+   */
+  readonly line: number;
 }
 
 function normalize(raw: string): string | null {
@@ -78,12 +86,15 @@ function normalize(raw: string): string | null {
  */
 export function parsePurgedList(text: string): string[] {
   const out = new Set<string>();
-  for (const line of text.split('\n')) {
+  // Identified by line, never by value. This list is the purged slurs, so an
+  // error quoting an entry puts a slur wherever the error goes, and the line
+  // number points at the row to open regardless.
+  for (const [index, line] of text.split('\n').entries()) {
     const trimmed = line.trim();
     if (trimmed === '' || trimmed.startsWith('#')) continue;
     const word = normalize(trimmed);
     if (word === null) {
-      throw new Error(`Purged-list entry is not a-z only: "${trimmed}"`);
+      throw new Error(`Purged list line ${index + 1}: entry is not a-z only.`);
     }
     out.add(word);
   }
@@ -99,7 +110,7 @@ export function parseReasonedWords(
   label: string,
 ): DenyExclusion[] {
   const out: DenyExclusion[] = [];
-  for (const line of tsv.split('\n')) {
+  for (const [index, line] of tsv.split('\n').entries()) {
     const trimmed = line.trim();
     if (trimmed === '' || trimmed.startsWith('#')) continue;
     const [rawWord, rawReason] = line.split('\t');
@@ -107,9 +118,9 @@ export function parseReasonedWords(
     if (word === null || word === 'word') continue; // header or blank
     const reason = (rawReason ?? '').trim();
     if (reason === '') {
-      throw new Error(`${label} "${word}" needs a reason.`);
+      throw new Error(`${label} on line ${index + 1} needs a reason.`);
     }
-    out.push({ word, reason });
+    out.push({ word, reason, line: index + 1 });
   }
   return out;
 }
@@ -169,10 +180,13 @@ export function deriveDenylist(
   boundary: ReadonlySet<string>,
 ): DerivedDenylist {
   const source = new Set(purged);
-  for (const { word } of exclusions) {
+  // By line, never by value, for the same reason the parsers above are: these
+  // entries are drawn from the purged slur list.
+  for (const { word, line } of exclusions) {
     if (!source.has(word)) {
       throw new Error(
-        `Deny exclusion "${word}" is not in the source list; it excludes nothing.`,
+        `Deny exclusion on line ${line} is not in the source list; ` +
+          `it excludes nothing.`,
       );
     }
   }

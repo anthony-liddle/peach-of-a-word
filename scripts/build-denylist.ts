@@ -5,7 +5,7 @@
  *
  * Reads the vendored NWL2020 purge and the reviewed exclusion list, intersects
  * with the committed validation boundary, and rewrites the nwl2020 block of
- * public/data/dictionary-patch.tsv. Idempotent: the block is replaced whole, so
+ * scripts/data-raw/dictionary-patch.tsv. Idempotent: the block is replaced whole, so
  * re-running after a vendor refresh or an exclusion edit converges. Offline; the
  * network step lives in vendor-lists.ts.
  *
@@ -17,7 +17,7 @@
  * path untouched. A separate file would have needed all three widened to say
  * the same thing twice.
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   deriveDenylist,
@@ -25,7 +25,8 @@ import {
   parsePurgedList,
   parseSupplementSlurs,
 } from './lib/denylist.ts';
-import { ASSET_DIR, DATA_RAW_DIR, writeAsset } from './lib/util.ts';
+import { loadUnpatchedBoundary } from './lib/sources.ts';
+import { DATA_RAW_DIR, PATCH_PATH } from './lib/util.ts';
 
 /** The note column value that marks a row as belonging to this block. */
 export const NWL2020_NOTE = 'nwl2020';
@@ -100,28 +101,19 @@ async function main(): Promise<void> {
   console.log('Deriving the slur denylist.\n');
 
   const raw = (f: string) => readFile(join(DATA_RAW_DIR, f), 'utf8');
-  const [
-    purgedText,
-    exclusionsText,
-    supplementText,
-    enableText,
-    additionsText,
-    patchText,
-  ] = await Promise.all([
-    raw('nwl2020-purged.txt'),
-    raw('nwl2020-exclusions.tsv'),
-    raw('supplement-slurs.tsv'),
-    readFile(join(ASSET_DIR, 'enable.txt'), 'utf8'),
-    readFile(join(ASSET_DIR, 'scowl95-additions.txt'), 'utf8'),
-    readFile(join(ASSET_DIR, 'dictionary-patch.tsv'), 'utf8'),
-  ]);
+  const [purgedText, exclusionsText, supplementText, boundaryWords, patchText] =
+    await Promise.all([
+      raw('nwl2020-purged.txt'),
+      raw('nwl2020-exclusions.tsv'),
+      raw('supplement-slurs.tsv'),
+      // The boundary before the patch. Deriving from the shipped lists would be
+      // circular now that they carry the denylist baked in: the words this is
+      // meant to find are already gone from them.
+      loadUnpatchedBoundary(),
+      readFile(PATCH_PATH, 'utf8'),
+    ]);
 
-  const words = (text: string) =>
-    text
-      .split('\n')
-      .map((w) => w.trim())
-      .filter(Boolean);
-  const boundary = new Set([...words(enableText), ...words(additionsText)]);
+  const boundary = new Set(boundaryWords);
 
   const purged = parsePurgedList(purgedText);
   const exclusions = parseDenyExclusions(exclusionsText);
@@ -174,9 +166,12 @@ async function main(): Promise<void> {
     base +
     `${BLOCK_HEADER.join('\n')}\n${rows.join('\n')}\n` +
     `${SUPPLEMENT_HEADER.join('\n')}\n${supplementRows.join('\n')}\n`;
-  await writeAsset('dictionary-patch.tsv', next);
+  await writeFile(PATCH_PATH, next, 'utf8');
 
-  console.log('\nDone. Wrote public/data/dictionary-patch.tsv.');
+  console.log(
+    '\nDone. Wrote scripts/data-raw/dictionary-patch.tsv.\n' +
+      'Run pnpm data:bake to carry the change into the shipped lists.',
+  );
 }
 
 main().catch((err) => {

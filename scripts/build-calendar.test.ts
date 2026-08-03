@@ -14,6 +14,10 @@ import type { Dictionary, WordSource } from '@/engine/types.ts';
 import { parseExclusions } from './lib/exclusions.ts';
 import { parseReasonedWords } from './lib/denylist.ts';
 import { loadPatchedPools } from './lib/pools.ts';
+import { loadUnpatchedBoundary } from './lib/sources.ts';
+
+/** The shipped data directory, read directly so tests see what ships. */
+const DATA = join(import.meta.dirname, '..', 'public', 'data');
 
 const ADMISSIONS = new Map(
   parseReasonedWords(
@@ -36,12 +40,6 @@ const EXCLUSIONS = parseExclusions(
  * Real-data checks against the baked assets. These prove eligibility is wired up
  * (the 582 anchor) and that the committed calendar is in sync with the data.
  */
-const DATA = join(import.meta.dirname, '..', 'public', 'data');
-const read = (f: string) =>
-  readFileSync(join(DATA, f), 'utf8')
-    .split('\n')
-    .map((w) => w.trim())
-    .filter(Boolean);
 
 let dictionary: Dictionary;
 let commonPool: WordSource;
@@ -78,7 +76,10 @@ describe('the calendar build derives from patched pools', () => {
   // keeps the ones that clear the floor, so a word present in these pools is
   // inside a par value and a completion count. Reading the raw lists left every
   // denied word in those denominators even though the runtime had removed it.
-  const deniedSlurs = readFileSync('public/data/dictionary-patch.tsv', 'utf8')
+  const deniedSlurs = readFileSync(
+    'scripts/data-raw/dictionary-patch.tsv',
+    'utf8',
+  )
     .split('\n')
     .map((l) => l.split('\t'))
     .filter((c) => c[1]?.trim() === 'deny' && c[3]?.trim() === 'nwl2020')
@@ -110,10 +111,15 @@ describe('the calendar build derives from patched pools', () => {
     }
   });
 
-  it('unpatched pools would still hold them, which is what was wrong', () => {
-    // The discriminator. Same assertion, raw lists: it must fail, or the two
-    // tests above prove nothing about the fix.
-    const raw = createListDictionary(read('enable.txt'));
+  it('unpatched pools would still hold them, which is what was wrong', async () => {
+    // The discriminator. Same assertion against the boundary before the patch,
+    // derived from the vendored raw lists: it must find the denied words, or the
+    // two tests above prove nothing about the fix.
+    //
+    // It reads the vendored sources rather than the shipped ones because the
+    // shipped lists now carry the denylist baked in. Reading enable.txt here
+    // would be asking a patched list whether it is patched.
+    const raw = createListDictionary(await loadUnpatchedBoundary());
     expect(deniedSlurs.some((w) => raw.has(w))).toBe(true);
   });
 });

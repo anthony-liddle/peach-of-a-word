@@ -1,6 +1,5 @@
 import type { Dictionary, WordSource } from '@/engine/types.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
-import { applyPatch, parsePatch } from './patch.ts';
 import type { SourceEntry } from './types.ts';
 
 /** The local calendar epoch baked into the daily calendar. */
@@ -36,13 +35,61 @@ export interface GameData {
   readonly sourceEntry: (word: string) => SourceEntry | undefined;
 }
 
-function assetUrl(name: string): string {
-  return `${import.meta.env.BASE_URL}data/${name}`;
+/**
+ * The data directory carries a hash of its own contents, so a bundle only ever
+ * asks for the data it was built against. If the data has moved on, this path is
+ * not in the current deploy and the fetch fails loudly instead of handing the
+ * bundle files it was not built to parse.
+ */
+export function assetUrl(name: string): string {
+  return `${import.meta.env.BASE_URL}data${__DATA_VERSION__}/${name}`;
+}
+
+/**
+ * A word list arriving as HTML is the failure that matters here. If a host ever
+ * answers a missing asset with a rewrite to index.html rather than a 404, res.ok
+ * is true and the word-list parser turns markup into thousands of junk words: no
+ * error, no safe message, a game that is quietly wrong. A JSON asset would throw
+ * on parse, but a word list fails open, so the content type is checked.
+ */
+function assertNotMarkup(name: string, res: Response): void {
+  const type = res.headers?.get?.('content-type') ?? '';
+  if (type.includes('text/html')) {
+    throw new Error(`Asset ${name} came back as HTML, not data.`);
+  }
+}
+
+/** A data asset the deploy did not serve, carrying the status that said so. */
+export class AssetHttpError extends Error {
+  constructor(
+    name: string,
+    readonly status: number,
+  ) {
+    super(`Failed to load ${name}: HTTP ${status}`);
+    this.name = 'AssetHttpError';
+  }
+}
+
+/**
+ * Whether a load failure means this bundle is stale rather than something else.
+ *
+ * Only a 404 on a data asset says that, and it says it unambiguously: the data
+ * directory is named for its own contents, so a path that is absent from the
+ * deploy is one this bundle was built against and the deploy has moved past.
+ *
+ * Deliberately narrow. A dropped connection, a 500, or an asset served as HTML
+ * are all load failures too, and none of them is fixed by fetching the page
+ * again. Reloading on those would turn one broken deploy into a reload for every
+ * visitor against an origin that is already failing.
+ */
+export function isStaleBundleError(err: unknown): boolean {
+  return err instanceof AssetHttpError && err.status === 404;
 }
 
 async function fetchText(name: string): Promise<string> {
   const res = await fetch(assetUrl(name));
-  if (!res.ok) throw new Error(`Failed to load ${name}: HTTP ${res.status}`);
+  if (!res.ok) throw new AssetHttpError(name, res.status);
+  assertNotMarkup(name, res);
   return res.text();
 }
 
@@ -67,7 +114,6 @@ export async function loadGameData(): Promise<GameData> {
     beyond95Text,
     sourceJson,
     calendarJson,
-    patchText,
   ] = await Promise.all([
     fetchText('enable.txt'),
     fetchText('scowl95-additions.txt'),
@@ -76,35 +122,27 @@ export async function loadGameData(): Promise<GameData> {
     fetchText('beyond-size-95.txt'),
     fetchText('source-pool.json'),
     fetchText('daily-calendar.json'),
-    fetchText('dictionary-patch.tsv'),
   ]);
 
   // The validation boundary is ENABLE union SCOWL 95: ENABLE plus the within-95
   // SCOWL words it lacks (shipped as the additions complement so nothing is
   // listed twice). The bands stay derived from the same SCOWL v1 list, so the
   // newly valid words land in their true rung and the mythic tail is unchanged.
+  //
+  // These lists arrive patched. The allowlist, denylist, and demotions are baked
+  // in at build time by pnpm data:bake, so there is no patch to fetch and no
+  // patch to parse here. That is deliberate: the merged pools are fully
+  // determined at build time, and re-deriving them per load meant a cached
+  // bundle could meet a newer patch file and crash on an action it did not know.
   const validation = [
     ...parseWordList(enableText),
     ...parseWordList(additionsText),
   ];
 
-  // Apply the curated patch on top of the merged lists before they back the
-  // engine. The allowlist joins validation and its band; the denylist is
-  // removed. Everything downstream sees one merged set of lists.
-  const lists = applyPatch(
-    {
-      enable: validation,
-      common: parseWordList(commonText),
-      beyond70: parseWordList(beyond70Text),
-      beyond95: parseWordList(beyond95Text),
-    },
-    parsePatch(patchText),
-  );
-
-  const dictionary = createListDictionary(lists.enable);
-  const commonPool = createListWordSource(lists.common);
-  const beyond70Pool = createListWordSource(lists.beyond70);
-  const beyond95Pool = createListWordSource(lists.beyond95);
+  const dictionary = createListDictionary(validation);
+  const commonPool = createListWordSource(parseWordList(commonText));
+  const beyond70Pool = createListWordSource(parseWordList(beyond70Text));
+  const beyond95Pool = createListWordSource(parseWordList(beyond95Text));
 
   const entries = JSON.parse(sourceJson) as SourceEntry[];
   const byWord = new Map(entries.map((e) => [e.word, e]));

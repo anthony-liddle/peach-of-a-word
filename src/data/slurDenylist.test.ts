@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   createPuzzle,
@@ -8,7 +7,14 @@ import {
   type Puzzle,
 } from '@/engine/index.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
-import { applyPatch, parsePatch, type PatchableLists } from './patch.ts';
+import type { PatchableLists } from './patch.ts';
+import {
+  readCalendarWords,
+  readCommittedPatch,
+  readPatchText,
+  readShippedLists,
+  withPatchUndone,
+} from './shippedLists.ts';
 
 /**
  * The slur denylist, asserted end to end against the committed assets.
@@ -24,28 +30,11 @@ import { applyPatch, parsePatch, type PatchableLists } from './patch.ts';
  *   blocking is the failure mode a published list makes easy, so it is tested
  *   as hard as the blocking is.
  */
-function readList(name: string): string[] {
-  return readFileSync(`public/data/${name}`, 'utf8')
-    .split('\n')
-    .map((w) => w.trim())
-    .filter(Boolean);
-}
-
-const patchText = readFileSync('public/data/dictionary-patch.tsv', 'utf8');
-const patch = parsePatch(patchText);
-const base: PatchableLists = {
-  enable: [...readList('enable.txt'), ...readList('scowl95-additions.txt')],
-  common: readList('common-pool.txt'),
-  beyond70: readList('beyond-size-70.txt'),
-  beyond95: readList('beyond-size-95.txt'),
-};
-const merged = applyPatch(base, patch);
-
-const calendar = (
-  JSON.parse(readFileSync('public/data/daily-calendar.json', 'utf8')) as {
-    words: string[];
-  }
-).words;
+// The shipped lists carry the denylist already, so these assert on the bytes the
+// player downloads rather than on a merge performed in the test.
+const patch = readCommittedPatch();
+const merged: PatchableLists = readShippedLists();
+const calendar = readCalendarWords();
 
 /**
  * The deny rows carrying the nwl2020 note. Read from the note column rather than
@@ -54,7 +43,7 @@ const calendar = (
  * empty set. scripts/lib/denylist.test.ts separately proves the block equals the
  * derivation from the vendored source.
  */
-const denied = patchText
+const denied = readPatchText()
   .split('\n')
   .map((line) => line.split('\t'))
   .filter(
@@ -87,9 +76,11 @@ const bands = (p: Puzzle) => [
 ];
 
 describe('the denylist is wired to the shipped patch', () => {
-  it('ships both derived blocks, 218 from the source and 25 supplemented', () => {
-    expect(denied).toHaveLength(243);
-    expect(deniedSet.size).toBe(243);
+  it('ships both derived blocks, 216 from the source and 23 supplemented', () => {
+    // Down from 218 and 25: cunt, cunts, slut and sluts are vulgar rather than
+    // slurs, so they came off the denylist and were demoted instead.
+    expect(denied).toHaveLength(239);
+    expect(deniedSet.size).toBe(239);
     // The supplement covers what a tournament lexicon could justify keeping.
     for (const word of ['faggot', 'fag', 'coon', 'negro', 'tranny', 'homo']) {
       expect(deniedSet.has(word)).toBe(true);
@@ -162,7 +153,10 @@ describe('a denied word is rejected outright', () => {
     // The positive control. The same assertion the suite runs over the real
     // racks, aimed at a rack built to spell a slur that has NOT been denied.
     // If this does not find it, the band check above proves nothing.
-    const planted = applyPatch(base, { allow: [], deny: [], demote: [] });
+    // gringa is not denied, so restoring the denied words is not what puts it
+    // there; it is in the shipped validation already. The restore keeps this
+    // control honest against a future run where it does get denied.
+    const planted = withPatchUndone(merged, patch);
     const puzzle = createPuzzle(
       'gringaxe',
       createListDictionary(planted.enable),

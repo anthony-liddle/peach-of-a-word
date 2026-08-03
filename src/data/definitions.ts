@@ -11,8 +11,12 @@ export interface DefinitionLookup {
 
 type Bundle = Record<string, string>;
 
+// Versioned with the rest of the data, or a stale bundle would keep resolving
+// definitions out of a directory the deploy no longer serves. A miss here is
+// already graceful (no definition shown), but it should still be a miss against
+// the right deploy rather than a hit against the wrong one.
 function bundleUrl(sourceWord: string): string {
-  return `${import.meta.env.BASE_URL}data/defs/${sourceWord}.json`;
+  return `${import.meta.env.BASE_URL}data${__DATA_VERSION__}/defs/${sourceWord}.json`;
 }
 
 async function fetchBundle(sourceWord: string): Promise<Bundle> {

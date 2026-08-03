@@ -7,6 +7,14 @@ export const CACHE_DIR = join(REPO_ROOT, 'scripts', '.cache');
 export const DATA_RAW_DIR = join(REPO_ROOT, 'scripts', 'data-raw');
 export const ASSET_DIR = join(REPO_ROOT, 'public', 'data');
 
+/**
+ * The curated patch. A build input, not a shipped asset: it lives outside
+ * public/ so it is never served. The client used to fetch and re-parse it on
+ * every load, which is how a cached bundle could meet a newer patch and crash.
+ * Its effect is baked into the shipped lists by pnpm data:bake.
+ */
+export const PATCH_PATH = join(DATA_RAW_DIR, 'dictionary-patch.tsv');
+
 export async function ensureDir(path: string): Promise<void> {
   await mkdir(path, { recursive: true });
 }

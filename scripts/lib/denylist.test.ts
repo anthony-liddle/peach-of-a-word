@@ -9,6 +9,7 @@ import {
   parseSupplementSlurs,
   NWL2020_EXPECTED,
 } from './denylist.ts';
+import { loadUnpatchedBoundary } from './sources.ts';
 import { DATA_RAW_DIR } from './util.ts';
 
 const raw = (f: string) => readFileSync(join(DATA_RAW_DIR, f), 'utf8');
@@ -62,9 +63,26 @@ describe('parsePurgedList', () => {
 describe('parseDenyExclusions', () => {
   it('reads word and reason, skipping the header and comments', () => {
     const tsv = '# note\nword\treason\njesuit\tneutral primary sense\n';
+    // Line 3: the physical line, counting the comment and the header it skips.
     expect(parseDenyExclusions(tsv)).toEqual([
-      { word: 'jesuit', reason: 'neutral primary sense' },
+      { word: 'jesuit', reason: 'neutral primary sense', line: 3 },
     ]);
+  });
+
+  it('names the line of an exclusion that excludes nothing, not the word', () => {
+    const exclusions = parseDenyExclusions(
+      '# note\nword\treason\nabsent\tneutral primary sense\n',
+    );
+
+    let message = '';
+    try {
+      deriveDenylist(['alpha'], exclusions, new Set(['alpha']));
+    } catch (err) {
+      message = (err as Error).message;
+    }
+
+    expect(message).toContain('line 3');
+    expect(message).not.toContain('absent');
   });
 
   it('throws on an exclusion with no reason, so the audit cannot rot', () => {
@@ -78,7 +96,7 @@ describe('deriveDenylist', () => {
   it('intersects with the boundary and subtracts the reviewed exclusions', () => {
     const result = deriveDenylist(
       ['alpha', 'beta', 'delta'],
-      [{ word: 'beta', reason: 'neutral primary sense' }],
+      [{ word: 'beta', reason: 'neutral primary sense', line: 1 }],
       boundary,
     );
     expect(result.denied).toEqual(['alpha']);
@@ -88,7 +106,11 @@ describe('deriveDenylist', () => {
 
   it('throws when an exclusion names a word the source does not contain', () => {
     expect(() =>
-      deriveDenylist(['alpha'], [{ word: 'zeta', reason: 'stale' }], boundary),
+      deriveDenylist(
+        ['alpha'],
+        [{ word: 'zeta', reason: 'stale', line: 1 }],
+        boundary,
+      ),
     ).toThrow(/excludes nothing/);
   });
 
@@ -108,30 +130,30 @@ describe('deriveDenylist', () => {
   });
 });
 
-describe('the committed derivation', () => {
+describe('the committed derivation', async () => {
   const purged = parsePurgedList(raw('nwl2020-purged.txt'));
   const exclusions = parseDenyExclusions(raw('nwl2020-exclusions.tsv'));
-  const boundaryOf = (f: string) =>
-    readFileSync(join('public', 'data', f), 'utf8')
-      .split('\n')
-      .map((w) => w.trim())
-      .filter(Boolean);
-  const boundary = new Set([
-    ...boundaryOf('enable.txt'),
-    ...boundaryOf('scowl95-additions.txt'),
-  ]);
+  // The boundary before the patch. The shipped lists carry the denylist baked
+  // in, so deriving from them would be circular: every word this is meant to
+  // find has already been removed, and the derivation would find nothing.
+  const boundary = new Set(await loadUnpatchedBoundary());
   const derived = deriveDenylist(purged, exclusions, boundary);
 
-  it('holds back only words with a neutral primary sense, each with a reason', () => {
-    expect(exclusions).toHaveLength(18);
+  it('holds back only words that pass one of the two tests, each with a reason', () => {
+    // 20, not the original 18: cunt and cunts joined as vulgar-not-slur.
+    expect(exclusions).toHaveLength(20);
     for (const { reason } of exclusions)
       expect(reason.length).toBeGreaterThan(8);
   });
 
-  it('denies 218 of the 259, with 23 no-ops the boundary never had', () => {
-    expect(derived.denied).toHaveLength(218);
+  it('denies 216 of the 259, with 23 no-ops the boundary never had', () => {
+    // Bea's line, and the reason two of these are held back: vulgar is not the
+    // same as slur. cunt and cunts are coarse but they are ordinary words with
+    // real meanings that target no group, so they fail the test this list
+    // applies. They are demoted in the patch instead, never required.
+    expect(derived.denied).toHaveLength(216);
     expect(derived.noOps).toHaveLength(23);
-    expect(derived.denied.length + derived.noOps.length + 18).toBe(
+    expect(derived.denied.length + derived.noOps.length + 20).toBe(
       NWL2020_EXPECTED,
     );
   });
@@ -140,7 +162,10 @@ describe('the committed derivation', () => {
     // The provenance claim, enforced. The nwl2020 rows in the committed patch
     // must equal the derivation from the vendored source and the reviewed
     // exclusions: no row added by hand, none quietly dropped.
-    const shipped = readFileSync('public/data/dictionary-patch.tsv', 'utf8')
+    const shipped = readFileSync(
+      'scripts/data-raw/dictionary-patch.tsv',
+      'utf8',
+    )
       .split('\n')
       .map((line) => line.split('\t'))
       .filter((c) => c[1]?.trim() === 'deny' && c[3]?.trim() === 'nwl2020')
@@ -156,7 +181,8 @@ describe('the committed derivation', () => {
     // lands is the only one that matters here.
     const supplement = parseSupplementSlurs(raw('supplement-slurs.tsv'));
     const words = supplement.map((s) => s.word);
-    expect(supplement).toHaveLength(25);
+    // 23, not the original 25: slut and sluts came out as vulgar, not slurs.
+    expect(supplement).toHaveLength(23);
     for (const { reason } of supplement) {
       expect(reason.length).toBeGreaterThan(8);
     }
