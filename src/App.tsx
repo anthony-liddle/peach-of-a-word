@@ -7,10 +7,18 @@ import { Game } from '@/ui/Game.tsx';
 import { useTheme } from '@/ui/useTheme.ts';
 import { copy } from '@/ui/themeCopy.ts';
 
+/**
+ * The error arm carries no detail, deliberately. An internal error string is
+ * not player-facing copy: it can hold anything the thrower interpolated,
+ * including a word from the lists, and the lists contain words a player is
+ * being protected from. Detail goes to the console for debugging. The screen
+ * gets fixed copy. Because the arm has no field to hold a message, there is
+ * nothing for a later edit to render by accident.
+ */
 type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; data: GameData }
-  | { status: 'error'; message: string };
+  | { status: 'error' };
 
 export function App() {
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
@@ -25,14 +33,10 @@ export function App() {
     let active = true;
     loadGameData()
       .then((data) => active && setLoad({ status: 'ready', data }))
-      .catch(
-        (err: unknown) =>
-          active &&
-          setLoad({
-            status: 'error',
-            message: err instanceof Error ? err.message : 'Could not load.',
-          }),
-      );
+      .catch((err: unknown) => {
+        console.error('Game data failed to load.', err);
+        if (active) setLoad({ status: 'error' });
+      });
     return () => {
       active = false;
     };
@@ -54,7 +58,9 @@ export function App() {
       <div className="app">
         <div className="error">
           <p>The word lists did not load. Reload to try again.</p>
-          <p className="found__empty">{load.message}</p>
+          <p className="found__empty">
+            If it keeps happening, come back in a little while.
+          </p>
         </div>
         <Analytics />
       </div>

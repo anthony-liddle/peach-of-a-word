@@ -5,10 +5,15 @@ import { act, render, renderHook, screen } from '@testing-library/react';
 // so the test exercises the copy and nothing else.
 vi.mock('@vercel/analytics/react', () => ({ Analytics: () => null }));
 
-// A promise that never settles holds the app on the loading state, which is
-// otherwise gone before a single assertion can run.
+// The load is driven per test. A promise that never settles holds the app on
+// the loading state, which is otherwise gone before a single assertion can run;
+// a rejection exercises the error screen.
+const load = vi.hoisted(() => ({
+  next: () => new Promise<never>(() => {}),
+}));
+
 vi.mock('@/data/gameData.ts', () => ({
-  loadGameData: () => new Promise(() => {}),
+  loadGameData: () => load.next(),
 }));
 
 import { App } from './App.tsx';
@@ -26,7 +31,18 @@ function paintTheme(theme: Theme): void {
 afterEach(() => {
   delete document.documentElement.dataset.theme;
   localStorage.clear();
+  load.next = () => new Promise<never>(() => {});
+  vi.restoreAllMocks();
 });
+
+/** Render, then let the rejected load settle so the error screen paints. */
+async function renderFailedLoad(err: unknown): Promise<void> {
+  load.next = () => Promise.reject(err) as Promise<never>;
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  await act(async () => {
+    render(<App />);
+  });
+}
 
 describe('the loading screen', () => {
   it('sets the type under letterpress', () => {
@@ -62,5 +78,51 @@ describe('the loading screen', () => {
 
     expect(screen.getByText('Picking the peaches.')).toBeInTheDocument();
     expect(screen.queryByText('Setting the type.')).toBeNull();
+  });
+});
+
+/**
+ * The incident these guard: a parse error interpolating a word from the lists
+ * was rendered full screen, which put a slur in front of the player the demote
+ * mechanism existed to protect. No internal error string may reach the DOM, for
+ * any error and any word. The sentinels below stand in for the real message,
+ * which is not worth writing down.
+ */
+describe('the error screen', () => {
+  const INTERNAL = 'INTERNAL_DETAIL_SENTINEL';
+  const WORD = 'WORD_FROM_THE_LISTS_SENTINEL';
+
+  it('shows fixed copy rather than the thrown message', async () => {
+    await renderFailedLoad(new Error(`Unknown action "${INTERNAL}"`));
+
+    expect(
+      screen.getByText('The word lists did not load. Reload to try again.'),
+    ).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain(INTERNAL);
+  });
+
+  it('keeps an interpolated word out of the DOM', async () => {
+    await renderFailedLoad(new Error(`Unknown action "demote" for "${WORD}"`));
+
+    expect(document.body.textContent).not.toContain(WORD);
+  });
+
+  it('holds its copy when the rejection is not an Error at all', async () => {
+    await renderFailedLoad(WORD);
+
+    expect(
+      screen.getByText('The word lists did not load. Reload to try again.'),
+    ).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain(WORD);
+  });
+
+  it('logs the detail to the console so debugging keeps it', async () => {
+    const err = new Error(INTERNAL);
+    await renderFailedLoad(err);
+
+    expect(console.error).toHaveBeenCalledWith(
+      'Game data failed to load.',
+      err,
+    );
   });
 });
