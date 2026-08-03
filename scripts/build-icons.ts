@@ -229,7 +229,14 @@ async function main(): Promise<void> {
       },
     ],
   };
-  await write('site.webmanifest', JSON.stringify(manifest, null, 2));
+  // The trailing newline is required, not cosmetic. This file is the one
+  // generated output prettier can parse (.webmanifest reads as JSON, while the
+  // SVGs and PNGs have no parser), and prettier wants a newline at end of file.
+  // JSON.stringify does not emit one, so without this pnpm format:check fails
+  // on every run. Writing it here rather than fixing the file by hand is what
+  // makes the fix survive: prettier --write on a generated file is undone by
+  // the next pnpm icons:build.
+  await write('site.webmanifest', `${JSON.stringify(manifest, null, 2)}\n`);
 
   // The OG alt text lives in index.html; surface it here for reference.
   console.log(`\nDone. og:image:alt is "${OG_ALT}"`);
