@@ -12,7 +12,18 @@ import {
 import type { SourceEntry } from '@/data/types.ts';
 import type { Dictionary, WordSource } from '@/engine/types.ts';
 import { parseExclusions } from './lib/exclusions.ts';
+import { parseReasonedWords } from './lib/denylist.ts';
 import { loadPatchedPools } from './lib/pools.ts';
+
+const ADMISSIONS = new Map(
+  parseReasonedWords(
+    readFileSync(
+      join(import.meta.dirname, 'data-raw', 'source-admissions.tsv'),
+      'utf8',
+    ),
+    'Source admission',
+  ).map((a) => [a.word, a.reason]),
+);
 
 const EXCLUSIONS = parseExclusions(
   readFileSync(
@@ -108,9 +119,10 @@ describe('the calendar build derives from patched pools', () => {
 });
 
 describe('eligibility against the real baked data', () => {
-  it('keeps 582 of the 707 shipped source words (the rest are sub-floor)', () => {
-    expect(sourceWords.length).toBe(707);
-    expect(eligible.length).toBe(582);
+  it('keeps 585 of the 710 shipped source words (the rest are sub-floor)', () => {
+    // 707 plus the three hand admissions that replace the retired crowns.
+    expect(sourceWords.length).toBe(710);
+    expect(eligible.length).toBe(585);
   });
 
   it('treats known thin words as sub-floor (crown-inclusive)', () => {
@@ -133,8 +145,9 @@ describe('the culled, regenerated calendar', () => {
   const culledWords = () => eligible.filter((w) => !EXCLUSIONS.has(w));
 
   it('drops exactly the excluded words from the eligible pool', () => {
-    // 582 eligible minus 38 exclusions = 544 clean crowns.
-    expect(eligible.length).toBe(582);
+    // 585 eligible minus 41 exclusions = 544 clean crowns, the same count as
+    // before: three retired for register, three admitted to replace them.
+    expect(eligible.length).toBe(585);
     expect(culledWords().length).toBe(544);
   });
 
@@ -161,16 +174,16 @@ describe('the culled, regenerated calendar', () => {
     // Antoine's call: sexually, violence and abortion would be odd to type into
     // a cute-themed game. They are swapped at their own index rather than
     // removed, because removing an entry re-dates every day after it and breaks
-    // the promise that a given date is a fixed puzzle. Each replacement is
-    // re-admitted from the Phase 2 cull, which is the only source of an eligible
-    // crown the calendar does not already hold.
+    // the promise that a given date is a fixed puzzle. Each replacement is a
+    // clean base word admitted to the source pool, not a word struck from the
+    // Phase 2 cull: a plural has no etymology of its own to reveal.
     const committed = JSON.parse(
       readFileSync(join(DATA, 'daily-calendar.json'), 'utf8'),
     ) as { words: string[] };
     const swaps: ReadonlyArray<readonly [number, string, string]> = [
-      [57, 'violence', 'archives'],
-      [67, 'abortion', 'criteria'],
-      [100, 'sexually', 'analyses'],
+      [57, 'violence', 'restrain'],
+      [67, 'abortion', 'integral'],
+      [100, 'sexually', 'distance'],
     ];
 
     expect(committed.words).toHaveLength(544);
@@ -189,6 +202,10 @@ describe('the culled, regenerated calendar', () => {
       // exactly as calendar generation computes it.
       expect(setSize(added)).toBeGreaterThanOrEqual(MIN_SET_SIZE);
       expect(dictionary.has(added)).toBe(true);
+      // Admitted by widening the source pool, never re-admitted from the cull:
+      // every culled word breaks one of the three rules by construction.
+      expect(ADMISSIONS.has(added)).toBe(true);
+      expect(EXCLUSIONS.has(added)).toBe(false);
     }
   });
 

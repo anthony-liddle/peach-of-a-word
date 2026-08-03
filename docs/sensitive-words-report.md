@@ -153,11 +153,32 @@ one, and the game will show the shoemaker definition.
 
 ### If any of these are substituted
 
-The same constraint applies as in Part 2. The eligible pool minus the Phase 2 cull
-is exactly the 544 committed crowns, so every substitution has to re-admit a word
-from `scripts/data-raw/source-exclusions.tsv`. There are 35 left in the cull and
-all of them clear the floor, so there is room for roughly a dozen more
-substitutions before the cull runs out and the source pool would need widening.
+The same constraint applies as in Part 2, and it is not a small one. The eligible
+pool minus the Phase 2 cull is exactly the 544 committed crowns, so a substitution
+has nothing to draw on until the source pool is widened. The cull cannot supply a
+replacement: every word in it breaks one of the three rules by construction, and a
+plural has no etymology of its own to reveal, which is the whole point of a crown.
+
+So each substitution costs one admission through `pnpm data:admit`, recorded in
+`scripts/data-raw/source-admissions.tsv`. There is plenty of headroom (see the
+next section), but it is a network step and it needs `pnpm defs:acquire` after it.
+
+## The source pool is much smaller than it should be
+
+Worth knowing before deciding anything above. There are 1,575 eight-letter words
+in the common pool at the right band, and only 710 in the source pool. The other
+865 were dropped for missing a definition or an etymology.
+
+For a large share of them that is an artefact, not a fact about the word.
+`enrichWord` re-fetches a cached raw response when the _definition_ is null, but
+not when the _etymology_ is null, so a throttled etymology fetch is trusted
+forever. `distance`, `restrain` and `integral` were all in that state; re-fetching
+returns a full etymology for each, which is how they were admitted here.
+
+Widening that guard would be correct, but it would admit hundreds of source words
+on the next `pnpm data:build` and append that many crowns to the calendar. That is
+a decision of its own, so it is reported rather than done. See the note on
+`enrichWord` in `scripts/lib/wiktionary.ts`.
 
 ---
 

@@ -10,14 +10,12 @@
 # derived reasons it is a judgment call, so each carries its own note
 # below rather than being regenerated.
 #
-# Re-admissions: analyses, archives and criteria were struck from
-# this list to substitute for the three register exclusions. The
-# eligible pool minus this cull is exactly the committed calendar, so
-# a substitution has nowhere else to draw from. All three are
-# irregular plurals, so they read as their own word rather than as
-# an inflection, which is what the cull was there to catch. All
-# three stay in the pure-inflection class, so the degree-form rule
-# (dropped regardless of a lemma sense) is untouched.
+# Nothing is ever re-admitted from this list to fill a crown slot.
+# Every word here violates one of the three rules by construction,
+# so no re-admission can be clean: a plural has no etymology of its
+# own to reveal, which is the whole reason the cull exists. When a
+# crown is retired, its replacement comes from widening the source
+# pool instead. See scripts/data-raw/source-admissions.tsv.
 # Future-growth caveat: if the source pool is widened (for example
 # SCOWL band 35), re-run the derivation to extend this list.
 word	reason
@@ -25,11 +23,14 @@ abortion	register
 absorbed	past-tense-dual
 accepted	past-tense-dual
 adhering	pure-inflection
+analyses	pure-inflection
+archives	pure-inflection
 breathed	past-tense-dual
 brothers	pure-inflection
 children	pure-inflection
 clearest	pure-inflection
 confused	past-tense-dual
+criteria	pure-inflection
 degraded	past-tense-dual
 demented	past-tense-dual
 deranged	past-tense-dual

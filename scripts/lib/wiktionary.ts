@@ -283,6 +283,16 @@ async function fetchRaw(word: string): Promise<RawResponses> {
  * Enrich one word. Raw responses are cached on disk; a cached entry whose
  * definition fetch failed (a throttled null) is re-fetched rather than trusted,
  * so a busy run never poisons the cache permanently.
+ *
+ * KNOWN LIMITATION, deliberately not changed here. The re-fetch guard covers a
+ * null definition but not a null etymology, so a cached entry whose etymology
+ * fetch was throttled is trusted forever. Measured against the committed cache,
+ * that is why words like distance, restrain and integral carry no etymology and
+ * so never entered the source pool: re-fetching them returns a full etymology.
+ * Widening the guard would be correct, but it would silently admit hundreds of
+ * new source words on the next data:build and append that many crowns, so it is
+ * a decision of its own rather than a fix to make in passing. Use refetchWord
+ * for the handful of words being admitted deliberately.
  */
 export async function enrichWord(word: string): Promise<WordEntry> {
   const cacheKey = `wiktionary-raw/${word}.json`;
@@ -290,6 +300,26 @@ export async function enrichWord(word: string): Promise<WordEntry> {
   if (!raw || raw.definitionJson === null) {
     raw = await fetchRaw(word);
     if (raw.definitionJson !== null) await writeCacheJson(cacheKey, raw);
+  }
+  return {
+    word,
+    definition: extractDefinition(raw.definitionJson),
+    etymology: extractEtymology(raw.etymologyHtml),
+  };
+}
+
+/**
+ * Enrich one word from the network, ignoring any cached raw response, and
+ * refresh the cache with what comes back.
+ *
+ * Only for deliberate, named admissions to the source pool. It is the way past
+ * a cached null etymology, which enrichWord trusts (see above). Scoped to an
+ * explicit word list so a rebuild stays reproducible.
+ */
+export async function refetchWord(word: string): Promise<WordEntry> {
+  const raw = await fetchRaw(word);
+  if (raw.definitionJson !== null) {
+    await writeCacheJson(`wiktionary-raw/${word}.json`, raw);
   }
   return {
     word,

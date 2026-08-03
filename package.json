@@ -17,6 +17,7 @@
     "data:vendor": "tsx scripts/vendor-lists.ts",
     "data:build": "tsx scripts/build-data.ts",
     "data:denylist": "tsx scripts/build-denylist.ts",
+    "data:admit": "tsx scripts/admit-source-words.ts",
     "data:calendar": "tsx scripts/build-calendar.ts",
     "defs:acquire": "tsx scripts/acquire-definitions.ts",
     "defs:rederive": "tsx scripts/rederive-definitions.ts",
