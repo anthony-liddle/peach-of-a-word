@@ -4,6 +4,7 @@ import {
   COMMON_POOL_SIZES,
   MIN_WORD_LENGTH,
   SCOWL_VARIANTS,
+  SIZE_70_SIZES,
   SIZE_95_SIZES,
   SOURCE_POOL_SIZES,
   SOURCE_WORD_LENGTH,
@@ -49,11 +50,48 @@ export async function loadEnable(): Promise<string[]> {
  * there was nothing to deny.
  */
 export async function loadUnpatchedBoundary(): Promise<string[]> {
+  const { enable, additions } = await loadUnpatchedLists();
+  return [...enable, ...additions];
+}
+
+/**
+ * The five shipped lists as they are before the patch touches them, derived from
+ * the vendored raw lists.
+ *
+ * This is what the bake starts from, and it has to be, because the bake would
+ * otherwise be one-way. Reading the shipped lists and removing the denylist
+ * again works fine while the denylist only grows, but taking a word OFF the
+ * denylist could never put it back: the word is already gone from the file being
+ * read. A deny row would be a ratchet nobody could release.
+ *
+ * Deriving the base here instead makes the bake a pure function of the vendored
+ * lexicons and the patch, so it reflects whatever the patch currently says.
+ * Offline: every input is committed under scripts/data-raw.
+ */
+export async function loadUnpatchedLists(): Promise<{
+  enable: string[];
+  additions: string[];
+  common: string[];
+  beyond70: string[];
+  beyond95: string[];
+}> {
   const enable = await loadEnable();
   const enableSet = new Set(enable);
-  const scowl95 = await loadScowlWords(SIZE_95_SIZES);
-  const additions = scowl95.filter((w) => !enableSet.has(w));
-  return [...enable, ...additions];
+  const scowl70 = new Set(await loadScowlWords(SIZE_70_SIZES));
+  const scowl95 = new Set(await loadScowlWords(SIZE_95_SIZES));
+
+  // The complement pair: each boundary word ships in exactly one of the two.
+  const additions = [...scowl95].filter((w) => !enableSet.has(w)).sort();
+  const boundary = [...enable, ...additions].sort();
+
+  return {
+    enable,
+    additions,
+    // Every counted word must be findable, so the denominator lives in ENABLE.
+    common: (await loadCommonPool()).filter((w) => enableSet.has(w)),
+    beyond70: boundary.filter((w) => !scowl70.has(w)),
+    beyond95: boundary.filter((w) => !scowl95.has(w)),
+  };
 }
 
 /**

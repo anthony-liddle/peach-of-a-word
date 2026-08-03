@@ -108,6 +108,24 @@ do not re-download 8MB of word lists that did not change.
 
 In dev the suffix is empty and the files are served from `public/data` as usual.
 
+### The three categories in the patch layer
+
+The curated patch in `scripts/data-raw/dictionary-patch.tsv` sorts words three
+ways, and the distinction matters enough to state plainly:
+
+- **deny** is for slurs: no ordinary meaning, targets a group. Not accepted at
+  all, and answered exactly as if the word were not a word.
+- **demote** is for legitimate words that should never be required. Accepted,
+  scored, off-page only.
+- **neither** is everything else, which is nearly every word.
+
+Vulgar is not the same as slur. A word can be coarse, even taboo, and still be
+an ordinary English word with a real meaning that targets nobody. Those are
+profanity, and removing profanity is not what the denylist is for; they belong
+in demote, where they stay playable but can never be something a player has to
+type to finish a rack. Source lists built for other games draw the line
+somewhere else, so it gets drawn here.
+
 ### The patch is applied at build time, not at runtime
 
 The word lists in `public/data` ship with the allowlist, denylist, and demotions

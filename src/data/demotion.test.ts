@@ -66,8 +66,10 @@ function puzzleWith(lists: PatchableLists, rack: string): Puzzle {
 const puzzleFor = (rack: string) => puzzleWith(merged, rack);
 
 describe('the committed demotions', () => {
-  it('demotes the fourteen decided words', () => {
-    expect(demoted).toHaveLength(14);
+  it('demotes the twenty-two decided words', () => {
+    // 14 from the register sweep, plus the eight vulgar-not-slur words that
+    // came off the denylist and were demoted so they can never be required.
+    expect(demoted).toHaveLength(22);
     for (const word of [
       'rape',
       'genocide',
@@ -101,7 +103,7 @@ describe('the committed demotions', () => {
     for (const word of demoted) expect(common.has(word)).toBe(false);
   });
 
-  it('is demotion and not denial: all fourteen stay in validation', () => {
+  it('is demotion and not denial: all twenty-two stay in validation', () => {
     const validation = new Set(merged.enable);
     const deny = new Set(patch.deny);
     for (const word of demoted) {
@@ -192,3 +194,101 @@ function canForm(word: string, rack: string): boolean {
   }
   return true;
 }
+
+/**
+ * Bea's eight: vulgar, not slurs.
+ *
+ * bitch, cunt, slut and whore and their plurals are coarse, several are
+ * reclaimed, and each is an ordinary English word with a real meaning. None
+ * targets a group the way the denylist exists to address, so none belongs on a
+ * list whose purpose is removing slurs. They are accepted and scoreable.
+ *
+ * They are demoted rather than simply left alone. None is in the common pool
+ * today, so the demotion is a no-op right now, and that is the point: it is
+ * insurance. The common pool is SCOWL sizes 10 and 20, and widening it to
+ * include size 35 would pull six of these eight straight into the completion
+ * denominator, where a player would have to type them to finish a rack. The
+ * demote rows mean that widening cannot do it quietly.
+ */
+describe('the vulgar-not-slur eight', () => {
+  const VULGAR = [
+    'bitch',
+    'bitches',
+    'cunt',
+    'cunts',
+    'slut',
+    'sluts',
+    'whore',
+    'whores',
+  ] as const;
+
+  it('are all accepted, and none is denied', () => {
+    const validation = new Set(merged.enable);
+    const deny = new Set(patch.deny);
+    for (const word of VULGAR) {
+      expect(validation.has(word)).toBe(true);
+      expect(deny.has(word)).toBe(false);
+    }
+  });
+
+  it('are all demoted, so the intent survives a common-pool widening', () => {
+    for (const word of VULGAR) expect(demotedSet.has(word)).toBe(true);
+  });
+
+  it('are absent from the shipped common pool', () => {
+    const common = new Set(merged.common);
+    for (const word of VULGAR) expect(common.has(word)).toBe(false);
+  });
+
+  it('are in no completion count on any rack that can spell them', () => {
+    // Every rack where any of the eight is formable. A word that cannot be
+    // formed from a rack cannot be in that rack's set either, so these racks
+    // are the whole of where one could appear.
+    const racks = calendar.filter((rack) =>
+      VULGAR.some((w) => canForm(w, rack)),
+    );
+    expect(racks.length).toBeGreaterThan(0);
+
+    for (const rack of racks) {
+      const puzzle = puzzleFor(rack);
+      for (const word of VULGAR) {
+        expect(puzzle.commonWords.has(word)).toBe(false);
+        // Nor pushed into the tail: each sits inside SCOWL 70, so an off-page
+        // find grades uncommon rather than rare or mythic.
+        expect(puzzle.rareWords.has(word)).toBe(false);
+        expect(puzzle.mythicWords.has(word)).toBe(false);
+      }
+    }
+  }, 240_000);
+
+  it('score and grade off-page wherever a rack can spell them', () => {
+    // Only cunt, cunts and slut are reachable from the current calendar. The
+    // other five are valid but no daily rack spells them, so there is nothing
+    // to grade and nothing to assert beyond acceptance.
+    const reachable = VULGAR.filter((w) =>
+      calendar.some((rack) => canForm(w, rack)),
+    );
+    expect([...reachable]).toEqual(['cunt', 'cunts', 'slut']);
+
+    for (const word of reachable) {
+      const rack = calendar.find((r) => canForm(word, r)) as string;
+      const puzzle = puzzleFor(rack);
+      const result = validateGuess(word, puzzle, new Set());
+      expect(result.kind).toBe('valid');
+      if (result.kind === 'valid') expect(result.score).toBeGreaterThan(0);
+      expect(classifyWord(word, puzzle)).toBe('uncommon');
+    }
+  });
+
+  it('would sit in the denominator if the demotion were not holding', () => {
+    // The discriminator. Put cunt back in the common pool and a rack that can
+    // spell it requires it, which is what the demote rows exist to prevent.
+    const planted: PatchableLists = {
+      ...merged,
+      common: [...merged.common, 'cunt'],
+    };
+    const puzzle = puzzleWith(planted, 'chestnut');
+    expect(puzzle.commonWords.has('cunt')).toBe(true);
+    expect(classifyWord('cunt', puzzle)).toBe('set');
+  });
+});

@@ -76,9 +76,11 @@ const bands = (p: Puzzle) => [
 ];
 
 describe('the denylist is wired to the shipped patch', () => {
-  it('ships both derived blocks, 218 from the source and 25 supplemented', () => {
-    expect(denied).toHaveLength(243);
-    expect(deniedSet.size).toBe(243);
+  it('ships both derived blocks, 216 from the source and 23 supplemented', () => {
+    // Down from 218 and 25: cunt, cunts, slut and sluts are vulgar rather than
+    // slurs, so they came off the denylist and were demoted instead.
+    expect(denied).toHaveLength(239);
+    expect(deniedSet.size).toBe(239);
     // The supplement covers what a tournament lexicon could justify keeping.
     for (const word of ['faggot', 'fag', 'coon', 'negro', 'tranny', 'homo']) {
       expect(deniedSet.has(word)).toBe(true);

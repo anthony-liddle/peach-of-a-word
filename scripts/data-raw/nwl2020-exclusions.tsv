@@ -2,10 +2,20 @@
 # One word per line: word, reason. Every entry is present in
 # nwl2020-purged.txt and is deliberately NOT denied by this game.
 #
-# The test is narrow on purpose: a word is held back only when its
-# primary sense in ordinary modern English is neutral, so a player
-# could reasonably type it with no idea of the other reading. A word
-# that is merely dated, coarse, or contested is still denied.
+# Two tests hold a word back, and only two.
+#
+# The first is a neutral primary sense: the ordinary modern reading
+# is innocuous, so a player could reasonably type it with no idea of
+# the other one. Most entries below qualify this way.
+#
+# The second is vulgar but not a slur. This list exists to remove
+# slurs, meaning words with no ordinary meaning that target a group.
+# A word can be coarse, even taboo, and still be an ordinary English
+# word with a real meaning that targets nobody. Those are profanity,
+# and profanity is not what this list is for. They are held back here
+# and demoted in the patch instead, so they stay accepted and scored
+# but can never be required. A word that is merely dated or contested
+# still fails both tests and stays denied.
 #
 # The asymmetry that settles the borderline cases: leaving a slur
 # valid rewards a player for typing it, while denying an ordinary
@@ -46,3 +56,5 @@ mongolian	of Mongolia; a nationality adjective (mongolism, mongoloid stay denied
 nonhandicapped	neutral descriptive compound; carries no slur force of its own
 pepsi	the soft drink is the primary sense; the ethnic reading is obscure
 pepsis	the soft drink is the primary sense; the ethnic reading is obscure
+cunt	vulgar, not a slur; an ordinary word that targets no group. Demoted instead
+cunts	vulgar, not a slur; an ordinary word that targets no group. Demoted instead

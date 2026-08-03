@@ -139,16 +139,21 @@ describe('the committed derivation', async () => {
   const boundary = new Set(await loadUnpatchedBoundary());
   const derived = deriveDenylist(purged, exclusions, boundary);
 
-  it('holds back only words with a neutral primary sense, each with a reason', () => {
-    expect(exclusions).toHaveLength(18);
+  it('holds back only words that pass one of the two tests, each with a reason', () => {
+    // 20, not the original 18: cunt and cunts joined as vulgar-not-slur.
+    expect(exclusions).toHaveLength(20);
     for (const { reason } of exclusions)
       expect(reason.length).toBeGreaterThan(8);
   });
 
-  it('denies 218 of the 259, with 23 no-ops the boundary never had', () => {
-    expect(derived.denied).toHaveLength(218);
+  it('denies 216 of the 259, with 23 no-ops the boundary never had', () => {
+    // Bea's line, and the reason two of these are held back: vulgar is not the
+    // same as slur. cunt and cunts are coarse but they are ordinary words with
+    // real meanings that target no group, so they fail the test this list
+    // applies. They are demoted in the patch instead, never required.
+    expect(derived.denied).toHaveLength(216);
     expect(derived.noOps).toHaveLength(23);
-    expect(derived.denied.length + derived.noOps.length + 18).toBe(
+    expect(derived.denied.length + derived.noOps.length + 20).toBe(
       NWL2020_EXPECTED,
     );
   });
@@ -176,7 +181,8 @@ describe('the committed derivation', async () => {
     // lands is the only one that matters here.
     const supplement = parseSupplementSlurs(raw('supplement-slurs.tsv'));
     const words = supplement.map((s) => s.word);
-    expect(supplement).toHaveLength(25);
+    // 23, not the original 25: slut and sluts came out as vulgar, not slurs.
+    expect(supplement).toHaveLength(23);
     for (const { reason } of supplement) {
       expect(reason.length).toBeGreaterThan(8);
     }

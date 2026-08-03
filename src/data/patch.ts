@@ -3,7 +3,29 @@
  * whatever the base validation boundary is (ENABLE today), so it carries over
  * unchanged when the boundary widens in a later phase.
  *
- * Two parts:
+ * ---------------------------------------------------------------------------
+ * THE THREE CATEGORIES. Written down because the distinction keeps needing to
+ * be restated, and getting it wrong is how an ordinary word ends up rejected or
+ * a word nobody should have to type ends up required.
+ *
+ *   deny    is for slurs: no ordinary meaning, targets a group. Not accepted at
+ *           all. A denied word answers exactly as if it were not a word.
+ *
+ *   demote  is for legitimate words that should never be required. Accepted,
+ *           scored, off-page only: out of the common pool, on the rarity ladder
+ *           like any other find.
+ *
+ *   neither is everything else, which is nearly every word.
+ *
+ * Vulgar is not the same as slur, and the difference decides the category.
+ * bitch, cunt, slut and whore are coarse, several are reclaimed, and each is an
+ * ordinary English word with a real meaning that targets no group. They are
+ * profanity, and removing profanity is not what the denylist is for. They
+ * belong in demote. A source list built for a different game with a different
+ * threshold will not draw this line for us, so it gets drawn here.
+ * ---------------------------------------------------------------------------
+ *
+ * Three parts:
  * - allowlist: words to accept that the base list misses, each carrying a band
  *   so the classifier grades it correctly rather than letting it fall through
  *   to a rarity rung.
