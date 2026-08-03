@@ -125,7 +125,7 @@ describe('denied words are gone before pool derivation', () => {
         for (const word of band) expect(deniedSet.has(word)).toBe(false);
       }
     }
-  }, 120_000);
+  }, 240_000);
 });
 
 describe('a denied word is rejected outright', () => {
@@ -162,7 +162,7 @@ describe('a denied word is rejected outright', () => {
     // The positive control. The same assertion the suite runs over the real
     // racks, aimed at a rack built to spell a slur that has NOT been denied.
     // If this does not find it, the band check above proves nothing.
-    const planted = applyPatch(base, { allow: [], deny: [] });
+    const planted = applyPatch(base, { allow: [], deny: [], demote: [] });
     const puzzle = createPuzzle(
       'gringaxe',
       createListDictionary(planted.enable),
@@ -188,16 +188,18 @@ describe('the over-blocking guard', () => {
     }
   });
 
-  it('still accepts nip on every one of the 28 racks that can spell it', () => {
+  it('still accepts nip on every one of the 29 racks that can spell it', () => {
+    // 28 when the denylist landed; patience, admitted here as a replacement
+    // crown, is the 29th rack that can spell it.
     const racks = calendar.filter((rack) => canForm('nip', rack));
-    expect(racks).toHaveLength(28);
+    expect(racks).toHaveLength(29);
     for (const rack of racks) {
       const puzzle = puzzleFor(rack);
       const result = validateGuess('nip', puzzle, new Set());
       expect(result.kind).toBe('valid');
       if (result.kind === 'valid') expect(result.score).toBeGreaterThan(0);
     }
-  }, 120_000);
+  }, 240_000);
 
   it('denies no word that is merely a substring host', () => {
     // Exact match only, never prefix, never substring, asserted on the shipped

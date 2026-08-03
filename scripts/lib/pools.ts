@@ -10,9 +10,12 @@
  * patch here is what makes "denied before pool derivation" true of the build and
  * not just of the app.
  *
- * Only the deny half of the patch is applied, and that is deliberate. Two other
- * divergences from the runtime predate this work, and closing either one grows
- * the calendar:
+ * Both subtracting halves of the patch are applied, deny and demote, and the
+ * adding half is not. That is deliberate. A demoted word has to come out here
+ * as well as at runtime, because set size IS the eligibility test: leaving a
+ * demoted word in these pools would count it toward a floor it no longer
+ * contributes to. Two other divergences from the runtime predate this work, and
+ * closing either one grows the calendar:
  *
  *   The allowlist is not applied. Its 32 common words raise some set sizes, and
  *   measured against the committed data that lifts appalled and approach over
@@ -69,6 +72,7 @@ export async function loadPatchedPools(): Promise<Pools> {
     read('dictionary-patch.tsv'),
   ]);
 
+  const patch = parsePatch(patchText);
   const lists = applyPatch(
     {
       enable: parseWordList(enable),
@@ -76,7 +80,7 @@ export async function loadPatchedPools(): Promise<Pools> {
       beyond70: parseWordList(beyond70),
       beyond95: parseWordList(beyond95),
     },
-    { allow: [], deny: parsePatch(patchText).deny },
+    { allow: [], deny: patch.deny, demote: patch.demote },
   );
 
   return {

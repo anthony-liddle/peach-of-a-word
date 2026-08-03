@@ -68,6 +68,56 @@ describe('useGame daily day-key', () => {
   });
 });
 
+describe('a demoted word already saved in progress', () => {
+  it('stays found and scored, but no longer counts toward completion', () => {
+    // Demotion lowers the denominator, so a board that was one word short can
+    // now read complete. Nothing migrates: progress is stored as found words
+    // and completion is recomputed from the live puzzle. Verified, not assumed.
+    const epoch = { year: 2026, month: 6, day: 23 };
+    // 'near' stands in for a demoted word: still valid and still scoreable,
+    // but out of the common pool, so out of the completion denominator.
+    const data: GameData = {
+      dictionary: createListDictionary(['serenade', 'sea', 'near']),
+      commonPool: createListWordSource(['serenade', 'sea']),
+      beyond70Pool: createListWordSource([]),
+      beyond95Pool: createListWordSource([]),
+      dailyCalendar: { epoch, words: ['serenade'] },
+      sourceEntry: () => undefined,
+    };
+    const cap = capturingStore();
+    const today = new Date();
+    cap.store.setItem(
+      'eight-letters/v1',
+      JSON.stringify({
+        version: 1,
+        days: {
+          [dayIndex(today, STORAGE_EPOCH)]: {
+            sourceWord: 'serenade',
+            found: ['sea', 'near', 'serenade'],
+          },
+        },
+        streak: { count: 0, lastClearedDayIndex: null },
+        endless: null,
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useGame(data, new NullAudioEngine(), new GameStorage(cap.store)),
+    );
+
+    // Kept: demotion is not denial, so the find survives rehydration.
+    expect(result.current.state.found).toContain('near');
+    // But the set is now just sea and serenade, and both are found, so the
+    // board reads complete even though a previously required word is gone.
+    expect(result.current.state.puzzle.commonWords.has('near')).toBe(false);
+    expect(result.current.state.puzzle.commonWords.size).toBe(2);
+    const foundSetWords = result.current.state.found.filter((w) =>
+      result.current.state.puzzle.commonWords.has(w),
+    );
+    expect(foundSetWords).toHaveLength(2);
+  });
+});
+
 describe('a denied word already saved in progress', () => {
   it('is dropped on rehydration, so no migration is needed', () => {
     // Bea found one before it was denied, so it is sitting in her stored found

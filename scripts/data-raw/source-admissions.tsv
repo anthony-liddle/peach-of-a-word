@@ -19,7 +19,10 @@
 #     is what makes the reveal work
 #   clears MIN_SET_SIZE through createPuzzle
 #
-# These three were already in the common pool at the right band and
+# The first three were added in #85. festival, patience and sunlight
+# follow the same route for the crowns retired here.
+#
+# These were already in the common pool at the right band and
 # were only missing from the source pool because their cached
 # Wiktionary etymology was a throttled null. Re-fetching returns a
 # full etymology for each. See the note on enrichWord in
@@ -30,3 +33,6 @@ word	reason
 distance	base noun; substitutes for violence at calendar index 57
 integral	base adjective and noun; substitutes for abortion at calendar index 67
 restrain	base verb; substitutes for sexually at calendar index 100
+festival	base noun; substitutes for oriental at calendar index 89
+patience	base noun; substitutes for atrocity at calendar index 66
+sunlight	base compound noun; substitutes for genocide at calendar index 246

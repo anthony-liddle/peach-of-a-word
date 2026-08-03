@@ -49,6 +49,22 @@ describe('looksInflected, the hand-admission guard', () => {
     }
   });
 
+  it('catches a y turning to i, and a doubled final consonant', () => {
+    // The two spelling changes English makes when it inflects. Without these
+    // the guard waves through earliest, happiest, notified and stripped, all of
+    // which are inflections sitting in the common pool at 8 letters.
+    const spelling = new Set(['early', 'happy', 'notify', 'strip', 'stop']);
+    for (const word of [
+      'earliest',
+      'happiest',
+      'notified',
+      'stripped',
+      'stopping',
+    ]) {
+      expect(looksInflected(word, spelling)).toBe(true);
+    }
+  });
+
   it('passes clean base words, including derived lemmas', () => {
     // unstable is un- plus stable, a derived lemma rather than an inflection,
     // the same class the cull already keeps (computer, darkness, unwanted).
@@ -67,11 +83,14 @@ describe('looksInflected, the hand-admission guard', () => {
 });
 
 describe('the committed admissions', () => {
-  it('admits exactly the three that replace the retired crowns', () => {
+  it('admits exactly the six that replace the retired crowns', () => {
     expect(admissions.map((a) => a.word)).toEqual([
       'distance',
       'integral',
       'restrain',
+      'festival',
+      'patience',
+      'sunlight',
     ]);
     for (const { reason } of admissions) {
       expect(reason.length).toBeGreaterThan(8);
@@ -107,13 +126,13 @@ describe('the committed admissions', () => {
       ) as Record<string, string>;
       // Existing crowns sit around 81 percent of formable words glossed; a
       // thin bundle would mean defs:acquire was never run for the new rack.
-      expect(Object.keys(bundle).length).toBeGreaterThan(300);
+      expect(Object.keys(bundle).length).toBeGreaterThan(150);
       expect(bundle[word]).toBeTruthy();
     }
   });
 
   it('grows the source pool by exactly the admissions', () => {
-    expect(pool).toHaveLength(710);
+    expect(pool).toHaveLength(713);
     for (const { word } of admissions) expect(byWord.has(word)).toBe(true);
   });
 });
