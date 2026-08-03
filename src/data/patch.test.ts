@@ -38,6 +38,35 @@ describe('parsePatch', () => {
     expect(() => parsePatch('app\tallow\t\t')).toThrow(/band/i);
   });
 
+  /**
+   * The incident: a parse error interpolating a word reached the screen. Part 1
+   * stops any internal string being rendered, so these are the second layer.
+   * The message must locate the row without repeating anything from it.
+   */
+  describe('never echoes the row it rejects', () => {
+    const WORD = 'zzsentinelzz';
+
+    it.each([
+      ['an unknown action', `${WORD}\tzzactionzz\t`],
+      ['a bad band', `${WORD}\tallow\tzzbandzz`],
+      ['a word that is not a-z', `zz-${WORD}\tdeny\t`],
+    ])('keeps the cells out of the message for %s', (_case, row) => {
+      // A comment header, so the physical line number and the count of parsed
+      // rows disagree. The reported line must be the physical one.
+      const tsv = `# header\n# more header\n\n${row}`;
+
+      expect(() => parsePatch(tsv)).toThrow(/line 4/);
+      try {
+        parsePatch(tsv);
+      } catch (err) {
+        const message = (err as Error).message;
+        expect(message).not.toContain(WORD);
+        expect(message).not.toContain('zzactionzz');
+        expect(message).not.toContain('zzbandzz');
+      }
+    });
+  });
+
   it('parses a demote entry', () => {
     const patch = parsePatch('rape\tdemote\t\tsexual violence');
     expect(patch.demote).toEqual(['rape']);

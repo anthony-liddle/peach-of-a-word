@@ -78,12 +78,15 @@ function normalize(raw: string): string | null {
  */
 export function parsePurgedList(text: string): string[] {
   const out = new Set<string>();
-  for (const line of text.split('\n')) {
+  // Identified by line, never by value. This list is the purged slurs, so an
+  // error quoting an entry puts a slur wherever the error goes, and the line
+  // number points at the row to open regardless.
+  for (const [index, line] of text.split('\n').entries()) {
     const trimmed = line.trim();
     if (trimmed === '' || trimmed.startsWith('#')) continue;
     const word = normalize(trimmed);
     if (word === null) {
-      throw new Error(`Purged-list entry is not a-z only: "${trimmed}"`);
+      throw new Error(`Purged list line ${index + 1}: entry is not a-z only.`);
     }
     out.add(word);
   }
@@ -99,7 +102,7 @@ export function parseReasonedWords(
   label: string,
 ): DenyExclusion[] {
   const out: DenyExclusion[] = [];
-  for (const line of tsv.split('\n')) {
+  for (const [index, line] of tsv.split('\n').entries()) {
     const trimmed = line.trim();
     if (trimmed === '' || trimmed.startsWith('#')) continue;
     const [rawWord, rawReason] = line.split('\t');
@@ -107,7 +110,7 @@ export function parseReasonedWords(
     if (word === null || word === 'word') continue; // header or blank
     const reason = (rawReason ?? '').trim();
     if (reason === '') {
-      throw new Error(`${label} "${word}" needs a reason.`);
+      throw new Error(`${label} on line ${index + 1} needs a reason.`);
     }
     out.push({ word, reason });
   }
@@ -169,10 +172,15 @@ export function deriveDenylist(
   boundary: ReadonlySet<string>,
 ): DerivedDenylist {
   const source = new Set(purged);
-  for (const { word } of exclusions) {
+  // Positional rather than by value, for the same reason the parsers above are:
+  // these entries are drawn from the purged slur list. Counted over parsed
+  // entries, since the exclusions have been through the parser by this point and
+  // their file lines are no longer in hand.
+  for (const [index, { word }] of exclusions.entries()) {
     if (!source.has(word)) {
       throw new Error(
-        `Deny exclusion "${word}" is not in the source list; it excludes nothing.`,
+        `Deny exclusion ${index + 1} of ${exclusions.length} is not in the ` +
+          `source list; it excludes nothing.`,
       );
     }
   }

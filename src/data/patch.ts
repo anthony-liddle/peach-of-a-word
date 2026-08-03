@@ -57,10 +57,21 @@ export interface PatchableLists {
 
 const VALID_BANDS: ReadonlySet<string> = new Set<PatchBand>(['common']);
 
-function normalizeWord(raw: string): string {
+/**
+ * Errors here name the line, never the cell.
+ *
+ * These lists hold words a player is deliberately being protected from, so an
+ * error that interpolates one carries it wherever the error goes. That is not
+ * hypothetical: a parse failure quoting a slur was rendered full screen once.
+ * A line number is also the better debugging aid, since it points at the row to
+ * open rather than at a value that may appear on many rows. The columns are
+ * data, so none of them is echoed, not even the action: on a misaligned row any
+ * column can hold a word.
+ */
+function normalizeWord(raw: string, line: number): string {
   const word = raw.trim().toLowerCase();
   if (!/^[a-z]+$/.test(word)) {
-    throw new Error(`Patch word is not a-z only: "${raw}"`);
+    throw new Error(`Patch line ${line}: word is not a-z only.`);
   }
   return word;
 }
@@ -76,7 +87,12 @@ export function parsePatch(tsv: string): DictionaryPatch {
   const deny: string[] = [];
   const demote: string[] = [];
 
-  for (const line of tsv.split('\n')) {
+  // The physical line number, counted over every line including the ones that
+  // are skipped. A counter of parsed rows would point at the wrong row: the
+  // committed patch opens with a comment header, so the two diverge from the
+  // very first entry.
+  for (const [index, line] of tsv.split('\n').entries()) {
+    const lineNumber = index + 1;
     const trimmed = line.trim();
     if (trimmed === '' || trimmed.startsWith('#')) continue;
 
@@ -88,19 +104,20 @@ export function parsePatch(tsv: string): DictionaryPatch {
       const band = (rawBand ?? '').trim().toLowerCase();
       if (!VALID_BANDS.has(band)) {
         throw new Error(
-          `Allow entry "${rawWord}" needs a valid band, got "${rawBand ?? ''}"`,
+          `Patch line ${lineNumber}: allow entry needs a valid band, ` +
+            `one of ${[...VALID_BANDS].join(', ')}.`,
         );
       }
       allow.push({
-        word: normalizeWord(rawWord ?? ''),
+        word: normalizeWord(rawWord ?? '', lineNumber),
         band: band as PatchBand,
       });
     } else if (action === 'deny') {
-      deny.push(normalizeWord(rawWord ?? ''));
+      deny.push(normalizeWord(rawWord ?? '', lineNumber));
     } else if (action === 'demote') {
-      demote.push(normalizeWord(rawWord ?? ''));
+      demote.push(normalizeWord(rawWord ?? '', lineNumber));
     } else {
-      throw new Error(`Unknown action "${rawAction ?? ''}" for "${rawWord}"`);
+      throw new Error(`Patch line ${lineNumber}: unknown action.`);
     }
   }
 
