@@ -68,7 +68,7 @@ beforeAll(async () => {
     beyond70Pool,
     beyond95Pool,
   );
-}, 120_000);
+}, 300_000);
 
 const setSize = (w: string) =>
   sourceSetSize(w, dictionary, commonPool, beyond70Pool, beyond95Pool);

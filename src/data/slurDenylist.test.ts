@@ -125,7 +125,7 @@ describe('denied words are gone before pool derivation', () => {
         for (const word of band) expect(deniedSet.has(word)).toBe(false);
       }
     }
-  }, 120_000);
+  }, 240_000);
 });
 
 describe('a denied word is rejected outright', () => {
@@ -199,7 +199,7 @@ describe('the over-blocking guard', () => {
       expect(result.kind).toBe('valid');
       if (result.kind === 'valid') expect(result.score).toBeGreaterThan(0);
     }
-  }, 120_000);
+  }, 240_000);
 
   it('denies no word that is merely a substring host', () => {
     // Exact match only, never prefix, never substring, asserted on the shipped

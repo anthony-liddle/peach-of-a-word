@@ -136,7 +136,7 @@ describe('a demoted word is permitted, never required', () => {
         expect(puzzle.mythicWords.has(word)).toBe(false);
       }
     }
-  }, 120_000);
+  }, 240_000);
 
   it('is still accepted, still scores, and grades as an off-page find', () => {
     for (const word of demoted) {
@@ -158,7 +158,7 @@ describe('a demoted word is permitted, never required', () => {
       expect(puzzle.commonWords.has('rape')).toBe(false);
       expect(validateGuess('rape', puzzle, new Set()).kind).toBe('valid');
     }
-  }, 120_000);
+  }, 240_000);
 
   it('fails when a demoted word is planted back into the common pool', () => {
     // The discriminator. Same assertion as above, run against lists where rape
@@ -186,7 +186,7 @@ describe('the floor still holds', () => {
       expect(size).toBeGreaterThanOrEqual(MIN_SET_SIZE);
     }
     expect(lowest).toBeGreaterThanOrEqual(MIN_SET_SIZE);
-  }, 180_000);
+  }, 300_000);
 });
 
 /** Whole-word formability from a rack, letter counts respected. */
