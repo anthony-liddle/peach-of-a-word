@@ -20,32 +20,12 @@ import { join } from 'node:path';
 import { eligibleSourceWords } from '../src/engine/eligibility.ts';
 import { generateCalendar } from '../src/engine/calendar.ts';
 import { DAILY_EPOCH } from '../src/engine/config.ts';
-import { formableFrom } from '../src/engine/formability.ts';
-import type { Dictionary, WordSource } from '../src/engine/types.ts';
 import type { SourceEntry } from '../src/data/types.ts';
 import { loadExclusions } from './lib/exclusions.ts';
+import { loadPatchedPools } from './lib/pools.ts';
 import { writeAsset } from './lib/util.ts';
 
-// List-backed sources, identical to src/data/listSource.ts but imported via a
-// relative path so the build script avoids the app's @/ alias under tsx.
-function listDictionary(words: Iterable<string>): Dictionary {
-  const set = new Set(words);
-  return { has: (w) => set.has(w), formableWords: (r) => formableFrom(r, set) };
-}
-function listWordSource(words: Iterable<string>): WordSource {
-  const list = [...words];
-  return { formableWords: (r) => formableFrom(r, list) };
-}
-
 const DATA = join(import.meta.dirname, '..', 'public', 'data');
-
-async function wordList(file: string): Promise<string[]> {
-  const raw = await readFile(join(DATA, file), 'utf8');
-  return raw
-    .split('\n')
-    .map((w) => w.trim())
-    .filter(Boolean);
-}
 
 interface CalendarFile {
   epoch: typeof DAILY_EPOCH;
@@ -68,18 +48,14 @@ function sameEpoch(a: typeof DAILY_EPOCH, b: typeof DAILY_EPOCH): boolean {
 async function main(): Promise<void> {
   console.log('Building the daily calendar.\n');
 
-  const [enable, common, beyond70, beyond95, sourceJson] = await Promise.all([
-    wordList('enable.txt'),
-    wordList('common-pool.txt'),
-    wordList('beyond-size-70.txt'),
-    wordList('beyond-size-95.txt'),
+  // Patched pools: the denylist is subtracted before anything is derived from
+  // them, so a denied word cannot sit inside a set size, and therefore cannot
+  // sit inside a par value or a completion count. See lib/pools.ts.
+  const [pools, sourceJson] = await Promise.all([
+    loadPatchedPools(),
     readFile(join(DATA, 'source-pool.json'), 'utf8'),
   ]);
-
-  const dictionary = listDictionary(enable);
-  const commonPool = listWordSource(common);
-  const beyond70Pool = listWordSource(beyond70);
-  const beyond95Pool = listWordSource(beyond95);
+  const { dictionary, commonPool, beyond70Pool, beyond95Pool } = pools;
 
   // Subtract the source-word exclusion list (Phase 2 cull): inflected forms
   // stay valid, scorable finds but cannot headline a day. Offline and

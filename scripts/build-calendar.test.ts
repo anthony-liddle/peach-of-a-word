@@ -1,11 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createListDictionary } from '@/data/listSource.ts';
 import {
-  createListDictionary,
-  createListWordSource,
-} from '@/data/listSource.ts';
-import {
+  createPuzzle,
   eligibleSourceWords,
   generateCalendar,
   sourceSetSize,
@@ -14,6 +12,7 @@ import {
 import type { SourceEntry } from '@/data/types.ts';
 import type { Dictionary, WordSource } from '@/engine/types.ts';
 import { parseExclusions } from './lib/exclusions.ts';
+import { loadPatchedPools } from './lib/pools.ts';
 
 const EXCLUSIONS = parseExclusions(
   readFileSync(
@@ -40,11 +39,12 @@ let beyond95Pool: WordSource;
 let sourceWords: string[];
 let eligible: string[];
 
-beforeAll(() => {
-  dictionary = createListDictionary(read('enable.txt'));
-  commonPool = createListWordSource(read('common-pool.txt'));
-  beyond70Pool = createListWordSource(read('beyond-size-70.txt'));
-  beyond95Pool = createListWordSource(read('beyond-size-95.txt'));
+beforeAll(async () => {
+  // The same patched pools the build derives from, so eligibility here is the
+  // eligibility that shipped. Loading the raw lists instead would leave denied
+  // words inside every set size this file asserts on.
+  ({ dictionary, commonPool, beyond70Pool, beyond95Pool } =
+    await loadPatchedPools());
   sourceWords = (
     JSON.parse(
       readFileSync(join(DATA, 'source-pool.json'), 'utf8'),
@@ -61,6 +61,51 @@ beforeAll(() => {
 
 const setSize = (w: string) =>
   sourceSetSize(w, dictionary, commonPool, beyond70Pool, beyond95Pool);
+
+describe('the calendar build derives from patched pools', () => {
+  // The generator IS pool derivation: it computes each candidate's set size and
+  // keeps the ones that clear the floor, so a word present in these pools is
+  // inside a par value and a completion count. Reading the raw lists left every
+  // denied word in those denominators even though the runtime had removed it.
+  const deniedSlurs = readFileSync('public/data/dictionary-patch.tsv', 'utf8')
+    .split('\n')
+    .map((l) => l.split('\t'))
+    .filter((c) => c[1]?.trim() === 'deny' && c[3]?.trim() === 'nwl2020')
+    .map((c) => (c[0] ?? '').trim());
+
+  it('has no denied word left in the pools eligibility is computed from', () => {
+    expect(deniedSlurs.length).toBeGreaterThan(0);
+    for (const word of deniedSlurs) expect(dictionary.has(word)).toBe(false);
+  });
+
+  it('leaves no denied word in any set the floor is measured against', () => {
+    // AGREEING is the rack that surfaced this: it spells two of them.
+    const denied = new Set(deniedSlurs);
+    const puzzle = createPuzzle(
+      'agreeing',
+      dictionary,
+      commonPool,
+      beyond70Pool,
+      beyond95Pool,
+    );
+    for (const band of [
+      puzzle.validationWords,
+      puzzle.commonWords,
+      puzzle.uncommonWords,
+      puzzle.rareWords,
+      puzzle.mythicWords,
+    ]) {
+      for (const word of band) expect(denied.has(word)).toBe(false);
+    }
+  });
+
+  it('unpatched pools would still hold them, which is what was wrong', () => {
+    // The discriminator. Same assertion, raw lists: it must fail, or the two
+    // tests above prove nothing about the fix.
+    const raw = createListDictionary(read('enable.txt'));
+    expect(deniedSlurs.some((w) => raw.has(w))).toBe(true);
+  });
+});
 
 describe('eligibility against the real baked data', () => {
   it('keeps 582 of the 707 shipped source words (the rest are sub-floor)', () => {
