@@ -2935,3 +2935,45 @@ wops	deny		nwl2020
 wrinklies	deny		nwl2020
 yid	deny		nwl2020
 yids	deny		nwl2020
+#
+# Denylist (slurs, supplement): slurs the 2020 revision does not cover.
+# It was written for a tournament lexicon, so it kept any word carrying a
+# non-offensive sense somewhere (faggot as a bundle of sticks, fag as a
+# cigarette, coon as a raccoon), and it predates transphobic slurs being a
+# category anyone audited. Right for competitive Scrabble, wrong here.
+#
+# Source:     scripts/data-raw/supplement-slurs.tsv (hand-curated, with
+#             reasons; no public list solves this the way NWL2020 solves
+#             the main case)
+# Generated:  pnpm data:denylist. Edit the source file, not these rows.
+#
+# Held to the same bar as the exclusions, pointing the other way: denied
+# only where there is no neutral primary sense in ordinary modern English.
+# lame, deaf, queer, creole, dyke, poof, moron and idiot are deliberately
+# NOT here; the source file records why for each.
+#
+coon	deny		supplement
+coons	deny		supplement
+cretin	deny		supplement
+cretins	deny		supplement
+fag	deny		supplement
+faggot	deny		supplement
+faggots	deny		supplement
+fags	deny		supplement
+homo	deny		supplement
+homos	deny		supplement
+injun	deny		supplement
+kraut	deny		supplement
+krauts	deny		supplement
+negress	deny		supplement
+negresses	deny		supplement
+negro	deny		supplement
+negroes	deny		supplement
+negroid	deny		supplement
+negroids	deny		supplement
+nigga	deny		supplement
+niggas	deny		supplement
+slut	deny		supplement
+sluts	deny		supplement
+trannies	deny		supplement
+tranny	deny		supplement

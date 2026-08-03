@@ -57,7 +57,11 @@ const calendar = (
 const denied = patchText
   .split('\n')
   .map((line) => line.split('\t'))
-  .filter((cols) => cols[1]?.trim() === 'deny' && cols[3]?.trim() === 'nwl2020')
+  .filter(
+    (cols) =>
+      cols[1]?.trim() === 'deny' &&
+      (cols[3]?.trim() === 'nwl2020' || cols[3]?.trim() === 'supplement'),
+  )
   .map((cols) => (cols[0] ?? '').trim());
 const deniedSet = new Set(denied);
 
@@ -83,9 +87,13 @@ const bands = (p: Puzzle) => [
 ];
 
 describe('the denylist is wired to the shipped patch', () => {
-  it('ships the derived nwl2020 block, all 218 of it', () => {
-    expect(denied).toHaveLength(218);
-    expect(deniedSet.size).toBe(218);
+  it('ships both derived blocks, 218 from the source and 25 supplemented', () => {
+    expect(denied).toHaveLength(243);
+    expect(deniedSet.size).toBe(243);
+    // The supplement covers what a tournament lexicon could justify keeping.
+    for (const word of ['faggot', 'fag', 'coon', 'negro', 'tranny', 'homo']) {
+      expect(deniedSet.has(word)).toBe(true);
+    }
   });
 });
 

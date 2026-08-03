@@ -91,12 +91,13 @@ export function parsePurgedList(text: string): string[] {
 }
 
 /**
- * Parse the reviewed exclusion list. Columns: word, reason. Every entry is a
- * word present in the source list that this game deliberately keeps valid,
- * because its primary sense in ordinary English is neutral. The reason column is
- * the audit trail: an entry without one throws.
+ * Parse a word-and-reason TSV. Columns: word, reason. The reason column is the
+ * audit trail, so an entry without one throws rather than being accepted.
  */
-export function parseDenyExclusions(tsv: string): DenyExclusion[] {
+export function parseReasonedWords(
+  tsv: string,
+  label: string,
+): DenyExclusion[] {
   const out: DenyExclusion[] = [];
   for (const line of tsv.split('\n')) {
     const trimmed = line.trim();
@@ -106,11 +107,40 @@ export function parseDenyExclusions(tsv: string): DenyExclusion[] {
     if (word === null || word === 'word') continue; // header or blank
     const reason = (rawReason ?? '').trim();
     if (reason === '') {
-      throw new Error(`Deny exclusion "${word}" needs a reason.`);
+      throw new Error(`${label} "${word}" needs a reason.`);
     }
     out.push({ word, reason });
   }
   return out;
+}
+
+/**
+ * Parse the reviewed exclusion list: words present in the source list that this
+ * game deliberately keeps valid, because their primary sense in ordinary English
+ * is neutral.
+ */
+export function parseDenyExclusions(tsv: string): DenyExclusion[] {
+  return parseReasonedWords(tsv, 'Deny exclusion');
+}
+
+/**
+ * Parse the reviewed supplement: slurs the source list does not cover.
+ *
+ * The 2020 revision was written for a tournament lexicon, so it kept words that
+ * carry a non-offensive sense somewhere: faggot survives as a bundle of sticks,
+ * fag as a cigarette, coon as a raccoon. That is the right call for competitive
+ * Scrabble and the wrong one for a game Bea plays, where the reading that lands
+ * is the only one that matters. The revision also predates transphobic slurs
+ * being a category anyone audited, so it covers none of them.
+ *
+ * No public list solves this the way NWL2020 solves the main case, so these are
+ * hand-curated and every one carries its reason. Held to the same bar as the
+ * exclusions: a word stays valid when its primary sense in ordinary modern
+ * English is neutral, which is why lame, deaf, queer, creole, dyke and poof are
+ * not here and are documented in the file header instead.
+ */
+export function parseSupplementSlurs(tsv: string): DenyExclusion[] {
+  return parseReasonedWords(tsv, 'Supplement entry');
 }
 
 /** What the derivation produced, and the counts the build reports. */

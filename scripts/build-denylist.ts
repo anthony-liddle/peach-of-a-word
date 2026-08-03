@@ -23,11 +23,15 @@ import {
   deriveDenylist,
   parseDenyExclusions,
   parsePurgedList,
+  parseSupplementSlurs,
 } from './lib/denylist.ts';
 import { ASSET_DIR, DATA_RAW_DIR, writeAsset } from './lib/util.ts';
 
 /** The note column value that marks a row as belonging to this block. */
 export const NWL2020_NOTE = 'nwl2020';
+
+/** The note column value for the hand-curated supplement block. */
+export const SUPPLEMENT_NOTE = 'supplement';
 
 const BLOCK_HEADER = [
   '#',
@@ -55,10 +59,30 @@ const BLOCK_HEADER = [
   '#',
 ];
 
-/** Strip the existing block: its comment header and every row noted nwl2020. */
-export function stripBlock(tsv: string): string {
+const SUPPLEMENT_HEADER = [
+  '#',
+  '# Denylist (slurs, supplement): slurs the 2020 revision does not cover.',
+  '# It was written for a tournament lexicon, so it kept any word carrying a',
+  '# non-offensive sense somewhere (faggot as a bundle of sticks, fag as a',
+  '# cigarette, coon as a raccoon), and it predates transphobic slurs being a',
+  '# category anyone audited. Right for competitive Scrabble, wrong here.',
+  '#',
+  '# Source:     scripts/data-raw/supplement-slurs.tsv (hand-curated, with',
+  '#             reasons; no public list solves this the way NWL2020 solves',
+  '#             the main case)',
+  '# Generated:  pnpm data:denylist. Edit the source file, not these rows.',
+  '#',
+  '# Held to the same bar as the exclusions, pointing the other way: denied',
+  '# only where there is no neutral primary sense in ordinary modern English.',
+  '# lame, deaf, queer, creole, dyke, poof, moron and idiot are deliberately',
+  '# NOT here; the source file records why for each.',
+  '#',
+];
+
+/** Strip an existing generated block: its comment header and its noted rows. */
+export function stripBlock(tsv: string, marker: string, note: string): string {
   const lines = tsv.split('\n');
-  const start = lines.findIndex((l) => l.startsWith('# Denylist (slurs)'));
+  const start = lines.findIndex((l) => l.startsWith(marker));
   if (start === -1) return tsv.replace(/\n+$/, '\n');
   // Walk back over the bare "#" spacer that opens the block.
   let from = start;
@@ -67,7 +91,7 @@ export function stripBlock(tsv: string): string {
     ...lines.slice(0, from),
     ...lines
       .slice(from)
-      .filter((l) => !l.startsWith('#') && l.split('\t')[3] !== NWL2020_NOTE),
+      .filter((l) => !l.startsWith('#') && l.split('\t')[3] !== note),
   ];
   return kept.join('\n').replace(/\n+$/, '\n');
 }
@@ -76,14 +100,21 @@ async function main(): Promise<void> {
   console.log('Deriving the slur denylist.\n');
 
   const raw = (f: string) => readFile(join(DATA_RAW_DIR, f), 'utf8');
-  const [purgedText, exclusionsText, enableText, additionsText, patchText] =
-    await Promise.all([
-      raw('nwl2020-purged.txt'),
-      raw('nwl2020-exclusions.tsv'),
-      readFile(join(ASSET_DIR, 'enable.txt'), 'utf8'),
-      readFile(join(ASSET_DIR, 'scowl95-additions.txt'), 'utf8'),
-      readFile(join(ASSET_DIR, 'dictionary-patch.tsv'), 'utf8'),
-    ]);
+  const [
+    purgedText,
+    exclusionsText,
+    supplementText,
+    enableText,
+    additionsText,
+    patchText,
+  ] = await Promise.all([
+    raw('nwl2020-purged.txt'),
+    raw('nwl2020-exclusions.tsv'),
+    raw('supplement-slurs.tsv'),
+    readFile(join(ASSET_DIR, 'enable.txt'), 'utf8'),
+    readFile(join(ASSET_DIR, 'scowl95-additions.txt'), 'utf8'),
+    readFile(join(ASSET_DIR, 'dictionary-patch.tsv'), 'utf8'),
+  ]);
 
   const words = (text: string) =>
     text
@@ -108,8 +139,41 @@ async function main(): Promise<void> {
   console.log(`  ${noOps.length} no-ops the boundary never had.`);
   console.log(`  ${denied.length} denied.`);
 
+  // The supplement: slurs the source keeps because a tournament lexicon can
+  // justify them. Intersected with the boundary the same way, so an entry the
+  // game never had is reported rather than silently written as a dead row.
+  const supplement = parseSupplementSlurs(supplementText);
+  const supplementDenied = supplement
+    .map((s) => s.word)
+    .filter((w) => boundary.has(w))
+    .sort();
+  const supplementNoOps = supplement
+    .map((s) => s.word)
+    .filter((w) => !boundary.has(w));
+  console.log(
+    `\n  supplement: ${supplementDenied.length} denied, ` +
+      `${supplementNoOps.length} no-ops${supplementNoOps.length ? ` (${supplementNoOps.join(', ')})` : ''}.`,
+  );
+  console.log(
+    `\n  ${denied.length + supplementDenied.length} denied in total.`,
+  );
+
   const rows = denied.map((w) => `${w}\tdeny\t\t${NWL2020_NOTE}`);
-  const next = `${stripBlock(patchText)}${BLOCK_HEADER.join('\n')}\n${rows.join('\n')}\n`;
+  const supplementRows = supplementDenied.map(
+    (w) => `${w}\tdeny\t\t${SUPPLEMENT_NOTE}`,
+  );
+  // Strip the later block first. Stripping a block drops every comment line
+  // after its header, which would take the next block's header with it and
+  // leave that block's rows orphaned and undetectable on the following run.
+  const base = stripBlock(
+    stripBlock(patchText, '# Denylist (slurs, supplement)', SUPPLEMENT_NOTE),
+    '# Denylist (slurs):',
+    NWL2020_NOTE,
+  );
+  const next =
+    base +
+    `${BLOCK_HEADER.join('\n')}\n${rows.join('\n')}\n` +
+    `${SUPPLEMENT_HEADER.join('\n')}\n${supplementRows.join('\n')}\n`;
   await writeAsset('dictionary-patch.tsv', next);
 
   console.log('\nDone. Wrote public/data/dictionary-patch.tsv.');

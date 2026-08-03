@@ -5,7 +5,15 @@ than acted on, because where the line sits is Antoine's call. Nothing in this
 document has been changed in the data.
 
 Measured against the shipped assets after the denylist landed: 544 crowns, the
-patched pools the calendar build now derives from.
+patched pools the calendar build now derives from, and 243 denied words.
+
+The profanity class is a separate decision that is not covered here or by the
+denylist. Sweeping the OSPD expurgations that are not slurs against the boundary
+and the racks turns up 22 reachable words (`arse` on 27 racks, `clit` on 14,
+`fart` on 9, `piss` on 8, `shit` on 6, and so on down). The denylist is
+deliberately a slur cull, not a profanity cull, so none of these were touched. A
+game family members play may well want them gone too, but that is a different
+call and a different list.
 
 ## Part 3: sensitive words in the common pool
 
@@ -117,12 +125,12 @@ congratulates you for finding, so the bar is higher than for an ordinary find.
 
 ### Strongly recommend substituting
 
-| Word       | Why                                                                               |
-| ---------- | --------------------------------------------------------------------------------- |
-| `genocide` | The clearest case in the list by some distance. Not a thing to celebrate finding. |
-| `atrocity` | Same register.                                                                    |
-| `oriental` | Dated racial term. Also required in the common pool, see Part 3 above.            |
-| `handicap` | Dated term for disability. The 2020 revision cut this whole family.               |
+| Word       | Why                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `genocide` | The clearest case in the list by some distance. Not a thing to celebrate finding.                                                                                  |
+| `atrocity` | Same register.                                                                                                                                                     |
+| `oriental` | Dated racial term. Also required in the common pool, see Part 3 above.                                                                                             |
+| `handicap` | Dated term for disability. The 2020 revision cut adjacent forms (`nonhandicapped`, `harelipped`) but not this one, so it is a judgment call rather than precedent. |
 
 ### Worth a decision: dated or othering usage
 

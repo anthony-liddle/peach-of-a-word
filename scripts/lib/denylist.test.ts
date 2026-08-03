@@ -6,6 +6,7 @@ import {
   extractNwl2020Purged,
   parseDenyExclusions,
   parsePurgedList,
+  parseSupplementSlurs,
   NWL2020_EXPECTED,
 } from './denylist.ts';
 import { DATA_RAW_DIR } from './util.ts';
@@ -145,6 +146,48 @@ describe('the committed derivation', () => {
       .filter((c) => c[1]?.trim() === 'deny' && c[3]?.trim() === 'nwl2020')
       .map((c) => (c[0] ?? '').trim());
     expect(shipped).toEqual(derived.denied);
+  });
+
+  it('supplements the source where a tournament lexicon kept a slur', () => {
+    // The 2020 revision kept faggot (a bundle of sticks), fag (a cigarette),
+    // coon (a raccoon) and negro (a Spanish colour word), because a tournament
+    // lexicon can justify each. It also predates transphobic slurs being a
+    // category anyone audited. AGREEING is the reminder that the reading which
+    // lands is the only one that matters here.
+    const supplement = parseSupplementSlurs(raw('supplement-slurs.tsv'));
+    const words = supplement.map((s) => s.word);
+    expect(supplement).toHaveLength(25);
+    for (const { reason } of supplement) {
+      expect(reason.length).toBeGreaterThan(8);
+    }
+    // Each of these is absent from the source list, which is the whole reason
+    // the supplement exists: it must add cover, not repeat it.
+    for (const word of ['faggot', 'fag', 'coon', 'negro', 'tranny']) {
+      expect(purged).not.toContain(word);
+      expect(words).toContain(word);
+    }
+  });
+
+  it('holds the supplement to the same neutral-primary-sense bar', () => {
+    // Pointing the other way from the exclusions, but the same rule. These have
+    // a neutral primary sense in ordinary modern English, so they stay valid
+    // even though each sits near a denied word.
+    const words = parseSupplementSlurs(raw('supplement-slurs.tsv')).map(
+      (s) => s.word,
+    );
+    for (const keep of [
+      'lame',
+      'deaf',
+      'queer',
+      'creole',
+      'dyke',
+      'poof',
+      'moron',
+      'idiot',
+      'dwarf',
+    ]) {
+      expect(words).not.toContain(keep);
+    }
   });
 
   it('never denies the five ordinary words this game must keep', () => {
