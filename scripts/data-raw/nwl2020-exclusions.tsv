@@ -1,0 +1,48 @@
+# Reviewed over-blocking exclusions for the NWL2020 slur purge.
+# One word per line: word, reason. Every entry is present in
+# nwl2020-purged.txt and is deliberately NOT denied by this game.
+#
+# The test is narrow on purpose: a word is held back only when its
+# primary sense in ordinary modern English is neutral, so a player
+# could reasonably type it with no idea of the other reading. A word
+# that is merely dated, coarse, or contested is still denied.
+#
+# The asymmetry that settles the borderline cases: leaving a slur
+# valid rewards a player for typing it, while denying an ordinary
+# word only makes the game look like it has a small vocabulary. So
+# the bar to hold a word back is a genuinely neutral primary sense,
+# not a neutral sense that exists somewhere.
+#
+# NASPA had already done most of this review. The five words this
+# game must not deny (nip, nips, niggard, spade, coot) are absent
+# from the source list entirely, which is a large part of why this
+# source was chosen over a generic profanity list. src/data/
+# slurDenylist.test.ts asserts all five stay accepted and scored.
+#
+# Held back but NOT here, and why they stay denied: hebe (the shrub
+# genus is real but niche in a US lexicon, and the slur reading is
+# live), goy and goyim (used neutrally by many Jewish speakers, but
+# NASPA judged them personally applicable), chola and cholo and
+# gringo and gringa (self-identifiers in some communities, mild in
+# others), redneck and girlies (informal, but the offensive sense is
+# the primary one). Each is a judgment call, and each is Antoine's
+# to overturn by adding a line here.
+word	reason
+gynecocracies	government by women; neutral descriptive term, purged as sexist
+gynecocracy	government by women; neutral descriptive term, purged as sexist
+gynecocratic	government by women; neutral descriptive term, purged as sexist
+greybeard	an old man; neutral primary sense, purged as ageist
+greybeards	an old man; neutral primary sense, purged as ageist
+jesuit	member of the Society of Jesus; neutral primary sense
+jesuitic	of the Society of Jesus; neutral primary sense
+jesuitical	of the Society of Jesus; neutral primary sense
+jesuitically	of the Society of Jesus; neutral primary sense
+jesuitism	the Jesuit system; neutral primary sense
+jesuitisms	the Jesuit system; neutral primary sense
+jesuitries	the Jesuit system; neutral primary sense
+jesuitry	the Jesuit system; neutral primary sense
+jesuits	members of the Society of Jesus; neutral primary sense
+mongolian	of Mongolia; a nationality adjective (mongolism, mongoloid stay denied)
+nonhandicapped	neutral descriptive compound; carries no slur force of its own
+pepsi	the soft drink is the primary sense; the ethnic reading is obscure
+pepsis	the soft drink is the primary sense; the ethnic reading is obscure

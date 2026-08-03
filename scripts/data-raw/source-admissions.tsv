@@ -1,0 +1,32 @@
+# Source-pool admissions: crown candidates added by hand, one per line,
+# as word, reason.
+#
+# Why this file exists. When a crown is retired for register, its
+# replacement cannot come from source-exclusions.tsv: every word in
+# that cull violates one of the three rules by construction, and a
+# plural has no etymology of its own to reveal, which is the whole
+# point of the crown. So the source pool is widened instead, by the
+# minimum needed, and each admission is recorded here.
+#
+# What an admission must satisfy, all enforced by
+# scripts/admit-source-words.ts, which refuses to write otherwise:
+#   exactly 8 letters
+#   in the common pool, so inside the SOURCE_POOL_SIZES bands (10, 20)
+#   in the validation boundary and not denied
+#   a clean base word: not a pure inflection, a degree form, or a
+#     past-tense dual, the three Phase 2 cull rules
+#   carries BOTH a definition and an etymology, since REQUIRE_ETYMOLOGY
+#     is what makes the reveal work
+#   clears MIN_SET_SIZE through createPuzzle
+#
+# These three were already in the common pool at the right band and
+# were only missing from the source pool because their cached
+# Wiktionary etymology was a throttled null. Re-fetching returns a
+# full etymology for each. See the note on enrichWord in
+# scripts/lib/wiktionary.ts: the same cache issue is why roughly 868
+# eligible 8-letter common words never entered the pool, which is a
+# larger decision than this change.
+word	reason
+distance	base noun; substitutes for violence at calendar index 57
+integral	base adjective and noun; substitutes for abortion at calendar index 67
+restrain	base verb; substitutes for sexually at calendar index 100

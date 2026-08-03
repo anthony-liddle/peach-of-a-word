@@ -82,7 +82,29 @@ describe('source-word exclusion list (the cull rule)', () => {
     }
   });
 
-  it('lands on 38 excluded words total', () => {
-    expect(exclusions.size).toBe(38);
+  it('excludes the three hand-flagged register words', () => {
+    // Not derived: a judgment call that these would be odd to type into a
+    // cute-themed game. Each is substituted in place in the calendar so no
+    // date is re-dated, and each stays a valid, scorable find.
+    expect(withReason('register')).toEqual([
+      'abortion',
+      'sexually',
+      'violence',
+    ]);
+  });
+
+  it('never gives up a word to fill a crown slot', () => {
+    // Every word here violates one of the three rules by construction, so no
+    // re-admission can be clean: a plural has no etymology of its own to
+    // reveal, which is the whole reason the cull exists. A retired crown is
+    // replaced by widening the source pool, not by striking a line here.
+    for (const word of ['analyses', 'archives', 'criteria', 'stranger']) {
+      expect(exclusions.has(word)).toBe(true);
+    }
+  });
+
+  it('lands on 41 excluded words total', () => {
+    // The 38 derived by the cull, plus the 3 hand-flagged register words.
+    expect(exclusions.size).toBe(41);
   });
 });

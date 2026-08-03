@@ -1,11 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createListDictionary } from '@/data/listSource.ts';
 import {
-  createListDictionary,
-  createListWordSource,
-} from '@/data/listSource.ts';
-import {
+  createPuzzle,
   eligibleSourceWords,
   generateCalendar,
   sourceSetSize,
@@ -14,6 +12,18 @@ import {
 import type { SourceEntry } from '@/data/types.ts';
 import type { Dictionary, WordSource } from '@/engine/types.ts';
 import { parseExclusions } from './lib/exclusions.ts';
+import { parseReasonedWords } from './lib/denylist.ts';
+import { loadPatchedPools } from './lib/pools.ts';
+
+const ADMISSIONS = new Map(
+  parseReasonedWords(
+    readFileSync(
+      join(import.meta.dirname, 'data-raw', 'source-admissions.tsv'),
+      'utf8',
+    ),
+    'Source admission',
+  ).map((a) => [a.word, a.reason]),
+);
 
 const EXCLUSIONS = parseExclusions(
   readFileSync(
@@ -40,11 +50,12 @@ let beyond95Pool: WordSource;
 let sourceWords: string[];
 let eligible: string[];
 
-beforeAll(() => {
-  dictionary = createListDictionary(read('enable.txt'));
-  commonPool = createListWordSource(read('common-pool.txt'));
-  beyond70Pool = createListWordSource(read('beyond-size-70.txt'));
-  beyond95Pool = createListWordSource(read('beyond-size-95.txt'));
+beforeAll(async () => {
+  // The same patched pools the build derives from, so eligibility here is the
+  // eligibility that shipped. Loading the raw lists instead would leave denied
+  // words inside every set size this file asserts on.
+  ({ dictionary, commonPool, beyond70Pool, beyond95Pool } =
+    await loadPatchedPools());
   sourceWords = (
     JSON.parse(
       readFileSync(join(DATA, 'source-pool.json'), 'utf8'),
@@ -62,10 +73,56 @@ beforeAll(() => {
 const setSize = (w: string) =>
   sourceSetSize(w, dictionary, commonPool, beyond70Pool, beyond95Pool);
 
+describe('the calendar build derives from patched pools', () => {
+  // The generator IS pool derivation: it computes each candidate's set size and
+  // keeps the ones that clear the floor, so a word present in these pools is
+  // inside a par value and a completion count. Reading the raw lists left every
+  // denied word in those denominators even though the runtime had removed it.
+  const deniedSlurs = readFileSync('public/data/dictionary-patch.tsv', 'utf8')
+    .split('\n')
+    .map((l) => l.split('\t'))
+    .filter((c) => c[1]?.trim() === 'deny' && c[3]?.trim() === 'nwl2020')
+    .map((c) => (c[0] ?? '').trim());
+
+  it('has no denied word left in the pools eligibility is computed from', () => {
+    expect(deniedSlurs.length).toBeGreaterThan(0);
+    for (const word of deniedSlurs) expect(dictionary.has(word)).toBe(false);
+  });
+
+  it('leaves no denied word in any set the floor is measured against', () => {
+    // AGREEING is the rack that surfaced this: it spells two of them.
+    const denied = new Set(deniedSlurs);
+    const puzzle = createPuzzle(
+      'agreeing',
+      dictionary,
+      commonPool,
+      beyond70Pool,
+      beyond95Pool,
+    );
+    for (const band of [
+      puzzle.validationWords,
+      puzzle.commonWords,
+      puzzle.uncommonWords,
+      puzzle.rareWords,
+      puzzle.mythicWords,
+    ]) {
+      for (const word of band) expect(denied.has(word)).toBe(false);
+    }
+  });
+
+  it('unpatched pools would still hold them, which is what was wrong', () => {
+    // The discriminator. Same assertion, raw lists: it must fail, or the two
+    // tests above prove nothing about the fix.
+    const raw = createListDictionary(read('enable.txt'));
+    expect(deniedSlurs.some((w) => raw.has(w))).toBe(true);
+  });
+});
+
 describe('eligibility against the real baked data', () => {
-  it('keeps 582 of the 707 shipped source words (the rest are sub-floor)', () => {
-    expect(sourceWords.length).toBe(707);
-    expect(eligible.length).toBe(582);
+  it('keeps 585 of the 710 shipped source words (the rest are sub-floor)', () => {
+    // 707 plus the three hand admissions that replace the retired crowns.
+    expect(sourceWords.length).toBe(710);
+    expect(eligible.length).toBe(585);
   });
 
   it('treats known thin words as sub-floor (crown-inclusive)', () => {
@@ -88,8 +145,9 @@ describe('the culled, regenerated calendar', () => {
   const culledWords = () => eligible.filter((w) => !EXCLUSIONS.has(w));
 
   it('drops exactly the excluded words from the eligible pool', () => {
-    // 582 eligible minus 38 exclusions = 544 clean crowns.
-    expect(eligible.length).toBe(582);
+    // 585 eligible minus 41 exclusions = 544 clean crowns, the same count as
+    // before: three retired for register, three admitted to replace them.
+    expect(eligible.length).toBe(585);
     expect(culledWords().length).toBe(544);
   });
 
@@ -110,6 +168,45 @@ describe('the culled, regenerated calendar', () => {
     expect(committed.words.length).toBe(544);
     expect([...committed.words].sort()).toEqual([...culledWords()].sort());
     expect(committed.epoch).toEqual({ year: 2026, month: 6, day: 23 });
+  });
+
+  it('substitutes the three flagged crowns in place, keeping the calendar frozen', () => {
+    // Antoine's call: sexually, violence and abortion would be odd to type into
+    // a cute-themed game. They are swapped at their own index rather than
+    // removed, because removing an entry re-dates every day after it and breaks
+    // the promise that a given date is a fixed puzzle. Each replacement is a
+    // clean base word admitted to the source pool, not a word struck from the
+    // Phase 2 cull: a plural has no etymology of its own to reveal.
+    const committed = JSON.parse(
+      readFileSync(join(DATA, 'daily-calendar.json'), 'utf8'),
+    ) as { words: string[] };
+    const swaps: ReadonlyArray<readonly [number, string, string]> = [
+      [57, 'violence', 'restrain'],
+      [67, 'abortion', 'integral'],
+      [100, 'sexually', 'distance'],
+    ];
+
+    expect(committed.words).toHaveLength(544);
+    // Length held and no duplicate introduced, so no two dates now resolve to
+    // the same puzzle.
+    expect(new Set(committed.words).size).toBe(544);
+
+    for (const [index, removed, added] of swaps) {
+      expect(committed.words[index]).toBe(added);
+      expect(committed.words).not.toContain(removed);
+      // The outgoing word is culled from the crown pool, so a regeneration
+      // cannot reintroduce it; it stays a valid, scorable find.
+      expect(EXCLUSIONS.has(removed)).toBe(true);
+      expect(EXCLUSIONS.has(added)).toBe(false);
+      // Each replacement makes a real puzzle: the floor, through createPuzzle,
+      // exactly as calendar generation computes it.
+      expect(setSize(added)).toBeGreaterThanOrEqual(MIN_SET_SIZE);
+      expect(dictionary.has(added)).toBe(true);
+      // Admitted by widening the source pool, never re-admitted from the cull:
+      // every culled word breaks one of the three rules by construction.
+      expect(ADMISSIONS.has(added)).toBe(true);
+      expect(EXCLUSIONS.has(added)).toBe(false);
+    }
   });
 
   it('every committed crown is clean, and the floor holds on a sample', () => {

@@ -2,7 +2,8 @@ word	action	band	note
 # Dictionary patch layer. One word per line. Columns: word, action (allow or
 # deny), band (common for allow seeds; blank for deny), note (optional).
 # Allow = accept a word the base list misses, banded so it classifies right.
-# Deny = reject a word the base list wrongly accepts (seeded empty for now).
+# Deny = reject a word the base list wrongly accepts, outright: it answers with
+# the ordinary not-in-the-word-list response, exactly as if it were not a word.
 # Bea flags a word, it becomes one line here, and the dictionary tunes to her.
 #
 # Allowlist: modern words ENABLE rejects, from the must-accept probe in
@@ -2693,3 +2694,286 @@ zimmer	deny		proper noun
 zira	deny		proper noun
 ziz	deny		proper noun
 zola	deny		proper noun
+#
+# Denylist (slurs): the 2020 NASPA Word List purge, the slurs removed from
+# the North American Scrabble tournament lexicon in its 2020 revision.
+# ENABLE is a Scrabble tournament lexicon and carries slurs deliberately, so
+# most of these arrived with it rather than with the SCOWL boundary swap.
+#
+# Source:     scripts/data-raw/nwl2020-purged.txt (vendored, 259 words)
+# Held back:  scripts/data-raw/nwl2020-exclusions.tsv (reviewed, with reasons)
+# Generated:  pnpm data:denylist. Do not hand-edit these rows; edit the
+#             exclusion list and re-run, so every decision keeps its reason.
+#
+# Whole words only. Nothing here is matched as a prefix or a substring, so
+# niggard, niggardly and denigrate are untouched, and so are nip (formable
+# from 28 of the shipped racks), nips, spade and coot. The source list does
+# not contain any of them, which is much of why it was chosen over a generic
+# profanity list: importing one of those unfiltered would take nip.
+#
+# A denied word is removed from validation and from every pool before the
+# pools are derived, so par, the common set, completion counts and the rarity
+# bands all recompute without it. It is then rejected with the ordinary
+# not-in-the-word-list response: a distinct message would tell the player the
+# block was deliberate, which is its own acknowledgement.
+#
+abo	deny		nwl2020
+abos	deny		nwl2020
+blackamoor	deny		nwl2020
+blackamoors	deny		nwl2020
+boche	deny		nwl2020
+boches	deny		nwl2020
+bogtrotter	deny		nwl2020
+bogtrotters	deny		nwl2020
+bohunk	deny		nwl2020
+bohunks	deny		nwl2020
+bubba	deny		nwl2020
+bubbas	deny		nwl2020
+buckra	deny		nwl2020
+buckras	deny		nwl2020
+bulldyke	deny		nwl2020
+bulldykes	deny		nwl2020
+chola	deny		nwl2020
+cholas	deny		nwl2020
+cholo	deny		nwl2020
+cholos	deny		nwl2020
+cocksucker	deny		nwl2020
+cocksuckers	deny		nwl2020
+cockteaser	deny		nwl2020
+cockteasers	deny		nwl2020
+coloreds	deny		nwl2020
+crip	deny		nwl2020
+crips	deny		nwl2020
+crumblies	deny		nwl2020
+cunt	deny		nwl2020
+cunts	deny		nwl2020
+dago	deny		nwl2020
+dagoes	deny		nwl2020
+dagos	deny		nwl2020
+darkey	deny		nwl2020
+darkeys	deny		nwl2020
+darkie	deny		nwl2020
+darkies	deny		nwl2020
+darky	deny		nwl2020
+dickhead	deny		nwl2020
+dickheads	deny		nwl2020
+dikey	deny		nwl2020
+dykey	deny		nwl2020
+faggier	deny		nwl2020
+faggiest	deny		nwl2020
+faggotries	deny		nwl2020
+faggotry	deny		nwl2020
+faggoty	deny		nwl2020
+faggy	deny		nwl2020
+gadje	deny		nwl2020
+ginzo	deny		nwl2020
+ginzoes	deny		nwl2020
+girlies	deny		nwl2020
+goy	deny		nwl2020
+goyim	deny		nwl2020
+goyish	deny		nwl2020
+goys	deny		nwl2020
+greaseball	deny		nwl2020
+greaseballs	deny		nwl2020
+gringa	deny		nwl2020
+gringas	deny		nwl2020
+gringo	deny		nwl2020
+gringos	deny		nwl2020
+haole	deny		nwl2020
+haoles	deny		nwl2020
+harelipped	deny		nwl2020
+hebe	deny		nwl2020
+hebes	deny		nwl2020
+honkey	deny		nwl2020
+honkeys	deny		nwl2020
+honkie	deny		nwl2020
+honkies	deny		nwl2020
+honky	deny		nwl2020
+hos	deny		nwl2020
+hunkey	deny		nwl2020
+hunkeys	deny		nwl2020
+hunkie	deny		nwl2020
+hunkies	deny		nwl2020
+jew	deny		nwl2020
+jewed	deny		nwl2020
+jewing	deny		nwl2020
+jews	deny		nwl2020
+jigaboo	deny		nwl2020
+jigaboos	deny		nwl2020
+kanaka	deny		nwl2020
+kanakas	deny		nwl2020
+kike	deny		nwl2020
+kikes	deny		nwl2020
+les	deny		nwl2020
+lesbo	deny		nwl2020
+lesbos	deny		nwl2020
+leses	deny		nwl2020
+lez	deny		nwl2020
+lezzes	deny		nwl2020
+lezzie	deny		nwl2020
+lezzies	deny		nwl2020
+lezzy	deny		nwl2020
+mick	deny		nwl2020
+micks	deny		nwl2020
+mongolism	deny		nwl2020
+mongolisms	deny		nwl2020
+mongoloid	deny		nwl2020
+mongoloids	deny		nwl2020
+mulatto	deny		nwl2020
+mulattoes	deny		nwl2020
+mulattos	deny		nwl2020
+nance	deny		nwl2020
+nances	deny		nwl2020
+nancies	deny		nwl2020
+nancy	deny		nwl2020
+negrophil	deny		nwl2020
+negrophils	deny		nwl2020
+nigger	deny		nwl2020
+niggers	deny		nwl2020
+nitchie	deny		nwl2020
+nitchies	deny		nwl2020
+nonpapist	deny		nwl2020
+nonpapists	deny		nwl2020
+nookie	deny		nwl2020
+nookies	deny		nwl2020
+nooky	deny		nwl2020
+ofay	deny		nwl2020
+ofays	deny		nwl2020
+papism	deny		nwl2020
+papisms	deny		nwl2020
+papist	deny		nwl2020
+papistic	deny		nwl2020
+papistries	deny		nwl2020
+papistry	deny		nwl2020
+papists	deny		nwl2020
+peckerwood	deny		nwl2020
+peckerwoods	deny		nwl2020
+picaninnies	deny		nwl2020
+picaninny	deny		nwl2020
+piccaninnies	deny		nwl2020
+piccaninny	deny		nwl2020
+pickaninnies	deny		nwl2020
+pickaninny	deny		nwl2020
+polack	deny		nwl2020
+pommie	deny		nwl2020
+pommies	deny		nwl2020
+pommy	deny		nwl2020
+poncier	deny		nwl2020
+ponciest	deny		nwl2020
+poncy	deny		nwl2020
+poofier	deny		nwl2020
+poofiest	deny		nwl2020
+poofs	deny		nwl2020
+pooftah	deny		nwl2020
+pooftahs	deny		nwl2020
+poofter	deny		nwl2020
+poofters	deny		nwl2020
+poofy	deny		nwl2020
+poontang	deny		nwl2020
+poontangs	deny		nwl2020
+poove	deny		nwl2020
+pooves	deny		nwl2020
+poperies	deny		nwl2020
+popery	deny		nwl2020
+popish	deny		nwl2020
+popishly	deny		nwl2020
+raghead	deny		nwl2020
+ragheads	deny		nwl2020
+redneck	deny		nwl2020
+rednecked	deny		nwl2020
+rednecks	deny		nwl2020
+retardate	deny		nwl2020
+retardates	deny		nwl2020
+shaveling	deny		nwl2020
+shavelings	deny		nwl2020
+sheeney	deny		nwl2020
+sheeneys	deny		nwl2020
+sheenie	deny		nwl2020
+sheenies	deny		nwl2020
+shegetz	deny		nwl2020
+shicksa	deny		nwl2020
+shicksas	deny		nwl2020
+shiksa	deny		nwl2020
+shiksas	deny		nwl2020
+shikse	deny		nwl2020
+shikseh	deny		nwl2020
+shiksehs	deny		nwl2020
+shikses	deny		nwl2020
+shkotzim	deny		nwl2020
+shvartze	deny		nwl2020
+shvartzes	deny		nwl2020
+skimo	deny		nwl2020
+skimos	deny		nwl2020
+sluttishness	deny		nwl2020
+sluttishnesses	deny		nwl2020
+spaz	deny		nwl2020
+spazz	deny		nwl2020
+spazzes	deny		nwl2020
+spic	deny		nwl2020
+spick	deny		nwl2020
+spicks	deny		nwl2020
+spics	deny		nwl2020
+spik	deny		nwl2020
+spiks	deny		nwl2020
+squaw	deny		nwl2020
+squaws	deny		nwl2020
+superbitch	deny		nwl2020
+superbitches	deny		nwl2020
+tommed	deny		nwl2020
+tomming	deny		nwl2020
+twat	deny		nwl2020
+twats	deny		nwl2020
+wetback	deny		nwl2020
+wetbacks	deny		nwl2020
+whiteys	deny		nwl2020
+whities	deny		nwl2020
+wog	deny		nwl2020
+woggish	deny		nwl2020
+wogs	deny		nwl2020
+wop	deny		nwl2020
+wops	deny		nwl2020
+wrinklies	deny		nwl2020
+yid	deny		nwl2020
+yids	deny		nwl2020
+#
+# Denylist (slurs, supplement): slurs the 2020 revision does not cover.
+# It was written for a tournament lexicon, so it kept any word carrying a
+# non-offensive sense somewhere (faggot as a bundle of sticks, fag as a
+# cigarette, coon as a raccoon), and it predates transphobic slurs being a
+# category anyone audited. Right for competitive Scrabble, wrong here.
+#
+# Source:     scripts/data-raw/supplement-slurs.tsv (hand-curated, with
+#             reasons; no public list solves this the way NWL2020 solves
+#             the main case)
+# Generated:  pnpm data:denylist. Edit the source file, not these rows.
+#
+# Held to the same bar as the exclusions, pointing the other way: denied
+# only where there is no neutral primary sense in ordinary modern English.
+# lame, deaf, queer, creole, dyke, poof, moron and idiot are deliberately
+# NOT here; the source file records why for each.
+#
+coon	deny		supplement
+coons	deny		supplement
+cretin	deny		supplement
+cretins	deny		supplement
+fag	deny		supplement
+faggot	deny		supplement
+faggots	deny		supplement
+fags	deny		supplement
+homo	deny		supplement
+homos	deny		supplement
+injun	deny		supplement
+kraut	deny		supplement
+krauts	deny		supplement
+negress	deny		supplement
+negresses	deny		supplement
+negro	deny		supplement
+negroes	deny		supplement
+negroid	deny		supplement
+negroids	deny		supplement
+nigga	deny		supplement
+niggas	deny		supplement
+slut	deny		supplement
+sluts	deny		supplement
+trannies	deny		supplement
+tranny	deny		supplement

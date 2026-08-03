@@ -67,3 +67,51 @@ describe('useGame daily day-key', () => {
     expect(keys).not.toContain(dayIndex(today, calendarEpoch));
   });
 });
+
+describe('a denied word already saved in progress', () => {
+  it('is dropped on rehydration, so no migration is needed', () => {
+    // Bea found one before it was denied, so it is sitting in her stored found
+    // list. Denying a word removes it from validation, and a restored game
+    // keeps only words validation still knows, so it disappears from the found
+    // list, the glossary and the score with no migration step. Verified rather
+    // than assumed: progress is stored as found words, and everything else is
+    // recomputed from the live puzzle.
+    const epoch = { year: 2026, month: 6, day: 23 };
+    const data: GameData = {
+      // 'near' stands in for a denied word: still spellable from the rack, but
+      // no longer in the dictionary the puzzle is built from.
+      dictionary: createListDictionary(['serenade', 'sea']),
+      commonPool: createListWordSource(['serenade', 'sea']),
+      beyond70Pool: createListWordSource([]),
+      beyond95Pool: createListWordSource([]),
+      dailyCalendar: { epoch, words: ['serenade'] },
+      sourceEntry: () => undefined,
+    };
+    const cap = capturingStore();
+    const today = new Date();
+    cap.store.setItem(
+      'eight-letters/v1',
+      JSON.stringify({
+        version: 1,
+        days: {
+          [dayIndex(today, STORAGE_EPOCH)]: {
+            sourceWord: 'serenade',
+            found: ['sea', 'near'],
+          },
+        },
+        streak: { count: 0, lastClearedDayIndex: null },
+        endless: null,
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useGame(data, new NullAudioEngine(), new GameStorage(cap.store)),
+    );
+
+    expect(result.current.state.mode).toBe('daily');
+    expect(result.current.state.found).toContain('sea');
+    expect(result.current.state.found).not.toContain('near');
+    // And it is not scored: the score is recomputed from the surviving finds.
+    expect(result.current.state.foundSet.has('near')).toBe(false);
+  });
+});
