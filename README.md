@@ -87,6 +87,27 @@ rows, `pnpm data:calendar` for the calendar, `pnpm defs:rederive` for glosses.
 Rerun `pnpm data:build` only when deliberately re-vendoring the source lexicons,
 and review the calendar and the crowns afterwards.
 
+### The data directory is versioned by its contents
+
+Vite content-hashes the JS bundle, so every deploy gives it a new filename, but
+files under `public/` keep the same URL forever. A returning visitor could
+therefore pair a cached bundle with data from a later deploy, which is exactly
+how the game broke: an old bundle fetched a newer patch file and threw on an
+action it did not know.
+
+So the built data directory carries a hash of its own contents,
+`dist/data-<hash>/`, and the app is handed the same suffix at build time. A
+bundle only ever requests the data it was built against. If that data has moved
+on, the path is not in the current deploy, the fetch 404s, and the app reloads
+itself once to pick up the current bundle. It never parses data it was not built
+for.
+
+Hashing the contents rather than stamping a build id keeps the cache useful: a
+deploy that changes only the app leaves the data URL alone, so returning visitors
+do not re-download 8MB of word lists that did not change.
+
+In dev the suffix is empty and the files are served from `public/data` as usual.
+
 ### The patch is applied at build time, not at runtime
 
 The word lists in `public/data` ship with the allowlist, denylist, and demotions

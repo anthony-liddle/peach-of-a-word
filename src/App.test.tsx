@@ -28,20 +28,37 @@ function paintTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
 }
 
+const RELOAD_KEY = 'peach:reloaded-for-stale-data';
+
 afterEach(() => {
   delete document.documentElement.dataset.theme;
   localStorage.clear();
+  sessionStorage.clear();
   load.next = () => new Promise<never>(() => {});
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
-/** Render, then let the rejected load settle so the error screen paints. */
-async function renderFailedLoad(err: unknown): Promise<void> {
+/**
+ * Render with a failing load and let it settle.
+ *
+ * A first failure reloads the page once, on the theory that the bundle is stale,
+ * so tests that want the error screen pass alreadyReloaded to stand in for the
+ * second attempt. Returns the reload spy either way.
+ */
+async function renderFailedLoad(
+  err: unknown,
+  { alreadyReloaded = true }: { alreadyReloaded?: boolean } = {},
+): Promise<ReturnType<typeof vi.fn>> {
+  if (alreadyReloaded) sessionStorage.setItem(RELOAD_KEY, '1');
+  const reload = vi.fn();
+  vi.stubGlobal('location', { reload });
   load.next = () => Promise.reject(err) as Promise<never>;
   vi.spyOn(console, 'error').mockImplementation(() => {});
   await act(async () => {
     render(<App />);
   });
+  return reload;
 }
 
 describe('the loading screen', () => {
@@ -124,5 +141,49 @@ describe('the error screen', () => {
       'Game data failed to load.',
       err,
     );
+  });
+});
+
+/**
+ * The data directory is versioned by its contents, so a bundle that outlived a
+ * data change requests a directory the deploy no longer serves. That is a stale
+ * bundle, and fetching the page again fixes it, so the app does that once rather
+ * than asking the player to.
+ */
+describe('the stale-bundle reload', () => {
+  it('reloads once on the first failure instead of showing an error', async () => {
+    const reload = await renderFailedLoad(new Error('HTTP 404'), {
+      alreadyReloaded: false,
+    });
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    // No error painted over a page that is about to be replaced.
+    expect(document.body.textContent).not.toContain('did not load');
+  });
+
+  it('shows the error rather than reloading again, so it cannot loop', async () => {
+    const reload = await renderFailedLoad(new Error('HTTP 404'));
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('The word lists did not load. Reload to try again.'),
+    ).toBeInTheDocument();
+  });
+
+  it('falls through to the error screen when sessionStorage is unavailable', async () => {
+    // Private mode and blocked storage partitions both throw here. Without a
+    // way to record the attempt there is no way to stop a loop, so it must not
+    // start one.
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    const reload = await renderFailedLoad(new Error('HTTP 404'), {
+      alreadyReloaded: false,
+    });
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('The word lists did not load. Reload to try again.'),
+    ).toBeInTheDocument();
   });
 });

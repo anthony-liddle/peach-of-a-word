@@ -35,13 +35,34 @@ export interface GameData {
   readonly sourceEntry: (word: string) => SourceEntry | undefined;
 }
 
-function assetUrl(name: string): string {
-  return `${import.meta.env.BASE_URL}data/${name}`;
+/**
+ * The data directory carries a hash of its own contents, so a bundle only ever
+ * asks for the data it was built against. If the data has moved on, this path is
+ * not in the current deploy and the fetch fails loudly instead of handing the
+ * bundle files it was not built to parse.
+ */
+export function assetUrl(name: string): string {
+  return `${import.meta.env.BASE_URL}data${__DATA_VERSION__}/${name}`;
+}
+
+/**
+ * A word list arriving as HTML is the failure that matters here. If a host ever
+ * answers a missing asset with a rewrite to index.html rather than a 404, res.ok
+ * is true and the word-list parser turns markup into thousands of junk words: no
+ * error, no safe message, a game that is quietly wrong. A JSON asset would throw
+ * on parse, but a word list fails open, so the content type is checked.
+ */
+function assertNotMarkup(name: string, res: Response): void {
+  const type = res.headers?.get?.('content-type') ?? '';
+  if (type.includes('text/html')) {
+    throw new Error(`Asset ${name} came back as HTML, not data.`);
+  }
 }
 
 async function fetchText(name: string): Promise<string> {
   const res = await fetch(assetUrl(name));
   if (!res.ok) throw new Error(`Failed to load ${name}: HTTP ${res.status}`);
+  assertNotMarkup(name, res);
   return res.text();
 }
 

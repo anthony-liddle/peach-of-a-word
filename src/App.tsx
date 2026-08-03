@@ -20,6 +20,37 @@ type LoadState =
   | { status: 'ready'; data: GameData }
   | { status: 'error' };
 
+/** Marks that this tab has already tried reloading, so it can only happen once. */
+const RELOAD_KEY = 'peach:reloaded-for-stale-data';
+
+/**
+ * Reload once when the data will not load, because the likeliest cause is a
+ * stale bundle.
+ *
+ * The data directory is versioned by its contents, so a bundle that survives a
+ * data change asks for a directory the deploy no longer serves and the fetch
+ * fails. The fix for that is simply to fetch the current page again, which is
+ * something the app can do for the player rather than asking them to.
+ *
+ * Guarded by a sessionStorage flag so it cannot loop: if the reload does not
+ * help, which is what a genuinely broken deploy looks like, the second attempt
+ * falls through to the error screen and stays there. Returns whether a reload
+ * was started, so the caller can skip painting an error over a page that is
+ * about to be replaced.
+ */
+function reloadForStaleBundle(): boolean {
+  try {
+    if (sessionStorage.getItem(RELOAD_KEY)) return false;
+    sessionStorage.setItem(RELOAD_KEY, '1');
+    location.reload();
+    return true;
+  } catch {
+    // Private mode, a blocked storage partition, or no location to speak of.
+    // The error screen is the correct fallback.
+    return false;
+  }
+}
+
 export function App() {
   const [load, setLoad] = useState<LoadState>({ status: 'loading' });
   // The loading screen paints before Game exists, so the theme is read here
@@ -35,6 +66,7 @@ export function App() {
       .then((data) => active && setLoad({ status: 'ready', data }))
       .catch((err: unknown) => {
         console.error('Game data failed to load.', err);
+        if (reloadForStaleBundle()) return;
         if (active) setLoad({ status: 'error' });
       });
     return () => {
