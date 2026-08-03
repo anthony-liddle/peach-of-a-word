@@ -37,6 +37,76 @@ describe('parsePatch', () => {
   it('throws when an allow entry has no valid band', () => {
     expect(() => parsePatch('app\tallow\t\t')).toThrow(/band/i);
   });
+
+  it('parses a demote entry', () => {
+    const patch = parsePatch('rape\tdemote\t\tsexual violence');
+    expect(patch.demote).toEqual(['rape']);
+    expect(patch.allow).toEqual([]);
+    expect(patch.deny).toEqual([]);
+  });
+});
+
+describe('demotion, the third action', () => {
+  // The band column could not express this. PatchBand was 'common' only and an
+  // allow entry only ever ADDS a word, so there was no way to move a word that
+  // is already in the common pool out of it. Denial was the only subtraction
+  // the layer had, and denial takes the word out of validation too. Demotion is
+  // the smallest thing that does what is needed: out of the set, still a word.
+  const lists: PatchableLists = {
+    enable: ['paradise', 'rape', 'pear', 'reap'],
+    common: ['paradise', 'rape', 'pear'],
+    beyond70: [],
+    beyond95: [],
+  };
+  const patch = parsePatch('rape\tdemote\t\tsexual violence');
+  const merged = applyPatch(lists, patch);
+
+  it('takes the word out of the common pool and nothing else', () => {
+    expect(merged.common).not.toContain('rape');
+    expect(merged.enable).toContain('rape');
+  });
+
+  it('leaves it valid, scoreable, and graded as an off-page find', () => {
+    const puzzle = createPuzzle(
+      'paradise',
+      createListDictionary(merged.enable),
+      createListWordSource(merged.common),
+      createListWordSource(merged.beyond70),
+      createListWordSource(merged.beyond95),
+    );
+    const result = validateGuess('rape', puzzle, new Set());
+    expect(result.kind).toBe('valid');
+    if (result.kind === 'valid') expect(result.score).toBeGreaterThan(0);
+    // Off the page: not a set word, so not required, but still on the ladder.
+    expect(puzzle.commonWords.has('rape')).toBe(false);
+    expect(classifyWord('rape', puzzle)).toBe('uncommon');
+  });
+
+  it('drops it out of par and the completion count', () => {
+    const before = createPuzzle(
+      'paradise',
+      createListDictionary(lists.enable),
+      createListWordSource(lists.common),
+      createListWordSource(lists.beyond70),
+      createListWordSource(lists.beyond95),
+    );
+    const after = createPuzzle(
+      'paradise',
+      createListDictionary(merged.enable),
+      createListWordSource(merged.common),
+      createListWordSource(merged.beyond70),
+      createListWordSource(merged.beyond95),
+    );
+    expect(before.commonWords.has('rape')).toBe(true);
+    expect(after.commonWords.size).toBe(before.commonWords.size - 1);
+    expect(after.reachableScore).toBeLessThan(before.reachableScore);
+  });
+
+  it('is not denial: a denied word loses validation, a demoted one does not', () => {
+    const denied = applyPatch(lists, parsePatch('rape\tdeny\t\t'));
+    expect(denied.enable).not.toContain('rape');
+    expect(merged.enable).toContain('rape');
+  });
 });
 
 describe('applyPatch', () => {
@@ -51,13 +121,14 @@ describe('applyPatch', () => {
     const merged = applyPatch(base, {
       allow: [{ word: 'app', band: 'common' }],
       deny: [],
+      demote: [],
     });
     expect(merged.enable).toContain('app');
     expect(merged.common).toContain('app');
   });
 
   it('removes a denylisted word from every list', () => {
-    const merged = applyPatch(base, { allow: [], deny: ['cat'] });
+    const merged = applyPatch(base, { allow: [], deny: ['cat'], demote: [] });
     expect(merged.enable).not.toContain('cat');
     expect(merged.common).not.toContain('cat');
   });
@@ -66,6 +137,7 @@ describe('applyPatch', () => {
     const merged = applyPatch(base, {
       allow: [{ word: 'cat', band: 'common' }],
       deny: [],
+      demote: [],
     });
     expect(merged.enable.filter((w) => w === 'cat')).toHaveLength(1);
     expect(merged.common.filter((w) => w === 'cat')).toHaveLength(1);
@@ -143,7 +215,11 @@ describe('patch layer through the engine', () => {
     const rack = 'arsenply';
     const before = puzzleFrom(lists, rack);
     const after = puzzleFrom(
-      applyPatch(lists, { allow: [{ word: 'app', band: 'common' }], deny: [] }),
+      applyPatch(lists, {
+        allow: [{ word: 'app', band: 'common' }],
+        deny: [],
+        demote: [],
+      }),
       rack,
     );
     for (const word of ['pearl', 'snare', 'plays', 'apery']) {
