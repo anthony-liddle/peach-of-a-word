@@ -119,10 +119,11 @@ describe('the calendar build derives from patched pools', () => {
 });
 
 describe('eligibility against the real baked data', () => {
-  it('keeps 585 of the 710 shipped source words (the rest are sub-floor)', () => {
-    // 707 plus the three hand admissions that replace the retired crowns.
-    expect(sourceWords.length).toBe(710);
-    expect(eligible.length).toBe(585);
+  it('keeps 588 of the 713 shipped source words (the rest are sub-floor)', () => {
+    // 707, plus three hand admissions in #85 and three more here, each
+    // replacing a crown retired for register.
+    expect(sourceWords.length).toBe(713);
+    expect(eligible.length).toBe(588);
   });
 
   it('treats known thin words as sub-floor (crown-inclusive)', () => {
@@ -145,9 +146,10 @@ describe('the culled, regenerated calendar', () => {
   const culledWords = () => eligible.filter((w) => !EXCLUSIONS.has(w));
 
   it('drops exactly the excluded words from the eligible pool', () => {
-    // 585 eligible minus 41 exclusions = 544 clean crowns, the same count as
-    // before: three retired for register, three admitted to replace them.
-    expect(eligible.length).toBe(585);
+    // 588 eligible minus 44 exclusions = 544 clean crowns, the count held
+    // steady across both rounds: each crown retired for register is matched by
+    // one admitted to replace it.
+    expect(eligible.length).toBe(588);
     expect(culledWords().length).toBe(544);
   });
 
@@ -182,8 +184,11 @@ describe('the culled, regenerated calendar', () => {
     ) as { words: string[] };
     const swaps: ReadonlyArray<readonly [number, string, string]> = [
       [57, 'violence', 'restrain'],
+      [66, 'atrocity', 'patience'],
       [67, 'abortion', 'integral'],
+      [89, 'oriental', 'festival'],
       [100, 'sexually', 'distance'],
+      [246, 'genocide', 'sunlight'],
     ];
 
     expect(committed.words).toHaveLength(544);

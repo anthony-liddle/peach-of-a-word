@@ -51,24 +51,31 @@ export function looksInflected(
   word: string,
   lemmas: ReadonlySet<string>,
 ): boolean {
-  const stem = (suffix: string) => word.slice(0, -suffix.length);
-  // A plural or third-person form whose singular is itself a word.
-  if (word.endsWith('s') && lemmas.has(stem('s'))) return true;
-  if (word.endsWith('es') && lemmas.has(stem('es'))) return true;
-  if (word.endsWith('ies') && lemmas.has(`${stem('ies')}y`)) return true;
-  // A past tense or participle whose base is itself a word.
-  if (word.endsWith('ed') && lemmas.has(stem('ed'))) return true;
-  if (word.endsWith('ed') && lemmas.has(`${stem('ed')}e`)) return true;
-  // A degree form. The -e variants matter: stranger is strange plus -r, and
-  // the cull holds it for exactly that reason.
-  if (word.endsWith('er') && lemmas.has(stem('er'))) return true;
-  if (word.endsWith('er') && lemmas.has(`${stem('er')}e`)) return true;
-  if (word.endsWith('est') && lemmas.has(stem('est'))) return true;
-  if (word.endsWith('est') && lemmas.has(`${stem('est')}e`)) return true;
-  // An -ing form whose base is itself a word.
-  if (word.endsWith('ing') && lemmas.has(stem('ing'))) return true;
-  if (word.endsWith('ing') && lemmas.has(`${stem('ing')}e`)) return true;
-  return false;
+  /**
+   * Every base a suffix could have been added to, accounting for the spelling
+   * changes English makes when it inflects: a silent e dropped (adhere to
+   * adhering, strange to stranger), a final y turning to i (early to earliest,
+   * notify to notified), and a final consonant doubling (strip to stripped).
+   * Without the last two the guard waves through earliest, happiest, notified
+   * and stripped, all of which sit in the common pool at 8 letters and are
+   * exactly what must never become a crown.
+   */
+  const basesFor = (suffix: string): string[] => {
+    const stem = word.slice(0, -suffix.length);
+    const out = [stem, `${stem}e`];
+    if (stem.endsWith('i')) out.push(`${stem.slice(0, -1)}y`);
+    const last = stem.at(-1);
+    if (last && stem.at(-2) === last) out.push(stem.slice(0, -1));
+    return out;
+  };
+  const inflects = (suffix: string): boolean =>
+    word.endsWith(suffix) &&
+    word.length > suffix.length + 1 &&
+    basesFor(suffix).some((base) => lemmas.has(base));
+
+  // A plural or third-person form, a past form, a degree form, or an -ing form,
+  // in each case only when the base it would come from is itself a word.
+  return ['s', 'es', 'ies', 'ed', 'er', 'est', 'ing'].some(inflects);
 }
 
 async function main(): Promise<void> {

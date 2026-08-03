@@ -82,12 +82,17 @@ describe('source-word exclusion list (the cull rule)', () => {
     }
   });
 
-  it('excludes the three hand-flagged register words', () => {
+  it('excludes the six hand-flagged register words', () => {
     // Not derived: a judgment call that these would be odd to type into a
     // cute-themed game. Each is substituted in place in the calendar so no
-    // date is re-dated, and each stays a valid, scorable find.
+    // date is re-dated, and each stays a valid, scorable find. All six are
+    // also demoted out of the common pool, since a retired crown that is still
+    // required for completion is the worse half of the problem.
     expect(withReason('register')).toEqual([
       'abortion',
+      'atrocity',
+      'genocide',
+      'oriental',
       'sexually',
       'violence',
     ]);
@@ -103,8 +108,8 @@ describe('source-word exclusion list (the cull rule)', () => {
     }
   });
 
-  it('lands on 41 excluded words total', () => {
-    // The 38 derived by the cull, plus the 3 hand-flagged register words.
-    expect(exclusions.size).toBe(41);
+  it('lands on 44 excluded words total', () => {
+    // The 38 derived by the cull, plus the 6 hand-flagged register words.
+    expect(exclusions.size).toBe(44);
   });
 });
