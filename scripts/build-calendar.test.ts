@@ -157,6 +157,41 @@ describe('the culled, regenerated calendar', () => {
     expect(committed.epoch).toEqual({ year: 2026, month: 6, day: 23 });
   });
 
+  it('substitutes the three flagged crowns in place, keeping the calendar frozen', () => {
+    // Antoine's call: sexually, violence and abortion would be odd to type into
+    // a cute-themed game. They are swapped at their own index rather than
+    // removed, because removing an entry re-dates every day after it and breaks
+    // the promise that a given date is a fixed puzzle. Each replacement is
+    // re-admitted from the Phase 2 cull, which is the only source of an eligible
+    // crown the calendar does not already hold.
+    const committed = JSON.parse(
+      readFileSync(join(DATA, 'daily-calendar.json'), 'utf8'),
+    ) as { words: string[] };
+    const swaps: ReadonlyArray<readonly [number, string, string]> = [
+      [57, 'violence', 'archives'],
+      [67, 'abortion', 'criteria'],
+      [100, 'sexually', 'analyses'],
+    ];
+
+    expect(committed.words).toHaveLength(544);
+    // Length held and no duplicate introduced, so no two dates now resolve to
+    // the same puzzle.
+    expect(new Set(committed.words).size).toBe(544);
+
+    for (const [index, removed, added] of swaps) {
+      expect(committed.words[index]).toBe(added);
+      expect(committed.words).not.toContain(removed);
+      // The outgoing word is culled from the crown pool, so a regeneration
+      // cannot reintroduce it; it stays a valid, scorable find.
+      expect(EXCLUSIONS.has(removed)).toBe(true);
+      expect(EXCLUSIONS.has(added)).toBe(false);
+      // Each replacement makes a real puzzle: the floor, through createPuzzle,
+      // exactly as calendar generation computes it.
+      expect(setSize(added)).toBeGreaterThanOrEqual(MIN_SET_SIZE);
+      expect(dictionary.has(added)).toBe(true);
+    }
+  });
+
   it('every committed crown is clean, and the floor holds on a sample', () => {
     const committed = JSON.parse(
       readFileSync(join(DATA, 'daily-calendar.json'), 'utf8'),

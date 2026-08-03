@@ -1,23 +1,35 @@
 # Phase 2 source-word exclusion list. One word per line: word, reason.
 # A crown candidate listed here cannot headline a day (it stays a
-# valid, scorable find). reason is pure-inflection, degree-form, or
-# past-tense-dual. Hand-editable: strike a line to re-admit a word
-# (for example re-add stranger), or add a line to exclude one.
+# valid, scorable find). reason is pure-inflection, degree-form,
+# past-tense-dual, or register. Hand-editable: strike a line to
+# re-admit a word, or add a line to exclude one.
 # Derived from Wiktionary form_of tags over the pre-cull crown pool.
+#
+# register is the one hand-flagged reason: a word that is perfectly
+# valid but would be odd to type into a cute-themed game. Unlike the
+# derived reasons it is a judgment call, so each carries its own note
+# below rather than being regenerated.
+#
+# Re-admissions: analyses, archives and criteria were struck from
+# this list to substitute for the three register exclusions. The
+# eligible pool minus this cull is exactly the committed calendar, so
+# a substitution has nowhere else to draw from. All three are
+# irregular plurals, so they read as their own word rather than as
+# an inflection, which is what the cull was there to catch. All
+# three stay in the pure-inflection class, so the degree-form rule
+# (dropped regardless of a lemma sense) is untouched.
 # Future-growth caveat: if the source pool is widened (for example
 # SCOWL band 35), re-run the derivation to extend this list.
 word	reason
+abortion	register
 absorbed	past-tense-dual
 accepted	past-tense-dual
 adhering	pure-inflection
-analyses	pure-inflection
-archives	pure-inflection
 breathed	past-tense-dual
 brothers	pure-inflection
 children	pure-inflection
 clearest	pure-inflection
 confused	past-tense-dual
-criteria	pure-inflection
 degraded	past-tense-dual
 demented	past-tense-dual
 deranged	past-tense-dual
@@ -38,6 +50,7 @@ portions	pure-inflection
 prepared	past-tense-dual
 regarded	past-tense-dual
 reserves	pure-inflection
+sexually	register
 slighter	degree-form
 stranger	degree-form
 stronger	degree-form
@@ -45,3 +58,4 @@ students	pure-inflection
 troubles	pure-inflection
 underlay	past-tense-dual
 variants	pure-inflection
+violence	register

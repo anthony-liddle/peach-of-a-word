@@ -18,15 +18,15 @@ function withReason(reason: string): string[] {
 }
 
 describe('source-word exclusion list (the cull rule)', () => {
-  it('excludes exactly the 15 pure inflections, no more no fewer', () => {
+  it('excludes exactly the 12 pure inflections, no more no fewer', () => {
+    // analyses, archives and criteria were struck from the cull to substitute
+    // for the three register exclusions. All three are irregular plurals that
+    // read as their own word, which is what the cull was there to catch.
     expect(withReason('pure-inflection')).toEqual([
       'adhering',
-      'analyses',
-      'archives',
       'brothers',
       'children',
       'clearest',
-      'criteria',
       'forgiven',
       'imagines',
       'matrices',
@@ -82,7 +82,20 @@ describe('source-word exclusion list (the cull rule)', () => {
     }
   });
 
+  it('excludes the three hand-flagged register words', () => {
+    // Not derived: a judgment call that these would be odd to type into a
+    // cute-themed game. Each is substituted in place in the calendar so no
+    // date is re-dated, and each stays a valid, scorable find.
+    expect(withReason('register')).toEqual([
+      'abortion',
+      'sexually',
+      'violence',
+    ]);
+  });
+
   it('lands on 38 excluded words total', () => {
+    // 35 derived by the cull, plus the 3 register words, minus nothing: the
+    // three re-admissions are balanced by the three register exclusions.
     expect(exclusions.size).toBe(38);
   });
 });
