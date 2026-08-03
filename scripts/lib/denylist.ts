@@ -64,6 +64,14 @@ export function extractNwl2020Purged(html: string): string[] {
 export interface DenyExclusion {
   readonly word: string;
   readonly reason: string;
+  /**
+   * The 1-based line this entry was read from, carried so later errors can name
+   * the row without quoting it. These files are slur lists, so an error that
+   * echoes an entry carries a slur wherever it goes, and a position counted over
+   * parsed entries would leave a developer hand-counting non-comment rows to
+   * find it.
+   */
+  readonly line: number;
 }
 
 function normalize(raw: string): string | null {
@@ -112,7 +120,7 @@ export function parseReasonedWords(
     if (reason === '') {
       throw new Error(`${label} on line ${index + 1} needs a reason.`);
     }
-    out.push({ word, reason });
+    out.push({ word, reason, line: index + 1 });
   }
   return out;
 }
@@ -172,15 +180,13 @@ export function deriveDenylist(
   boundary: ReadonlySet<string>,
 ): DerivedDenylist {
   const source = new Set(purged);
-  // Positional rather than by value, for the same reason the parsers above are:
-  // these entries are drawn from the purged slur list. Counted over parsed
-  // entries, since the exclusions have been through the parser by this point and
-  // their file lines are no longer in hand.
-  for (const [index, { word }] of exclusions.entries()) {
+  // By line, never by value, for the same reason the parsers above are: these
+  // entries are drawn from the purged slur list.
+  for (const { word, line } of exclusions) {
     if (!source.has(word)) {
       throw new Error(
-        `Deny exclusion ${index + 1} of ${exclusions.length} is not in the ` +
-          `source list; it excludes nothing.`,
+        `Deny exclusion on line ${line} is not in the source list; ` +
+          `it excludes nothing.`,
       );
     }
   }

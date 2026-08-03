@@ -1,8 +1,8 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { classifyWord, createPuzzle, validateGuess } from '@/engine/index.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
 import { applyPatch, parsePatch, type PatchableLists } from './patch.ts';
+import { readCommittedPatch } from './shippedLists.ts';
 
 describe('parsePatch', () => {
   it('parses an allow entry with its band', () => {
@@ -275,8 +275,8 @@ describe('patch layer through the engine', () => {
 });
 
 describe('committed seed file', () => {
-  const tsv = readFileSync('public/data/dictionary-patch.tsv', 'utf8');
-  const patch = parsePatch(tsv);
+  // A build input now, not a shipped asset: the client never fetches it.
+  const patch = readCommittedPatch();
 
   it('allowlists the seeded modern words and udon at the common band', () => {
     const allowed = new Map(patch.allow.map((a) => [a.word, a.band]));

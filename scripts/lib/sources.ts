@@ -10,7 +10,7 @@ import {
 } from './config.ts';
 import { parseDefinitions } from './definitions.ts';
 import { applyPatch, parsePatch } from '../../src/data/patch.ts';
-import { ASSET_DIR, DATA_RAW_DIR } from './util.ts';
+import { DATA_RAW_DIR, PATCH_PATH } from './util.ts';
 
 /** Lowercase, ASCII a-z only. Drops accents, apostrophes, proper-noun casing. */
 function normalize(word: string): string | null {
@@ -39,24 +39,35 @@ export async function loadEnable(): Promise<string[]> {
 }
 
 /**
- * The full validation boundary: ENABLE union SCOWL 95 with the committed patch
- * layer applied (allowlist added, denylist removed). This is what the runtime
- * validates against, so definition acquisition and the per-puzzle bundles must
- * target it, not ENABLE alone. Mirrors loadGameData's merge from the same
- * committed inputs.
+ * The boundary before the patch touches it: ENABLE union SCOWL 95, derived from
+ * the vendored raw lists.
+ *
+ * This is the input the denylist is derived against, and it has to come from the
+ * raw lists rather than from the shipped ones. The shipped lists carry the patch
+ * baked in, so deriving a denylist from them would be circular: the words the
+ * derivation is meant to find have already been removed, and it would conclude
+ * there was nothing to deny.
  */
-export async function loadValidation(): Promise<string[]> {
+export async function loadUnpatchedBoundary(): Promise<string[]> {
   const enable = await loadEnable();
   const enableSet = new Set(enable);
   const scowl95 = await loadScowlWords(SIZE_95_SIZES);
   const additions = scowl95.filter((w) => !enableSet.has(w));
-  const patchText = await readFile(
-    join(ASSET_DIR, 'dictionary-patch.tsv'),
-    'utf8',
-  );
+  return [...enable, ...additions];
+}
+
+/**
+ * The full validation boundary: ENABLE union SCOWL 95 with the committed patch
+ * layer applied (allowlist added, denylist removed). This is what the runtime
+ * validates against, so definition acquisition and the per-puzzle bundles must
+ * target it, not ENABLE alone. Mirrors the lists loadGameData now fetches
+ * pre-baked, derived here from the same committed inputs.
+ */
+export async function loadValidation(): Promise<string[]> {
+  const patchText = await readFile(PATCH_PATH, 'utf8');
   const merged = applyPatch(
     {
-      enable: [...enable, ...additions],
+      enable: await loadUnpatchedBoundary(),
       common: [],
       beyond70: [],
       beyond95: [],

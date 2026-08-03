@@ -69,6 +69,37 @@ offline.
   `public/data`. It is offline except for source-word etymologies, which it
   still fetches from Wiktionary on a cache miss and caches under
   `scripts/.cache`.
+- `pnpm data:bake` applies the curated dictionary patch in
+  `scripts/data-raw/dictionary-patch.tsv` to the shipped word lists. Pure,
+  offline, and idempotent. Run it after any change to the patch.
+
+### The committed files are the source of truth
+
+`pnpm data:build` is effectively one-way and should not be reached for casually.
+It touches the network, and a rerun rewrites `meta.json` with a fresh timestamp,
+re-derives every per-puzzle bundle under `public/data/defs`, and reorders
+`source-pool.json`. The result is a large diff nobody reviewed in files the daily
+calendar is anchored to.
+
+So `public/data` is maintained by the narrow tools, not by rerunning the
+pipeline: `pnpm data:bake` for the patch, `pnpm data:denylist` for the denylist
+rows, `pnpm data:calendar` for the calendar, `pnpm defs:rederive` for glosses.
+Rerun `pnpm data:build` only when deliberately re-vendoring the source lexicons,
+and review the calendar and the crowns afterwards.
+
+### The patch is applied at build time, not at runtime
+
+The word lists in `public/data` ship with the allowlist, denylist, and demotions
+already baked in. The client fetches lists that are already correct: it does not
+download the patch and does not parse it.
+
+This is deliberate. The patch used to be fetched and re-parsed on every load,
+which meant a browser holding a cached JS bundle could fetch a newer patch file
+and crash on an action the old bundle did not know about. The merged pools are
+fully determined at build time, so they are computed once, at build time.
+
+The build parser stays strict and throws on a malformed row. That is correct
+there: a typo must hard-fail the build. It was only ever wrong at runtime.
 
 ## Scripts
 
@@ -76,7 +107,8 @@ offline.
 - `pnpm build` type-check and build the static site
 - `pnpm test` run the engine and persistence unit tests
 - `pnpm lint` / `pnpm format` lint and format
-- `pnpm data:build` rebuild the baked word data from the vendored lists
+- `pnpm data:bake` apply the dictionary patch to the shipped word lists
+- `pnpm data:build` rebuild the baked word data from the vendored lists (one-way, see above)
 - `pnpm data:vendor` download the raw ENABLE and SCOWL lists (maintainer, one time)
 - `pnpm defs:acquire` fetch Wiktionary glosses into the definitions TSV (maintainer)
 - `pnpm defs:rederive` re-derive glosses from the cache with better sense selection (maintainer)

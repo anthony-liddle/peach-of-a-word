@@ -9,6 +9,7 @@ import {
   parseSupplementSlurs,
   NWL2020_EXPECTED,
 } from './denylist.ts';
+import { loadUnpatchedBoundary } from './sources.ts';
 import { DATA_RAW_DIR } from './util.ts';
 
 const raw = (f: string) => readFileSync(join(DATA_RAW_DIR, f), 'utf8');
@@ -62,9 +63,26 @@ describe('parsePurgedList', () => {
 describe('parseDenyExclusions', () => {
   it('reads word and reason, skipping the header and comments', () => {
     const tsv = '# note\nword\treason\njesuit\tneutral primary sense\n';
+    // Line 3: the physical line, counting the comment and the header it skips.
     expect(parseDenyExclusions(tsv)).toEqual([
-      { word: 'jesuit', reason: 'neutral primary sense' },
+      { word: 'jesuit', reason: 'neutral primary sense', line: 3 },
     ]);
+  });
+
+  it('names the line of an exclusion that excludes nothing, not the word', () => {
+    const exclusions = parseDenyExclusions(
+      '# note\nword\treason\nabsent\tneutral primary sense\n',
+    );
+
+    let message = '';
+    try {
+      deriveDenylist(['alpha'], exclusions, new Set(['alpha']));
+    } catch (err) {
+      message = (err as Error).message;
+    }
+
+    expect(message).toContain('line 3');
+    expect(message).not.toContain('absent');
   });
 
   it('throws on an exclusion with no reason, so the audit cannot rot', () => {
@@ -78,7 +96,7 @@ describe('deriveDenylist', () => {
   it('intersects with the boundary and subtracts the reviewed exclusions', () => {
     const result = deriveDenylist(
       ['alpha', 'beta', 'delta'],
-      [{ word: 'beta', reason: 'neutral primary sense' }],
+      [{ word: 'beta', reason: 'neutral primary sense', line: 1 }],
       boundary,
     );
     expect(result.denied).toEqual(['alpha']);
@@ -88,7 +106,11 @@ describe('deriveDenylist', () => {
 
   it('throws when an exclusion names a word the source does not contain', () => {
     expect(() =>
-      deriveDenylist(['alpha'], [{ word: 'zeta', reason: 'stale' }], boundary),
+      deriveDenylist(
+        ['alpha'],
+        [{ word: 'zeta', reason: 'stale', line: 1 }],
+        boundary,
+      ),
     ).toThrow(/excludes nothing/);
   });
 
@@ -108,18 +130,13 @@ describe('deriveDenylist', () => {
   });
 });
 
-describe('the committed derivation', () => {
+describe('the committed derivation', async () => {
   const purged = parsePurgedList(raw('nwl2020-purged.txt'));
   const exclusions = parseDenyExclusions(raw('nwl2020-exclusions.tsv'));
-  const boundaryOf = (f: string) =>
-    readFileSync(join('public', 'data', f), 'utf8')
-      .split('\n')
-      .map((w) => w.trim())
-      .filter(Boolean);
-  const boundary = new Set([
-    ...boundaryOf('enable.txt'),
-    ...boundaryOf('scowl95-additions.txt'),
-  ]);
+  // The boundary before the patch. The shipped lists carry the denylist baked
+  // in, so deriving from them would be circular: every word this is meant to
+  // find has already been removed, and the derivation would find nothing.
+  const boundary = new Set(await loadUnpatchedBoundary());
   const derived = deriveDenylist(purged, exclusions, boundary);
 
   it('holds back only words with a neutral primary sense, each with a reason', () => {
@@ -140,7 +157,10 @@ describe('the committed derivation', () => {
     // The provenance claim, enforced. The nwl2020 rows in the committed patch
     // must equal the derivation from the vendored source and the reviewed
     // exclusions: no row added by hand, none quietly dropped.
-    const shipped = readFileSync('public/data/dictionary-patch.tsv', 'utf8')
+    const shipped = readFileSync(
+      'scripts/data-raw/dictionary-patch.tsv',
+      'utf8',
+    )
       .split('\n')
       .map((line) => line.split('\t'))
       .filter((c) => c[1]?.trim() === 'deny' && c[3]?.trim() === 'nwl2020')

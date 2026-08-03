@@ -1,6 +1,5 @@
 import type { Dictionary, WordSource } from '@/engine/types.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
-import { applyPatch, parsePatch } from './patch.ts';
 import type { SourceEntry } from './types.ts';
 
 /** The local calendar epoch baked into the daily calendar. */
@@ -67,7 +66,6 @@ export async function loadGameData(): Promise<GameData> {
     beyond95Text,
     sourceJson,
     calendarJson,
-    patchText,
   ] = await Promise.all([
     fetchText('enable.txt'),
     fetchText('scowl95-additions.txt'),
@@ -76,35 +74,27 @@ export async function loadGameData(): Promise<GameData> {
     fetchText('beyond-size-95.txt'),
     fetchText('source-pool.json'),
     fetchText('daily-calendar.json'),
-    fetchText('dictionary-patch.tsv'),
   ]);
 
   // The validation boundary is ENABLE union SCOWL 95: ENABLE plus the within-95
   // SCOWL words it lacks (shipped as the additions complement so nothing is
   // listed twice). The bands stay derived from the same SCOWL v1 list, so the
   // newly valid words land in their true rung and the mythic tail is unchanged.
+  //
+  // These lists arrive patched. The allowlist, denylist, and demotions are baked
+  // in at build time by pnpm data:bake, so there is no patch to fetch and no
+  // patch to parse here. That is deliberate: the merged pools are fully
+  // determined at build time, and re-deriving them per load meant a cached
+  // bundle could meet a newer patch file and crash on an action it did not know.
   const validation = [
     ...parseWordList(enableText),
     ...parseWordList(additionsText),
   ];
 
-  // Apply the curated patch on top of the merged lists before they back the
-  // engine. The allowlist joins validation and its band; the denylist is
-  // removed. Everything downstream sees one merged set of lists.
-  const lists = applyPatch(
-    {
-      enable: validation,
-      common: parseWordList(commonText),
-      beyond70: parseWordList(beyond70Text),
-      beyond95: parseWordList(beyond95Text),
-    },
-    parsePatch(patchText),
-  );
-
-  const dictionary = createListDictionary(lists.enable);
-  const commonPool = createListWordSource(lists.common);
-  const beyond70Pool = createListWordSource(lists.beyond70);
-  const beyond95Pool = createListWordSource(lists.beyond95);
+  const dictionary = createListDictionary(validation);
+  const commonPool = createListWordSource(parseWordList(commonText));
+  const beyond70Pool = createListWordSource(parseWordList(beyond70Text));
+  const beyond95Pool = createListWordSource(parseWordList(beyond95Text));
 
   const entries = JSON.parse(sourceJson) as SourceEntry[];
   const byWord = new Map(entries.map((e) => [e.word, e]));

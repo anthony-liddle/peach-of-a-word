@@ -23,7 +23,6 @@ abolition
 abort
 aborted
 aborting
-abortion
 aborts
 about
 above
@@ -39,8 +38,6 @@ absorbs
 abstract
 abstraction
 absurd
-abuse
-abused
 abuses
 abusing
 abusive
@@ -478,6 +475,7 @@ apologizes
 apologizing
 apology
 apostrophe
+app
 appall
 appalled
 appalling
@@ -691,7 +689,6 @@ atom
 atomic
 atoms
 atrocities
-atrocity
 attach
 attached
 attaching
@@ -1046,6 +1043,8 @@ block
 blocked
 blocking
 blocks
+blog
+blogger
 blood
 bloody
 blow
@@ -1479,6 +1478,7 @@ chased
 chases
 chasing
 chat
+chatbot
 chats
 chatted
 chatting
@@ -2204,7 +2204,6 @@ corner
 corners
 corporate
 corporation
-corpse
 corpses
 correct
 corrected
@@ -2414,6 +2413,7 @@ cut
 cute
 cuts
 cutting
+cyber
 cycle
 cycled
 cycles
@@ -3072,6 +3072,7 @@ down
 downhill
 downright
 downstairs
+downvote
 downwards
 dozen
 dozens
@@ -3291,6 +3292,8 @@ elite
 elitist
 else
 elsewhere
+email
+emailed
 embarrass
 embarrassed
 embarrasses
@@ -3308,6 +3311,8 @@ emerging
 eminent
 eminently
 emit
+emoji
+emojis
 emotion
 emotional
 emotionally
@@ -4285,7 +4290,6 @@ genetic
 genetically
 genetics
 genius
-genocide
 genre
 gentle
 gentleman
@@ -4357,6 +4361,7 @@ goodies
 goodness
 goods
 goody
+googled
 gorgeous
 gospel
 gossip
@@ -4550,6 +4555,7 @@ harmony
 harsh
 has
 hash
+hashtag
 hassle
 hasten
 hasty
@@ -5238,6 +5244,7 @@ internal
 internally
 internals
 international
+internet
 interpret
 interpretation
 interpretations
@@ -5738,7 +5745,9 @@ logging
 logic
 logical
 logically
+login
 logo
+logout
 logs
 lonely
 long
@@ -5982,6 +5991,8 @@ melt
 member
 members
 membership
+meme
+memes
 memorable
 memories
 memory
@@ -6018,6 +6029,7 @@ messes
 messing
 messy
 met
+metadata
 metal
 metaphor
 meter
@@ -6601,6 +6613,7 @@ ones
 oneself
 ongoing
 onion
+online
 only
 onto
 onus
@@ -6680,7 +6693,6 @@ organizes
 organizing
 organs
 orient
-oriental
 orientate
 orientated
 orientates
@@ -7155,6 +7167,7 @@ plural
 plus
 pocket
 pockets
+podcast
 poem
 poems
 poet
@@ -7733,7 +7746,6 @@ races
 racial
 racing
 racism
-racist
 rack
 racket
 racks
@@ -7777,7 +7789,6 @@ rant
 ranted
 ranting
 rants
-rape
 rapid
 rapidly
 rare
@@ -8570,6 +8581,7 @@ screaming
 screams
 screen
 screens
+screenshot
 screw
 screwed
 screwing
@@ -8636,6 +8648,8 @@ selective
 selectively
 selects
 self
+selfie
+selfies
 selfish
 sell
 selling
@@ -8709,12 +8723,9 @@ several
 severe
 severely
 severity
-sex
 sexes
 sexist
-sexual
 sexuality
-sexually
 sexy
 shade
 shades
@@ -8974,6 +8985,7 @@ smaller
 smallest
 smallish
 smart
+smartphone
 smash
 smashed
 smashes
@@ -9084,6 +9096,7 @@ space
 spaced
 spaces
 spacing
+spam
 span
 spare
 spares
@@ -9793,7 +9806,6 @@ terrifies
 terrify
 terrifying
 territory
-terror
 terrorism
 terrorist
 terrorists
@@ -9805,6 +9817,7 @@ tests
 text
 textbook
 textbooks
+texting
 texts
 textual
 than
@@ -10173,6 +10186,7 @@ typewriter
 typical
 typically
 typing
+udon
 ugh
 ugly
 ultimate
@@ -10255,6 +10269,7 @@ unfinished
 unfortunate
 unfortunately
 unfounded
+unfriend
 unfriendly
 unhappy
 unhealthy
@@ -10353,6 +10368,7 @@ upsets
 upsetting
 upside
 upstairs
+upvote
 upward
 upwards
 urban
@@ -10488,7 +10504,6 @@ vintage
 vinyl
 violate
 violation
-violence
 violent
 violently
 violin
@@ -10621,6 +10636,8 @@ weary
 weasel
 weasels
 weather
+webpage
+website
 wed
 wedded
 wedding
@@ -10692,6 +10709,7 @@ widespread
 widest
 width
 wife
+wifi
 wild
 wildly
 will

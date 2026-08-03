@@ -1359,7 +1359,6 @@ diehard
 diehards
 dietician
 dieticians
-dikey
 dilettanti
 dingdong
 dingdonged
@@ -2088,7 +2087,6 @@ gipsies
 gipsy
 gipsying
 girlie
-girlies
 gismo
 gismos
 glace
@@ -2325,9 +2323,6 @@ homologs
 homy
 hon
 honied
-honkey
-honkeys
-honkie
 honoraria
 honour
 honourable
@@ -3302,7 +3297,6 @@ muclucs
 mucosae
 mujahedeen
 mujahedin
-mulattos
 mullen
 mullens
 multiplexor
@@ -4582,10 +4576,6 @@ spelaean
 spelt
 spelts
 sphinges
-spick
-spicks
-spik
-spiks
 spilt
 spinoff
 spinoffs

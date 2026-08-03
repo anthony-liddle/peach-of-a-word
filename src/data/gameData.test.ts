@@ -14,9 +14,11 @@ function mockAssets(files: Record<string, string>) {
   });
 }
 
+// The lists arrive patched: app and wifi sit in the shipped files because the
+// bake put them there, not because the runtime merges an allowlist.
 const BASE_FILES: Record<string, string> = {
-  'enable.txt': 'sap\nasp\n',
-  'common-pool.txt': 'sap\n',
+  'enable.txt': 'app\nasp\nsap\nwifi\n',
+  'common-pool.txt': 'app\nsap\nwifi\n',
   'scowl95-additions.txt': '',
   'beyond-size-70.txt': '',
   'beyond-size-95.txt': '',
@@ -25,20 +27,32 @@ const BASE_FILES: Record<string, string> = {
     epoch: { year: 2026, month: 1, day: 1 },
     words: ['apppwfii'],
   }),
-  'dictionary-patch.tsv': 'app\tallow\tcommon\nwifi\tallow\tcommon\n',
 };
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('loadGameData with the patch layer', () => {
-  it('merges the allowlist into validation so a patched word is accepted', async () => {
+describe('loadGameData over pre-baked lists', () => {
+  it('accepts a formerly allowlisted word straight from the shipped list', async () => {
     vi.stubGlobal('fetch', mockAssets(BASE_FILES));
     const data = await loadGameData();
     expect(data.dictionary.has('app')).toBe(true);
     expect(data.dictionary.has('wifi')).toBe(true);
   });
 
-  it('bands the allowlisted word so it classifies as common, not mythic', async () => {
+  it('never fetches the patch, so a data change cannot crash a cached bundle', async () => {
+    // The incident in one assertion. The old runtime fetched and re-parsed the
+    // patch on every load, so a bundle that predated a new action threw on it.
+    // There is nothing left to fetch and nothing left to parse.
+    const fetchMock = mockAssets(BASE_FILES);
+    vi.stubGlobal('fetch', fetchMock);
+    await loadGameData();
+
+    const fetched = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(fetched.length).toBeGreaterThan(0);
+    for (const url of fetched) expect(url).not.toContain('dictionary-patch');
+  });
+
+  it('bands the word so it classifies as common, not mythic', async () => {
     vi.stubGlobal('fetch', mockAssets(BASE_FILES));
     const data = await loadGameData();
     const puzzle = createPuzzle(
@@ -63,7 +77,6 @@ describe('loadGameData with the ENABLE union SCOWL 95 boundary', () => {
     'scowl95-additions.txt': 'blog\n',
     'beyond-size-70.txt': 'blog\n', // boundary minus SCOWL 70 (blog is beyond 70)
     'beyond-size-95.txt': '', // boundary minus SCOWL 95 (blog is within 95)
-    'dictionary-patch.tsv': '',
     'daily-calendar.json': JSON.stringify({
       epoch: { year: 2026, month: 1, day: 1 },
       words: ['blogxxxx'],

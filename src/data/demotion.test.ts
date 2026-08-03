@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   classifyWord,
@@ -8,7 +7,13 @@ import {
   type Puzzle,
 } from '@/engine/index.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
-import { applyPatch, parsePatch, type PatchableLists } from './patch.ts';
+import type { PatchableLists } from './patch.ts';
+import {
+  readCalendarWords,
+  readCommittedPatch,
+  readShippedLists,
+  withPatchUndone,
+} from './shippedLists.ts';
 
 /**
  * Demotion, asserted end to end against the committed assets.
@@ -18,27 +23,11 @@ import { applyPatch, parsePatch, type PatchableLists } from './patch.ts';
  * it; validation and scoring must not. Denial would have been the easy answer
  * and the wrong one, because these are real words a player may reasonably find.
  */
-function readList(name: string): string[] {
-  return readFileSync(`public/data/${name}`, 'utf8')
-    .split('\n')
-    .map((w) => w.trim())
-    .filter(Boolean);
-}
-
-const patchText = readFileSync('public/data/dictionary-patch.tsv', 'utf8');
-const patch = parsePatch(patchText);
-const base: PatchableLists = {
-  enable: [...readList('enable.txt'), ...readList('scowl95-additions.txt')],
-  common: readList('common-pool.txt'),
-  beyond70: readList('beyond-size-70.txt'),
-  beyond95: readList('beyond-size-95.txt'),
-};
-const merged = applyPatch(base, patch);
-const calendar = (
-  JSON.parse(readFileSync('public/data/daily-calendar.json', 'utf8')) as {
-    words: string[];
-  }
-).words;
+// The shipped lists carry the demotions already, so these assert on what the
+// player receives rather than on a merge performed in the test.
+const patch = readCommittedPatch();
+const merged: PatchableLists = readShippedLists();
+const calendar = readCalendarWords();
 
 const demoted = [...patch.demote];
 const demotedSet = new Set(demoted);
@@ -100,8 +89,11 @@ describe('the committed demotions', () => {
   });
 
   it('names only words the common pool actually had, so none is a no-op', () => {
-    const originalCommon = new Set(base.common);
-    for (const word of demoted) expect(originalCommon.has(word)).toBe(true);
+    // The shipped pool no longer holds them, which is the whole point, so the
+    // check runs against the pool with the demotions put back. A demotion of a
+    // word the pool never had would still be absent here and would fail.
+    const restored = new Set(withPatchUndone(merged, patch).common);
+    for (const word of demoted) expect(restored.has(word)).toBe(true);
   });
 
   it('takes every one out of the common pool', () => {
@@ -164,11 +156,10 @@ describe('a demoted word is permitted, never required', () => {
     // The discriminator. Same assertion as above, run against lists where rape
     // was never demoted: it must find rape sitting in the denominator, or the
     // checks above prove nothing.
-    const planted = applyPatch(base, {
-      allow: [],
-      deny: patch.deny,
-      demote: patch.demote.filter((w) => w !== 'rape'),
-    });
+    const planted: PatchableLists = {
+      ...merged,
+      common: [...merged.common, 'rape'],
+    };
     const puzzle = puzzleWith(planted, 'paradise');
     expect(puzzle.commonWords.has('rape')).toBe(true);
     expect(classifyWord('rape', puzzle)).toBe('set');

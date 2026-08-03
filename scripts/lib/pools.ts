@@ -30,10 +30,10 @@
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { applyPatch, parsePatch } from '../../src/data/patch.ts';
 import { formableFrom } from '../../src/engine/formability.ts';
 import type { Dictionary, WordSource } from '../../src/engine/types.ts';
-import { ASSET_DIR } from './util.ts';
+import { parsePatch } from '../../src/data/patch.ts';
+import { ASSET_DIR, PATCH_PATH } from './util.ts';
 
 /** The four sources createPuzzle needs, in the order it takes them. */
 export interface Pools {
@@ -61,7 +61,21 @@ function parseWordList(text: string): string[] {
     .filter(Boolean);
 }
 
-/** Read the committed lists and apply the patch, then wrap them for the engine. */
+/**
+ * Read the committed lists and wrap them for the engine.
+ *
+ * The lists now carry the whole patch baked in, so the deny and demote halves
+ * need no work here: they are already gone. The allowlist has to be taken back
+ * out, which is the awkward part and is deliberate.
+ *
+ * Baking closed the first divergence described above by accident. The shipped
+ * common pool now contains the 32 allowlisted words, so set sizes rise, appalled
+ * and approach clear the floor, and the eligible pool grows by two. That would
+ * move the committed calendar. Growing the calendar is a curation decision and
+ * not part of moving the patch to build time, so the allowlist is subtracted
+ * here to hold the derivation exactly where it was. The divergence stays open,
+ * documented, and someone's deliberate choice to make later.
+ */
 export async function loadPatchedPools(): Promise<Pools> {
   const read = (f: string) => readFile(join(ASSET_DIR, f), 'utf8');
   const [enable, common, beyond70, beyond95, patchText] = await Promise.all([
@@ -69,19 +83,19 @@ export async function loadPatchedPools(): Promise<Pools> {
     read('common-pool.txt'),
     read('beyond-size-70.txt'),
     read('beyond-size-95.txt'),
-    read('dictionary-patch.tsv'),
+    readFile(PATCH_PATH, 'utf8'),
   ]);
 
-  const patch = parsePatch(patchText);
-  const lists = applyPatch(
-    {
-      enable: parseWordList(enable),
-      common: parseWordList(common),
-      beyond70: parseWordList(beyond70),
-      beyond95: parseWordList(beyond95),
-    },
-    { allow: [], deny: patch.deny, demote: patch.demote },
-  );
+  const allowed = new Set(parsePatch(patchText).allow.map((a) => a.word));
+  const withoutAllowlist = (words: string[]) =>
+    words.filter((w) => !allowed.has(w));
+
+  const lists = {
+    enable: withoutAllowlist(parseWordList(enable)),
+    common: withoutAllowlist(parseWordList(common)),
+    beyond70: parseWordList(beyond70),
+    beyond95: parseWordList(beyond95),
+  };
 
   return {
     dictionary: listDictionary(lists.enable),

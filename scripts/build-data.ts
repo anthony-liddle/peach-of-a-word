@@ -1,8 +1,30 @@
 /**
- * Build-time data pipeline. Runs offline, bakes static assets the engine loads.
- * Rerunnable: Wiktionary responses are cached on disk, so reruns are cheap.
+ * Build-time data pipeline. Bakes the static assets the engine loads.
  *
  *   pnpm data:build
+ *
+ * ---------------------------------------------------------------------------
+ * READ THIS BEFORE RE-RUNNING. This pipeline is effectively one-way.
+ *
+ * It reaches the network (Wiktionary), and even with the disk cache warm a rerun
+ * is not a no-op. It rewrites meta.json with a fresh generatedAt, re-derives all
+ * 700-odd per-puzzle bundles under defs/, and reorders source-pool.json. So a
+ * rerun produces a large, noisy diff whose contents nobody reviewed, in files
+ * the daily calendar is anchored to.
+ *
+ * The practical consequence: the committed files in public/data/ are the source
+ * of truth, not this script. This script is how they came to exist, not how they
+ * are maintained. Reach for a narrower tool instead:
+ *
+ *   pnpm data:bake       apply the dictionary patch to the shipped lists.
+ *                        Pure, offline, idempotent. This is the usual one.
+ *   pnpm data:denylist   re-derive the denylist rows in the patch.
+ *   pnpm data:calendar   re-derive the daily calendar.
+ *   pnpm defs:rederive   rebuild definition bundles from the committed TSV.
+ *
+ * Re-run this whole pipeline only when deliberately re-vendoring the source
+ * lexicons, and expect to review the calendar and the crowns afterwards.
+ * ---------------------------------------------------------------------------
  *
  * Outputs to public/data/:
  *   enable.txt             newline list, the ENABLE half of the boundary

@@ -1,31 +1,17 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { classifyWord, createPuzzle, validateGuess } from '@/engine/index.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
-import { applyPatch, parsePatch, type PatchableLists } from './patch.ts';
+import type { PatchableLists } from './patch.ts';
+import {
+  readCommittedPatch,
+  readList,
+  readShippedLists,
+} from './shippedLists.ts';
 
-// Build the live merged lists from the committed assets, exactly as
-// loadGameData does, but read from disk instead of fetched. This exercises the
-// real ENABLE union SCOWL 95 boundary with the patch on top.
-function readList(name: string): string[] {
-  return readFileSync(`public/data/${name}`, 'utf8')
-    .split('\n')
-    .map((w) => w.trim())
-    .filter(Boolean);
-}
-
-const patch = parsePatch(
-  readFileSync('public/data/dictionary-patch.tsv', 'utf8'),
-);
-const merged: PatchableLists = applyPatch(
-  {
-    enable: [...readList('enable.txt'), ...readList('scowl95-additions.txt')],
-    common: readList('common-pool.txt'),
-    beyond70: readList('beyond-size-70.txt'),
-    beyond95: readList('beyond-size-95.txt'),
-  },
-  patch,
-);
+// The shipped lists, read from disk exactly as loadGameData assembles them from
+// the fetched files. They carry the patch baked in, so this exercises the real
+// ENABLE union SCOWL 95 boundary as the player receives it.
+const merged: PatchableLists = readShippedLists();
 const validation = new Set(merged.enable);
 
 function puzzleFor(rack: string) {
@@ -118,12 +104,17 @@ describe('ENABLE union SCOWL 95 boundary (live assets)', () => {
 
   it('rejects denylisted warts that SCOWL would otherwise admit', () => {
     // bonjour and cairo both entered the boundary via the SCOWL additions, then
-    // the denylist removes them. bonjour is the curated foreign word; cairo is a
+    // the denylist removed them. bonjour is the curated foreign word; cairo is a
     // formable proper-noun wart.
-    const additions = new Set(readList('scowl95-additions.txt'));
-    expect(additions.has('bonjour')).toBe(true);
-    expect(additions.has('cairo')).toBe(true);
-    // After the patch they are gone from validation.
+    //
+    // That they were admitted before the patch is no longer visible in the
+    // shipped files, which is the point of baking: the words are simply gone.
+    // The curation record still carries them, and denylist.test.ts proves that
+    // record is what the derivation against the unpatched boundary produces.
+    const deny = new Set(readCommittedPatch().deny);
+    expect(deny.has('bonjour')).toBe(true);
+    expect(deny.has('cairo')).toBe(true);
+    // And they are absent from the validation the player actually receives.
     expect(validation.has('bonjour')).toBe(false);
     expect(validation.has('cairo')).toBe(false);
     // And a rack that can spell cairo rejects it rather than counting it.
@@ -137,6 +128,9 @@ describe('ENABLE union SCOWL 95 boundary (live assets)', () => {
     const additions = new Set(readList('scowl95-additions.txt'));
     const beyond95 = readList('beyond-size-95.txt');
     expect(beyond95.some((w) => additions.has(w))).toBe(false);
-    expect(beyond95.length).toBe(5399);
+    // 5389, not the 5399 the unbaked file held: the bake takes the 10 denied
+    // words out of the shipped tail. The engine never saw them either way, since
+    // the old runtime merge removed the same 10 on every load.
+    expect(beyond95.length).toBe(5389);
   });
 });
