@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SourceEntry } from '@/data/types.ts';
-import { looksInflected } from './admit-source-words.ts';
+import {
+  admissionFailures,
+  looksInflected,
+  parseClearances,
+} from './admit-source-words.ts';
 import { parseReasonedWords } from './lib/denylist.ts';
 import { parseExclusions } from './lib/exclusions.ts';
 
@@ -21,6 +25,7 @@ const admissions = parseReasonedWords(
   'Source admission',
 );
 const cull = parseExclusions(raw('source-exclusions.tsv'));
+const clearances = parseClearances(raw('source-lemma-clearances.tsv'));
 const pool = JSON.parse(
   readFileSync('public/data/source-pool.json', 'utf8'),
 ) as SourceEntry[];
@@ -83,8 +88,12 @@ describe('looksInflected, the hand-admission guard', () => {
 });
 
 describe('the committed admissions', () => {
-  it('admits exactly the six that replace the retired crowns', () => {
-    expect(admissions.map((a) => a.word)).toEqual([
+  it('admits the six crown replacements and the widened-pool batch', () => {
+    // The first six each replace a crown retired for register. The 80 that
+    // follow are what the cached-null-etymology fix made eligible, through
+    // every gate: the re-run form_of derivation, the denylist, the register
+    // sweep, and the floor.
+    expect(admissions.map((a) => a.word).slice(0, 6)).toEqual([
       'distance',
       'integral',
       'restrain',
@@ -92,6 +101,7 @@ describe('the committed admissions', () => {
       'patience',
       'sunlight',
     ]);
+    expect(admissions).toHaveLength(86);
     for (const { reason } of admissions) {
       expect(reason.length).toBeGreaterThan(8);
     }
@@ -101,9 +111,24 @@ describe('the committed admissions', () => {
     // The rule this whole file exists to enforce.
     for (const { word } of admissions) {
       expect(cull.has(word)).toBe(false);
-      expect(looksInflected(word, new Set(pool.map((e) => e.word)))).toBe(
-        false,
-      );
+    }
+  });
+
+  it('is inflection-free: shape guard, or a named form_of clearance', () => {
+    // The shape guard is deliberately over-broad and disagrees with the
+    // derivation on 14 words, each recorded with its evidence in
+    // source-lemma-clearances.tsv. Every admission must clear one or the
+    // other, and nothing may be exempt without a row naming it.
+    const lemmas = new Set(pool.map((e) => e.word));
+    for (const { word } of admissions) {
+      if (looksInflected(word, lemmas)) {
+        expect(clearances.has(word)).toBe(true);
+      }
+    }
+    // The clearance list is not a back door: every row is a real lemma the
+    // derivation cleared, and none of them is in the cull.
+    for (const word of clearances) {
+      expect(cull.has(word)).toBe(false);
     }
   });
 
@@ -115,7 +140,9 @@ describe('the committed admissions', () => {
       expect(entry).toBeDefined();
       expect(entry?.definition).toBeTruthy();
       expect(entry?.etymology).toBeTruthy();
-      expect(entry?.etymology?.length).toBeGreaterThan(20);
+      // Short is fine and well precedented: 118 of the shipped crowns carry a
+      // pure surface analysis (chairman, "From chair + -man."). Empty is not.
+      expect(entry?.etymology?.length).toBeGreaterThan(15);
     }
   });
 
@@ -126,13 +153,86 @@ describe('the committed admissions', () => {
       ) as Record<string, string>;
       // Existing crowns sit around 81 percent of formable words glossed; a
       // thin bundle would mean defs:acquire was never run for the new rack.
-      expect(Object.keys(bundle).length).toBeGreaterThan(150);
+      // Bundle size tracks how many words a rack can spell, so the floor is
+      // set low enough for the thinnest rack in the batch (sufferer, 90
+      // formable words). Coverage is asserted as a ratio below.
+      expect(Object.keys(bundle).length).toBeGreaterThan(50);
       expect(bundle[word]).toBeTruthy();
     }
   });
 
   it('grows the source pool by exactly the admissions', () => {
-    expect(pool).toHaveLength(713);
+    expect(pool).toHaveLength(793);
     for (const { word } of admissions) expect(byWord.has(word)).toBe(true);
+  });
+});
+
+describe('admissionFailures, the gates that decide an admission', () => {
+  // Built by hand so the gates can be watched discriminating rather than
+  // passing vacuously. A gate that never rejects anything is not a gate.
+  const ctx = {
+    common: new Set([
+      'distance',
+      'archives',
+      'sexually',
+      'projects',
+      'earliest',
+    ]),
+    validation: new Set([
+      'distance',
+      'archives',
+      'projects',
+      'earliest',
+      'early',
+      'project',
+      'archive',
+    ]),
+    cull: new Map([
+      ['archives', 'pure-inflection'],
+      ['sexually', 'register'],
+    ]),
+    clearances: new Set(['projects']),
+    setSize: () => 30,
+  };
+
+  it('admits a clean base word', () => {
+    expect(admissionFailures('distance', ctx)).toEqual([]);
+  });
+
+  it('rejects an inflection planted in the candidates', () => {
+    // archives: a pure plural, in the cull, and inflected by shape. It must be
+    // refused, and the reason must say which gate caught it.
+    const failures = admissionFailures('archives', ctx);
+    expect(failures.length).toBeGreaterThan(0);
+    expect(failures.join(' ')).toMatch(/cull|inflected/);
+  });
+
+  it('rejects an inflection the cull has not seen, on shape alone', () => {
+    // earliest is a superlative sitting in the common pool at 8 letters. The
+    // derivation has not been run over it, so only the shape guard stands
+    // between it and a crown.
+    expect(admissionFailures('earliest', ctx)).toContain(
+      'reads as an inflected form and the derivation has not cleared it',
+    );
+  });
+
+  it('rejects a denied word planted in the candidates', () => {
+    // sexually is in the common pool but out of validation, which is what a
+    // denial or a register exclusion looks like from here.
+    const failures = admissionFailures('sexually', ctx);
+    expect(failures.length).toBeGreaterThan(0);
+    expect(failures.join(' ')).toMatch(/validation|denied|cull/);
+  });
+
+  it('admits a word the form_of derivation has cleared', () => {
+    // projects is a plural WITH a lemma sense, so it carries its own etymology
+    // to reveal. The shape guard rejects it; the derivation is the authority.
+    expect(looksInflected('projects', ctx.validation)).toBe(true);
+    expect(admissionFailures('projects', ctx)).toEqual([]);
+  });
+
+  it('rejects a word whose set is under the floor', () => {
+    const thin = { ...ctx, setSize: () => 3 };
+    expect(admissionFailures('distance', thin).join(' ')).toMatch(/floor/);
   });
 });

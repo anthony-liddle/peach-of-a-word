@@ -18,7 +18,7 @@ function withReason(reason: string): string[] {
 }
 
 describe('source-word exclusion list (the cull rule)', () => {
-  it('excludes exactly the 15 pure inflections, no more no fewer', () => {
+  it('excludes exactly the 16 pure inflections, no more no fewer', () => {
     expect(withReason('pure-inflection')).toEqual([
       'adhering',
       'analyses',
@@ -33,6 +33,7 @@ describe('source-word exclusion list (the cull rule)', () => {
       'portions',
       'reserves',
       'students',
+      'subjects',
       'troubles',
       'variants',
     ]);
@@ -82,6 +83,38 @@ describe('source-word exclusion list (the cull rule)', () => {
     }
   });
 
+  it('excludes the three register words found in the widened pool', () => {
+    // Flagged from the 113 the cache fix made eligible, and never crowns, so
+    // unlike the six below they are not demoted from the common pool: they
+    // stay ordinary findable, scorable words that simply never headline.
+    //
+    // shooting is the one the automated screen got wrong. Wiktionary's first
+    // sense is the adjective "moving or growing quickly", but nobody reads
+    // SHOOTING that way first. The crown test is not "is this word
+    // acceptable", it is "should the game throw a party for it", which is a
+    // lower bar to fail.
+    for (const word of ['punching', 'shooting', 'suicidal']) {
+      expect(exclusions.get(word)).toBe('register');
+    }
+  });
+
+  it('keeps ordinary vocabulary from law, medicine and plain description', () => {
+    // The line stops here. These read as sensitive to a keyword screen and are
+    // not: excluding them would start sanding off English for no gain. feminist
+    // sits on a political axis rather than an offensive one, and excluding it
+    // would itself be a statement.
+    for (const keep of [
+      'imprison',
+      'sufferer',
+      'distress',
+      'paranoia',
+      'suppress',
+      'feminist',
+    ]) {
+      expect(exclusions.has(keep)).toBe(false);
+    }
+  });
+
   it('excludes the six hand-flagged register words', () => {
     // Not derived: a judgment call that these would be odd to type into a
     // cute-themed game. Each is substituted in place in the calendar so no
@@ -93,7 +126,10 @@ describe('source-word exclusion list (the cull rule)', () => {
       'atrocity',
       'genocide',
       'oriental',
+      'punching',
       'sexually',
+      'shooting',
+      'suicidal',
       'violence',
     ]);
   });
@@ -108,8 +144,29 @@ describe('source-word exclusion list (the cull rule)', () => {
     }
   });
 
-  it('lands on 44 excluded words total', () => {
-    // The 38 derived by the cull, plus the 6 hand-flagged register words.
-    expect(exclusions.size).toBe(44);
+  it('covers the candidates the cache fix newly made eligible', () => {
+    // The Phase 2 cull was derived against a 707-word pool, and said so: it
+    // "covers today's pool, not words not yet in it". Fixing the cached null
+    // etymology made 113 more candidates eligible, so the form_of derivation
+    // was re-run over them and these seven came back inflected. Excluding them
+    // before anything is admitted is what stops the widened pool from carrying
+    // an inflection into a crown.
+    for (const word of [
+      'defeated',
+      'defended',
+      'enhanced',
+      'filtered',
+      'mistaken',
+      'modified',
+    ]) {
+      expect(exclusions.get(word)).toBe('past-tense-dual');
+    }
+    expect(exclusions.get('subjects')).toBe('pure-inflection');
+  });
+
+  it('lands on 54 excluded words total', () => {
+    // The 45 derived by the cull, plus 9 hand-flagged register words: the
+    // original 6 retired crowns and 3 found in the widened candidate set.
+    expect(exclusions.size).toBe(54);
   });
 });

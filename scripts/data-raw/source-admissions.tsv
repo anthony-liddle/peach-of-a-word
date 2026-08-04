@@ -36,3 +36,98 @@ restrain	base verb; substitutes for sexually at calendar index 100
 festival	base noun; substitutes for oriental at calendar index 89
 patience	base noun; substitutes for atrocity at calendar index 66
 sunlight	base compound noun; substitutes for genocide at calendar index 246
+# The widened-pool batch. Fixing enrichWord's cached null etymology made
+# 113 more candidates eligible, and these 80 are what came through every
+# gate: the re-run form_of derivation (7 inflections excluded), the
+# denylist (0), the register sweep (3 excluded), and the MIN_SET_SIZE
+# floor through createPuzzle (23 sub-floor).
+#
+# The 14 whose reason names the form_of derivation are the ones the
+# looksInflected shape guard rejects and the derivation clears. They are
+# listed with their evidence in source-lemma-clearances.tsv; the shipped
+# calendar already carries 6 plural-lemma and 59 participle-lemma crowns,
+# so admitting them follows the standard rather than bending it.
+#
+# appalled and approach are not here. They were already in the source
+# pool and only ever needed the allowlist subtraction in lib/pools.ts
+# removed, which is a pool derivation change and not an admission.
+appendix	base noun; widened pool, cached null etymology
+applause	base noun; widened pool, cached null etymology
+backbone	base noun; widened pool, cached null etymology
+backward	base adjective; widened pool, cached null etymology
+bacteria	base noun; widened pool, cached null etymology
+clothing	base verb; participle lemma of clothe, cleared by the form_of derivation
+compress	base verb; widened pool, cached null etymology
+consumer	base noun; derived lemma, cleared by the form_of derivation
+convince	base verb; widened pool, cached null etymology
+delivery	base noun; widened pool, cached null etymology
+designer	base noun; derived lemma, cleared by the form_of derivation
+discover	base verb; widened pool, cached null etymology
+distract	base verb; widened pool, cached null etymology
+distress	base noun; widened pool, cached null etymology
+doctrine	base noun; widened pool, cached null etymology
+document	base noun; widened pool, cached null etymology
+domestic	base adjective; widened pool, cached null etymology
+dominant	base noun; widened pool, cached null etymology
+dripping	base noun; participle lemma of drip, cleared by the form_of derivation
+entirely	base adverb; widened pool, cached null etymology
+external	base adjective; widened pool, cached null etymology
+feminist	base adjective; widened pool, cached null etymology
+formally	base adverb; widened pool, cached null etymology
+fountain	base noun; widened pool, cached null etymology
+goldfish	base noun; widened pool, cached null etymology
+graffito	base noun; widened pool, cached null etymology
+humanity	base noun; widened pool, cached null etymology
+imperial	base adjective; widened pool, cached null etymology
+imprison	base verb; widened pool, cached null etymology
+instruct	base verb; widened pool, cached null etymology
+internal	base adjective; widened pool, cached null etymology
+lecturer	base noun; derived lemma, cleared by the form_of derivation
+location	base noun; widened pool, cached null etymology
+marriage	base noun; widened pool, cached null etymology
+material	base adjective; widened pool, cached null etymology
+meantime	base noun; widened pool, cached null etymology
+medicine	base noun; widened pool, cached null etymology
+medieval	base adjective; widened pool, cached null etymology
+modeling	base noun; participle lemma of model, cleared by the form_of derivation
+morality	base noun; widened pool, cached null etymology
+nuisance	base noun; widened pool, cached null etymology
+observer	base noun; derived lemma, cleared by the form_of derivation
+opposite	base adjective; widened pool, cached null etymology
+optional	base adjective; widened pool, cached null etymology
+original	base adjective; widened pool, cached null etymology
+outright	base adverb; widened pool, cached null etymology
+paranoia	base noun; widened pool, cached null etymology
+pathetic	base adjective; widened pool, cached null etymology
+peaceful	base adjective; widened pool, cached null etymology
+pedantic	base adjective; widened pool, cached null etymology
+pedantry	base noun; widened pool, cached null etymology
+precious	base adjective; widened pool, cached null etymology
+pressing	base adjective; participle lemma of press, cleared by the form_of derivation
+pressure	base noun; widened pool, cached null etymology
+projects	base noun; plural lemma of project, cleared by the form_of derivation
+prospect	base noun; widened pool, cached null etymology
+protocol	base noun; widened pool, cached null etymology
+puncture	base noun; widened pool, cached null etymology
+purchase	base noun; widened pool, cached null etymology
+railroad	base noun; widened pool, cached null etymology
+rational	base adjective; widened pool, cached null etymology
+regional	base adjective; widened pool, cached null etymology
+reliably	base adverb; widened pool, cached null etymology
+scarcely	base adverb; widened pool, cached null etymology
+scenario	base noun; widened pool, cached null etymology
+schedule	base noun; widened pool, cached null etymology
+shocking	base adjective; participle lemma of shock, cleared by the form_of derivation
+speeding	base verb; participle lemma of speed, cleared by the form_of derivation
+splendid	base adjective; widened pool, cached null etymology
+stunning	base adjective; participle lemma of stun, cleared by the form_of derivation
+subtlety	base noun; widened pool, cached null etymology
+suddenly	base adverb; widened pool, cached null etymology
+sufferer	base noun; derived lemma, cleared by the form_of derivation
+sunshine	base noun; widened pool, cached null etymology
+supplier	base noun; derived lemma, cleared by the form_of derivation
+suppress	base verb; widened pool, cached null etymology
+tolerant	base adjective; widened pool, cached null etymology
+unstable	base adjective; widened pool, cached null etymology
+unusable	base adjective; widened pool, cached null etymology
+warranty	base noun; widened pool, cached null etymology

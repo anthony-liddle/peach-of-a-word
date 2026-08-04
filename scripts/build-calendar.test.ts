@@ -125,11 +125,11 @@ describe('the calendar build derives from patched pools', () => {
 });
 
 describe('eligibility against the real baked data', () => {
-  it('keeps 588 of the 713 shipped source words (the rest are sub-floor)', () => {
-    // 707, plus three hand admissions in #85 and three more here, each
-    // replacing a crown retired for register.
-    expect(sourceWords.length).toBe(713);
-    expect(eligible.length).toBe(588);
+  it('keeps 670 of the 793 shipped source words (the rest are sub-floor)', () => {
+    // 707, plus six hand admissions replacing crowns retired for register,
+    // plus the 80 the cached-null-etymology fix made eligible.
+    expect(sourceWords.length).toBe(793);
+    expect(eligible.length).toBe(670);
   });
 
   it('treats known thin words as sub-floor (crown-inclusive)', () => {
@@ -152,11 +152,12 @@ describe('the culled, regenerated calendar', () => {
   const culledWords = () => eligible.filter((w) => !EXCLUSIONS.has(w));
 
   it('drops exactly the excluded words from the eligible pool', () => {
-    // 588 eligible minus 44 exclusions = 544 clean crowns, the count held
-    // steady across both rounds: each crown retired for register is matched by
-    // one admitted to replace it.
-    expect(eligible.length).toBe(588);
-    expect(culledWords().length).toBe(544);
+    // 670 eligible minus 44 of the 54 exclusions that sit in the pool = 626
+    // clean crowns. The first six register retirements each had a replacement
+    // admitted, holding the count steady; the three added from the widened
+    // candidate set were never in the pool, so they subtract nothing.
+    expect(eligible.length).toBe(670);
+    expect(culledWords().length).toBe(626);
   });
 
   it('first run contains exactly the culled words, no excluded word', () => {
@@ -173,7 +174,7 @@ describe('the culled, regenerated calendar', () => {
       epoch: { year: number; month: number; day: number };
       words: string[];
     };
-    expect(committed.words.length).toBe(544);
+    expect(committed.words.length).toBe(626);
     expect([...committed.words].sort()).toEqual([...culledWords()].sort());
     expect(committed.epoch).toEqual({ year: 2026, month: 6, day: 23 });
   });
@@ -197,10 +198,11 @@ describe('the culled, regenerated calendar', () => {
       [246, 'genocide', 'sunlight'],
     ];
 
-    expect(committed.words).toHaveLength(544);
-    // Length held and no duplicate introduced, so no two dates now resolve to
-    // the same puzzle.
-    expect(new Set(committed.words).size).toBe(544);
+    expect(committed.words).toHaveLength(626);
+    // No duplicate introduced, so no two dates resolve to the same puzzle.
+    // The swaps happened in place at 544 days; the calendar has since been
+    // appended to, and appending cannot disturb an index before it.
+    expect(new Set(committed.words).size).toBe(626);
 
     for (const [index, removed, added] of swaps) {
       expect(committed.words[index]).toBe(added);

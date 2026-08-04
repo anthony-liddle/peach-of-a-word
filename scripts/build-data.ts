@@ -12,6 +12,12 @@
  * rerun produces a large, noisy diff whose contents nobody reviewed, in files
  * the daily calendar is anchored to.
  *
+ * What it cannot do is grow the source pool. Every source word is a crown, and
+ * the calendar appends newly eligible words, so a pool that grew here would ship
+ * crowns nobody curated. This run reports its newly eligible candidates and
+ * writes only the committed membership. Admission is pnpm data:admit alone. See
+ * lib/source-gate.ts.
+ *
  * The practical consequence: the committed files in public/data/ are the source
  * of truth, not this script. This script is how they came to exist, not how they
  * are maintained. Reach for a narrower tool instead:
@@ -62,6 +68,7 @@ import {
   loadValidation,
 } from './lib/sources.ts';
 import { enrichWord, type WordEntry } from './lib/wiktionary.ts';
+import { gateSourcePool } from './lib/source-gate.ts';
 import {
   ASSET_DIR,
   DATA_RAW_DIR,
@@ -76,6 +83,19 @@ import {
   coverage,
   shardProjection,
 } from './lib/emit-definitions.ts';
+
+/**
+ * The committed source pool. Read rather than derived: it is the membership the
+ * gate holds this run to, and the calendar is anchored to it.
+ */
+async function loadCommittedSourcePool(): Promise<WordEntry[]> {
+  try {
+    const raw = await readFile(join(ASSET_DIR, 'source-pool.json'), 'utf8');
+    return JSON.parse(raw) as WordEntry[];
+  } catch {
+    return [];
+  }
+}
 
 async function loadExcludeList(): Promise<Set<string>> {
   try {
@@ -169,15 +189,38 @@ async function main(): Promise<void> {
   );
   process.stdout.write('\n');
 
-  const sourcePool: WordEntry[] = enriched.filter(
+  const eligible: WordEntry[] = enriched.filter(
     (e) => e.definition && (REQUIRE_ETYMOLOGY ? e.etymology : true),
   );
-  sourcePool.sort((a, b) => a.word.localeCompare(b.word));
+  console.log(
+    `  ${eligible.length} candidates carry both a definition and an etymology ` +
+      `(${enriched.length - eligible.length} dropped for missing either).`,
+  );
+
+  // The gate. This pipeline reports what it found and writes only what was
+  // already committed; the pool grows through pnpm data:admit alone. See
+  // lib/source-gate.ts for why.
+  const committedEntries = await loadCommittedSourcePool();
+  const gated = gateSourcePool(
+    eligible,
+    new Set(committedEntries.map((e) => e.word)),
+    committedEntries,
+  );
+  const sourcePool = gated.kept;
   await writeAsset('source-pool.json', JSON.stringify(sourcePool));
   console.log(
-    `  ${sourcePool.length} source words kept ` +
-      `(${enriched.length - sourcePool.length} dropped for missing definition or etymology).`,
+    `  ${sourcePool.length} source words written (the committed pool, unchanged in membership).`,
   );
+  console.log(
+    `  ${gated.withheld.length} newly eligible words withheld. They are crown ` +
+      `candidates nobody has curated, so admit them through pnpm data:admit.`,
+  );
+  if (gated.stale.length) {
+    console.log(
+      `  ${gated.stale.length} committed words held at their committed entry ` +
+        `(this run did not reproduce them): ${gated.stale.join(', ')}.`,
+    );
+  }
 
   console.log('Definitions: emitting per-puzzle bundles.');
   // Bundles are built over the full validation boundary, so an allowlisted
