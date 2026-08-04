@@ -71,6 +71,27 @@ export const REVEAL_KICKERS: Record<Theme, string> = {
 };
 
 /**
+ * The completion card's ornament. A token rather than markup, because this
+ * module is plain TypeScript and the cute mark is a drawing, not a character:
+ * the card resolves the token and the artwork stays in a component.
+ */
+export type Ornament =
+  | { readonly kind: 'glyph'; readonly glyph: string }
+  | { readonly kind: 'peach' };
+
+/**
+ * Letterpress keeps the fleuron, a printer's mark and the right one for a
+ * theme built out of the type case. Cute takes the peach: the fleuron was
+ * letterpress vocabulary sitting in the middle of the peach celebration, the
+ * same class of leak as the reveal kicker. Skinned here rather than in the card
+ * so a theme switch re-skins it live, like every other themed string.
+ */
+export const ORNAMENTS: Record<Theme, Ornament> = {
+  letterpress: { kind: 'glyph', glyph: '❧' },
+  cute: { kind: 'peach' },
+};
+
+/**
  * The cute theme's container noun. Six strings below are built from it, so
  * swapping basket for crate (Bea's suggestion) is this one line. Basket reads
  * hand-picked; crate reads like a harvest haul. Whichever it is, it has to be
@@ -189,6 +210,11 @@ export const CROWN_RANK = TIER_NAMES.letterpress.length;
 /** The themed completion-crown name for the active theme. */
 export function crownName(theme: Theme): string {
   return CROWN_NAMES[theme];
+}
+
+/** The themed completion-card ornament for the active theme. */
+export function ornament(theme: Theme): Ornament {
+  return ORNAMENTS[theme];
 }
 
 /** The themed reveal-card kicker for the active theme. */

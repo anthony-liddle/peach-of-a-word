@@ -5,6 +5,7 @@ import {
   CROWN_RANK,
   TIER_NAMES,
   crownName,
+  ornament,
   revealKicker,
   sourceFoundAnnouncement,
   sourceFoundMessage,
@@ -72,6 +73,19 @@ describe('theme-skinned reveal kicker', () => {
     // sets it in spaced small caps where a full stop would read as a speck.
     expect(revealKicker('letterpress')).not.toMatch(/[.!?]$/);
     expect(revealKicker('cute')).not.toMatch(/[.!?]$/);
+  });
+});
+
+describe('theme-skinned completion ornament', () => {
+  it('keeps the fleuron on letterpress and gives cute the peach', () => {
+    // The fleuron is a printer's mark, so it is letterpress vocabulary sitting
+    // in the middle of the peach celebration. Letterpress is pinned verbatim.
+    expect(ornament('letterpress')).toEqual({ kind: 'glyph', glyph: '❧' });
+    expect(ornament('cute')).toEqual({ kind: 'peach' });
+  });
+
+  it('carries no glyph on the cute side, so no printer mark can leak in', () => {
+    expect(ornament('cute')).not.toHaveProperty('glyph');
   });
 });
 
@@ -191,6 +205,9 @@ describe('the vocabulary lives only in the copy module', () => {
     'Written in Fredoka',
     'can spell, found.',
     'can grow, picked.',
+    // The printer's fleuron. A glyph, not a sentence, but the same rule: it is
+    // letterpress vocabulary, so it lives in the copy module or nowhere.
+    '❧',
   ];
 
   it('finds none of the skinned strings spelled out in a component', () => {

@@ -1668,6 +1668,32 @@ button {
   color: var(--accent);
   margin: 0 0 0.2rem;
 }
+/* The cute ornament is the peach mark, not a glyph. Sized in rem so the
+   text-size steps carry it along with the type it sits above, and centred
+   explicitly because a block element ignores the card's text-align. */
+.edition__ornament--peach {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.3rem;
+  animation: peach-settle 0.42s var(--ease) both;
+}
+/* Transform only, and no delay. The global reduced-motion switch zeroes
+   animation-duration but not animation-delay, so a delayed entrance would hold
+   its opening frame; with nothing but a transform in the frames, even a stuck
+   frame still shows the peach. The card's own drop animation owns the fade,
+   and the confetti owns the loud part of the beat. */
+@keyframes peach-settle {
+  from {
+    transform: scale(0.72) translateY(0.35rem);
+  }
+  60% {
+    transform: scale(1.06) translateY(0);
+  }
+  to {
+    transform: scale(1) translateY(0);
+  }
+}
 .edition__title {
   font-family: var(--font-display);
   font-weight: 600;
