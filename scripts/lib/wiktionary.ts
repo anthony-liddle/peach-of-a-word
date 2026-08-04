@@ -14,6 +14,16 @@ interface RawResponses {
   definitionJson: string | null;
   /** Raw rendered HTML of the Etymology section, or null. */
   etymologyHtml: string | null;
+  /**
+   * Whether the etymology lookup ran to completion, whatever it found. This is
+   * what separates the two meanings a null etymologyHtml used to share: the
+   * lookup was throttled and we do not know, versus we asked and the page has
+   * no Etymology section. Without the distinction, a re-fetch guard either
+   * trusts throttled nulls forever or never settles on words that genuinely
+   * have no etymology. Absent on entries cached before this field existed,
+   * which is read as "do not know" and so re-fetched once.
+   */
+  etymologyFetched?: boolean;
 }
 
 const HEADERS = {
@@ -251,6 +261,9 @@ async function fetchRaw(word: string): Promise<RawResponses> {
   await sleep(REQUEST_DELAY_MS);
 
   let etymologyHtml: string | null = null;
+  // Only set once a lookup has run its full course, so a throw anywhere along
+  // the way leaves the answer recorded as unknown rather than as absent.
+  let etymologyFetched = false;
   try {
     const base = 'https://en.wiktionary.org/w/api.php';
     const sections = JSON.parse(
@@ -272,32 +285,43 @@ async function fetchRaw(word: string): Promise<RawResponses> {
       ) as { parse?: { text?: string } };
       etymologyHtml = body.parse?.text ?? null;
     }
+    etymologyFetched = true;
   } catch {
     etymologyHtml = null;
   }
 
-  return { word, definitionJson, etymologyHtml };
+  return { word, definitionJson, etymologyHtml, etymologyFetched };
 }
 
 /**
- * Enrich one word. Raw responses are cached on disk; a cached entry whose
- * definition fetch failed (a throttled null) is re-fetched rather than trusted,
- * so a busy run never poisons the cache permanently.
+ * Whether a cached raw response has to go back to the network. A null
+ * definition does, as it always has. A null etymology does too, unless the
+ * entry records that the lookup completed and found none, which is what keeps a
+ * warm cache from re-asking about the same words on every run.
+ */
+export function needsRefetch(raw: RawResponses): boolean {
+  if (raw.definitionJson === null) return true;
+  return raw.etymologyHtml === null && raw.etymologyFetched !== true;
+}
+
+/**
+ * Enrich one word. Raw responses are cached on disk; a cached entry whose fetch
+ * did not complete (a throttled null, for either half) is re-fetched rather than
+ * trusted, so a busy run never poisons the cache permanently. See needsRefetch
+ * for which nulls count as unknown and which count as answered.
  *
- * KNOWN LIMITATION, deliberately not changed here. The re-fetch guard covers a
- * null definition but not a null etymology, so a cached entry whose etymology
- * fetch was throttled is trusted forever. Measured against the committed cache,
- * that is why words like distance, restrain and integral carry no etymology and
- * so never entered the source pool: re-fetching them returns a full etymology.
- * Widening the guard would be correct, but it would silently admit hundreds of
- * new source words on the next data:build and append that many crowns, so it is
- * a decision of its own rather than a fix to make in passing. Use refetchWord
- * for the handful of words being admitted deliberately.
+ * This used to trust a null etymology forever, which is why words like distance,
+ * restrain and integral carried none and so never entered the source pool:
+ * re-fetching them returns a full etymology. Measured against the committed
+ * cache, 859 of 1,575 eligible candidates were held out that way. Fixing it
+ * widens the candidate set, so the pool no longer grows as a side effect of a
+ * build: see the source-pool gate in scripts/build-data.ts, and admit through
+ * pnpm data:admit.
  */
 export async function enrichWord(word: string): Promise<WordEntry> {
   const cacheKey = `wiktionary-raw/${word}.json`;
   let raw = await readCacheJson<RawResponses>(cacheKey);
-  if (!raw || raw.definitionJson === null) {
+  if (!raw || needsRefetch(raw)) {
     raw = await fetchRaw(word);
     if (raw.definitionJson !== null) await writeCacheJson(cacheKey, raw);
   }
