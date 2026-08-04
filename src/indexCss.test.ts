@@ -361,3 +361,58 @@ describe('index.css narrow screens: em breakpoints and reachable overflow', () =
     expect(block('.decorations')).toContain('overflow: hidden');
   });
 });
+
+/**
+ * The completion ornament. The peach gets a brief entrance so it reads as
+ * arriving rather than being placed, but the celebration's loud part belongs to
+ * the confetti, and reduced motion has to leave the peach visible and still.
+ */
+describe('index.css completion ornament: a quiet entrance that reduced motion kills', () => {
+  test('the entrance is a keyframe animation, so the global switch reaches it', () => {
+    // The reduced-motion block zeroes animation-duration on the universal
+    // selector. An entrance built from anything else would slip past it.
+    expect(block('.edition__ornament--peach')).toMatch(/animation:/);
+  });
+
+  test('the entrance carries no animation-delay', () => {
+    // The global switch zeroes duration and transition-duration but NOT delay.
+    // A delayed entrance would hold its from-state under reduced motion, so the
+    // peach would sit invisible for the delay. Verified, not assumed.
+    const b = block('.edition__ornament--peach');
+    expect(b).not.toMatch(/animation-delay/);
+    expect(b).not.toMatch(
+      /animation:[^;]*\b\d*\.?\d+m?s\s+[^;]*\b\d*\.?\d+m?s/,
+    );
+  });
+
+  test('the entrance never animates opacity, so a stuck frame still shows the peach', () => {
+    // Transform only, by construction: even if a frame sticks, the peach is on
+    // screen. The card's own drop animation already owns the fade.
+    const name = block('.edition__ornament--peach').match(
+      /animation:\s*([\w-]+)/,
+    )?.[1];
+    expect(name).toBeTruthy();
+    const frames = css.match(
+      new RegExp(`@keyframes ${name}\\s*\\{([\\s\\S]*?)\\n\\}`),
+    )?.[1];
+    expect(frames).toBeTruthy();
+    expect(frames).not.toMatch(/opacity/);
+    expect(frames).toMatch(/transform/);
+  });
+
+  test('the reduced-motion switch is still in place and universal', () => {
+    const m = css.match(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?)\n\}/,
+    );
+    expect(m?.[1]).toMatch(/animation-duration:\s*0\.001ms\s*!important/);
+    expect(m?.[1]).toMatch(/\*,/);
+  });
+
+  test('the peach ornament is sized in rem, so the text-size steps scale it', () => {
+    // px would pin it while the type around it grows, and the largest step at
+    // 375px is exactly where that would crowd the crown title.
+    const b = block('.edition__ornament--peach');
+    expect(b).toMatch(/(width|height|font-size):\s*[\d.]+rem/);
+    expect(b).not.toMatch(/(width|height):\s*[\d.]+px/);
+  });
+});
