@@ -182,11 +182,13 @@ describe('the over-blocking guard', () => {
     }
   });
 
-  it('still accepts nip on every one of the 29 racks that can spell it', () => {
-    // 28 when the denylist landed; patience, admitted here as a replacement
-    // crown, is the 29th rack that can spell it.
+  it('still accepts nip on every one of the 38 racks that can spell it', () => {
+    // 28 when the denylist landed, 29 once patience was admitted as a
+    // replacement crown, and 38 now the widened pool has appended 82 more.
+    // The count is incidental; that every one of them accepts nip is not.
     const racks = calendar.filter((rack) => canForm('nip', rack));
-    expect(racks).toHaveLength(29);
+    expect(racks).toHaveLength(38);
+    expect(racks.length).toBeGreaterThan(0);
     for (const rack of racks) {
       const puzzle = puzzleFor(rack);
       const result = validateGuess('nip', puzzle, new Set());
