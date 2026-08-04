@@ -493,8 +493,9 @@ export function useGame(
   /**
    * The endless cycle. Held in a ref rather than a memo because the cursor is
    * the whole guarantee: React may discard a memo, and a discarded cycle would
-   * quietly start repeating. Rebuilt only when the calendar or the daily word
-   * changes, so a session that crosses midnight picks up the new exclusion.
+   * quietly start repeating. Both the calendar and the daily word are fixed for
+   * the life of a session, so in practice the cursor is built once; the guard is
+   * there so a future regeneration of either cannot leave a stale exclusion.
    *
    * The cycle is per session by design, not persisted. See the comment on
    * createEndlessSource: a stored position would need the drawn set stored with
