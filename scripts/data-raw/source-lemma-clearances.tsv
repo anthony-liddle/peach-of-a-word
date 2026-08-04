@@ -1,0 +1,47 @@
+# Words the hand-admission shape guard rejects and the Wiktionary form_of
+# derivation clears. Columns: word, form_of tag (or none), base (or -).
+#
+# Why this file exists. admit-source-words.ts carries looksInflected, a cheap
+# string guard meant to stop an obvious inflection being admitted by hand. The
+# derivation from form_of tags is the authority; the guard is belt and braces.
+# Measured over the widened candidate set they disagreed on 14 words, and the
+# guard was wrong on every one of them: it rejects any -er, -ing or -s form
+# whose base is itself a word, which sweeps up agent nouns (consumer, an -er
+# form of consume) and gerund lemmas (clothing, a participle of clothe) that
+# carry their own lemma sense and their own etymology.
+#
+# The shipped calendar already settles this. It carries 6 plural-lemma and 59
+# participle-lemma crowns (evenings, mornings, offering, blessing, sleeping),
+# so a guard that rejects them contradicts the standard it exists to enforce.
+# The guard is wrong, not the calendar.
+#
+# So the disagreement is recorded here, word by word with its evidence, rather
+# than resolved by loosening the guard's patterns until these happen to pass.
+# Loosening would also wave through earliest, happiest, notified and stripped,
+# which are exactly what the guard is for. A word listed here is exempt from
+# the shape guard and nothing else: every other admission gate still applies.
+#
+# lemma is true for every word here, which is the whole point. A pure plural
+# with no lemma sense of its own (analyses, archives) has no etymology to
+# reveal, and that is what makes it unacceptable as a crown. projects is the
+# deliberate case: it is tagged a plural AND carries a genuine lemma sense, so
+# its reveal card shows the real etymology of project. Bea's rule was drop the
+# past tense and keep everything else, and this is what that rule says.
+#
+# Derived from Wiktionary form_of tags and the lemma-sense list. Extend it by
+# re-running the derivation when the candidate set widens again, not by hand.
+word	tag	base
+clothing	participle	clothe
+consumer	none	-
+designer	none	-
+dripping	participle	drip
+lecturer	none	-
+modeling	participle	model
+observer	none	-
+pressing	participle	press
+projects	plural	project
+shocking	participle	shock
+speeding	participle	speed
+stunning	participle	stun
+sufferer	none	-
+supplier	none	-

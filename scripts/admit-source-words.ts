@@ -43,9 +43,15 @@ import { ASSET_DIR, DATA_RAW_DIR, writeAsset } from './lib/util.ts';
  *
  * The committed cull was derived from Wiktionary form_of tags, which is the
  * authority; this is the cheap guard that stops an obvious inflection being
- * admitted by hand. It is deliberately conservative: it rejects more than the
- * cull would, because a false reject here costs one candidate and a false
- * accept ships a plural as a crown.
+ * admitted by hand, including one the derivation has never been run over. It is
+ * deliberately conservative: it rejects more than the cull would, because a
+ * false reject costs one candidate and a false accept ships a plural as a crown.
+ *
+ * Where it disagrees with the derivation, the derivation wins, and the
+ * disagreement is recorded word by word in source-lemma-clearances.tsv rather
+ * than settled by loosening these patterns. Loosening them to admit consumer
+ * and clothing would also wave through earliest, happiest, notified and
+ * stripped, which is exactly what this is for. See admissionFailures.
  */
 export function looksInflected(
   word: string,
@@ -78,17 +84,81 @@ export function looksInflected(
   return ['s', 'es', 'ies', 'ed', 'er', 'est', 'ing'].some(inflects);
 }
 
+/** Everything an admission is judged against that does not need the network. */
+export interface AdmissionContext {
+  /** The baked common pool: inside the SOURCE_POOL_SIZES bands. */
+  readonly common: ReadonlySet<string>;
+  /** The patched validation boundary. A denied word is absent from it. */
+  readonly validation: ReadonlySet<string>;
+  /** The Phase 2 cull, word to reason. */
+  readonly cull: ReadonlyMap<string, string>;
+  /** Words the form_of derivation clears despite the shape guard. */
+  readonly clearances: ReadonlySet<string>;
+  /** Set size through the engine's own createPuzzle. */
+  readonly setSize: (word: string) => number;
+}
+
+/**
+ * Every reason this word may not be admitted, or an empty list to admit it.
+ *
+ * Returned rather than thrown so one run reports all of a candidate's problems
+ * at once, and so the gates can be tested by planting a word that must fail.
+ * The network gates (a definition and an etymology must exist) live in main,
+ * since they cannot be decided offline.
+ */
+export function admissionFailures(
+  word: string,
+  ctx: AdmissionContext,
+): string[] {
+  const failures: string[] = [];
+  if (word.length !== SOURCE_WORD_LENGTH) failures.push('not 8 letters');
+  if (!ctx.common.has(word))
+    failures.push('not in the common pool, so outside the bands');
+  if (!ctx.validation.has(word)) failures.push('not in validation, or denied');
+  if (ctx.cull.has(word))
+    failures.push(`in the Phase 2 cull as ${ctx.cull.get(word)}`);
+  if (looksInflected(word, ctx.validation) && !ctx.clearances.has(word)) {
+    failures.push(
+      'reads as an inflected form and the derivation has not cleared it',
+    );
+  }
+  const setSize = ctx.setSize(word);
+  if (setSize < MIN_SET_SIZE)
+    failures.push(`set size ${setSize} is under the floor`);
+  return failures;
+}
+
+/** Parse the clearance list: word in the first column, comments and header skipped. */
+export function parseClearances(tsv: string): Set<string> {
+  const out = new Set<string>();
+  for (const line of tsv.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed === '' || trimmed.startsWith('#')) continue;
+    const word = (line.split('\t')[0] ?? '').trim().toLowerCase();
+    if (word === '' || word === 'word') continue;
+    out.add(word);
+  }
+  return out;
+}
+
 async function main(): Promise<void> {
   console.log('Admitting source words (manual, network).\n');
 
-  const [admissionsText, poolJson, commonText, defsText, exclusionsText] =
-    await Promise.all([
-      readFile(join(DATA_RAW_DIR, 'source-admissions.tsv'), 'utf8'),
-      readFile(join(ASSET_DIR, 'source-pool.json'), 'utf8'),
-      readFile(join(ASSET_DIR, 'common-pool.txt'), 'utf8'),
-      readFile(join(DATA_RAW_DIR, 'definitions.tsv'), 'utf8'),
-      readFile(join(DATA_RAW_DIR, 'source-exclusions.tsv'), 'utf8'),
-    ]);
+  const [
+    admissionsText,
+    poolJson,
+    commonText,
+    defsText,
+    exclusionsText,
+    clearancesText,
+  ] = await Promise.all([
+    readFile(join(DATA_RAW_DIR, 'source-admissions.tsv'), 'utf8'),
+    readFile(join(ASSET_DIR, 'source-pool.json'), 'utf8'),
+    readFile(join(ASSET_DIR, 'common-pool.txt'), 'utf8'),
+    readFile(join(DATA_RAW_DIR, 'definitions.tsv'), 'utf8'),
+    readFile(join(DATA_RAW_DIR, 'source-exclusions.tsv'), 'utf8'),
+    readFile(join(DATA_RAW_DIR, 'source-lemma-clearances.tsv'), 'utf8'),
+  ]);
 
   const admissions = parseReasonedWords(admissionsText, 'Source admission');
   const pool = JSON.parse(poolJson) as SourceEntry[];
@@ -100,6 +170,7 @@ async function main(): Promise<void> {
       .filter(Boolean),
   );
   const cull = parseExclusions(exclusionsText);
+  const clearances = parseClearances(clearancesText);
   const pools = await loadPatchedPools();
   const validation = await loadValidation();
   const validationSet = new Set(validation);
@@ -107,23 +178,26 @@ async function main(): Promise<void> {
   const failures: string[] = [];
   const admitted: SourceEntry[] = [];
 
+  const ctx: AdmissionContext = {
+    common,
+    validation: validationSet,
+    cull,
+    clearances,
+    setSize: (w) =>
+      sourceSetSize(
+        w,
+        pools.dictionary,
+        pools.commonPool,
+        pools.beyond70Pool,
+        pools.beyond95Pool,
+      ),
+  };
+
   for (const { word, reason } of admissions) {
     const fail = (why: string) => failures.push(`${word}: ${why}`);
 
-    if (word.length !== SOURCE_WORD_LENGTH) fail('not 8 letters');
-    if (!common.has(word)) fail('not in the common pool, so outside the bands');
-    if (!validationSet.has(word)) fail('not in validation, or denied');
-    if (cull.has(word)) fail(`in the Phase 2 cull as ${cull.get(word)}`);
-    if (looksInflected(word, validationSet)) fail('reads as an inflected form');
-
-    const setSize = sourceSetSize(
-      word,
-      pools.dictionary,
-      pools.commonPool,
-      pools.beyond70Pool,
-      pools.beyond95Pool,
-    );
-    if (setSize < MIN_SET_SIZE) fail(`set size ${setSize} is under the floor`);
+    for (const why of admissionFailures(word, ctx)) fail(why);
+    const setSize = ctx.setSize(word);
 
     // Re-fetch rather than trust the cache: a cached null etymology is exactly
     // what kept these words out of the pool in the first place.

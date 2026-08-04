@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SourceEntry } from '@/data/types.ts';
-import { looksInflected } from './admit-source-words.ts';
+import { admissionFailures, looksInflected } from './admit-source-words.ts';
 import { parseReasonedWords } from './lib/denylist.ts';
 import { parseExclusions } from './lib/exclusions.ts';
 
@@ -134,5 +134,75 @@ describe('the committed admissions', () => {
   it('grows the source pool by exactly the admissions', () => {
     expect(pool).toHaveLength(713);
     for (const { word } of admissions) expect(byWord.has(word)).toBe(true);
+  });
+});
+
+describe('admissionFailures, the gates that decide an admission', () => {
+  // Built by hand so the gates can be watched discriminating rather than
+  // passing vacuously. A gate that never rejects anything is not a gate.
+  const ctx = {
+    common: new Set([
+      'distance',
+      'archives',
+      'sexually',
+      'projects',
+      'earliest',
+    ]),
+    validation: new Set([
+      'distance',
+      'archives',
+      'projects',
+      'earliest',
+      'early',
+      'project',
+      'archive',
+    ]),
+    cull: new Map([
+      ['archives', 'pure-inflection'],
+      ['sexually', 'register'],
+    ]),
+    clearances: new Set(['projects']),
+    setSize: () => 30,
+  };
+
+  it('admits a clean base word', () => {
+    expect(admissionFailures('distance', ctx)).toEqual([]);
+  });
+
+  it('rejects an inflection planted in the candidates', () => {
+    // archives: a pure plural, in the cull, and inflected by shape. It must be
+    // refused, and the reason must say which gate caught it.
+    const failures = admissionFailures('archives', ctx);
+    expect(failures.length).toBeGreaterThan(0);
+    expect(failures.join(' ')).toMatch(/cull|inflected/);
+  });
+
+  it('rejects an inflection the cull has not seen, on shape alone', () => {
+    // earliest is a superlative sitting in the common pool at 8 letters. The
+    // derivation has not been run over it, so only the shape guard stands
+    // between it and a crown.
+    expect(admissionFailures('earliest', ctx)).toContain(
+      'reads as an inflected form and the derivation has not cleared it',
+    );
+  });
+
+  it('rejects a denied word planted in the candidates', () => {
+    // sexually is in the common pool but out of validation, which is what a
+    // denial or a register exclusion looks like from here.
+    const failures = admissionFailures('sexually', ctx);
+    expect(failures.length).toBeGreaterThan(0);
+    expect(failures.join(' ')).toMatch(/validation|denied|cull/);
+  });
+
+  it('admits a word the form_of derivation has cleared', () => {
+    // projects is a plural WITH a lemma sense, so it carries its own etymology
+    // to reveal. The shape guard rejects it; the derivation is the authority.
+    expect(looksInflected('projects', ctx.validation)).toBe(true);
+    expect(admissionFailures('projects', ctx)).toEqual([]);
+  });
+
+  it('rejects a word whose set is under the floor', () => {
+    const thin = { ...ctx, setSize: () => 3 };
+    expect(admissionFailures('distance', thin).join(' ')).toMatch(/floor/);
   });
 });
