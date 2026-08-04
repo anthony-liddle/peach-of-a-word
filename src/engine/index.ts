@@ -14,4 +14,9 @@ export { seededPermutation } from './shuffle.ts';
 export { validateGuess, normalizeGuess } from './validate.ts';
 export { classifyWord } from './classify.ts';
 export { computeTier } from './tiers.ts';
-export { dayIndex, dailySourceWord, endlessSourceWord } from './daily.ts';
+export {
+  dayIndex,
+  dailySourceWord,
+  createEndlessSource,
+  type EndlessSourceOptions,
+} from './daily.ts';

@@ -8,10 +8,10 @@ import {
 } from 'react';
 import {
   computeTier,
+  createEndlessSource,
   createPuzzle,
   dailySourceWord,
   dayIndex,
-  endlessSourceWord,
   normalizeGuess,
   STORAGE_EPOCH,
   STREAK_TIER_INDEX,
@@ -477,13 +477,6 @@ export function useGame(
     [data],
   );
 
-  const freshEndlessSlice = useCallback((): Slice => {
-    // Endless draws from the same eligible calendar words as the daily, so a
-    // sub-floor word never headlines endless either.
-    const word = endlessSourceWord(data.dailyCalendar.words);
-    return buildSlice(endlessPayload(word, []));
-  }, [data, endlessPayload]);
-
   const [game, dispatch] = useReducer(reduce, undefined, (): Game => {
     const stored = storage.loadEndless();
     // Only rehydrate a stored word the data still knows, so the reveal works.
@@ -496,6 +489,50 @@ export function useGame(
 
   const active =
     game.mode === 'endless' && game.endless ? game.endless : game.daily;
+
+  /**
+   * The endless cycle. Held in a ref rather than a memo because the cursor is
+   * the whole guarantee: React may discard a memo, and a discarded cycle would
+   * quietly start repeating. Both the calendar and the daily word are fixed for
+   * the life of a session, so in practice the cursor is built once; the guard is
+   * there so a future regeneration of either cannot leave a stale exclusion.
+   *
+   * The cycle is per session by design, not persisted. See the comment on
+   * createEndlessSource: a stored position would need the drawn set stored with
+   * it to survive the calendar growing, and the repeats that actually bite
+   * happen inside a single sitting.
+   */
+  const endlessCursor = useRef<{
+    words: readonly string[];
+    dailyWord: string;
+    next: () => string;
+  } | null>(null);
+
+  const dailyWord = game.daily.puzzle.sourceWord;
+  const endlessWord = game.endless?.puzzle.sourceWord;
+
+  const freshEndlessSlice = useCallback((): Slice => {
+    const words = data.dailyCalendar.words;
+    const held = endlessCursor.current;
+    // Endless draws from the same eligible calendar words as the daily, so a
+    // sub-floor word never headlines endless either. Today's daily word is
+    // excluded so the two modes never serve the same rack on the same day, and
+    // the word already on screen seeds the boundary so a rehydrated game is not
+    // handed straight back by the first New Puzzle.
+    const cursor =
+      held && held.words === words && held.dailyWord === dailyWord
+        ? held
+        : {
+            words,
+            dailyWord,
+            next: createEndlessSource(words, {
+              exclude: dailyWord,
+              previous: endlessWord,
+            }),
+          };
+    endlessCursor.current = cursor;
+    return buildSlice(endlessPayload(cursor.next(), []));
+  }, [data, endlessPayload, dailyWord, endlessWord]);
 
   const view = useMemo<GameView>(
     () => ({ mode: game.mode, ...active }),
@@ -511,7 +548,6 @@ export function useGame(
   // is transient, so keying on found (plus the puzzle identity) keeps tile taps,
   // backspace, clear, and shuffle off the synchronous disk-write path.
   const dailyDayIndex = game.daily.dayIndex;
-  const dailyWord = game.daily.puzzle.sourceWord;
   const dailyFound = game.daily.found;
   useEffect(() => {
     if (dailyDayIndex !== null) {
@@ -520,7 +556,6 @@ export function useGame(
   }, [dailyFound, dailyDayIndex, dailyWord, storage]);
 
   // Same for endless: persist identity plus progress, never the composing word.
-  const endlessWord = game.endless?.puzzle.sourceWord;
   const endlessFound = game.endless?.found;
   useEffect(() => {
     if (endlessWord !== undefined && endlessFound !== undefined) {
