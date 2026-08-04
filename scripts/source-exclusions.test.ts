@@ -18,7 +18,7 @@ function withReason(reason: string): string[] {
 }
 
 describe('source-word exclusion list (the cull rule)', () => {
-  it('excludes exactly the 15 pure inflections, no more no fewer', () => {
+  it('excludes exactly the 16 pure inflections, no more no fewer', () => {
     expect(withReason('pure-inflection')).toEqual([
       'adhering',
       'analyses',
@@ -33,6 +33,7 @@ describe('source-word exclusion list (the cull rule)', () => {
       'portions',
       'reserves',
       'students',
+      'subjects',
       'troubles',
       'variants',
     ]);
@@ -108,8 +109,28 @@ describe('source-word exclusion list (the cull rule)', () => {
     }
   });
 
-  it('lands on 44 excluded words total', () => {
-    // The 38 derived by the cull, plus the 6 hand-flagged register words.
-    expect(exclusions.size).toBe(44);
+  it('covers the candidates the cache fix newly made eligible', () => {
+    // The Phase 2 cull was derived against a 707-word pool, and said so: it
+    // "covers today's pool, not words not yet in it". Fixing the cached null
+    // etymology made 113 more candidates eligible, so the form_of derivation
+    // was re-run over them and these seven came back inflected. Excluding them
+    // before anything is admitted is what stops the widened pool from carrying
+    // an inflection into a crown.
+    for (const word of [
+      'defeated',
+      'defended',
+      'enhanced',
+      'filtered',
+      'mistaken',
+      'modified',
+    ]) {
+      expect(exclusions.get(word)).toBe('past-tense-dual');
+    }
+    expect(exclusions.get('subjects')).toBe('pure-inflection');
+  });
+
+  it('lands on 51 excluded words total', () => {
+    // The 45 derived by the cull, plus the 6 hand-flagged register words.
+    expect(exclusions.size).toBe(51);
   });
 });

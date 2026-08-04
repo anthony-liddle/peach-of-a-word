@@ -18,6 +18,13 @@
 # pool instead. See scripts/data-raw/source-admissions.tsv.
 # Future-growth caveat: if the source pool is widened (for example
 # SCOWL band 35), re-run the derivation to extend this list.
+#
+# Re-run once already, after the cached-null-etymology fix made 113
+# more candidates eligible. Seven came back inflected and were added:
+# defeated, defended, enhanced, filtered, mistaken, modified and
+# subjects. None of them is in the source pool, so nothing on the
+# calendar moved; they are listed ahead of any admission so a widened
+# pool cannot carry an inflection into a crown.
 word	reason
 abortion	register
 absorbed	past-tense-dual
@@ -32,12 +39,16 @@ children	pure-inflection
 clearest	pure-inflection
 confused	past-tense-dual
 criteria	pure-inflection
+defeated	past-tense-dual
+defended	past-tense-dual
 degraded	past-tense-dual
 demented	past-tense-dual
 deranged	past-tense-dual
 disabled	past-tense-dual
 educated	past-tense-dual
+enhanced	past-tense-dual
 featured	past-tense-dual
+filtered	past-tense-dual
 forgiven	pure-inflection
 genocide	register
 imagines	pure-inflection
@@ -47,6 +58,8 @@ inspired	past-tense-dual
 involved	past-tense-dual
 isolated	past-tense-dual
 matrices	pure-inflection
+mistaken	past-tense-dual
+modified	past-tense-dual
 narrower	degree-form
 oriental	register
 outdated	past-tense-dual
@@ -59,6 +72,7 @@ slighter	degree-form
 stranger	degree-form
 stronger	degree-form
 students	pure-inflection
+subjects	pure-inflection
 troubles	pure-inflection
 underlay	past-tense-dual
 variants	pure-inflection
