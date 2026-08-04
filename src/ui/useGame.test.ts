@@ -68,6 +68,98 @@ describe('useGame daily day-key', () => {
   });
 });
 
+describe('endless New Puzzle', () => {
+  const CALENDAR = [
+    'serenade',
+    'lemonade',
+    'renegade',
+    'colander',
+    'grenades',
+    'reloaded',
+  ];
+
+  function endlessData(epoch: {
+    year: number;
+    month: number;
+    day: number;
+  }): GameData {
+    return {
+      dictionary: createListDictionary(['sea', 'near', 'lane']),
+      commonPool: createListWordSource(['sea', 'near', 'lane']),
+      beyond70Pool: createListWordSource([]),
+      beyond95Pool: createListWordSource([]),
+      dailyCalendar: { epoch, words: CALENDAR },
+      // Known to the data, so a stored endless word actually rehydrates.
+      sourceEntry: (word) => ({ word, definition: null, etymology: null }),
+    };
+  }
+
+  /** Today's calendar epoch, so the daily is the calendar's first word. */
+  function todayEpoch(): { year: number; month: number; day: number } {
+    const now = new Date();
+    return {
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+      day: now.getDate(),
+    };
+  }
+
+  function pressNewPuzzle(count: number): string[] {
+    const data = endlessData(todayEpoch());
+    const cap = capturingStore();
+    const { result } = renderHook(() =>
+      useGame(data, new NullAudioEngine(), new GameStorage(cap.store)),
+    );
+    act(() => result.current.setMode('endless'));
+    const words = [result.current.state.puzzle.sourceWord];
+    for (let i = 1; i < count; i++) {
+      act(() => result.current.newEndless());
+      words.push(result.current.state.puzzle.sourceWord);
+    }
+    return words;
+  }
+
+  it('never repeats a word before the pool is exhausted', () => {
+    // The pool is the calendar minus the daily word, so a full pass is one
+    // shorter than the calendar.
+    const pool = CALENDAR.filter((w) => w !== CALENDAR[0]);
+    const words = pressNewPuzzle(pool.length);
+    expect([...words].sort()).toEqual([...pool].sort());
+  });
+
+  it('does not repeat across the pass boundary', () => {
+    const pool = CALENDAR.filter((w) => w !== CALENDAR[0]);
+    const words = pressNewPuzzle(pool.length + 1);
+    expect(words[pool.length]).not.toBe(words[pool.length - 1]);
+  });
+
+  it('never serves the daily word', () => {
+    const words = pressNewPuzzle(60);
+    expect(words).not.toContain(CALENDAR[0]);
+  });
+
+  it('does not hand a rehydrated endless word straight back', () => {
+    const data = endlessData(todayEpoch());
+    const cap = capturingStore();
+    cap.store.setItem(
+      'eight-letters/v1',
+      JSON.stringify({
+        version: 1,
+        days: {},
+        streak: { count: 0, lastClearedDayIndex: null },
+        endless: { sourceWord: 'colander', found: [] },
+      }),
+    );
+    const { result } = renderHook(() =>
+      useGame(data, new NullAudioEngine(), new GameStorage(cap.store)),
+    );
+    act(() => result.current.setMode('endless'));
+    expect(result.current.state.puzzle.sourceWord).toBe('colander');
+    act(() => result.current.newEndless());
+    expect(result.current.state.puzzle.sourceWord).not.toBe('colander');
+  });
+});
+
 describe('a demoted word already saved in progress', () => {
   it('stays found and scored, but no longer counts toward completion', () => {
     // Demotion lowers the denominator, so a board that was one word short can

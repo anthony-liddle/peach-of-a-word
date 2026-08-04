@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dailySourceWord, dayIndex, endlessSourceWord } from './daily.ts';
+import { createEndlessSource, dailySourceWord, dayIndex } from './daily.ts';
 
 const EPOCH = { year: 2026, month: 1, day: 1 };
 
@@ -77,24 +77,102 @@ describe('dailySourceWord', () => {
   });
 });
 
-describe('endlessSourceWord', () => {
+describe('createEndlessSource', () => {
   // The calendar holds only eligible words; a sub-floor word is never in it.
   const calendar = ['alpha', 'bravo', 'charlie', 'delta', 'echo'];
 
+  /** A deterministic stand-in for Math.random, so every draw is reproducible. */
+  function testRng(seed = 1): () => number {
+    let a = seed >>> 0;
+    return () => {
+      a = (a * 1_664_525 + 1_013_904_223) >>> 0;
+      return a / 4_294_967_296;
+    };
+  }
+
+  const draw = (next: () => string, count: number): string[] =>
+    Array.from({ length: count }, () => next());
+
   it('only ever draws a word from the calendar (never a sub-floor word)', () => {
+    const next = createEndlessSource(calendar, { rng: testRng() });
     const set = new Set(calendar);
-    // Sweep the whole [0, 1) range so every index is exercised deterministically.
-    for (let r = 0; r < 1; r += 0.01) {
-      const word = endlessSourceWord(calendar, () => r);
-      expect(set.has(word)).toBe(true);
+    for (const word of draw(next, 200)) expect(set.has(word)).toBe(true);
+  });
+
+  it('yields every word exactly once across a full pass', () => {
+    const next = createEndlessSource(calendar, { rng: testRng() });
+    const pass = draw(next, calendar.length);
+    expect([...pass].sort()).toEqual([...calendar].sort());
+  });
+
+  it('never repeats a word before the pool is exhausted', () => {
+    const next = createEndlessSource(calendar, { rng: testRng(7) });
+    // Four full passes: within each pass every word appears exactly once.
+    for (let pass = 0; pass < 4; pass++) {
+      const words = draw(next, calendar.length);
+      expect(new Set(words).size).toBe(calendar.length);
     }
   });
 
-  it('reaches every word in the calendar', () => {
-    const seen = new Set<string>();
-    for (let r = 0; r < 1; r += 0.001) {
-      seen.add(endlessSourceWord(calendar, () => r));
+  it('does not repeat the previous word across a pass boundary', () => {
+    // Every seed, so the boundary holds for whichever permutation comes up.
+    for (let seed = 1; seed <= 25; seed++) {
+      const next = createEndlessSource(calendar, { rng: testRng(seed) });
+      const drawn = draw(next, calendar.length + 1);
+      expect(drawn[calendar.length]).not.toBe(drawn[calendar.length - 1]);
     }
-    expect(seen).toEqual(new Set(calendar));
+  });
+
+  it('never draws the excluded daily word', () => {
+    const next = createEndlessSource(calendar, {
+      exclude: 'charlie',
+      rng: testRng(3),
+    });
+    for (const word of draw(next, 200)) expect(word).not.toBe('charlie');
+  });
+
+  it('yields every remaining word exactly once per pass when one is excluded', () => {
+    const next = createEndlessSource(calendar, {
+      exclude: 'charlie',
+      rng: testRng(3),
+    });
+    const remaining = calendar.filter((w) => w !== 'charlie');
+    const pass = draw(next, remaining.length);
+    expect([...pass].sort()).toEqual([...remaining].sort());
+  });
+
+  it('does not open with the word already on screen', () => {
+    for (let seed = 1; seed <= 25; seed++) {
+      const next = createEndlessSource(calendar, {
+        previous: 'delta',
+        rng: testRng(seed),
+      });
+      expect(next()).not.toBe('delta');
+    }
+  });
+
+  it('is deterministic and reproducible for a given rng', () => {
+    const a = draw(createEndlessSource(calendar, { rng: testRng(9) }), 17);
+    const b = draw(createEndlessSource(calendar, { rng: testRng(9) }), 17);
+    expect(a).toEqual(b);
+  });
+
+  it('reshuffles rather than replaying the same order every pass', () => {
+    const next = createEndlessSource(calendar, { rng: testRng(4) });
+    const first = draw(next, calendar.length);
+    const second = draw(next, calendar.length);
+    expect(second).not.toEqual(first);
+  });
+
+  it('falls back to the whole calendar when the exclusion would empty it', () => {
+    const next = createEndlessSource(['alpha'], {
+      exclude: 'alpha',
+      rng: testRng(),
+    });
+    expect(next()).toBe('alpha');
+  });
+
+  it('throws on an empty calendar', () => {
+    expect(() => createEndlessSource([])).toThrow();
   });
 });

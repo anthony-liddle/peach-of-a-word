@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createEndlessSource,
   createPuzzle,
   dailySourceWord,
-  endlessSourceWord,
   validateGuess,
   type Puzzle,
 } from '@/engine/index.ts';
@@ -125,7 +125,7 @@ describe('a denied word is rejected outright', () => {
     // hand it to createPuzzle, so the check is the same one in both; this pins
     // that neither mode has its own path around it.
     const daily = dailySourceWord(calendar, new Date(2026, 5, 23));
-    const endless = endlessSourceWord(calendar, () => 0);
+    const endless = createEndlessSource(calendar, { rng: () => 0 })();
     for (const rack of [daily, endless]) {
       const puzzle = puzzleFor(rack);
       // A denied word this rack can actually spell, if it has one; otherwise

@@ -69,15 +69,57 @@ export function dailySourceWord(
   return calendar[cycleOrder(cycle, n)[position]!]!;
 }
 
+export interface EndlessSourceOptions {
+  /** A word this source must never draw, in practice today's daily word. */
+  readonly exclude?: string | undefined;
+  /** The word already on screen, so the very first draw differs from it. */
+  readonly previous?: string | undefined;
+  /** Injectable for testing. One call per pass, to seed that pass's shuffle. */
+  readonly rng?: () => number;
+}
+
 /**
- * A random source word for endless play, drawn from the same eligible calendar
- * as the daily. Because the calendar holds only words that clear MIN_SET_SIZE, a
- * sub-floor word can never headline endless. The rng is injectable for testing.
+ * A source of endless words that draws without replacement.
+ *
+ * Each pass is a fresh shuffle of the pool, handed out one word at a time, so no
+ * word repeats until the pool is exhausted. Reaching the end reshuffles, and the
+ * first word of the new pass is forced to differ from the last of the old, which
+ * is the same boundary rule the daily cycle uses. The pool is the eligible daily
+ * calendar minus the excluded word, so a sub-floor word can never headline
+ * endless and endless can never serve the day's daily rack.
+ *
+ * The daily's `cycleOrder` is deliberately not reused: its cycle 0 is the
+ * identity permutation, so endless would replay the committed calendar order,
+ * which is precisely the daily's own sequence. Both share `seededPermutation`
+ * and the boundary rule; only the ordering of the first pass differs.
+ *
+ * The returned function owns the cursor, so a cycle lives as long as the source.
  */
-export function endlessSourceWord(
+export function createEndlessSource(
   calendar: readonly string[],
-  rng: () => number = Math.random,
-): string {
+  { exclude, previous, rng = Math.random }: EndlessSourceOptions = {},
+): () => string {
   if (calendar.length === 0) throw new Error('Daily calendar is empty.');
-  return calendar[Math.floor(rng() * calendar.length)]!;
+  const remaining = calendar.filter((word) => word !== exclude);
+  // A calendar of only the excluded word still has to deal something.
+  const pool = remaining.length > 0 ? remaining : calendar;
+  const n = pool.length;
+
+  let order: number[] = [];
+  let position = n; // Out of range, so the first draw shuffles.
+  let last = previous;
+
+  return () => {
+    if (position >= n) {
+      order = seededPermutation(n, Math.floor(rng() * 0x1_0000_0000));
+      if (n > 1 && pool[order[0]!] === last) {
+        [order[0], order[1]] = [order[1]!, order[0]!];
+      }
+      position = 0;
+    }
+    const word = pool[order[position]!]!;
+    position += 1;
+    last = word;
+    return word;
+  };
 }
