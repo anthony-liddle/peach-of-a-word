@@ -8,7 +8,21 @@
 # register is the one hand-flagged reason: a word that is perfectly
 # valid but would be odd to type into a cute-themed game. Unlike the
 # derived reasons it is a judgment call, so each carries its own note
-# below rather than being regenerated.
+# below rather than being regenerated. The test is not "is this word
+# acceptable" but "should the game throw a party for it", which is a
+# lower bar to fail.
+#
+# The first six were retired crowns, and each was also demoted out of
+# the common pool, since a retired crown still required for completion
+# is the worse half of the problem. punching, shooting and suicidal
+# came from the widened candidate set and were never crowns, so there
+# is nothing to demote: they stay ordinary findable, scorable words
+# that simply never headline a day.
+#
+# shooting is the case that shows why a keyword screen cannot make
+# this call. Wiktionary's first sense is the adjective "moving or
+# growing quickly", so an automated first-sense screen clears it, and
+# nobody reads SHOOTING that way first.
 #
 # Nothing is ever re-admitted from this list to fill a crown slot.
 # Every word here violates one of the three rules by construction,
@@ -65,14 +79,17 @@ oriental	register
 outdated	past-tense-dual
 portions	pure-inflection
 prepared	past-tense-dual
+punching	register
 regarded	past-tense-dual
 reserves	pure-inflection
 sexually	register
+shooting	register
 slighter	degree-form
 stranger	degree-form
 stronger	degree-form
 students	pure-inflection
 subjects	pure-inflection
+suicidal	register
 troubles	pure-inflection
 underlay	past-tense-dual
 variants	pure-inflection
