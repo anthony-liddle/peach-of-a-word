@@ -293,3 +293,22 @@ The `enrichWord` etymology-cache issue is unchanged and still needs a decision.
 It is why 862 of the 1,575 eligible 8-letter common words are outside the source
 pool. Nothing here touched it; the six admissions so far were all deliberate,
 named, and routed through `pnpm data:admit`.
+
+## Follow-up: denying a word did not reach everything derived from the lists
+
+Added after the fact, because this report is where someone reading about the
+denylist lands first.
+
+Everything above measures the denylist against the word lists. That was not the
+whole surface. `pnpm data:bake` wrote the five lists and nothing else, so a
+denied word was removed from validation and from all three rarity bands while
+its gloss stayed in the per-puzzle definition bundles under `public/data/defs`.
+44 denied words were still being served that way, unfindable in play, invisible
+to every test, and public. The bake now re-emits the bundles too.
+
+The general rule, and it applies to anything built from these lists in future
+including a port to another platform, is in README.md under "Every derived
+artifact carries the patch, not just the lists". The short version: a word
+removed from validation is not thereby removed from everything built out of
+validation, and the artifact needs its own guard rather than an assumption that
+someone will notice.
