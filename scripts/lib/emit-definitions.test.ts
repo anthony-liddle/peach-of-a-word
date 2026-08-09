@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertNoDeniedGlosses,
   bundleStats,
   buildBundles,
   coverage,
@@ -31,6 +32,52 @@ describe('buildBundles', () => {
   it('omits words that have no definition', () => {
     const bundles = buildBundles(['deed'], enable, defs);
     expect(bundles.get('deed')).toEqual({});
+  });
+});
+
+describe('assertNoDeniedGlosses', () => {
+  const bundlesOf = (
+    ...entries: [string, Record<string, string>][]
+  ): Map<string, Record<string, string>> => new Map(entries);
+
+  it('passes when a bundle carries only words the denylist leaves alone', () => {
+    // The shape a correct bake produces: the denied word is absent from the
+    // boundary buildBundles was handed, so it never reached a bundle.
+    const boundary = enable.filter((w) => w !== 'cab');
+    const bundles = buildBundles(['abcdef'], boundary, defs);
+    expect(() => assertNoDeniedGlosses(bundles, ['cab'])).not.toThrow();
+  });
+
+  it('throws when a bundle carries a gloss for a denied word', () => {
+    const bundles = buildBundles(['abcdef'], enable, defs);
+    expect(() => assertNoDeniedGlosses(bundles, ['cab'])).toThrow(
+      /1 denied gloss across 1 bundle/,
+    );
+  });
+
+  it('counts every occurrence across every bundle', () => {
+    const bundles = bundlesOf(
+      ['one', { cab: 'a taxi', ace: 'a single pip' }],
+      ['two', { cab: 'a taxi' }],
+      ['three', { ace: 'a single pip' }],
+    );
+    expect(() => assertNoDeniedGlosses(bundles, ['cab', 'ace'])).toThrow(
+      /4 denied glosses across 3 bundles/,
+    );
+  });
+
+  it('names the racks but never the words', () => {
+    // These are words a player is protected from. A build log is not the place
+    // to reprint them, so the message carries counts and racks only.
+    const bundles = bundlesOf(['one', { cab: 'a taxi' }]);
+    let message = '';
+    try {
+      assertNoDeniedGlosses(bundles, ['cab']);
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    expect(message).toContain('one');
+    expect(message).not.toContain('cab');
   });
 });
 

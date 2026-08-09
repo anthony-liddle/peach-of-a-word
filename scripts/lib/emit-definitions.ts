@@ -22,6 +22,43 @@ export function buildBundles(
   return bundles;
 }
 
+/**
+ * Refuse to emit a bundle carrying a gloss for a denied word.
+ *
+ * The bundles are derived from the boundary, so a correct build cannot produce
+ * one: buildBundles only ever writes words the boundary carries, and the baked
+ * boundary has the denylist removed. This is the assertion that says so out
+ * loud, on every bake, the way assertBakedEquivalent does for the lists. It
+ * exists because the failure it catches is silent by nature. A denied gloss
+ * breaks nothing, surfaces nowhere in play, and simply ships.
+ *
+ * Counts and racks appear in the message; the words never do. These are words a
+ * player is protected from, and a build log is not the place to reprint them.
+ */
+export function assertNoDeniedGlosses(
+  bundles: Map<string, Record<string, string>>,
+  deny: Iterable<string>,
+): void {
+  const denied = new Set(deny);
+  const racks: string[] = [];
+  let total = 0;
+  for (const [rack, bundle] of bundles) {
+    const count = Object.keys(bundle).filter((w) => denied.has(w)).length;
+    if (count > 0) {
+      racks.push(rack);
+      total += count;
+    }
+  }
+  if (total > 0) {
+    throw new Error(
+      `Emit carried ${total} denied ${total === 1 ? 'gloss' : 'glosses'} ` +
+        `across ${racks.length} ${racks.length === 1 ? 'bundle' : 'bundles'} ` +
+        `(racks: ${racks.join(', ')}). Every artifact derived from the word ` +
+        `lists must have the patch applied, not just the lists themselves.`,
+    );
+  }
+}
+
 /** How many union words carry a definition. */
 export function coverage(
   union: string[],
