@@ -1,12 +1,21 @@
 /**
- * Bake the curated patch into the shipped word lists.
+ * Bake the curated patch into every artifact derived from the word lists.
  *
  *   pnpm data:bake
  *
  * Derives the five lists from the vendored lexicons, applies the patch, and
- * writes the result to public/data/. The client then fetches lists that are
- * already correct, with no patch file to download and no patch parsing at
+ * writes the result to public/data/, then re-emits the per-puzzle definition
+ * bundles from the boundary that produces. The client then fetches lists that
+ * are already correct, with no patch file to download and no patch parsing at
  * runtime.
+ *
+ * The rule this exists to enforce, stated in README.md under "The patch is
+ * applied at build time, not at runtime": every artifact derived from the word
+ * lists must have the patch applied, not just the lists themselves. Baking only
+ * the lists is how 44 denied words kept their glosses in public/data/defs while
+ * being absent from validation, unfindable in play, and invisible to every test.
+ * Anything derived from these lists in future, here or in a port, inherits the
+ * same obligation.
  *
  * It derives the base rather than reading the shipped files, and that matters.
  * Re-reading the shipped lists and removing the denylist again works only while
@@ -27,7 +36,7 @@
  * here: a typo must hard-fail the build. It was only ever wrong at runtime,
  * where it took the player's game down with it.
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parsePatch } from '../src/data/patch.ts';
 import {
@@ -35,7 +44,12 @@ import {
   bakeLists,
   type ShippedLists,
 } from './lib/bake.ts';
-import { loadUnpatchedLists } from './lib/sources.ts';
+import { assertNoDeniedGlosses, buildBundles } from './lib/emit-definitions.ts';
+import {
+  loadDefinitions,
+  loadUnpatchedLists,
+  loadValidation,
+} from './lib/sources.ts';
 import { ASSET_DIR, PATCH_PATH, writeAsset } from './lib/util.ts';
 
 /** The shipped list files, in the order bakeLists takes them. */
@@ -66,7 +80,7 @@ async function readCommitted(file: string): Promise<Set<string>> {
 }
 
 async function main(): Promise<void> {
-  console.log('Baking the dictionary patch into the shipped lists.\n');
+  console.log('Baking the dictionary patch into every derived artifact.\n');
 
   const patch = parsePatch(await readFile(PATCH_PATH, 'utf8'));
   console.log(
@@ -107,8 +121,78 @@ async function main(): Promise<void> {
 
   console.log(
     changed === 0
-      ? '\nDone. The shipped lists were already correct.'
-      : `\nDone. ${changed} membership changes across the shipped lists.`,
+      ? '\n  The shipped lists were already correct.'
+      : `\n  ${changed} membership changes across the shipped lists.`,
+  );
+
+  await bakeBundles(patch.deny);
+
+  console.log('\nDone.');
+}
+
+/**
+ * Re-emit the per-puzzle definition bundles from the boundary the patch just
+ * produced.
+ *
+ * The bundles are derived from the word lists, so the patch has to reach them
+ * too. It did not, and the shape of that bug is worth stating: a deny row
+ * removed a word from validation and from every rarity band, so it could never
+ * be found in play, and left its gloss sitting in every bundle that could spell
+ * it. Nothing broke, nothing surfaced, and the text shipped. Only a full
+ * pnpm data:build rewrote the bundles, and that is a network-touching rebuild
+ * nobody reaches for casually, so the glosses stayed.
+ *
+ * Re-derived, not scrubbed, for the same reason the lists are. Filtering the
+ * committed bundles would work only while the denylist grows: taking a word off
+ * the denylist could never put its gloss back, because the gloss is already gone
+ * from the file being read. Deriving from the committed definitions TSV makes
+ * the bundles a pure function of that TSV, the vendored lexicons, and the patch,
+ * so a denial stays reversible. It is also why the TSV keeps entries for denied
+ * words: the TSV is the build input that makes reversal possible without going
+ * back to the network, and it is never served.
+ *
+ * The boundary comes from loadValidation, which is the same function
+ * build-data.ts emits bundles against, so the two tools cannot disagree about
+ * key order and leave the files flip-flopping. That it matches the lists this
+ * bake just wrote is already proved above: assertBakedEquivalent compares the
+ * baked pair against exactly this patch-applied boundary.
+ *
+ * Offline like the rest of the bake. Every input is committed.
+ */
+async function bakeBundles(deny: readonly string[]): Promise<void> {
+  console.log('\nRe-emitting the definition bundles from the baked boundary.');
+
+  const validation = await loadValidation();
+  const defs = await loadDefinitions();
+  const sourceWords = (
+    JSON.parse(await readFile(join(ASSET_DIR, 'source-pool.json'), 'utf8')) as {
+      word: string;
+    }[]
+  ).map((entry) => entry.word);
+
+  const bundles = buildBundles(sourceWords, validation, defs);
+
+  // Belt and braces. A correct emit cannot produce a denied gloss, because
+  // buildBundles only writes words the boundary carries. This says so out loud
+  // on every bake, because the failure it catches is silent by nature.
+  assertNoDeniedGlosses(bundles, deny);
+
+  // Cleared before writing, matching build-data.ts. A rack dropped from the
+  // source pool must not leave its bundle behind, or the directory accumulates
+  // files for racks that no longer exist.
+  const defsDir = join(ASSET_DIR, 'defs');
+  await rm(defsDir, { recursive: true, force: true });
+  for (const [rack, bundle] of bundles) {
+    await writeAsset(`defs/${rack}.json`, JSON.stringify(bundle));
+  }
+
+  const glosses = [...bundles.values()].reduce(
+    (sum, bundle) => sum + Object.keys(bundle).length,
+    0,
+  );
+  console.log(
+    `  ${bundles.size.toLocaleString()} bundles written, ` +
+      `${glosses.toLocaleString()} glosses, no denied words.`,
   );
 }
 

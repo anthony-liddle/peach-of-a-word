@@ -70,8 +70,9 @@ offline.
   still fetches from Wiktionary on a cache miss and caches under
   `scripts/.cache`.
 - `pnpm data:bake` applies the curated dictionary patch in
-  `scripts/data-raw/dictionary-patch.tsv` to the shipped word lists. Pure,
-  offline, and idempotent. Run it after any change to the patch.
+  `scripts/data-raw/dictionary-patch.tsv` to the shipped word lists and to the
+  per-puzzle definition bundles derived from them. Pure, offline, and
+  idempotent. Run it after any change to the patch.
 
 ### The committed files are the source of truth
 
@@ -82,8 +83,11 @@ re-derives every per-puzzle bundle under `public/data/defs`, and reorders
 calendar is anchored to.
 
 So `public/data` is maintained by the narrow tools, not by rerunning the
-pipeline: `pnpm data:bake` for the patch, `pnpm data:denylist` for the denylist
-rows, `pnpm data:calendar` for the calendar, `pnpm defs:rederive` for glosses.
+pipeline: `pnpm data:bake` for the patch and the definition bundles derived from
+it, `pnpm data:denylist` for the denylist rows, `pnpm data:calendar` for the
+calendar, `pnpm defs:rederive` for glosses. The bundles are listed here
+deliberately: they used to be reachable only through `pnpm data:build`, which is
+exactly why they went stale.
 Rerun `pnpm data:build` only when deliberately re-vendoring the source lexicons,
 and review the calendar and the crowns afterwards.
 
@@ -139,6 +143,49 @@ fully determined at build time, so they are computed once, at build time.
 
 The build parser stays strict and throws on a malformed row. That is correct
 there: a typo must hard-fail the build. It was only ever wrong at runtime.
+
+### Every derived artifact carries the patch, not just the lists
+
+**Anything derived from the word lists must have the patch applied to it too.**
+The lists are not the only place a denied word can appear, and a word removed
+from validation is not thereby removed from everything built out of validation.
+
+This is written down because it was learned the expensive way. `pnpm data:bake`
+originally wrote the five word lists and nothing else, while the per-puzzle
+definition bundles under `public/data/defs` were rewritten only by a full
+`pnpm data:build`. That is the network-touching rebuild the section above tells
+you not to reach for casually, so nobody did. The result: 44 denied words kept
+their glosses in the shipped bundles and were served publicly from the site,
+while being absent from validation and from all three rarity bands.
+
+Note what that failure looked like from the inside, because the next one will
+look the same. Nothing broke. The words could never be found in play, the lookup
+path never reached them, no test failed, and the game was correct in every way a
+player could observe. The text just shipped. A derived artifact going stale is
+silent by construction, so it needs a guard rather than an expectation that
+someone will notice.
+
+The obligation is on the derivation, not on this repo. A port that ships
+definitions, an export for a different platform, a search index, an iOS build
+reading these bundles or building its own from another source: each one derives
+from the lists and each one owes the patch the same filter.
+
+Two rules follow, and both are load-bearing:
+
+- **Re-derive, never scrub.** Filtering denied words out of the committed
+  artifact works only while the denylist grows. Taking a word off the denylist
+  could never put it back, because it is already gone from the file being read,
+  so a deny row becomes a ratchet nobody can release. Derive from the vendored
+  lexicons, the committed `definitions.tsv`, and the patch, so the output says
+  whatever the patch currently says. This is also why `definitions.tsv` keeps
+  entries for denied words: it is a build input, never served, and it is what
+  makes a denial reversible without going back to the network.
+- **Assert it in the artifact, not just in the producer.** `pnpm data:bake`
+  refuses to write a bundle carrying a denied gloss, and
+  `src/data/bundlePatch.test.ts` checks the shipped bytes for the same thing.
+  The producer-side assertion prevents the bug; the artifact-side test catches
+  the artifact going stale for any other reason, including a producer nobody has
+  thought of yet.
 
 ## Scripts
 
