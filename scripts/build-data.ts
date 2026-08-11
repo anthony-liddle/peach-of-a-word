@@ -53,12 +53,11 @@
 import { readFile, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
-  MAX_SOURCE_WORDS,
-  REQUIRE_ETYMOLOGY,
   SIZE_70_SIZES,
   SIZE_95_SIZES,
   WIKTIONARY_CONCURRENCY,
-} from './lib/config.ts';
+} from './lib/lexicon-config.ts';
+import { MAX_SOURCE_WORDS, REQUIRE_ETYMOLOGY } from './lib/curation-config.ts';
 import {
   loadCommonPool,
   loadDefinitions,
