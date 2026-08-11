@@ -1,15 +1,13 @@
 {
-  "generatedAt": "2026-06-24T15:11:59.569Z",
   "counts": {
-    "enable": 172727,
-    "scowl95Additions": 257445,
-    "boundary": 430172,
-    "common": 10861,
-    "beyond70": 318691,
-    "beyond95": 5399,
-    "sourcePool": 707,
-    "definitionUnion": 29407,
-    "definitionsCovered": 23555
+    "enable": 172562,
+    "scowl95Additions": 254728,
+    "boundary": 427290,
+    "common": 10879,
+    "beyond70": 315922,
+    "beyond95": 5389,
+    "sourcePool": 793,
+    "definitionsCovered": 24833
   },
   "attribution": {
     "enable": "ENABLE word list. Public domain.",

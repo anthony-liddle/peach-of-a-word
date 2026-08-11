@@ -45,6 +45,7 @@ import {
   type ShippedLists,
 } from './lib/bake.ts';
 import { assertNoDeniedGlosses, buildBundles } from './lib/emit-definitions.ts';
+import { buildMeta, serialiseMeta } from './lib/meta.ts';
 import {
   loadDefinitions,
   loadUnpatchedLists,
@@ -125,9 +126,55 @@ async function main(): Promise<void> {
       : `\n  ${changed} membership changes across the shipped lists.`,
   );
 
-  await bakeBundles(patch.deny);
+  const derived = await bakeBundles(patch.deny);
+
+  await writeMeta(baked, derived);
 
   console.log('\nDone.');
+}
+
+/**
+ * Rewrite meta.json from the artifacts this run just produced.
+ *
+ * This is the step whose absence was the bug. The bake wrote the five lists and
+ * the bundles and left the metadata describing the previous build, so the file
+ * kept claiming 430,172 boundary words against 427,290 shipped, and a published
+ * essay quoted the wrong figure out of it.
+ *
+ * Every count is measured from what was written rather than carried forward, so
+ * the file cannot describe a build that no longer exists. See lib/meta.ts for
+ * the two fields that were deliberately dropped.
+ */
+async function writeMeta(
+  baked: ShippedLists,
+  derived: DerivedCounts,
+): Promise<void> {
+  const meta = buildMeta({
+    enable: baked.enable.length,
+    scowl95Additions: baked.additions.length,
+    // The runtime concatenates these two and nothing else. They are disjoint by
+    // construction (the additions are what SCOWL 95 adds on top of ENABLE), so
+    // the union is the sum and no deduplication is hiding here.
+    boundary: baked.enable.length + baked.additions.length,
+    common: baked.common.length,
+    beyond70: baked.beyond70.length,
+    beyond95: baked.beyond95.length,
+    sourcePool: derived.sourcePool,
+    definitionsCovered: derived.definitionsCovered,
+  });
+
+  await writeAsset('meta.json', serialiseMeta(meta));
+  console.log(
+    `\n  meta.json rewritten: ${meta.counts.boundary.toLocaleString()} boundary words, ` +
+      `${meta.counts.sourcePool.toLocaleString()} crowns, ` +
+      `${meta.counts.definitionsCovered.toLocaleString()} defined.`,
+  );
+}
+
+/** What the bundle emit measured, for the metadata to record. */
+interface DerivedCounts {
+  readonly sourcePool: number;
+  readonly definitionsCovered: number;
 }
 
 /**
@@ -159,7 +206,7 @@ async function main(): Promise<void> {
  *
  * Offline like the rest of the bake. Every input is committed.
  */
-async function bakeBundles(deny: readonly string[]): Promise<void> {
+async function bakeBundles(deny: readonly string[]): Promise<DerivedCounts> {
   console.log('\nRe-emitting the definition bundles from the baked boundary.');
 
   const validation = await loadValidation();
@@ -194,6 +241,16 @@ async function bakeBundles(deny: readonly string[]): Promise<void> {
     `  ${bundles.size.toLocaleString()} bundles written, ` +
       `${glosses.toLocaleString()} glosses, no denied words.`,
   );
+
+  // Counted once across every bundle, which is the same set meta.test.ts
+  // re-derives from the committed files. glosses above is the total including
+  // the same word in many racks; this is the distinct vocabulary.
+  const distinct = new Set<string>();
+  for (const bundle of bundles.values()) {
+    for (const word of Object.keys(bundle)) distinct.add(word);
+  }
+
+  return { sourcePool: sourceWords.length, definitionsCovered: distinct.size };
 }
 
 main().catch((err) => {

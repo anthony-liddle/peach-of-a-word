@@ -77,6 +77,7 @@ import {
   writeAsset,
 } from './lib/util.ts';
 import { formableUnion } from './lib/formable.ts';
+import { buildMeta, serialiseMeta } from './lib/meta.ts';
 import {
   bundleStats,
   buildBundles,
@@ -274,28 +275,21 @@ async function main(): Promise<void> {
   console.log(`    ${shardLine}`);
   console.log('======================================\n');
 
-  const meta = {
-    generatedAt: new Date().toISOString(),
-    counts: {
-      enable: enable.length,
-      scowl95Additions: additions.length,
-      boundary: boundary.length,
-      common: common.length,
-      beyond70: beyond70.length,
-      beyond95: beyond95.length,
-      sourcePool: sourcePool.length,
-      definitionUnion: union.length,
-      definitionsCovered: cov.defined,
-    },
-    attribution: {
-      enable: 'ENABLE word list. Public domain.',
-      scowl:
-        'SCOWL (Spell Checker Oriented Word Lists) by Kevin Atkinson. See ATTRIBUTION.md.',
-      wiktionary:
-        'Definitions and etymologies from Wiktionary, CC BY-SA 4.0. See ATTRIBUTION.md.',
-    },
-  };
-  await writeAsset('meta.json', JSON.stringify(meta, null, 2));
+  // Built through lib/meta.ts rather than inline, so this writer and pnpm
+  // data:bake cannot disagree about the file's shape. definitionUnion and
+  // generatedAt are deliberately not carried; see that module for why. The
+  // union is still reported in the build log above, where it belongs.
+  const meta = buildMeta({
+    enable: enable.length,
+    scowl95Additions: additions.length,
+    boundary: boundary.length,
+    common: common.length,
+    beyond70: beyond70.length,
+    beyond95: beyond95.length,
+    sourcePool: sourcePool.length,
+    definitionsCovered: cov.defined,
+  });
+  await writeAsset('meta.json', serialiseMeta(meta));
 
   console.log('\nDone. Assets written to public/data/.');
 }
