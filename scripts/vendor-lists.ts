@@ -7,7 +7,7 @@ import { execFile } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { SCOWL_VARIANTS, SIZE_95_SIZES } from './lib/config.ts';
+import { SCOWL_VARIANTS, SIZE_95_SIZES } from './lib/lexicon-config.ts';
 import { extractNwl2020Purged, NWL2020_EXPECTED } from './lib/denylist.ts';
 import {
   CACHE_DIR,

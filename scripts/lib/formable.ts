@@ -1,6 +1,6 @@
 // Build-time formability. Mirrors src/engine/formability.ts; kept local so the
 // scripts have no dependency on the app's module graph.
-import { MIN_WORD_LENGTH } from './config.ts';
+import { MIN_WORD_LENGTH } from './lexicon-config.ts';
 
 const A = 'a'.charCodeAt(0);
 

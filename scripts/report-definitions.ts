@@ -13,7 +13,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { DEFINITION_MAX_LENGTH } from './lib/config.ts';
+import { DEFINITION_MAX_LENGTH } from './lib/lexicon-config.ts';
 import { parseDefinitions, shapeDefinition } from './lib/definitions.ts';
 import { formableUnion } from './lib/formable.ts';
 import { loadEnable } from './lib/sources.ts';

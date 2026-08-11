@@ -12,7 +12,7 @@
 // scripts/data-raw/PROVENANCE.md and the colophon.
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DEFINITION_MAX_LENGTH } from './lib/config.ts';
+import { DEFINITION_MAX_LENGTH } from './lib/lexicon-config.ts';
 import {
   parseDefinitions,
   rederiveGlosses,

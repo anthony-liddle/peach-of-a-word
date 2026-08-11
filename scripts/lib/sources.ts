@@ -1,14 +1,13 @@
 import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
-  COMMON_POOL_SIZES,
   MIN_WORD_LENGTH,
   SCOWL_VARIANTS,
   SIZE_70_SIZES,
   SIZE_95_SIZES,
-  SOURCE_POOL_SIZES,
   SOURCE_WORD_LENGTH,
-} from './config.ts';
+} from './lexicon-config.ts';
+import { COMMON_POOL_SIZES, SOURCE_POOL_SIZES } from './curation-config.ts';
 import { parseDefinitions } from './definitions.ts';
 import { applyPatch, parsePatch } from './patch.ts';
 import { DATA_RAW_DIR, PATCH_PATH } from './util.ts';
