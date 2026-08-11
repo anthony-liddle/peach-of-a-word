@@ -23,3 +23,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # The word lists are a committed copy of an orchard release, which is what
+      # keeps this build offline and reproducible. The cost of a committed copy
+      # is that it can drift from the release it claims to be, so the claim is
+      # checked. Offline and no network: it hashes the committed files against
+      # scripts/lexicon.lock.json.
+      - run: pnpm lexicon:check
