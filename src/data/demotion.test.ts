@@ -66,10 +66,17 @@ function puzzleWith(lists: PatchableLists, rack: string): Puzzle {
 const puzzleFor = (rack: string) => puzzleWith(merged, rack);
 
 describe('the committed demotions', () => {
-  it('demotes the twenty-two decided words', () => {
+  it('demotes the twenty-three decided words', () => {
     // 14 from the register sweep, plus the eight vulgar-not-slur words that
-    // came off the denylist and were demoted so they can never be required.
-    expect(demoted).toHaveLength(22);
+    // came off the denylist and were demoted so they can never be required,
+    // plus abort (2026-08-11).
+    //
+    // The count is pinned on purpose, and this is the second record of it
+    // rather than an accident: a stray demote row is a curation change nobody
+    // decided, and it should fail here rather than reach a board quietly.
+    // Moving this number is part of making the decision, not a chore that
+    // follows it.
+    expect(demoted).toHaveLength(23);
     for (const word of [
       'rape',
       'genocide',
@@ -85,6 +92,12 @@ describe('the committed demotions', () => {
       'racist',
       'sexual',
       'terror',
+      // Added 2026-08-11, and the first curation decision to arrive from
+      // orchard rather than from a local edit. The stem of abortion, which was
+      // demoted 2026-08-02: requiring the stem while the derived form is
+      // demoted is incoherent. See abortDemotion.test.ts for what a player
+      // actually experiences.
+      'abort',
     ]) {
       expect(demotedSet.has(word)).toBe(true);
     }
