@@ -1,7 +1,0 @@
-# Source-word exclude list (hand review)
-#
-# One word per line. Lines starting with # are ignored. Any word listed here is
-# dropped from the source-word pool at build time, so unrecognizable or unwanted
-# answers can be trimmed by hand without touching code.
-#
-# After editing, rerun: pnpm data:build
