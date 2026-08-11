@@ -36,7 +36,7 @@ import { parseExclusions } from './lib/exclusions.ts';
 import { loadPatchedPools } from './lib/pools.ts';
 import { loadValidation } from './lib/sources.ts';
 import { refetchWord } from './lib/wiktionary.ts';
-import { ASSET_DIR, DATA_RAW_DIR, writeAsset } from './lib/util.ts';
+import { ASSET_DIR, DATA_RAW_DIR, VENDOR_DIR, writeAsset } from './lib/util.ts';
 
 /**
  * The three Phase 2 cull rules, as a shape test on the candidate itself.
@@ -155,7 +155,7 @@ async function main(): Promise<void> {
     readFile(join(DATA_RAW_DIR, 'source-admissions.tsv'), 'utf8'),
     readFile(join(ASSET_DIR, 'source-pool.json'), 'utf8'),
     readFile(join(ASSET_DIR, 'common-pool.txt'), 'utf8'),
-    readFile(join(DATA_RAW_DIR, 'definitions.tsv'), 'utf8'),
+    readFile(join(VENDOR_DIR, 'definitions.tsv'), 'utf8'),
     readFile(join(DATA_RAW_DIR, 'source-exclusions.tsv'), 'utf8'),
     readFile(join(DATA_RAW_DIR, 'source-lemma-clearances.tsv'), 'utf8'),
   ]);

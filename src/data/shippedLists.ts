@@ -18,8 +18,20 @@ import type {
 } from '../../scripts/lib/patch.ts';
 import { parsePatch } from '../../scripts/lib/patch.ts';
 
-/** Where the curated patch lives now: a build input, never a shipped asset. */
-export const PATCH_PATH = 'scripts/data-raw/dictionary-patch.tsv';
+/**
+ * Where the curated patch lives: a fetched build input, never a shipped asset.
+ *
+ * This used to point at scripts/data-raw, the copy this repo vendored itself.
+ * It now reads the copy fetched from a pinned orchard release, which is the
+ * whole point of the extraction: the curation record has one home, and this
+ * repo holds a checksummed copy of it rather than an independent original.
+ *
+ * The path is vendor/lexicon rather than data-raw deliberately. While both
+ * directories exist, a reader pointed at the old one would pass identically,
+ * because the files are byte-identical. A distinct path is what makes the
+ * difference observable: break the fetched copy and these tests fail.
+ */
+export const PATCH_PATH = 'vendor/lexicon/dictionary-patch.tsv';
 
 /** One shipped word-list file, as a list of words. */
 export function readList(name: string): string[] {
