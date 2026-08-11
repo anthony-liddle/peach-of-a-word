@@ -24,7 +24,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import * as engine from '@/engine/config.ts';
-import * as pipeline from './lexicon-config.ts';
+import * as pipeline from './curation-config.ts';
 
 describe('the pipeline and the engine agree about the shared game rules', () => {
   it('agrees on the minimum playable word length', () => {

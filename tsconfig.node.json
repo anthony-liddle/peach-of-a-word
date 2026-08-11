@@ -22,5 +22,11 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "scripts"]
+  "include": ["vite.config.ts", "vitest.config.ts", "scripts"],
+  // scripts/_investigate is gitignored one-off analysis, never committed and
+  // never run by CI. Typechecking it means a fresh clone and a working copy
+  // disagree about whether the project compiles, which is a confusing thing to
+  // debug. It is excluded rather than fixed, because it is not part of the
+  // repository.
+  "exclude": ["scripts/_investigate"]
 }
