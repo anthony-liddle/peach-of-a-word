@@ -12,8 +12,11 @@
  * know the patch exists.
  */
 import { readFileSync } from 'node:fs';
-import type { DictionaryPatch, PatchableLists } from './patch.ts';
-import { parsePatch } from './patch.ts';
+import type {
+  DictionaryPatch,
+  PatchableLists,
+} from '../../scripts/lib/patch.ts';
+import { parsePatch } from '../../scripts/lib/patch.ts';
 
 /** Where the curated patch lives now: a build input, never a shipped asset. */
 export const PATCH_PATH = 'scripts/data-raw/dictionary-patch.tsv';

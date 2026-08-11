@@ -7,7 +7,7 @@ import {
   type Puzzle,
 } from '@/engine/index.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
-import type { PatchableLists } from './patch.ts';
+import type { PatchableLists } from '../../scripts/lib/patch.ts';
 import {
   readCalendarWords,
   readCommittedPatch,

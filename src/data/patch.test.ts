@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { classifyWord, createPuzzle, validateGuess } from '@/engine/index.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
-import { applyPatch, parsePatch, type PatchableLists } from './patch.ts';
+import {
+  applyPatch,
+  parsePatch,
+  type PatchableLists,
+} from '../../scripts/lib/patch.ts';
 import { readCommittedPatch } from './shippedLists.ts';
 
 describe('parsePatch', () => {
