@@ -29,6 +29,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPuzzle, validateGuess } from '@/engine/index.ts';
 import { loadGameData } from './gameData.ts';
+import { PATCH_PATH } from './shippedLists.ts';
 
 const SHIPPED = join(process.cwd(), 'public', 'data');
 
@@ -104,7 +105,7 @@ describe('the real shipped data, through the real load path', () => {
 
     // Demoted words stay valid but must not be required. Read from the curation
     // record, which is no longer shipped, and checked against what is.
-    const patch = readFileSync('scripts/data-raw/dictionary-patch.tsv', 'utf8');
+    const patch = readFileSync(PATCH_PATH, 'utf8');
     const demoted = patch
       .split('\n')
       .map((line) => line.split('\t'))

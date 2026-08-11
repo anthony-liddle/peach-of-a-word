@@ -8,6 +8,14 @@ export const DATA_RAW_DIR = join(REPO_ROOT, 'scripts', 'data-raw');
 export const ASSET_DIR = join(REPO_ROOT, 'public', 'data');
 
 /**
+ * Fetched build inputs: the curated patch and the definitions corpus, both
+ * pulled from a pinned orchard release by pnpm lexicon:update. Never served,
+ * and deliberately not data-raw, so a reader still pointed at the local
+ * vendored copy is observable rather than silently equivalent.
+ */
+export const VENDOR_DIR = join(REPO_ROOT, 'vendor', 'lexicon');
+
+/**
  * The curated patch. A build input, not a shipped asset: it lives outside
  * public/ so it is never served. The client used to fetch and re-parse it on
  * every load, which is how a cached bundle could meet a newer patch and crash.

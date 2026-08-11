@@ -45,6 +45,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -58,12 +59,43 @@ import { ASSET_DIR, REPO_ROOT } from './lib/util.ts';
 interface Lock {
   readonly repo: string;
   readonly version: string;
-  readonly archive: string;
-  readonly archiveSha256: string;
+  /** Each release asset, by name, with the sha256 of the download itself. */
+  readonly assets: Readonly<Record<string, string>>;
+  /** Every file, by name, with the sha256 of its content after unpacking. */
   readonly files: Readonly<Record<string, string>>;
 }
 
 const LOCK_PATH = join(REPO_ROOT, 'scripts', 'lexicon.lock.json');
+
+/**
+ * Where fetched build inputs land: the patch and the definitions corpus.
+ *
+ * Deliberately NOT scripts/data-raw, and deliberately not public/. Not public
+ * because neither is ever served: the patch is baked in at build time and the
+ * definitions are a build input. Not data-raw because that directory holds the
+ * vendored lexicons this repo still derives from, and writing fetched copies
+ * over them would make "is this test reading the fetched copy or the local one"
+ * unanswerable. A separate path makes a silent fallback impossible to miss:
+ * break the fetched copy and the readers fail, rather than quietly succeeding
+ * against a stale local file.
+ */
+const VENDOR_DIR = join(REPO_ROOT, 'vendor', 'lexicon');
+
+/**
+ * The five files that ship from public/data. Named explicitly rather than taken
+ * as "everything in the lock", because the lock also pins two build inputs that
+ * live elsewhere and must never be copied into the served directory.
+ */
+const SHIPPED_LISTS = [
+  'enable.txt',
+  'scowl95-additions.txt',
+  'common-pool.txt',
+  'beyond-size-70.txt',
+  'beyond-size-95.txt',
+] as const;
+
+/** Build inputs: fetched, never served, and read only by tests and the pipeline. */
+const BUILD_INPUTS = ['dictionary-patch.tsv', 'definitions.tsv'] as const;
 const lock = JSON.parse(readFileSync(LOCK_PATH, 'utf8')) as Lock;
 
 const checkOnly = process.argv.includes('--check');
@@ -86,8 +118,12 @@ function fail(message: string): never {
 function check(): void {
   console.log(`[lexicon] checking committed lists against ${lock.version}\n`);
   let bad = 0;
+  const VENDORED = new Set<string>(BUILD_INPUTS);
   for (const [file, expected] of Object.entries(lock.files)) {
-    const path = join(ASSET_DIR, file);
+    // The lists ship from public/data; the build inputs live in vendor/lexicon.
+    const path = VENDORED.has(file)
+      ? join(VENDOR_DIR, file)
+      : join(ASSET_DIR, file);
     let actual: string;
     try {
       actual = sha256(path);
@@ -178,37 +214,38 @@ function update(): void {
 
     // `gh` rather than curl because orchard is private. On a public repo this
     // becomes a plain https download with no auth and no extra dependency.
-    execFileSync(
-      'gh',
-      [
-        'release',
-        'download',
-        lock.version,
-        '--repo',
-        lock.repo,
-        '--pattern',
-        lock.archive,
-        '--dir',
-        work,
-      ],
-      { stdio: 'inherit' },
+    for (const asset of Object.keys(lock.assets)) {
+      execFileSync(
+        'gh',
+        [
+          'release',
+          'download',
+          lock.version,
+          '--repo',
+          lock.repo,
+          '--pattern',
+          asset,
+          '--dir',
+          work,
+        ],
+        { stdio: 'inherit' },
+      );
+      const expected = lock.assets[asset]!;
+      const actualAsset = sha256(join(work, asset));
+      if (actualAsset !== expected) {
+        fail(
+          `${asset} checksum mismatch, refusing to use it.\n` +
+            `    expected ${expected}\n    actual   ${actualAsset}\n` +
+            `  The asset at that tag is not the reviewed one. Do not update the ` +
+            `lock to make this pass without establishing why it changed.`,
+        );
+      }
+    }
+    console.log(
+      `\n[lexicon] all ${Object.keys(lock.assets).length} asset checksums verified`,
     );
 
-    const archive = join(work, lock.archive);
-
-    // Verified BEFORE unpacking. An archive is untrusted input until its hash
-    // matches, and tar acts on the archive's own contents.
-    const actual = sha256(archive);
-    if (actual !== lock.archiveSha256) {
-      fail(
-        `archive checksum mismatch, refusing to unpack.\n` +
-          `    expected ${lock.archiveSha256}\n` +
-          `    actual   ${actual}\n` +
-          `  The asset at that tag is not the reviewed one. Do not update the ` +
-          `lock to make this pass without establishing why it changed.`,
-      );
-    }
-    console.log(`\n[lexicon] archive checksum verified`);
+    const archive = join(work, 'lexicon.tar.gz');
 
     execFileSync('tar', ['-xzf', archive, '-C', work], { stdio: 'inherit' });
     const unpacked = join(work, 'lexicon');
@@ -216,7 +253,8 @@ function update(): void {
     // Per-file, after unpacking. Only the five lists are touched: the calendar,
     // the source pool, the definition bundles and meta.json are this game's and
     // are not in the archive.
-    for (const [file, expected] of Object.entries(lock.files)) {
+    for (const file of SHIPPED_LISTS) {
+      const expected = lock.files[file]!;
       const from = join(unpacked, file);
       const actualFile = sha256(from);
       if (actualFile !== expected) {
@@ -228,6 +266,40 @@ function update(): void {
       copyFileSync(from, join(ASSET_DIR, file));
       console.log(`  wrote  ${file}`);
     }
+
+    // The two build inputs, into vendor/lexicon rather than public/ or
+    // data-raw. Neither is ever served, and neither may overwrite the local
+    // vendored copies while those still exist, or a fallback would be
+    // indistinguishable from a fetch.
+    mkdirSync(VENDOR_DIR, { recursive: true });
+
+    const patchName = 'dictionary-patch.tsv';
+    const patchExpected = lock.files[patchName]!;
+    const patchActual = sha256(join(work, patchName));
+    if (patchActual !== patchExpected) {
+      fail(`${patchName} content checksum mismatch after download.`);
+    }
+    copyFileSync(join(work, patchName), join(VENDOR_DIR, patchName));
+    console.log(`  wrote  vendor/lexicon/${patchName}`);
+
+    execFileSync(
+      'tar',
+      ['-xzf', join(work, 'definitions.tar.gz'), '-C', work],
+      {
+        stdio: 'inherit',
+      },
+    );
+    const defsName = 'definitions.tsv';
+    const defsExpected = lock.files[defsName]!;
+    const defsActual = sha256(join(work, 'definitions', defsName));
+    if (defsActual !== defsExpected) {
+      fail(`${defsName} content checksum mismatch after unpacking.`);
+    }
+    copyFileSync(
+      join(work, 'definitions', defsName),
+      join(VENDOR_DIR, defsName),
+    );
+    console.log(`  wrote  vendor/lexicon/${defsName}`);
 
     rewriteMeta();
 
