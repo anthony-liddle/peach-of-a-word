@@ -1,9 +1,9 @@
 {
   "comment": "The pinned orchard lexicon release. Edited only by a deliberate update, never to silence a failure. See scripts/update-lexicon.ts.",
   "repo": "anthony-liddle/orchard",
-  "version": "v1.0.0",
+  "version": "v1.0.2",
   "archive": "lexicon.tar.gz",
-  "archiveSha256": "d6881a72879165cd7e511a860975324c16cb8d732a5080101e65b34a2cb7ba8f",
+  "archiveSha256": "65cd01f592fb83d22d2c4228743f985f144ce55cec8e55386c600365826a204b",
   "files": {
     "enable.txt": "689618c5348c28738ae3453575518e459bc0804c0f3cc3ad8c4af6b2441ea4e0",
     "scowl95-additions.txt": "dbc6347327b3237b2a5ebb22f55227b193be386d882da1863add2d1353233b7c",
