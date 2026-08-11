@@ -43,9 +43,16 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import {
+  copyFileSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { buildMeta, serialiseMeta } from './lib/meta.ts';
 import { ASSET_DIR, REPO_ROOT } from './lib/util.ts';
 
 interface Lock {
@@ -108,6 +115,62 @@ function check(): void {
   console.log(`\n[lexicon] committed lists match ${lock.version}.`);
 }
 
+/**
+ * Recompute the list-derived counts in meta.json from the lists just written.
+ *
+ * ---------------------------------------------------------------------------
+ * THIS EXISTS BECAUSE THE FIRST VERSION OF THIS SCRIPT DID NOT HAVE IT, AND
+ * THAT REINTRODUCED THE meta.json DEFECT THROUGH A NEW DOOR.
+ *
+ * meta.json used to be rewritten by pnpm data:bake, which was the only thing
+ * that wrote the word lists. This command is now the thing that writes them,
+ * and it did not touch the metadata, so a lexicon update left every list count
+ * describing the previous release. That is precisely the failure that had
+ * meta.json claiming 430,172 boundary words against 427,290 shipped for six
+ * weeks, and it came straight back the first time the lists moved.
+ *
+ * It was caught by src/data/meta.test.ts on the round-trip test, which is what
+ * that test is for. Worth stating plainly: fixing a defect does not retire it.
+ * Moving the thing that writes the data moves the obligation with it.
+ * ---------------------------------------------------------------------------
+ *
+ * Only the six list counts are recomputed. sourcePool and definitionsCovered
+ * describe the crown pool and the definition bundles, which are this game's and
+ * are not in the lexicon archive, so they are read back unchanged.
+ */
+function rewriteMeta(): void {
+  const metaPath = join(ASSET_DIR, 'meta.json');
+  const current = JSON.parse(readFileSync(metaPath, 'utf8')) as {
+    counts: Record<string, number>;
+  };
+
+  const count = (file: string): number =>
+    readFileSync(join(ASSET_DIR, file), 'utf8')
+      .split('\n')
+      .map((w) => w.trim())
+      .filter(Boolean).length;
+
+  const enable = count('enable.txt');
+  const additions = count('scowl95-additions.txt');
+
+  const meta = buildMeta({
+    enable,
+    scowl95Additions: additions,
+    boundary: enable + additions,
+    common: count('common-pool.txt'),
+    beyond70: count('beyond-size-70.txt'),
+    beyond95: count('beyond-size-95.txt'),
+    // Game-owned, untouched by a lexicon update.
+    sourcePool: current.counts.sourcePool ?? 0,
+    definitionsCovered: current.counts.definitionsCovered ?? 0,
+  });
+
+  writeFileSync(metaPath, serialiseMeta(meta), 'utf8');
+  console.log(
+    `  meta.json rewritten: ${meta.counts.boundary.toLocaleString()} boundary words`,
+  );
+}
+
 function update(): void {
   const work = mkdtempSync(join(tmpdir(), 'lexicon-'));
   try {
@@ -165,6 +228,8 @@ function update(): void {
       copyFileSync(from, join(ASSET_DIR, file));
       console.log(`  wrote  ${file}`);
     }
+
+    rewriteMeta();
 
     // Nothing else is written into public/data, and that is deliberate on two
     // counts.
