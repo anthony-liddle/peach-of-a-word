@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { parsePatch } from '../../src/data/patch.ts';
+import { parsePatch } from './patch.ts';
 import { assertBakedEquivalent, bakeLists, type ShippedLists } from './bake.ts';
 import { PATCH_PATH } from './util.ts';
 

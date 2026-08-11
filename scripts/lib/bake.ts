@@ -20,7 +20,7 @@
  * allowlisted word joins enable.txt only if the union does not already have it,
  * or the pair would list it twice.
  */
-import { applyPatch, type DictionaryPatch } from '../../src/data/patch.ts';
+import { applyPatch, type DictionaryPatch } from './patch.ts';
 
 /** The five shipped lists, before or after baking. */
 export interface ShippedLists {

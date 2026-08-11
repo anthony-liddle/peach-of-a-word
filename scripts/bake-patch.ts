@@ -38,7 +38,7 @@
  */
 import { readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { parsePatch } from '../src/data/patch.ts';
+import { parsePatch } from './lib/patch.ts';
 import {
   assertBakedEquivalent,
   bakeLists,

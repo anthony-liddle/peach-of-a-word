@@ -10,7 +10,7 @@ import {
   SOURCE_WORD_LENGTH,
 } from './config.ts';
 import { parseDefinitions } from './definitions.ts';
-import { applyPatch, parsePatch } from '../../src/data/patch.ts';
+import { applyPatch, parsePatch } from './patch.ts';
 import { DATA_RAW_DIR, PATCH_PATH } from './util.ts';
 
 /** Lowercase, ASCII a-z only. Drops accents, apostrophes, proper-noun casing. */

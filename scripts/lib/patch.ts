@@ -4,6 +4,20 @@
  * unchanged when the boundary widens in a later phase.
  *
  * ---------------------------------------------------------------------------
+ * WHY THIS LIVES IN scripts/lib. It sat in src/data until 2026-08-11, which had
+ * the dependency backwards: bake-patch.ts, lib/bake.ts and lib/sources.ts all
+ * imported the app's source tree to reach it. That is the wrong direction. The
+ * patch is a build input, applied by the bake and never fetched at runtime, and
+ * no shipped app code has imported this module since the patch moved to build
+ * time. The only remaining readers in src/ are tests.
+ *
+ * It matters beyond tidiness: the plan is to extract the dictionary, its data
+ * and its pipeline into a separate repository, and a pipeline that imports the
+ * game cannot be lifted out. This module is dictionary code and now sits with
+ * the rest of it.
+ * ---------------------------------------------------------------------------
+ *
+ * ---------------------------------------------------------------------------
  * THE THREE CATEGORIES. Written down because the distinction keeps needing to
  * be restated, and getting it wrong is how an ordinary word ends up rejected or
  * a word nobody should have to type ends up required.
