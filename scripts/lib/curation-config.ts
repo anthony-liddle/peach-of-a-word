@@ -52,3 +52,37 @@ export const MAX_SOURCE_WORDS = 2000;
  * is for.
  */
 export const REQUIRE_ETYMOLOGY = true;
+
+// ---------------------------------------------------------------------------
+// Absorbed from lib/lexicon-config.ts when the dictionary left.
+//
+// That file split cleanly into "facts about the word list", which went to
+// orchard with the pipeline that used them, and these, which the game's
+// remaining scripts still need. Rather than keep a one-sided lexicon-config
+// holding the leftovers, the leftovers moved here and that file is gone.
+//
+// SIZE_70_SIZES, SIZE_95_SIZES and SCOWL_VARIANTS are NOT here, deliberately.
+// They defined which SCOWL bands produce which list, and nothing in this repo
+// derives a list any more. They live in orchard, which is the only place that
+// question can now be asked.
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimum playable word length, and the source word's fixed length.
+ *
+ * Still duplicated with src/engine/config.ts, still deliberately, and still
+ * asserted by lib/config-agreement.test.ts. lib/formable.ts exists so the
+ * build has no dependency on the app's module graph, and collapsing these
+ * would undo that. Duplication you can verify is not drift.
+ */
+export const MIN_WORD_LENGTH = 3;
+
+/** The source word is always exactly 8 letters. See the note above. */
+export const SOURCE_WORD_LENGTH = 8;
+
+/** Polite User-Agent. Wiktionary throttles clients that omit one. */
+export const WIKTIONARY_USER_AGENT =
+  '8LettersInSearchOfAWord/1.0 (gift project; anthonyliddle@gmail.com)';
+
+/** Concurrency for Wiktionary refetches during crown admission. */
+export const WIKTIONARY_CONCURRENCY = 4;

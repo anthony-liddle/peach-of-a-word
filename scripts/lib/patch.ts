@@ -4,6 +4,19 @@
  * unchanged when the boundary widens in a later phase.
  *
  * ---------------------------------------------------------------------------
+ * WHY THIS SURVIVED THE EXTRACTION, when the lexicons and the bake did not.
+ *
+ * The patch FILE moved to orchard and is fetched from a pinned release into
+ * vendor/lexicon. This module is the PARSER, and it stayed, because four tests
+ * in src/data still read that file and need something to interpret it with:
+ * the slur guards, the demotion guards, the boundary probe and the patch unit
+ * tests. They are the game halves of the split section 3.3 describes, and until
+ * that split happens they need parsePatch.
+ *
+ * applyPatch is a different case. Nothing in this repo applies the patch any
+ * more, because the lists arrive already baked. It is kept only because
+ * patch.test.ts exercises it, and it should leave with that test.
+ *
  * WHY THIS LIVES IN scripts/lib. It sat in src/data until 2026-08-11, which had
  * the dependency backwards: bake-patch.ts, lib/bake.ts and lib/sources.ts all
  * imported the app's source tree to reach it. That is the wrong direction. The

@@ -1,4 +1,4 @@
-import { WIKTIONARY_USER_AGENT } from './lexicon-config.ts';
+import { WIKTIONARY_USER_AGENT } from './curation-config.ts';
 import { fetchText, readCacheJson, sleep, writeCacheJson } from './util.ts';
 
 export interface WordEntry {

@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createListDictionary } from '@/data/listSource.ts';
 import {
   createPuzzle,
   eligibleSourceWords,
@@ -14,7 +13,6 @@ import type { Dictionary, WordSource } from '@/engine/types.ts';
 import { parseExclusions } from './lib/exclusions.ts';
 import { parseReasonedWords } from './lib/denylist.ts';
 import { loadPatchedPools } from './lib/pools.ts';
-import { loadUnpatchedBoundary } from './lib/sources.ts';
 
 /** The shipped data directory, read directly so tests see what ships. */
 const DATA = join(import.meta.dirname, '..', 'public', 'data');
@@ -77,7 +75,13 @@ describe('the calendar build derives from patched pools', () => {
   // inside a par value and a completion count. Reading the raw lists left every
   // denied word in those denominators even though the runtime had removed it.
   const deniedSlurs = readFileSync(
-    'scripts/data-raw/dictionary-patch.tsv',
+    join(
+      import.meta.dirname,
+      '..',
+      'vendor',
+      'lexicon',
+      'dictionary-patch.tsv',
+    ),
     'utf8',
   )
     .split('\n')
@@ -116,11 +120,16 @@ describe('the calendar build derives from patched pools', () => {
     // derived from the vendored raw lists: it must find the denied words, or the
     // two tests above prove nothing about the fix.
     //
-    // It reads the vendored sources rather than the shipped ones because the
-    // shipped lists now carry the denylist baked in. Reading enable.txt here
-    // would be asking a patched list whether it is patched.
-    const raw = createListDictionary(await loadUnpatchedBoundary());
-    expect(deniedSlurs.some((w) => raw.has(w))).toBe(true);
+    // The positive control for this file used to live here: assert the denied
+    // slurs ARE present in the UNPATCHED boundary, so the absence checks above
+    // are not passing vacuously. It cannot live here any more, because this
+    // repo no longer holds the unpatched lexicons to ask.
+    //
+    // It moved to orchard, where the unpatched data is, and got stronger on the
+    // way: denylist.test.ts derives the list from the raw boundary and asserts
+    // exactly 216 denied and 23 no-ops the boundary never had, which pins how
+    // many were present rather than merely that some were.
+    expect(deniedSlurs.length).toBeGreaterThan(0);
   });
 });
 
