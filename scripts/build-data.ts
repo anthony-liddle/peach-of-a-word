@@ -72,7 +72,6 @@ import { gateSourcePool } from './lib/source-gate.ts';
 import {
   ASSET_DIR,
   DATA_RAW_DIR,
-  REPO_ROOT,
   mapWithConcurrency,
   writeAsset,
 } from './lib/util.ts';
@@ -95,23 +94,6 @@ async function loadCommittedSourcePool(): Promise<WordEntry[]> {
     return JSON.parse(raw) as WordEntry[];
   } catch {
     return [];
-  }
-}
-
-async function loadExcludeList(): Promise<Set<string>> {
-  try {
-    const raw = await readFile(
-      join(REPO_ROOT, 'scripts', 'source-exclude.txt'),
-      'utf8',
-    );
-    const out = new Set<string>();
-    for (const line of raw.split('\n')) {
-      const w = line.trim().toLowerCase();
-      if (w && !w.startsWith('#')) out.add(w);
-    }
-    return out;
-  } catch {
-    return new Set();
   }
 }
 
@@ -166,16 +148,19 @@ async function main(): Promise<void> {
       `(${((beyond95.length / boundary.length) * 100).toFixed(0)}%).`,
   );
 
+  // No hand-exclusion step here any more. scripts/source-exclude.txt used to be
+  // filtered out at this point, and it could not affect what ships: gateSourcePool
+  // below reduces membership to the committed pool, and a candidate dropped here
+  // simply falls back to its committed entry rather than leaving the pool. It was
+  // also empty, untested, and carried no reason column. The live mechanism is
+  // data-raw/source-exclusions.tsv, which records a reason per word and is read by
+  // build-calendar.ts and admit-source-words.ts, where crown membership is actually
+  // decided.
   console.log('SCOWL: deriving 8-letter source candidates.');
-  const exclude = await loadExcludeList();
   const candidates = (await loadSourceCandidates())
     .filter((w) => enableSet.has(w)) // must be a submittable answer
-    .filter((w) => !exclude.has(w)) // hand-review drops
     .slice(0, MAX_SOURCE_WORDS);
-  console.log(
-    `  ${candidates.length} candidates to enrich ` +
-      `(${exclude.size} excluded by hand).`,
-  );
+  console.log(`  ${candidates.length} candidates to enrich.`);
 
   console.log('Wiktionary: fetching definitions and etymologies.');
   const enriched = await mapWithConcurrency(
