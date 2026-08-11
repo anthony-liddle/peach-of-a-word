@@ -1,0 +1,14 @@
+{
+  "comment": "The pinned orchard lexicon release. Edited only by a deliberate update, never to silence a failure. See scripts/update-lexicon.ts.",
+  "repo": "anthony-liddle/orchard",
+  "version": "v1.0.0",
+  "archive": "lexicon.tar.gz",
+  "archiveSha256": "d6881a72879165cd7e511a860975324c16cb8d732a5080101e65b34a2cb7ba8f",
+  "files": {
+    "enable.txt": "689618c5348c28738ae3453575518e459bc0804c0f3cc3ad8c4af6b2441ea4e0",
+    "scowl95-additions.txt": "dbc6347327b3237b2a5ebb22f55227b193be386d882da1863add2d1353233b7c",
+    "common-pool.txt": "560c246b7a078889b5b4a84df67f8f9bc833e778c28259ee36950603fc3db361",
+    "beyond-size-70.txt": "4af0676fdd320c86889e5fc06a2bff4b06a5052e16d3442e60000dc9fa0ba285",
+    "beyond-size-95.txt": "8b4a39ab5b62739ffe4d8408117e3d4fe8f2e8ae271fb0deaae1666eaca5e257"
+  }
+}

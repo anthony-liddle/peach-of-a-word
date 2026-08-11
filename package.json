@@ -23,7 +23,9 @@
     "defs:acquire": "tsx scripts/acquire-definitions.ts",
     "defs:rederive": "tsx scripts/rederive-definitions.ts",
     "icons:build": "tsx scripts/build-icons.ts",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "lexicon:update": "tsx scripts/update-lexicon.ts",
+    "lexicon:check": "tsx scripts/update-lexicon.ts --check"
   },
   "lint-staged": {
     "*.{ts,tsx,js}": [
