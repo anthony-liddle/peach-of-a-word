@@ -20,7 +20,6 @@ abolished
 abolishes
 abolishing
 abolition
-abort
 aborted
 aborting
 aborts
