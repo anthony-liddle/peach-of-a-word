@@ -34,10 +34,14 @@ export function Reveal(props: RevealProps) {
   const wordId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const capturedRef = useRef<Element | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     capturedRef.current = document.activeElement;
-    closeRef.current?.focus();
+    // The card is its own scroll container and this button sits near its
+    // bottom, so a plain focus() would scroll a long entry to the end. Take the
+    // focus without the scroll; the effect below owns the position.
+    closeRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -53,6 +57,18 @@ export function Reveal(props: RevealProps) {
     };
   }, [onClose, returnFocusTo]);
 
+  // Every entry opens at its own beginning. Keyed on the word and register
+  // because the card can be reused rather than remounted: the two registers
+  // render at the same slot with no key, so React keeps the node and the scroll
+  // position along with it. Keying on the register as well means the reset does
+  // not quietly depend on the caller's guarantee that a quiet word is never the
+  // source word. Deliberately not folded into the effect above, whose cleanup
+  // returns focus to the opener and would then re-capture the close button as
+  // the thing to return to.
+  useEffect(() => {
+    if (dialogRef.current) dialogRef.current.scrollTop = 0;
+  }, [props.word, props.register]);
+
   const className =
     props.register === 'crown'
       ? 'reveal'
@@ -66,6 +82,7 @@ export function Reveal(props: RevealProps) {
       }}
     >
       <div
+        ref={dialogRef}
         className={className}
         role="dialog"
         aria-modal="true"
