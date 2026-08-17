@@ -89,6 +89,40 @@ describe('Reveal crown register', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText('The word the type was cut for')).toBeNull();
   });
+
+  it('opens at the top of a long entry rather than scrolled to the close button', () => {
+    // `.reveal` is both the dialog and the scroll container, and the close
+    // button sits near its bottom. Focusing it on open let the browser scroll
+    // it into view, so long entries opened at the bottom. jsdom has no layout,
+    // so assert the mechanism: the open focus must decline to scroll.
+    const focus = vi.spyOn(HTMLButtonElement.prototype, 'focus');
+    render(
+      <Reveal
+        register="crown"
+        theme="letterpress"
+        word="withdraw"
+        entry={ENTRY}
+        onClose={() => {}}
+      />,
+    );
+    expect(focus).toHaveBeenCalledTimes(1);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('still gives the close button the focus on open', () => {
+    // The other half of the contract: declining to scroll must not turn into
+    // declining to focus, or the modal opens with focus left outside it.
+    render(
+      <Reveal
+        register="crown"
+        theme="letterpress"
+        word="withdraw"
+        entry={ENTRY}
+        onClose={() => {}}
+      />,
+    );
+    expect(document.activeElement).toBe(screen.getByRole('button'));
+  });
 });
 
 describe('Reveal quiet register', () => {
@@ -185,6 +219,41 @@ describe('Reveal quiet register', () => {
       delete document.documentElement.dataset.theme;
     },
   );
+
+  it('returns to the top when reopened on a different word without a remount', () => {
+    // Both branches of the caller's ternary render <Reveal> at the same slot
+    // with no key, so React reuses the instance and the DOM node. A scroll
+    // position left over from the previous word survives into the next one.
+    const { rerender, container } = render(
+      <Reveal
+        theme="letterpress"
+        register="quiet"
+        word="withdraw"
+        category="rare"
+        status="ready"
+        definition="a long gloss"
+        onClose={() => {}}
+      />,
+    );
+    const dialog = container.querySelector('.reveal') as HTMLElement;
+    dialog.scrollTop = 500;
+
+    rerender(
+      <Reveal
+        theme="letterpress"
+        register="quiet"
+        word="remember"
+        category="rare"
+        status="ready"
+        definition="another long gloss"
+        onClose={() => {}}
+      />,
+    );
+
+    // Same node, so this really is the no-remount path.
+    expect(container.querySelector('.reveal')).toBe(dialog);
+    expect(dialog.scrollTop).toBe(0);
+  });
 
   it('returns focus to returnFocusTo on close', () => {
     const trigger = document.createElement('button');
