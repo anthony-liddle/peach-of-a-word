@@ -6,9 +6,20 @@ import {
 } from './shareText.ts';
 
 /**
- * A representative daily result, the worked example from the spec. Jun 18 is
- * month index 5; the date is built from local components so the short form is
- * stable.
+ * The shared parity fixture.
+ *
+ * **These exact inputs are also the `result` helper in the Swift repo's
+ * `Tests/PeachEngineTests/ShareTextTests.swift`, and the expected block below is
+ * the same string.** Before this, both repos asserted an exact block over
+ * different inputs, so the Swift test named "matches the web's block" could not
+ * detect drift in either direction: change one repo's separator and both suites
+ * stayed green. Same input, same expected output, in both suites, is the
+ * cheapest thing that actually fails when the two formats diverge.
+ *
+ * The numbers are Bea's worked example and are internally consistent on purpose:
+ * 39 + 26 + 2 = 67 off-page finds, 99 + 388 = 487 points, and 388/487 rounds to
+ * the 8 purple squares in the row. Aug 18 is month index 7; the date is built
+ * from local components so the short form is stable.
  */
 function exampleResult(
   overrides: Partial<DailyShareResult> = {},
@@ -16,16 +27,18 @@ function exampleResult(
   return {
     mode: 'daily',
     title: 'Peach of a Word',
-    date: new Date(2026, 5, 18),
+    date: new Date(2026, 7, 18),
     tierLabel: 'Peachy Keen Supreme',
-    setFound: 37,
-    setTotal: 37,
-    uncommon: 29,
-    rare: 4,
+    setFound: 33,
+    setTotal: 33,
+    uncommon: 39,
+    rare: 26,
     mythic: 2,
-    setPoints: 113,
-    offPagePoints: 113,
-    totalPoints: 226,
+    setPoints: 99,
+    offPagePoints: 388,
+    totalPoints: 487,
+    setLabel: 'basket',
+    offPageLabel: 'wild',
     sourceWord: 'PEACHING',
     foundWords: ['PEACHING', 'PEACH', 'CHEAP', 'PINCH'],
     ...overrides,
@@ -44,14 +57,16 @@ function endlessExample(
     title: 'Peach of a Word',
     tierLabel: 'Peachy Keen Supreme',
     showSourceWord: true,
-    setFound: 37,
-    setTotal: 37,
-    uncommon: 29,
-    rare: 4,
+    setFound: 33,
+    setTotal: 33,
+    uncommon: 39,
+    rare: 26,
     mythic: 2,
-    setPoints: 113,
-    offPagePoints: 113,
-    totalPoints: 226,
+    setPoints: 99,
+    offPagePoints: 388,
+    totalPoints: 487,
+    setLabel: 'basket',
+    offPageLabel: 'wild',
     sourceWord: 'PEACHING',
     foundWords: ['PEACHING', 'PEACH', 'CHEAP', 'PINCH'],
     ...overrides,
@@ -59,27 +74,34 @@ function endlessExample(
 }
 
 /**
- * The share body, with the chrome removed. The name (line 1) and the tier
- * headline (line 2) are chrome: they can legitimately share letters with a found
- * word (the tier "The Complete Works" contains "Works") without that being a
- * leak. Stripping them by value leaves only the lines that must never carry a
- * word, so the spoiler assertion scopes to the real risk.
+ * The share body, with the chrome removed. The name (line 1), the tier headline
+ * (line 2) and the two point labels are chrome: they can legitimately share
+ * letters with a found word (the tier "The Complete Works" contains "Works")
+ * without that being a leak. Stripping them by value leaves only the lines that
+ * must never carry a word, so the spoiler assertion scopes to the real risk.
+ *
+ * The labels made this load-bearing rather than defensive: a label is a word and
+ * a rack can spell it. `downhill` is a real calendar rack that spells `wild`,
+ * and 17 more spell `case`, so without the strip the first such day would fail
+ * for a leak that never happened.
  */
 function shareBody(out: string, result: DailyShareResult): string {
   return out
     .toUpperCase()
     .replace(result.title.toUpperCase(), '')
-    .replace(result.tierLabel.toUpperCase(), '');
+    .replace(result.tierLabel.toUpperCase(), '')
+    .replaceAll(result.setLabel.toUpperCase(), '')
+    .replaceAll(result.offPageLabel.toUpperCase(), '');
 }
 
 describe('buildShareText', () => {
   test('produces the exact block for the worked example', () => {
     const expected = [
-      '🍑 Peach of a Word · Jun 18',
-      'Peachy Keen Supreme · 37 of 37 words',
-      '🟥🟥🟥🟥🟥🟪🟪🟪🟪🟪',
-      '✦ 29 Uncommon · 4 Rare · 2 Mythic',
-      '226 pts',
+      '🍑 Peach of a Word · Aug 18',
+      'Peachy Keen Supreme · 33 of 33 words + 67',
+      '🟥🟥🟪🟪🟪🟪🟪🟪🟪🟪',
+      '✦ 39 Uncommon · 26 Rare · 2 Mythic',
+      '99 basket/388 wild · 487 total points',
     ].join('\n');
 
     expect(buildShareText(exampleResult())).toBe(expected);
@@ -95,7 +117,7 @@ describe('buildShareText', () => {
     // The peach is the name's mark and the share signature; it rides the title
     // line for every board, never the tier headline or the body.
     const out = buildShareText(exampleResult({ title: 'Anything' }));
-    expect(out.split('\n')[0]).toBe('🍑 Anything · Jun 18');
+    expect(out.split('\n')[0]).toBe('🍑 Anything · Aug 18');
   });
 
   describe('the tier headline', () => {
@@ -103,7 +125,9 @@ describe('buildShareText', () => {
       const out = buildShareText(
         exampleResult({ tierLabel: 'The Complete Works' }),
       );
-      expect(out.split('\n')[1]).toBe('The Complete Works · 37 of 37 words');
+      expect(out.split('\n')[1]).toBe(
+        'The Complete Works · 33 of 33 words + 67',
+      );
     });
 
     test('never prints the retired Set X/Y line', () => {
@@ -112,37 +136,53 @@ describe('buildShareText', () => {
 
     test('carries the completion count, so the points have something to measure against', () => {
       const out = buildShareText(exampleResult());
-      expect(out.split('\n')[1]).toBe('Peachy Keen Supreme · 37 of 37 words');
+      expect(out.split('\n')[1]).toBe(
+        'Peachy Keen Supreme · 33 of 33 words + 67',
+      );
     });
 
     test('reads correctly mid-climb, where the count is arguably more use', () => {
       const out = buildShareText(
         exampleResult({ tierLabel: 'Blossom', setFound: 12, setTotal: 21 }),
       );
-      expect(out.split('\n')[1]).toBe('Blossom · 12 of 21 words');
+      expect(out.split('\n')[1]).toBe('Blossom · 12 of 21 words + 67');
     });
 
     test('carries the count on an untouched board too', () => {
       const out = buildShareText(
-        exampleResult({ tierLabel: 'First Sprout', setFound: 0, setTotal: 21 }),
+        // No finds at all, so no off-page count either: an untouched board is
+        // the one place all three off-page lines are absent together.
+        exampleResult({
+          tierLabel: 'First Sprout',
+          setFound: 0,
+          setTotal: 21,
+          uncommon: 0,
+          rare: 0,
+          mythic: 0,
+        }),
       );
       expect(out.split('\n')[1]).toBe('First Sprout · 0 of 21 words');
     });
 
     test('keeps the tier line short enough for a text message', () => {
       // The longest crown either theme can print, against the largest set a rack
-      // carries. A tier line that wraps in a message undoes the point of adding
-      // the count, so this is a real bound, not a decorative one.
+      // carries, now with the largest plausible off-page haul on the end. A tier
+      // line that wraps in a message undoes the point of adding the count, so
+      // this is a real bound, not a decorative one. The off-page count cost it
+      // six characters, and the bound moved with it rather than being dropped.
       const out = buildShareText(
         exampleResult({
           tierLabel: 'Peachy Keen Supreme',
           setFound: 100,
           setTotal: 100,
+          uncommon: 100,
+          rare: 50,
+          mythic: 20,
         }),
       );
       const tierLine = out.split('\n')[1]!;
-      expect(tierLine).toBe('Peachy Keen Supreme · 100 of 100 words');
-      expect(tierLine.length).toBeLessThanOrEqual(40);
+      expect(tierLine).toBe('Peachy Keen Supreme · 100 of 100 words + 170');
+      expect(tierLine.length).toBeLessThanOrEqual(46);
     });
   });
 
@@ -153,7 +193,7 @@ describe('buildShareText', () => {
 
       // The set count is the one honest denominator; the ladder gets none, so
       // the share never advertises how many obscure words a rack holds.
-      expect(rarity).toBe('✦ 29 Uncommon · 4 Rare · 2 Mythic');
+      expect(rarity).toBe('✦ 39 Uncommon · 26 Rare · 2 Mythic');
       expect(rarity).not.toMatch(/\bof\b/);
       expect(rarity).not.toMatch(/\//);
     });
@@ -207,7 +247,7 @@ describe('buildShareText', () => {
       const out = buildShareText(
         exampleResult({ sourceWord: 'PEACHING', foundWords: ['PEACHING'] }),
       ).toUpperCase();
-      expect(out.split('\n')[0]).toBe('🍑 PEACH OF A WORD · JUN 18');
+      expect(out.split('\n')[0]).toBe('🍑 PEACH OF A WORD · AUG 18');
       expect(out.split('\n')[0]).not.toContain('PEACHING');
     });
   });
@@ -225,7 +265,9 @@ describe('buildShareText', () => {
       const withoutIdentifier = out.split('\n').slice(1).join('\n');
       return withoutIdentifier
         .toUpperCase()
-        .replace(result.tierLabel.toUpperCase(), '');
+        .replace(result.tierLabel.toUpperCase(), '')
+        .replaceAll(result.setLabel.toUpperCase(), '')
+        .replaceAll(result.offPageLabel.toUpperCase(), '');
     }
 
     test('labels itself Endless on the identifier line, never a date', () => {
@@ -280,7 +322,7 @@ describe('buildShareText', () => {
       const out = buildShareText(
         endlessExample({ tierLabel: 'Ripening', setFound: 9, setTotal: 18 }),
       );
-      expect(out.split('\n')[1]).toBe('Ripening · 9 of 18 words');
+      expect(out.split('\n')[1]).toBe('Ripening · 9 of 18 words + 67');
     });
   });
 
@@ -365,9 +407,77 @@ describe('buildShareText', () => {
     });
   });
 
-  test('reports the total points', () => {
-    expect(buildShareText(exampleResult({ totalPoints: 226 }))).toContain(
-      '226 pts',
-    );
+  describe('the points line', () => {
+    test('names both halves of the split, then the total', () => {
+      // The labels are what make the slash safe. A bare 99/388 reads as a
+      // fraction, and the line above holds a real one; naming the halves means
+      // the slash can only be read as a divider.
+      const out = buildShareText(exampleResult());
+      expect(out.split('\n').at(-1)).toBe(
+        '99 basket/388 wild · 487 total points',
+      );
+    });
+
+    test('takes the labels from the result, so letterpress reads as letterpress', () => {
+      const out = buildShareText(
+        exampleResult({ setLabel: 'set', offPageLabel: 'off-page' }),
+      );
+      expect(out.split('\n').at(-1)).toBe(
+        '99 set/388 off-page · 487 total points',
+      );
+    });
+
+    test('falls back to the plain total when there is nothing to split', () => {
+      // Two labels to say zero is worse than the single total the block carried
+      // before the split existed.
+      const out = buildShareText(
+        exampleResult({
+          uncommon: 0,
+          rare: 0,
+          mythic: 0,
+          setPoints: 80,
+          offPagePoints: 0,
+          totalPoints: 80,
+        }),
+      );
+      expect(out.split('\n').at(-1)).toBe('80 pts');
+      expect(out).not.toContain('basket');
+    });
+
+    test('carries the split into endless too, on the same line', () => {
+      // Endless shares the tier line and the points line with daily. A second
+      // format would be a second thing to keep in step, and the split is not a
+      // daily-only idea: the bar it writes out is on both boards.
+      const out = buildShareText(endlessExample());
+      expect(out.split('\n').at(-1)).toBe(
+        '99 basket/388 wild · 487 total points',
+      );
+    });
+  });
+
+  describe('the off-page find count', () => {
+    test('is the rarity rungs summed, so the two lines cannot disagree', () => {
+      const out = buildShareText(
+        exampleResult({ uncommon: 5, rare: 3, mythic: 1 }),
+      );
+      expect(out.split('\n')[1]).toBe(
+        'Peachy Keen Supreme · 33 of 33 words + 9',
+      );
+    });
+
+    test('is added, never divided: it is a count and not a denominator', () => {
+      // The same rule that keeps the rarity ladder's open end. The completion
+      // count keeps its "of" because it is the one honest fraction.
+      const wordsLine = buildShareText(exampleResult()).split('\n')[1]!;
+      expect(wordsLine).not.toMatch(/of 67|67 of|\/ ?67/);
+      expect(wordsLine).toContain('+ 67');
+    });
+
+    test('disappears when there are no off-page finds', () => {
+      const out = buildShareText(
+        exampleResult({ uncommon: 0, rare: 0, mythic: 0 }),
+      );
+      expect(out.split('\n')[1]).toBe('Peachy Keen Supreme · 33 of 33 words');
+    });
   });
 });

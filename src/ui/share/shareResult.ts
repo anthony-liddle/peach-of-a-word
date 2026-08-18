@@ -1,6 +1,6 @@
 import { classifyWord, computeTier, type Puzzle } from '@/engine/index.ts';
 import type { Theme } from '../useTheme.ts';
-import { crownName, tierName } from '../themeCopy.ts';
+import { copy, crownName, tierName } from '../themeCopy.ts';
 import type { DailyShareResult, EndlessShareResult } from './shareText.ts';
 
 /**
@@ -13,6 +13,12 @@ import type { DailyShareResult, EndlessShareResult } from './shareText.ts';
  * shared points and split match the display by construction and no length-only
  * path can creep back in. The source word is a set word, so its points and its
  * place in the count fall under the set, never off-page.
+ *
+ * The point labels come from the same copy module the meter's legend reads, so
+ * the share names the two colours exactly as the bar under them does, in
+ * whichever theme was on screen. Lowercased here because the legend capitalises
+ * for a label and the share needs a sentence; one pair of words either way,
+ * rather than a second pair that could drift from the first.
  *
  * The earned tier headline is computed the same way the app's TierMeter shows
  * it: the completion crown once every common word is found, otherwise the
@@ -64,6 +70,8 @@ function baseResult(
     setPoints: tier.setPoints,
     offPagePoints: tier.offPagePoints,
     totalPoints: tier.score,
+    setLabel: copy(theme).onPageLabel.toLowerCase(),
+    offPageLabel: copy(theme).offPageLabel.toLowerCase(),
     sourceWord: puzzle.sourceWord,
     foundWords: found,
   };

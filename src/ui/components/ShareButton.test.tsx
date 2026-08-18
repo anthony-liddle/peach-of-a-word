@@ -98,8 +98,14 @@ describe('ShareButton', () => {
 
     const payload = share.mock.calls[0]![0] as ShareData;
     // The rank is letterpress-skinned, and the tier line carries the completion
-    // count beside it: one of the four common words found.
-    expect(payload.text?.split('\n')[1]).toBe('Blank Page · 1 of 4 words');
+    // count beside it: one of the four common words found, plus the one off-page
+    // find (OCAS), which is a count and not a second denominator.
+    expect(payload.text?.split('\n')[1]).toBe('Blank Page · 1 of 4 words + 1');
+    // And the split names its halves in the theme that was on screen: this
+    // board is letterpress, so it must never say basket.
+    expect(payload.text?.split('\n').at(-1)).toBe(
+      '15 set/4 off-page · 19 total points',
+    );
   });
 
   test('shares an endless block labeled Endless, with the found source word', async () => {
