@@ -16,6 +16,7 @@
     "format:check": "prettier --check .",
     "data:admit": "tsx scripts/admit-source-words.ts",
     "data:calendar": "tsx scripts/build-calendar.ts",
+    "data:rebundle": "tsx scripts/refresh-bundles.ts",
     "icons:build": "tsx scripts/build-icons.ts",
     "prepare": "husky || true",
     "lexicon:update": "tsx scripts/update-lexicon.ts",
