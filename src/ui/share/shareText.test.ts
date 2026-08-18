@@ -165,24 +165,29 @@ describe('buildShareText', () => {
     });
 
     test('keeps the tier line short enough for a text message', () => {
-      // The longest crown either theme can print, against the largest set a rack
-      // carries, now with the largest plausible off-page haul on the end. A tier
-      // line that wraps in a message undoes the point of adding the count, so
-      // this is a real bound, not a decorative one. The off-page count cost it
-      // six characters, and the bound moved with it rather than being dropped.
+      // The true ceiling, measured rather than guessed: `ancestor` is the
+      // fattest rack in the 626-day calendar at 109 set words and 570 off-page
+      // ones, and the cute crown is the longest either theme prints. A player
+      // who found literally every word on it would send this line.
+      //
+      // A tier line that wraps in a message undoes the point of adding the
+      // count, so this is a real bound. **It moved: the off-page count cost the
+      // line four characters and the old ceiling of 40 no longer holds.** What
+      // has not been re-measured is where a message actually wraps, so 44 is a
+      // known ceiling rather than a proven-safe one.
       const out = buildShareText(
         exampleResult({
           tierLabel: 'Peachy Keen Supreme',
-          setFound: 100,
-          setTotal: 100,
-          uncommon: 100,
-          rare: 50,
+          setFound: 109,
+          setTotal: 109,
+          uncommon: 400,
+          rare: 150,
           mythic: 20,
         }),
       );
       const tierLine = out.split('\n')[1]!;
-      expect(tierLine).toBe('Peachy Keen Supreme · 100 of 100 words + 170');
-      expect(tierLine.length).toBeLessThanOrEqual(46);
+      expect(tierLine).toBe('Peachy Keen Supreme · 109 of 109 words + 570');
+      expect(tierLine.length).toBeLessThanOrEqual(44);
     });
   });
 
