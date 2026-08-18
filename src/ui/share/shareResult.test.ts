@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { computeTier, type Puzzle } from '@/engine/index.ts';
+import { copy } from '../themeCopy.ts';
 import { dailyShareResult, endlessShareResult } from './shareResult.ts';
 
 /**
@@ -207,6 +208,48 @@ describe('dailyShareResult', () => {
       expect(cute.setFound).toBeLessThan(cute.setTotal);
       expect(cute.tierLabel).toBe('Ripening');
       expect(classic.tierLabel).toBe('Press Run');
+    });
+  });
+
+  describe('the point labels', () => {
+    test('speak the theme the player played in', () => {
+      // Letterpress sets type taken from a case; cute picks peaches into a
+      // basket. The share names the two halves of the score, so it needs both
+      // vocabularies, and neither may reach the other theme's block.
+      const found = ['NOTECASE', 'OCAS'];
+      const cute = dailyShareResult(
+        testPuzzle(),
+        found,
+        new Date(2026, 7, 18),
+        'Peach of a Word',
+        'cute',
+      );
+      const classic = dailyShareResult(
+        testPuzzle(),
+        found,
+        new Date(2026, 7, 18),
+        'Peach of a Word',
+        'letterpress',
+      );
+      expect(cute.setLabel).toBe('basket');
+      expect(cute.offPageLabel).toBe('wild');
+      expect(classic.setLabel).toBe('set');
+      expect(classic.offPageLabel).toBe('off-page');
+    });
+
+    test('are the meter legend, not a second pair of words', () => {
+      // The share writes out the bar's own split, so it uses the bar's own
+      // labels. A separate pair here could drift from the legend the player is
+      // looking at while they read the numbers.
+      const result = dailyShareResult(
+        testPuzzle(),
+        ['NOTECASE'],
+        new Date(2026, 7, 18),
+        'Peach of a Word',
+        'cute',
+      );
+      expect(result.setLabel).toBe(copy('cute').onPageLabel.toLowerCase());
+      expect(result.offPageLabel).toBe(copy('cute').offPageLabel.toLowerCase());
     });
   });
 });

@@ -31,6 +31,15 @@ interface ShareResultBase {
   /** Points from the set, and points from off-page finds. The score's split. */
   readonly setPoints: number;
   readonly offPagePoints: number;
+  /**
+   * What the two halves of the score are called on the points line. Theme
+   * vocabulary, read from the copy module by the caller for the same reason
+   * tierLabel is: letterpress sets type from a case and cute picks peaches into
+   * a basket, so a label spelled out here would put one theme's noun in the
+   * other theme's share. Lowercase, because they sit inside a sentence.
+   */
+  readonly setLabel: string;
+  readonly offPageLabel: string;
   /** The single summary number. */
   readonly totalPoints: number;
   /**
@@ -153,7 +162,8 @@ function identifierLine(result: ShareResult): string {
 }
 
 /**
- * The tier line: the earned headline, then how much of the set was completed.
+ * The tier line: the earned headline, how much of the set was completed, and how
+ * many finds came from beyond it.
  * Without the count the block prints a point total with nothing to measure it
  * against, which is what a recipient (and the player) actually wants to read.
  *
@@ -164,11 +174,43 @@ function identifierLine(result: ShareResult): string {
  * learns nothing a player would not see immediately. It reads just as well
  * mid-climb ("Blossom · 12 of 21 words"), where it is arguably more use.
  *
+ * The off-page count on the end follows the ladder's rule, not the set's: it is
+ * a count of finds and never a denominator, so it is added rather than divided
+ * and it is dropped entirely at zero. It is derived from the rungs rather than
+ * passed alongside them, so it cannot disagree with the rarity line below:
+ * `39 Uncommon · 26 Rare · 2 Mythic` is the same 67.
+ *
  * Shared by both modes. Endless has its own identifier line above, but the tier
  * line is the same one, so there is no second format to keep in step.
  */
 function tierLine(result: ShareResult): string {
-  return `${result.tierLabel} · ${result.setFound} of ${result.setTotal} words`;
+  const base = `${result.tierLabel} · ${result.setFound} of ${result.setTotal} words`;
+  const offPageFound = result.uncommon + result.rare + result.mythic;
+  return offPageFound > 0 ? `${base} + ${offPageFound}` : base;
+}
+
+/**
+ * The points line: the score row's split written out, then the total.
+ *
+ * **The labels are what make the slash safe.** A bare `99/388` reads as a
+ * fraction, and the line above it contains a real one; naming the halves means
+ * the slash can only be read as a divider. That was Bea's fix, and it is why the
+ * labels are not decoration that can be dropped.
+ *
+ * The split reaches the text because the squares alone could not carry it: the
+ * row is quantised to ten, so a 99/388 board and a 100/387 board draw the same
+ * picture. With no off-page points there is nothing to split, so the line
+ * degrades to the single total it carried before rather than spending two labels
+ * to say zero, on exactly the boards where the rarity line and the off-page
+ * count drop too. Shared by both modes, like the tier line.
+ */
+function pointsLine(result: ShareResult): string {
+  if (result.offPagePoints === 0) return `${result.totalPoints} pts`;
+  return (
+    `${result.setPoints} ${result.setLabel}/` +
+    `${result.offPagePoints} ${result.offPageLabel} · ` +
+    `${result.totalPoints} total points`
+  );
 }
 
 /** Build the exact, spoiler-safe share block for a daily or endless result. */
@@ -184,6 +226,6 @@ export function buildShareText(result: ShareResult): string {
   ];
   const rarity = rarityLine(result.uncommon, result.rare, result.mythic);
   if (rarity !== null) lines.push(rarity);
-  lines.push(`${result.totalPoints} pts`);
+  lines.push(pointsLine(result));
   return lines.join('\n');
 }
