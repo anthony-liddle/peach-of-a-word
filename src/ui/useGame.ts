@@ -10,8 +10,10 @@ import {
   computeTier,
   createEndlessSource,
   createPuzzle,
+  dailyRackOrder,
   dailySourceWord,
   dayIndex,
+  guardedRackOrder,
   normalizeGuess,
   STORAGE_EPOCH,
   STREAK_TIER_INDEX,
@@ -187,6 +189,22 @@ function shuffled<T>(items: readonly T[]): T[] {
   return out;
 }
 
+/**
+ * A random rack order that will not lead with the crown.
+ *
+ * The Shuffle button must stay unpredictable, so it cannot walk the daily's
+ * seed stream: it redraws from `Math.random` and rejects, where the daily takes
+ * the next seeded permutation. Different recovery, same predicate, which is the
+ * half that has to agree. The rejection is silent by design; a "reshuffled you"
+ * tell would confirm the answer the rack just leaked.
+ */
+function guardedShuffle(slice: Slice, ids: readonly number[]): number[] {
+  const letters = slice.puzzle.letters;
+  return guardedRackOrder(letters, slice.puzzle.sourceWord, () =>
+    shuffled(ids),
+  );
+}
+
 function tilesFor(puzzle: Puzzle): Tile[] {
   return [...puzzle.letters].map((letter, id) => ({ id, letter }));
 }
@@ -202,7 +220,17 @@ function buildSlice(payload: SlicePayload): Slice {
     sourceEntry: payload.sourceEntry,
     dayIndex: payload.dayIndex,
     tiles,
-    rackOrder: shuffled(tiles.map((t) => t.id)),
+    // The daily rack is seeded from the source word, so every player on a
+    // given day opens the same rack; Endless is a private stream and stays
+    // random. Both go through the same giving-away guard.
+    rackOrder:
+      payload.dayIndex !== null
+        ? dailyRackOrder(payload.puzzle.letters, payload.puzzle.sourceWord)
+        : guardedRackOrder(
+            payload.puzzle.letters,
+            payload.puzzle.sourceWord,
+            () => shuffled(tiles.map((t) => t.id)),
+          ),
     composing: [],
     found,
     foundSet: new Set(found),
@@ -265,7 +293,7 @@ function reduceSlice(slice: Slice, action: Action): Slice {
       return { ...slice, composing: [] };
 
     case 'SHUFFLE':
-      return { ...slice, rackOrder: shuffled(slice.rackOrder) };
+      return { ...slice, rackOrder: guardedShuffle(slice, slice.rackOrder) };
 
     case 'SUBMIT_RESULT': {
       const { result } = action;
