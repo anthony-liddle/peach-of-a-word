@@ -11,6 +11,12 @@ export {
 } from './eligibility.ts';
 export { generateCalendar, CALENDAR_SEED } from './calendar.ts';
 export { seededPermutation } from './shuffle.ts';
+export {
+  RACK_ROW,
+  rackGivesAway,
+  guardedRackOrder,
+  dailyRackOrder,
+} from './rack.ts';
 export { validateGuess, normalizeGuess } from './validate.ts';
 export { classifyWord } from './classify.ts';
 export { computeTier } from './tiers.ts';
