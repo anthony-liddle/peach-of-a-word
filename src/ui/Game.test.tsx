@@ -180,6 +180,17 @@ describe('Game', () => {
     expect(footer.textContent).toMatch(/for Bea/);
   });
 
+  it('offers the privacy policy from the footer', () => {
+    renderGame();
+    const footer = document.querySelector('.colophon') as HTMLElement;
+    const link = footer.querySelector('a[href="/privacy"]');
+    // Asserted on the href rather than on the text: the wording of a small
+    // print link is allowed to change, and where it goes is not. The App Store
+    // record names this exact path, so a rename here breaks a submitted URL.
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toMatch(/privacy/i);
+  });
+
   it('keeps the dedication present in the cute theme too', () => {
     document.documentElement.dataset.theme = 'cute';
     try {
