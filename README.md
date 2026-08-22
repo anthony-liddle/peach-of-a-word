@@ -235,7 +235,15 @@ Soundscape audio engine, or the timed Faithful Copy mode are all additive.
 ## Tech
 
 React, Vite, TypeScript (strict), pnpm. Deployed on Vercel as a static site,
-with privacy-light Vercel Analytics and no backend.
+with no backend.
+
+Vercel Web Analytics runs on the site. It is cookieless and aggregate: per
+Vercel's documentation it records the time, page URL, referrer, an approximate
+location, and device, OS and browser, and identifies visitors by a hash derived
+from the request that is discarded after 24 hours. Described that way rather
+than as "privacy-light", which is a characterisation and not a fact, and which
+told a reader less than the two sentences it saved. `/privacy` says the same
+thing to players, and the two should not describe one behaviour differently.
 
 ## Credits
 

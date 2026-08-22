@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy | Peach of a Word</title>
+    <meta
+      name="description"
+      content="What Peach of a Word collects: nothing in the iOS app, and aggregate page views on the website."
+    />
+    <!-- Icons: the tab icon follows the theme, same contract as index.html.
+         The default is the cute peach, the default theme, so a fresh visitor
+         never sees a stale icon. The script below swaps it for letterpress. -->
+    <link
+      rel="icon"
+      id="favicon"
+      href="/favicon-cute.svg"
+      type="image/svg+xml"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Spectral:ital,wght@0,400;0,500;0,600&family=Fredoka:wght@400;500;600&family=Nunito:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* The two theme palettes, lifted from src/index.css so this page belongs
+         to the site rather than merely sitting on the same domain. Only the
+         tokens this page actually uses are copied; the rest would be dead
+         weight that could drift without anyone noticing. */
+      :root,
+      [data-theme='letterpress'] {
+        --paper: #f1eee6;
+        --paper-deep: #e7e1d2;
+        --ink: #211d17;
+        --ink-soft: #5a5446;
+        --ink-faint: #6e6755;
+        --accent: #9d2b25;
+        --rule: #cabf9f;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Spectral', Georgia, serif;
+        --radius: 3px;
+      }
+      [data-theme='cute'] {
+        --paper: #fff4ee;
+        --paper-deep: #ffffff;
+        --ink: #6b4636;
+        --ink-soft: #6f5142;
+        --ink-faint: #7e5c4a;
+        --accent: #c42e60;
+        --rule: #ffe0d2;
+        --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+        --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+        --radius: 18px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        font-family: var(--font-body);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 34rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        margin: 0 0 0.25rem;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        margin: 2.25rem 0 0.5rem;
+      }
+      .updated {
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+        margin: 0 0 2rem;
+      }
+      .lede {
+        font-size: 1.05rem;
+      }
+      ul {
+        padding-left: 1.1rem;
+      }
+      li {
+        margin-bottom: 0.35rem;
+      }
+      a {
+        color: var(--accent);
+      }
+      /* No chip, no padding. A padded background reads well in a code block
+         and badly mid-sentence: the trailing padding pushes the following
+         comma away from the word and prints "e8-theme , " with a gap that
+         looks like a typo. The mono face alone is enough to mark a key. */
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        color: var(--ink-soft);
+      }
+      footer {
+        margin-top: 3rem;
+        border-top: 1px solid var(--rule);
+        padding-top: 1rem;
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+      }
+    </style>
+    <script>
+      // Match the theme the player already chose, read from the same key the
+      // game writes. Wrapped because localStorage throws outright in some
+      // privacy modes, and a privacy page that breaks under privacy settings
+      // would be a poor joke.
+      //
+      // The theme and the tab icon are resolved together, mirroring the
+      // pre-paint script in index.html. Applying one without the other is what
+      // put a crown on this page while the rest of the site showed the peach.
+      (function () {
+        var DEFAULT = 'cute';
+        var saved;
+        try {
+          saved = localStorage.getItem('e8-theme');
+        } catch (e) {
+          saved = null; /* storage blocked: fall back to the default */
+        }
+        var theme =
+          saved === 'cute' || saved === 'letterpress' ? saved : DEFAULT;
+        document.documentElement.dataset.theme = theme;
+        var icon = document.getElementById('favicon');
+        if (icon)
+          icon.href =
+            theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy</h1>
+      <p class="updated">Last updated 21 August 2026</p>
+
+      <p class="lede">
+        Peach of a Word has no accounts, no sign-in, and no advertising. There
+        is no server anywhere holding anything about you. Two versions exist,
+        the iOS app and the website at peachofaword.com, and they do not behave
+        the same way, so this page takes them one at a time.
+      </p>
+
+      <h2>The iOS App Makes No Network Calls</h2>
+      <p>
+        Not to a server of ours, and not to anyone else's. There is no analytics
+        library in it, no crash reporter, no advertising identifier, and no
+        third-party code of any kind.
+      </p>
+      <ul>
+        <li>
+          The dictionary and the puzzles ship inside the app. Nothing is fetched
+          while you play, and the app works with the network switched off.
+        </li>
+        <li>
+          Your found words, your streak and your settings are stored on your own
+          device. They are never sent anywhere. Deleting the app deletes them.
+        </li>
+        <li>
+          Tapping share hands a spoiler-free summary to iOS, and you pick where
+          it goes.
+        </li>
+      </ul>
+
+      <h2>The Website Counts Visits</h2>
+      <p>
+        The game works the way the app does. Puzzle data ships with the page,
+        and your progress, theme and text size live in your browser's local
+        storage under the keys <code>eight-letters/v1</code>,
+        <code>e8-theme</code> and <code>e8-text-size</code>. Clearing your
+        browser storage clears them. There is no account and no copy of them
+        anywhere else.
+      </p>
+      <p>
+        Counting visits is the one thing the site does that the app does not. It
+        uses Vercel Web Analytics, cookieless and aggregate. Per Vercel's
+        documentation it records the time, the page URL, the referring site, an
+        approximate location from your network connection, and your device type,
+        operating system and browser. Visitors are identified by a hash derived
+        from the request, not by a cookie, and it is discarded after 24 hours.
+        It does not follow you to other sites, and it does not build a profile
+        of you.
+      </p>
+      <p>
+        Vercel hosts the site, and like any web host it processes the requests
+        needed to serve pages.
+      </p>
+
+      <h2>What Neither One Collects</h2>
+      <p>
+        No accounts exist, so there are no names or email addresses to hold.
+        Neither version asks for your contacts, your photos, your location, or a
+        device identifier. Nothing is sold or shared, and no ad network is
+        involved. Nothing here follows you into another app or another website,
+        and neither version holds anything that could identify you personally.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        Nothing is collected from anyone, children included, so there is nothing
+        held about a child to ask about or to have deleted.
+      </p>
+
+      <h2>Changes and Questions</h2>
+      <p>
+        If any of this changes, this page changes with it and the date at the
+        top moves. Questions are welcome at
+        <a href="mailto:anthony@anthonyliddle.dev">anthony@anthonyliddle.dev</a
+        >.
+      </p>
+
+      <footer>
+        <a href="/">Back to the game</a>
+      </footer>
+    </main>
+  </body>
+</html>
