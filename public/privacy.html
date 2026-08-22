@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy | Peach of a Word</title>
+    <meta
+      name="description"
+      content="What Peach of a Word collects: nothing on iOS, and aggregate page views on the website. The short version of a short story."
+    />
+    <link rel="icon" href="/favicon-classic.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Spectral:ital,wght@0,400;0,500;0,600&family=Fredoka:wght@400;500;600&family=Nunito:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* The two theme palettes, lifted from src/index.css so this page belongs
+         to the site rather than merely sitting on the same domain. Only the
+         tokens this page actually uses are copied; the rest would be dead
+         weight that could drift without anyone noticing. */
+      :root,
+      [data-theme='letterpress'] {
+        --paper: #f1eee6;
+        --paper-deep: #e7e1d2;
+        --ink: #211d17;
+        --ink-soft: #5a5446;
+        --ink-faint: #6e6755;
+        --accent: #9d2b25;
+        --rule: #cabf9f;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Spectral', Georgia, serif;
+        --radius: 3px;
+      }
+      [data-theme='cute'] {
+        --paper: #fff4ee;
+        --paper-deep: #ffffff;
+        --ink: #6b4636;
+        --ink-soft: #6f5142;
+        --ink-faint: #7e5c4a;
+        --accent: #c42e60;
+        --rule: #ffe0d2;
+        --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+        --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+        --radius: 18px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        font-family: var(--font-body);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 34rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        margin: 0 0 0.25rem;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        margin: 2.25rem 0 0.5rem;
+      }
+      .updated {
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+        margin: 0 0 2rem;
+      }
+      .lede {
+        font-size: 1.05rem;
+      }
+      ul {
+        padding-left: 1.1rem;
+      }
+      li {
+        margin-bottom: 0.35rem;
+      }
+      a {
+        color: var(--accent);
+      }
+      /* No chip, no padding. A padded background reads well in a code block
+         and badly mid-sentence: the trailing padding pushes the following
+         comma away from the word and prints "e8-theme , " with a gap that
+         looks like a typo. The mono face alone is enough to mark a key. */
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        color: var(--ink-soft);
+      }
+      footer {
+        margin-top: 3rem;
+        border-top: 1px solid var(--rule);
+        padding-top: 1rem;
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+      }
+    </style>
+    <script>
+      // Match the theme the player already chose, read from the same key the
+      // game writes. Wrapped because localStorage throws outright in some
+      // privacy modes, and a privacy page that breaks under privacy settings
+      // would be a poor joke.
+      try {
+        var saved = localStorage.getItem('e8-theme');
+        if (saved === 'cute' || saved === 'letterpress') {
+          document.documentElement.dataset.theme = saved;
+        }
+      } catch (e) {
+        /* the default palette is fine */
+      }
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy</h1>
+      <p class="updated">Last updated 21 August 2026</p>
+
+      <p class="lede">
+        Peach of a Word has no accounts, no sign-in, no advertising, and no
+        server that knows anything about you. This page covers two things: the
+        <strong>iOS app</strong> and the <strong>website</strong> at
+        peachofaword.com. They are not identical, so they are described
+        separately.
+      </p>
+
+      <h2>The iOS app collects nothing, and makes no network calls</h2>
+      <p>
+        That second half is the part worth stating plainly, because it is what
+        makes the first half verifiable rather than a promise. The app does not
+        contact any server, ours or anyone else's. There is no analytics
+        library, no crash reporter, no advertising identifier, and no
+        third-party code of any kind in it.
+      </p>
+      <ul>
+        <li>
+          The dictionary and the puzzles ship inside the app. Nothing is fetched
+          while you play, and the app works with the network switched off.
+        </li>
+        <li>
+          Your found words, your streak and your settings are stored on your own
+          device. They are never sent anywhere, and deleting the app deletes
+          them.
+        </li>
+        <li>
+          Tapping share hands a spoiler-free summary to iOS, and you choose
+          where it goes. Nothing is shared unless you do that, and it goes
+          wherever you send it rather than to us.
+        </li>
+      </ul>
+
+      <h2>The website collects aggregate page views, and nothing else</h2>
+      <p>
+        The game itself works the same way as the app: the puzzle data ships
+        with the page, and your progress, theme and text size live in your
+        browser's local storage under the keys
+        <code>eight-letters/v1</code>, <code>e8-theme</code> and
+        <code>e8-text-size</code>. Clearing your browser storage clears them.
+        There is no account and no copy of them anywhere else.
+      </p>
+      <p>
+        The one thing the website does that the app does not is count visits. It
+        uses Vercel Web Analytics, which is cookieless and aggregate. Per
+        Vercel's documentation it records the time, the page URL, the referring
+        site, an approximate location from your network connection, and your
+        device type, operating system and browser. Visitors are identified by a
+        hash derived from the request rather than by a cookie, and that is
+        discarded after 24 hours. It does not follow you to other sites and it
+        does not build a profile of you.
+      </p>
+      <p>
+        The site is hosted on Vercel, which like any web host processes the
+        requests needed to serve pages.
+      </p>
+
+      <h2>What is never collected, on either</h2>
+      <ul>
+        <li>No names, email addresses, or accounts, because there are none.</li>
+        <li>
+          No contacts, photos, location permissions, or device identifiers.
+        </li>
+        <li>No advertising, no ad networks, and no data sold or shared.</li>
+        <li>
+          No tracking across other apps or websites, and nothing that could be
+          used to identify you personally.
+        </li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>
+        The game is suitable for children and collects nothing from anyone,
+        which means there is nothing held about a child to request or delete.
+      </p>
+
+      <h2>Changes, and how to ask</h2>
+      <p>
+        If this ever changes, this page changes with it and the date at the top
+        moves. Questions are welcome at
+        <a href="mailto:anthony@anthonyliddle.dev">anthony@anthonyliddle.dev</a
+        >.
+      </p>
+
+      <footer>
+        <a href="/">Back to the game</a>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -481,6 +481,13 @@ function Colophon({
       >
         How the words work
       </button>
+      {/* Beside the other quiet expansion rather than in a chrome bar of its
+          own. Someone looking for what a game does with their data looks at
+          the bottom of it, and the App Store record points here too, so this
+          link is the one route both audiences already take. */}
+      <a className="colophon__privacy" href="/privacy">
+        Privacy
+      </a>
       {/* The title says what the game is to everyone; this says who it is for
           to the one person meant to notice it. Unornamented on purpose. */}
       <p className="colophon__dedication">for Bea</p>

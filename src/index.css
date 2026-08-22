@@ -1630,6 +1630,18 @@ button {
 .colophon__how:hover {
   color: var(--ink);
 }
+/* Its neighbour, and deliberately identical in weight: the two are the same
+   kind of thing, a quiet way out of the page for someone who went looking.
+   Separated by a spaced bullet rather than a line break so the pair reads as
+   one row of small print. */
+.colophon__privacy {
+  margin-left: 0.75rem;
+}
+.colophon__privacy::before {
+  content: '\00B7';
+  margin-right: 0.75rem;
+  color: var(--ink-faint);
+}
 
 /* ---- Edition Complete (the win state) ----------------------------------- */
 /* A sibling to the reveal, but ink and oxblood, ornamental, and non-blocking:
