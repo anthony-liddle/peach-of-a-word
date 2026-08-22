@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="cute">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,15 @@
       name="description"
       content="What Peach of a Word collects: nothing in the iOS app, and aggregate page views on the website."
     />
-    <link rel="icon" href="/favicon-classic.svg" />
+    <!-- Icons: the tab icon follows the theme, same contract as index.html.
+         The default is the cute peach, the default theme, so a fresh visitor
+         never sees a stale icon. The script below swaps it for letterpress. -->
+    <link
+      rel="icon"
+      id="favicon"
+      href="/favicon-cute.svg"
+      type="image/svg+xml"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -110,14 +118,26 @@
       // game writes. Wrapped because localStorage throws outright in some
       // privacy modes, and a privacy page that breaks under privacy settings
       // would be a poor joke.
-      try {
-        var saved = localStorage.getItem('e8-theme');
-        if (saved === 'cute' || saved === 'letterpress') {
-          document.documentElement.dataset.theme = saved;
+      //
+      // The theme and the tab icon are resolved together, mirroring the
+      // pre-paint script in index.html. Applying one without the other is what
+      // put a crown on this page while the rest of the site showed the peach.
+      (function () {
+        var DEFAULT = 'cute';
+        var saved;
+        try {
+          saved = localStorage.getItem('e8-theme');
+        } catch (e) {
+          saved = null; /* storage blocked: fall back to the default */
         }
-      } catch (e) {
-        /* the default palette is fine */
-      }
+        var theme =
+          saved === 'cute' || saved === 'letterpress' ? saved : DEFAULT;
+        document.documentElement.dataset.theme = theme;
+        var icon = document.getElementById('favicon');
+        if (icon)
+          icon.href =
+            theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+      })();
     </script>
   </head>
   <body>
