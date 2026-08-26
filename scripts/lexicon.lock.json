@@ -1,7 +1,7 @@
 {
   "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. See scripts/update-lexicon.ts.",
   "repo": "anthony-liddle/orchard",
-  "version": "v1.4.0",
+  "version": "v1.5.0",
   "files": {
     "enable.txt": "3be67be18b42d1903911f16f008c2cf7754cef4dfce2bcff448e8d7f94854a6b",
     "scowl95-additions.txt": "a636a359b0d0fd8de1db338c24893f87d09978eaaa3eff81c4eb7e370426f173",
@@ -9,13 +9,13 @@
     "beyond-size-70.txt": "556c91aa84c6aaad7ab80d6b942fc1349acd6304624089acb1e575991f83c171",
     "beyond-size-95.txt": "3bf2bd8af9952e76bb1621b93c75710e47e61fd707444637e391138f45f1eef9",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tsv": "0101ecdcf394e4f88e96cfa967e4172fe50dcffb1ac041e676f2f3b3be7d5c2b",
+    "definitions.tsv": "4297d44de6fb478b8fb94a1b66b04692889e4af3f6008ca25cb2fca8f3c9728a",
     "etymology.tsv": "d51a4dc38a1cf73d50549b2d176da74db91852b711a4a93348ecd6e02bd44ea0"
   },
   "assets": {
-    "lexicon.tar.gz": "417f6198f85835fa696437801a73c22d2033cd35727a04ba756904b52511c7e3",
+    "lexicon.tar.gz": "e386779b6dd533298ec64c56bb52fcef6200c2566cd51a38012ab186655816f6",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tar.gz": "033fd010c138af95c24b403028cfe5e98d44d285fe77ebb71ff2433466b1bf39",
-    "etymology.tar.gz": "e209c96716a91129a8cc321909b097d3eb3a2f1d2ec05de3484c21ad5dd60ee6"
+    "definitions.tar.gz": "6578f0e91534b31b44c6b177b2a3df79dece03433d2e16ffde626f2b03ec3ef4",
+    "etymology.tar.gz": "14e00abbffc358bfd3ab1e763551c840d330f30eaa0e7401ccdd31ffb27c5fb6"
   }
 }
