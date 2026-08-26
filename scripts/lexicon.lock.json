@@ -1,19 +1,19 @@
 {
   "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. See scripts/update-lexicon.ts.",
   "repo": "anthony-liddle/orchard",
-  "version": "v1.3.0",
+  "version": "v1.4.0",
   "files": {
-    "enable.txt": "689618c5348c28738ae3453575518e459bc0804c0f3cc3ad8c4af6b2441ea4e0",
-    "scowl95-additions.txt": "dbc6347327b3237b2a5ebb22f55227b193be386d882da1863add2d1353233b7c",
+    "enable.txt": "3be67be18b42d1903911f16f008c2cf7754cef4dfce2bcff448e8d7f94854a6b",
+    "scowl95-additions.txt": "a636a359b0d0fd8de1db338c24893f87d09978eaaa3eff81c4eb7e370426f173",
     "common-pool.txt": "10fa33188c8de4fc0d047f0993165365e12d6e739e1072a1275ee94c1fab928f",
-    "beyond-size-70.txt": "4af0676fdd320c86889e5fc06a2bff4b06a5052e16d3442e60000dc9fa0ba285",
-    "beyond-size-95.txt": "8b4a39ab5b62739ffe4d8408117e3d4fe8f2e8ae271fb0deaae1666eaca5e257",
+    "beyond-size-70.txt": "556c91aa84c6aaad7ab80d6b942fc1349acd6304624089acb1e575991f83c171",
+    "beyond-size-95.txt": "3bf2bd8af9952e76bb1621b93c75710e47e61fd707444637e391138f45f1eef9",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tsv": "c21ddf117fe0749fdf415abc13688aac6e28d740fe87cd06ec9d77d0b3d9fcf6"
+    "definitions.tsv": "0101ecdcf394e4f88e96cfa967e4172fe50dcffb1ac041e676f2f3b3be7d5c2b"
   },
   "assets": {
-    "lexicon.tar.gz": "fdf0c6752de2dc18eacb8720e378a2b7f3c0eb4d8aa12964a63367b47bd612df",
+    "lexicon.tar.gz": "417f6198f85835fa696437801a73c22d2033cd35727a04ba756904b52511c7e3",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tar.gz": "e9bb6d7cb22df407bd41be6191cbfc7ff5d6904d0e497272a5bda90d7a153151"
+    "definitions.tar.gz": "033fd010c138af95c24b403028cfe5e98d44d285fe77ebb71ff2433466b1bf39"
   }
 }

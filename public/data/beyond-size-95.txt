@@ -3758,7 +3758,6 @@ pirozhki
 piscinae
 pistolled
 pistolling
-piu
 pixy
 pixyish
 pizazz
@@ -4190,7 +4189,6 @@ rivetting
 riviere
 rivieres
 rogueing
-rom
 romanise
 romanised
 romanises
@@ -4223,7 +4221,6 @@ sabre
 sabred
 sabres
 sabring
-sae
 saki
 sakis
 saleable
