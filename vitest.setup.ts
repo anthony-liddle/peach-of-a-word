@@ -1,4 +1,13 @@
 import '@testing-library/jest-dom/vitest';
+import { afterEach } from 'vitest';
+import { installMatchMedia, resetViewport } from './src/testing/viewport.ts';
+
+// jsdom implements no matchMedia, so the board's two-column branch would never
+// render under test and the layout that must not regress would be the untested
+// one. Install an evaluator over a settable width, and reset to a phone between
+// tests so a width set in one never leaks into the next.
+installMatchMedia();
+afterEach(resetViewport);
 
 // jsdom does not implement the canvas 2d context: getContext returns null and
 // logs "Not implemented" to the virtual console. The confetti overlay handles a
