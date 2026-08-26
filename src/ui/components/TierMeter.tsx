@@ -5,6 +5,37 @@ import { crownName, tierName, copy } from '../themeCopy.ts';
 interface Props {
   tier: TierStanding;
   theme: Theme;
+  /**
+   * Days cleared in a row, shown as a flame in the caption row the way the app
+   * does. Omitted at two-column widths, where the toolbar pill is the streak's
+   * home: exactly one home at any given width, never two at the same one.
+   */
+  streak?: number;
+}
+
+/**
+ * The streak flame. An inline SVG rather than the 🔥 emoji, for the same reason
+ * every other glyph on this page is drawn or typeset: an emoji arrives with its
+ * own palette and its own platform-specific drawing, which reads as a sticker
+ * pasted onto letterpress. This takes `currentColor`, so it is amber in one
+ * theme and peach in the other by inheriting, and it scales with the type.
+ */
+function Flame() {
+  return (
+    <svg
+      className="tier__flame"
+      viewBox="0 0 12 16"
+      width="0.75em"
+      height="1em"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        fill="currentColor"
+        d="M6 1c.6 2.6 1.9 4 3 5.3 1.1 1.3 1.8 2.6 1.8 4.3 0 2.7-2.2 4.7-4.8 4.7s-4.8-2-4.8-4.7c0-1.1.3-2 .9-2.7 0 1.4 1.1 2.5 2.5 2.5S7.1 9.3 7.1 7.9c0-1.1-.4-1.6-.8-2.4C5.5 4 5.7 2.5 6 1Z"
+      />
+    </svg>
+  );
 }
 
 /**
@@ -13,7 +44,7 @@ interface Props {
  * off-page points in the discovery colour), so the bar Bea loves survives and
  * reads as the climb. The current named rank is the label, theme-skinned.
  */
-export function TierMeter({ tier, theme }: Props) {
+export function TierMeter({ tier, theme, streak = 0 }: Props) {
   // Off-page points can push the score past reachable; the bar fills to full and
   // the named rank caps at the top. The overflow is the climb toward the Stage 2
   // completion peak, which this bar does not measure.
@@ -73,15 +104,38 @@ export function TierMeter({ tier, theme }: Props) {
           />
         ))}
       </div>
-      <div className="tier__ticks" aria-hidden="true">
-        <span>{pct}%</span>
+      {/* The caption row. The percent and the next-rank note are hidden per
+          child rather than on the row, which is the load-bearing detail once
+          the streak joins them: aria-hidden on the row would take the streak
+          down with it, and the toolbar pill it replaces is readable text today.
+          A silent accessibility regression behind a visual parity win is the
+          worst trade available here.
+
+          The two that stay hidden are hidden for the reason they always were:
+          the progressbar's aria-valuetext already speaks the percent and the
+          rank, so reading this row too would say it all twice. */}
+      <div className="tier__ticks">
+        <span aria-hidden="true">{pct}%</span>
         {tier.next ? (
-          <span className="tier__next">
+          <span className="tier__next" aria-hidden="true">
             Next: {tierName(theme, tier.next.index)} at{' '}
             {Math.round(tier.next.threshold * 100)}%
           </span>
         ) : (
-          <span className="tier__next">{copy(theme).ladderPeak}</span>
+          <span className="tier__next" aria-hidden="true">
+            {copy(theme).ladderPeak}
+          </span>
+        )}
+        {streak > 0 && (
+          <span className="tier__streak">
+            <Flame />
+            {/* A flame and a number said nothing about what it counted, so the
+                app prints the word. The pill said "Days cleared in a row" in a
+                title attribute, which touch never sees; this says it in text. */}
+            <span className="visually-hidden">Streak: </span>
+            {streak} {streak === 1 ? 'day' : 'days'}
+            <span className="visually-hidden"> cleared in a row</span>
+          </span>
         )}
       </div>
       {/* The explicit split beneath the bar: the same set-versus-off-page points

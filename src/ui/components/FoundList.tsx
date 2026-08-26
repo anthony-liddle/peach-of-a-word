@@ -23,6 +23,15 @@ interface Props {
   /** Called when the player taps a found word to see its definition. */
   onWordTap: (word: string, trigger: HTMLElement) => void;
   /**
+   * Whether the tier meter renders here. True at two-column widths, where the
+   * glossary has a column of its own and the meter has always sat in it. False
+   * at narrow widths, where the meter moves above the compose well to match the
+   * app — one meter on the screen, never two, so this is the half of that
+   * decision the glossary owns. Defaults to true: the meter's home is here, and
+   * the narrow layout is the exception that has to ask.
+   */
+  showTier?: boolean;
+  /**
    * An optional control for the summary footer, the daily share among them.
    * Lives here so it sits with the score it brags about; Endless passes none.
    */
@@ -152,6 +161,7 @@ export function FoundList({
   theme,
   onWordTap,
   summaryExtra,
+  showTier = true,
 }: Props) {
   // The one classification pass. The grid below and the rung panels above are
   // both derived from it, so a word is never Rare in one readout and not the
@@ -321,7 +331,7 @@ export function FoundList({
               It carries the named tier, the bold points total, the two-color
               set-versus-off-page climb, and the explicit Set and Off-page numbers
               beneath it. There is no second bar under the input. */}
-          <TierMeter tier={tier} theme={theme} />
+          {showTier && <TierMeter tier={tier} theme={theme} />}
 
           {/* Her best find, sitting with the tier and the points it belongs
               beside. Deliberately not announced: it changes often during normal

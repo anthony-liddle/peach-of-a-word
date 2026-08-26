@@ -272,9 +272,25 @@ function messageForRejection(
 /** Gameplay actions, applied to whichever slice is active. */
 function reduceSlice(slice: Slice, action: Action): Slice {
   switch (action.type) {
+    // Starting a word ends the last one's message.
+    //
+    // The message and the composed word now share one slot: it renders inside
+    // the stick, where it replaces the placeholder. See `ComposingStick`.
+    // Merely hiding it while letters are on the stick would look equivalent and
+    // is not, because deleting back to an empty stick would bring a stale
+    // rejection back, an answer to a question nobody had asked.
+    //
+    // `announcement` is deliberately untouched. Its `seq` drives the live
+    // region, and clearing a message is not an event worth speaking; bumping it
+    // here would re-announce on every tile that landed. The app makes the same
+    // split for the same reason (`GameModel.addTile` leaves `feedbackSeq`).
     case 'ADD_TILE':
       if (slice.composing.includes(action.id)) return slice;
-      return { ...slice, composing: [...slice.composing, action.id] };
+      return {
+        ...slice,
+        composing: [...slice.composing, action.id],
+        message: null,
+      };
 
     case 'ADD_LETTER': {
       const id = slice.rackOrder.find(
@@ -283,7 +299,8 @@ function reduceSlice(slice: Slice, action: Action): Slice {
           !slice.composing.includes(tileId),
       );
       if (id === undefined) return slice;
-      return { ...slice, composing: [...slice.composing, id] };
+      // The same clearing ADD_TILE does, for the same reason. See there.
+      return { ...slice, composing: [...slice.composing, id], message: null };
     }
 
     case 'REMOVE_LAST':

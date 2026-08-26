@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
+import { TWO_COLUMN_QUERY } from './ui/useWideBoard.ts';
 
 /**
  * Legibility pins for the stylesheet. The audit found two WCAG AA contrast
@@ -86,6 +87,10 @@ describe('index.css sizes: the supporting-text floor', () => {
     ['.summary__bestlabel', 0.9],
     ['.legend', 0.875],
     ['.legend__caption', 0.74],
+    // The feedback message: player-read supporting text, and it grew its own
+    // font-size when it moved inside the compose well, so it joins the floor
+    // the rest of that band holds.
+    ['.message', 0.875],
     ['.tier__key', 0.875],
     ['.tier__ticks', 0.875],
     ['.tier__next', 0.875],
@@ -414,5 +419,32 @@ describe('index.css completion ornament: a quiet entrance that reduced motion ki
     const b = block('.edition__ornament--peach');
     expect(b).toMatch(/(width|height|font-size):\s*[\d.]+rem/);
     expect(b).not.toMatch(/(width|height):\s*[\d.]+px/);
+  });
+});
+
+describe('index.css two-column breakpoint: the stylesheet and the meter agree', () => {
+  /**
+   * The tier meter is REPARENTED at this width, not repositioned: no stylesheet
+   * can lift a node out of the glossary summary and into the play column, so
+   * the breakpoint has to be read in JS as well as declared here. That is two
+   * copies of one number, and this is the guard.
+   *
+   * It guards ONE direction at ONE input: it catches the stylesheet moving away
+   * from `TWO_COLUMN_QUERY`. It cannot catch the constant moving, because the
+   * constant is what it reads. Change the constant and this test follows it
+   * happily; the stylesheet is the side that gets caught.
+   */
+  test('.board goes two-column at exactly the width the meter reads', () => {
+    const escaped = TWO_COLUMN_QUERY.replace(/[.()]/g, '\\$&');
+    expect(css).toMatch(new RegExp(`@media ${escaped} \\{\\s*\\.board \\{`));
+  });
+
+  test('no other width query moves .board, so there is one handoff', () => {
+    // A second breakpoint on .board would be a second handoff the JS knows
+    // nothing about, and the meter would be in the wrong column across it.
+    const queries = [...css.matchAll(/@media ([^{]+)\{\s*\.board \{/g)].map(
+      (m) => m[1]!.trim(),
+    );
+    expect(queries).toEqual([TWO_COLUMN_QUERY]);
   });
 });
