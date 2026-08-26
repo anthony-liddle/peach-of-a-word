@@ -17,7 +17,7 @@
  *
  * Run it after every `pnpm lexicon:update` that moves definitions.tsv.
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { buildBundles } from './lib/emit-definitions.ts';
 import { parseDefinitions } from './lib/definitions.ts';
@@ -42,16 +42,44 @@ async function main(): Promise<void> {
 
   const bundles = buildBundles(racks, validation, defs);
   let glossed = 0;
+  const distinct = new Set<string>();
   for (const [word, bundle] of bundles) {
     await writeAsset(`defs/${word}.json`, JSON.stringify(bundle));
-    glossed += Object.keys(bundle).length;
+    const words = Object.keys(bundle);
+    glossed += words.length;
+    for (const w of words) distinct.add(w);
   }
+
+  // ------------------------------------------------------------------
+  // meta.json's definitionsCovered IS WRITTEN HERE, and nowhere else.
+  //
+  // The same gap this script exists to close, one layer further along.
+  // `pnpm lexicon:update` deliberately preserves sourcePool and
+  // definitionsCovered because both are crown-dependent and it has no crown
+  // knowledge. That left definitionsCovered describing the bundles as they
+  // were BEFORE this script rewrote them: orchard v1.4.0 denied 392 words, the
+  // bundles dropped to 24,596 distinct glossed words, and meta.json still said
+  // 24,833.
+  //
+  // This is the step that changes the thing the count describes, so it is the
+  // step that owes the count. meta.test.ts catches the stale state, which is
+  // how it was found rather than shipped.
+  // ------------------------------------------------------------------
+  const metaPath = join(ASSET_DIR, 'meta.json');
+  const meta = JSON.parse(await readFile(metaPath, 'utf8')) as {
+    counts: Record<string, number>;
+  };
+  const wasCovered = meta.counts.definitionsCovered;
+  meta.counts.definitionsCovered = distinct.size;
+  await writeFile(metaPath, `${JSON.stringify(meta, null, 2)}\n`, 'utf8');
 
   console.log(
     `\n  Rewrote ${bundles.size.toLocaleString()} per-rack bundles from the ` +
       `${defs.size.toLocaleString()}-row definitions corpus.\n` +
       `  ${glossed.toLocaleString()} gloss entries across all bundles ` +
-      `(a word's gloss ships in every rack that can form it).\n`,
+      `(a word's gloss ships in every rack that can form it).\n` +
+      `  meta.json definitionsCovered: ${wasCovered?.toLocaleString()} -> ` +
+      `${distinct.size.toLocaleString()}\n`,
   );
 }
 
