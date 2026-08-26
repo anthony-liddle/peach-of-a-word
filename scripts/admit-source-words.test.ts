@@ -144,14 +144,23 @@ describe('the committed admissions', () => {
    * calendar days and both now show a quiet card, which is what the iOS app
    * has done since orchard v1.3.0.
    *
-   * **Their admission is not thereby invalid, and the distinction matters.**
+   * **DECIDED 2026-08-26: both stay crowns.**
+   *
    * Each was admitted on a lemma clearance, recorded in source-admissions.tsv
-   * as "participle lemma of drip" and "plural lemma of project"; that reason
-   * is about whether the word is an inflection, and it still holds. What no
-   * longer holds is the batch-level expectation, stated in this test's old
-   * comment, that every admitted word carries a reveal. Whether a crown with
-   * no etymology should stay a crown is a membership question, and membership
-   * is this repository's to decide, not orchard's.
+   * as "participle lemma of drip" and "plural lemma of project". That reason
+   * is about whether the word is an inflection, and it is unchanged. What
+   * expired is the batch-level expectation, stated in this test's old comment,
+   * that every admitted crown carries a reveal, and that expectation was never
+   * load-bearing: it was simply true until orchard began refusing contaminated
+   * etymologies.
+   *
+   * The quiet card is a deliberate state rather than a degraded one.
+   * `readSourceEntries` was written to return nothing for an absent corpus
+   * rather than throw, and the card renders each section only when its field
+   * has content, so a crown with a definition and no etymology is a shape both
+   * consumers already handle. Two crowns out of 626 showing a definition and
+   * no etymology is a smaller cost than removing two words that pass every
+   * other gate.
    */
   const REVEAL_REFUSED = ['dripping', 'projects'];
 
