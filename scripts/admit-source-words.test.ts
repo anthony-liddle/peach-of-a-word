@@ -132,13 +132,47 @@ describe('the committed admissions', () => {
     }
   });
 
-  it('carries a definition and an etymology, so the reveal works', () => {
-    // REQUIRE_ETYMOLOGY is the gate that kept these out of the pool in the
-    // first place, via a cached null. Each must really have one now.
+  /**
+   * Two admitted crowns whose etymology orchard has since refused.
+   *
+   * Pinned by name rather than the assertion being softened to allow null.
+   * These two are known and accounted for; a THIRD appearing is a new fact
+   * about the corpus and should fail this test rather than join a widened rule.
+   *
+   * `dripping` shipped a raw Lua module error under the heading Etymology and
+   * `projects` shipped a Wiktionary maintenance notice. Both are dealt on real
+   * calendar days and both now show a quiet card, which is what the iOS app
+   * has done since orchard v1.3.0.
+   *
+   * **Their admission is not thereby invalid, and the distinction matters.**
+   * Each was admitted on a lemma clearance, recorded in source-admissions.tsv
+   * as "participle lemma of drip" and "plural lemma of project"; that reason
+   * is about whether the word is an inflection, and it still holds. What no
+   * longer holds is the batch-level expectation, stated in this test's old
+   * comment, that every admitted word carries a reveal. Whether a crown with
+   * no etymology should stay a crown is a membership question, and membership
+   * is this repository's to decide, not orchard's.
+   */
+  const REVEAL_REFUSED = ['dripping', 'projects'];
+
+  it('carries a definition, which no admission has ever lacked', () => {
     for (const { word } of admissions) {
       const entry = byWord.get(word);
       expect(entry).toBeDefined();
       expect(entry?.definition).toBeTruthy();
+    }
+  });
+
+  it('carries an etymology, except the two orchard has refused', () => {
+    // REQUIRE_ETYMOLOGY is the gate that kept these out of the pool in the
+    // first place, via a cached null. Each had to really have one to be
+    // admitted, and all but two still do.
+    for (const { word } of admissions) {
+      const entry = byWord.get(word);
+      if (REVEAL_REFUSED.includes(word)) {
+        expect(entry?.etymology).toBeNull();
+        continue;
+      }
       expect(entry?.etymology).toBeTruthy();
       // Short is fine and well precedented: 118 of the shipped crowns carry a
       // pure surface analysis (chairman, "From chair + -man."). Empty is not.

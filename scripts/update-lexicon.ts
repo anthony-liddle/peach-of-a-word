@@ -95,7 +95,11 @@ const SHIPPED_LISTS = [
 ] as const;
 
 /** Build inputs: fetched, never served, and read only by tests and the pipeline. */
-const BUILD_INPUTS = ['dictionary-patch.tsv', 'definitions.tsv'] as const;
+const BUILD_INPUTS = [
+  'dictionary-patch.tsv',
+  'definitions.tsv',
+  'etymology.tsv',
+] as const;
 const lock = JSON.parse(readFileSync(LOCK_PATH, 'utf8')) as Lock;
 
 const checkOnly = process.argv.includes('--check');
@@ -300,6 +304,26 @@ function update(): void {
       join(VENDOR_DIR, defsName),
     );
     console.log(`  wrote  vendor/lexicon/${defsName}`);
+
+    // The reveal corpus, taken from v1.4.0 onward. Same shape as the gloss
+    // corpus above and vendored for the same reason: it is a build input that
+    // `pnpm data:refresh-reveals` reads, never something served.
+    //
+    // This repo did not take this asset before. It did not need to while
+    // source-pool.json was the only place reveal content lived, and that is
+    // exactly how source-pool.json came to be nineteen days stale and serving
+    // Lua module error text on `dripping`.
+    execFileSync('tar', ['-xzf', join(work, 'etymology.tar.gz'), '-C', work], {
+      stdio: 'inherit',
+    });
+    const etyName = 'etymology.tsv';
+    const etyExpected = lock.files[etyName]!;
+    const etyActual = sha256(join(work, 'etymology', etyName));
+    if (etyActual !== etyExpected) {
+      fail(`${etyName} content checksum mismatch after unpacking.`);
+    }
+    copyFileSync(join(work, 'etymology', etyName), join(VENDOR_DIR, etyName));
+    console.log(`  wrote  vendor/lexicon/${etyName}`);
 
     rewriteMeta();
 

@@ -9,11 +9,13 @@
     "beyond-size-70.txt": "556c91aa84c6aaad7ab80d6b942fc1349acd6304624089acb1e575991f83c171",
     "beyond-size-95.txt": "3bf2bd8af9952e76bb1621b93c75710e47e61fd707444637e391138f45f1eef9",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tsv": "0101ecdcf394e4f88e96cfa967e4172fe50dcffb1ac041e676f2f3b3be7d5c2b"
+    "definitions.tsv": "0101ecdcf394e4f88e96cfa967e4172fe50dcffb1ac041e676f2f3b3be7d5c2b",
+    "etymology.tsv": "d51a4dc38a1cf73d50549b2d176da74db91852b711a4a93348ecd6e02bd44ea0"
   },
   "assets": {
     "lexicon.tar.gz": "417f6198f85835fa696437801a73c22d2033cd35727a04ba756904b52511c7e3",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tar.gz": "033fd010c138af95c24b403028cfe5e98d44d285fe77ebb71ff2433466b1bf39"
+    "definitions.tar.gz": "033fd010c138af95c24b403028cfe5e98d44d285fe77ebb71ff2433466b1bf39",
+    "etymology.tar.gz": "e209c96716a91129a8cc321909b097d3eb3a2f1d2ec05de3484c21ad5dd60ee6"
   }
 }
