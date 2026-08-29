@@ -757,8 +757,8 @@ button {
   display: flex;
   gap: 0.6rem;
 }
-/* The primary pair carries the weight, so let it take the room it needs; the
-   utility pair stays compact at its content width. */
+/* The pair carrying Submit takes the room it needs; the undo pair stays compact
+   at its content width. */
 .controls__group--primary {
   flex: 1 1 auto;
 }
@@ -821,24 +821,26 @@ button {
   border-color: var(--rule);
   cursor: default;
 }
-/* Narrow widths: the primary pair (Delete, Submit) on the top control row, the
-   utility pair beneath it. The eye scans top to bottom and lands on the most-used
-   actions first, and they stay closest to the rack and composing well where the
-   action flow already is. The visual swap is done with order, so the DOM and
-   focus order stay Shuffle, Clear, Delete, Submit. Same structure in both themes.
-   The 480px break matches the toolbar's. */
+/* Narrow widths: Shuffle and Submit on the top control row, Clear and Delete
+   beneath. The undo pair sits below the row carrying Submit, because Submit is
+   the most obvious action on the screen; see the Controls component for whose
+   decision that is and what it replaced.
+
+   No `order` here any more. The old grouping needed `order: -1` to lift the
+   primary pair above the utility one, which left a keyboard tabbing Shuffle,
+   Clear, Delete, Submit through a screen that read Delete, Submit, Shuffle,
+   Clear. The regrouping makes the DOM order the visual order, so the hack is
+   simply gone. Same structure in both themes. The 480px break matches the
+   toolbar's. */
 @media (max-width: 30em) {
   .controls {
     flex-direction: column;
     align-items: stretch;
   }
-  .controls__group--primary {
-    order: -1;
-  }
   .controls__group .btn {
     flex: 1 1 0;
   }
-  /* Keep Submit weightier than Delete even when the pair fills the row. */
+  /* Keep Submit weightier than whatever shares its row. */
   .controls__group--primary .btn--primary {
     flex: 2 1 0;
   }

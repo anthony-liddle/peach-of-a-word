@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { Game } from './Game.tsx';
@@ -1074,40 +1076,64 @@ describe('Controls layout', () => {
       .getAllByRole('button')
       .map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim() ?? '');
 
-  it('orders the controls Shuffle, Clear, Delete, Submit', () => {
+  /**
+   * These two used to assert the opposite grouping, and the change is Bea's.
+   * The controls were clustered by how often each action is used, utility pair
+   * then primary pair with Delete before Submit; they are now clustered by what
+   * each action does, so the two undo actions sit together. See the `Controls`
+   * component for the reasoning and for the fact that both arrangements came
+   * from her.
+   */
+  it('orders the controls Shuffle, Submit, Clear, Delete', () => {
     renderGame();
     const names = controlNames();
     expect(names).toEqual([
       'Shuffle',
+      submitLabel(),
       'Clear',
       'Delete last letter',
-      submitLabel(),
     ]);
-    // Delete sits before Submit: Bea's "delete before submit".
-    expect(names.indexOf('Delete last letter')).toBeLessThan(
-      names.indexOf(submitLabel()),
+    // Delete sits to the right of Clear, being the more used of the two.
+    expect(names.indexOf('Clear')).toBeLessThan(
+      names.indexOf('Delete last letter'),
     );
   });
 
-  it('groups the controls into a utility cluster and a primary cluster', () => {
+  /**
+   * The DOM order is also the visual order now, which it was not before: the
+   * old arrangement lifted the primary pair above the utility one with
+   * `order: -1`, so a keyboard tabbed Shuffle, Clear, Delete, Submit through a
+   * screen reading Delete, Submit, Shuffle, Clear. Asserting the DOM order
+   * above is therefore asserting what someone sees, which it previously was
+   * not.
+   */
+  it('groups the controls into an action cluster and an undo cluster', () => {
     renderGame();
     const groups = controls().querySelectorAll<HTMLElement>('.controls__group');
     expect(groups).toHaveLength(2);
 
-    const utility = groups[0]!;
-    const primary = groups[1]!;
+    const action = groups[0]!;
+    const undo = groups[1]!;
     expect(
-      within(utility).getByRole('button', { name: 'Shuffle' }),
+      within(action).getByRole('button', { name: 'Shuffle' }),
     ).toBeInTheDocument();
     expect(
-      within(utility).getByRole('button', { name: 'Clear' }),
+      within(action).getByRole('button', { name: submitLabel() }),
     ).toBeInTheDocument();
     expect(
-      within(primary).getByRole('button', { name: 'Delete last letter' }),
+      within(undo).getByRole('button', { name: 'Clear' }),
     ).toBeInTheDocument();
     expect(
-      within(primary).getByRole('button', { name: submitLabel() }),
+      within(undo).getByRole('button', { name: 'Delete last letter' }),
     ).toBeInTheDocument();
+  });
+
+  it('no longer needs a CSS order hack to place the rows', () => {
+    // The regrouping removed the reason for `order: -1`. If it comes back, the
+    // DOM order above stops describing what anyone sees, and the assertion
+    // stops being about the screen.
+    const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
+    expect(css).not.toMatch(/controls__group--primary\s*\{[^}]*order:/);
   });
 
   it('gives every control its accessible name', () => {
