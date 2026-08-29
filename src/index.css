@@ -865,7 +865,7 @@ button {
      Three lines, not two. Measured: the longest rejection string ("Too short.
      Words need three letters or more.") overran a two-line clamp in letterpress
      at every text step, because that face is wider than the cute one at the
-     same size — so the clamp was ellipsing an ORDINARY message, not the
+     same size, so the clamp was ellipsing an ORDINARY message, not the
      pathological one it exists for. Three lines at this size occupy 3.4rem of a
      4rem well, so the clamp is back to being the safety net it was meant to be
      and no real string reaches it. */

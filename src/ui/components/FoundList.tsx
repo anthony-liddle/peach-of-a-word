@@ -26,7 +26,7 @@ interface Props {
    * Whether the tier meter renders here. True at two-column widths, where the
    * glossary has a column of its own and the meter has always sat in it. False
    * at narrow widths, where the meter moves above the compose well to match the
-   * app — one meter on the screen, never two, so this is the half of that
+   * app: one meter on the screen, never two, so this is the half of that
    * decision the glossary owns. Defaults to true: the meter's home is here, and
    * the narrow layout is the exception that has to ask.
    */

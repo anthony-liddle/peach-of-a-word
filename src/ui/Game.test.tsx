@@ -315,8 +315,9 @@ describe('Game', () => {
   // column, so a JS media query picks the site and renders exactly one node.
   //
   // These two tests are why it cannot be the other pattern. A twin hidden with
-  // `display: none` is fully present to getByRole — jsdom loads no stylesheet
-  // and evaluates no media query — so "exactly one" would be unassertable and a
+  // `display: none` is fully present to getByRole, because jsdom loads no
+  // stylesheet and evaluates no media query, so "exactly one" would be
+  // unassertable and a
   // second bar could creep back unseen. Both widths are checked because with
   // matchMedia stubbed to a phone by default, desktop is otherwise never
   // rendered by the suite at all.
@@ -1385,7 +1386,7 @@ describe('Game message in the tray', () => {
  * The streak has exactly one home at any given width. Narrow: the flame in the
  * tier meter, as the app has it. Two-column: the toolbar pill, because the
  * meter lives in the glossary there and the glossary only appears with the
- * first find — a returning player on a fresh board would otherwise see no
+ * first find. A returning player on a fresh board would otherwise see no
  * streak at all until they found a word.
  */
 describe('Game streak placement', () => {
@@ -1457,8 +1458,8 @@ describe('Game streak placement', () => {
 
   // The two homes differ at zero, deliberately and asymmetrically. The flame is
   // gated on a streak existing, which is what the app does and what was asked
-  // for. The pill still prints "Streak 0", which is what it has always done —
-  // changing it would be a two-column change nobody asked for, and the whole
+  // for. The pill still prints "Streak 0", which is what it has always done.
+  // Changing it would be a two-column change nobody asked for, and the whole
   // constraint on this work is that the two-column layout does not move.
   it('hides the flame before a streak is earned, and leaves the pill alone', () => {
     setViewportWidth(PHONE_WIDTH);
