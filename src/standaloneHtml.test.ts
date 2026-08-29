@@ -102,6 +102,14 @@ describe('transfer-temporary.html', () => {
     expect(html).toContain('year: 2026, month: 1, day: 1');
   });
 
+  test('promises no capability the app does not have', () => {
+    // The app has URL handling and no manual entry, so "type the numbers in by
+    // hand" described a feature that does not exist. The address is shown
+    // instead, which is a thing she can actually do.
+    expect(html).not.toMatch(/by hand/i);
+    expect(html).toContain('link-literal');
+  });
+
   test('says on the page that it is temporary', () => {
     // The page states its own disposability, because the filename is the only
     // other place that can: vercel.json is strict JSON and takes no comments.

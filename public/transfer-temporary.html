@@ -140,6 +140,19 @@
         color: var(--ink-faint);
         font-size: 0.875rem;
       }
+      /* The address is long and has no spaces, so it has to be allowed to
+         break mid-token or it widens the page on a phone, which is the one
+         device it exists for. */
+      .literal {
+        margin: 0;
+        padding: 0.6rem 0.75rem;
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        overflow-wrap: anywhere;
+        word-break: break-all;
+        line-height: 1.5;
+      }
       .hidden {
         display: none;
       }
@@ -213,23 +226,30 @@
       </p>
 
       <p id="desktop-note" class="note hidden">
-        The link above only works on the iPhone with the app installed. On a
-        computer, open <code>peachofaword.com/transfer</code> on your phone
-        instead, or type the two numbers above into the app by hand.
+        The link above only works on the iPhone, with the app installed. If you
+        are reading this on a computer, the streak lives in
+        <em>this</em> browser and cannot be tapped across on its own: use the
+        address below, which carries it.
       </p>
 
       <div id="fallback" class="card hidden">
         <p style="margin: 0 0 0.75rem">
-          <strong>iOS will ask first.</strong> Tapping the link brings up
-          <em>Open in “Peach of a Word”?</em> The streak only moves when you tap
-          Open.
+          <strong>iOS asks the first time.</strong> Tapping the link brings up
+          <em>Open in “Peach of a Word”?</em> and the streak moves when you tap
+          Open. iOS remembers the answer, so it may not ask again after that.
         </p>
-        <p class="note" style="margin: 0">
-          If nothing opens at all, the app is not installed on this device.
-          Nothing is changed either way: the streak in this browser is
-          untouched, and the two numbers above can be typed into the app by
-          hand.
+        <p class="note" style="margin: 0 0 0.9rem">
+          If nothing opens at all, the app is not installed on that device.
+          Nothing is changed either way, and the streak in this browser is
+          untouched.
         </p>
+        <p class="note" style="margin: 0 0 0.4rem">
+          This address <em>is</em> the transfer. Type it into Safari on the
+          iPhone, or send it to yourself and tap it there. It does exactly what
+          the link above does, and it is the way across if you play here and the
+          app is somewhere else.
+        </p>
+        <p class="literal"><code id="link-literal"></code></p>
       </div>
 
       <footer>
@@ -343,6 +363,11 @@
         // Cancelling on pagehide separates success from failure but not
         // failure from hesitation, so the page states both possibilities up
         // front instead of claiming one of them wrongly.
+        // The same string, written where it can be read and retyped. One
+        // source, so the address on the page and the address in the link
+        // cannot drift apart.
+        el('link-literal').textContent = link;
+
         show('fallback');
       })();
     </script>

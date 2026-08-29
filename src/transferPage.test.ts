@@ -136,6 +136,20 @@ describe('what it says about opening the app', () => {
     expect(visible('fallback')).toBe(true);
   });
 
+  /**
+   * The page used to say the numbers could be "typed into the app by hand".
+   * Nothing in the app can do that: there is URL handling and no manual entry.
+   * It was the worst place to overclaim, because it is the instruction that
+   * matters most when the streak is in a browser on a different machine from
+   * the app, where the address is not a fallback but the entire transfer.
+   */
+  test('shows the literal address, and it matches the link exactly', () => {
+    load({ streak: { count: 53, lastClearedDayIndex: 239 } });
+    const literal = document.getElementById('link-literal')?.textContent;
+    expect(literal).toBe('peachofaword://streak?count=53&lastCleared=239&v=1');
+    expect(literal).toBe(document.getElementById('send')?.getAttribute('href'));
+  });
+
   test('says nothing about opening when there is nothing to send', () => {
     load();
     expect(visible('fallback')).toBe(false);
