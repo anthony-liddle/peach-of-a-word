@@ -3,7 +3,7 @@
  *
  * jsdom implements `window.matchMedia` as `undefined` and evaluates no media
  * queries at all, so without this every test renders the narrow branch and the
- * two-column layout — the one that must not regress — would have no coverage
+ * two-column layout, the one that must not regress, would have no coverage
  * whatsoever. That is not a gap you notice: the suite stays green while half the
  * app goes untested.
  *

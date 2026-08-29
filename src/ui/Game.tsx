@@ -238,7 +238,7 @@ function Toolbar({ game }: { game: GameApi }) {
   // The streak has one home at any given width, never two at the same one. At
   // narrow widths it is the flame in the tier meter, above the well; here it is
   // the pill. The pill survives at two-column widths because the meter there
-  // lives in the glossary, which only appears with the first find — a returning
+  // lives in the glossary, which only appears with the first find. A returning
   // player opening a fresh board would otherwise see no streak at all until
   // they found a word, and the streak is not the stat to make someone earn
   // twice.
@@ -409,7 +409,7 @@ function ThemeSwap({
  *
  * `aria-hidden` carries over from that row unchanged. The message is already
  * spoken by the live region at the moment it lands, and hearing every rejection
- * twice — once when it happens, again on the next swipe — is exactly what the
+ * twice, once when it happens and again on the next swipe, is exactly what the
  * old row's `aria-hidden` was avoiding.
  *
  * The height is fixed at every state, so the rack cannot shift when the first
