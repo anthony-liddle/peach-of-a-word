@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Move your streak | Peach of a Word</title>
+    <meta name="robots" content="noindex" />
+    <meta
+      name="description"
+      content="A one-time handoff of a Peach of a Word streak from this browser to the iOS app."
+    />
+    <!-- Icons: the tab icon follows the theme, same contract as index.html and
+         privacy.html. The default is the cute peach, the default theme, so a
+         fresh visitor never sees a stale icon. The script below swaps it. -->
+    <link
+      rel="icon"
+      id="favicon"
+      href="/favicon-cute.svg"
+      type="image/svg+xml"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Spectral:ital,wght@0,400;0,500;0,600&family=Fredoka:wght@400;500;600&family=Nunito:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* The two theme palettes, lifted from src/index.css, same as
+         privacy.html: only the tokens this page uses, so nothing dead can
+         drift here unnoticed. */
+      :root,
+      [data-theme='letterpress'] {
+        --paper: #f1eee6;
+        --paper-deep: #e7e1d2;
+        --ink: #211d17;
+        --ink-soft: #5a5446;
+        --ink-faint: #6e6755;
+        --accent: #9d2b25;
+        --rule: #cabf9f;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Spectral', Georgia, serif;
+        --radius: 3px;
+      }
+      [data-theme='cute'] {
+        --paper: #fff4ee;
+        --paper-deep: #ffffff;
+        --ink: #6b4636;
+        --ink-soft: #6f5142;
+        --ink-faint: #7e5c4a;
+        --accent: #c42e60;
+        --rule: #ffe0d2;
+        --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+        --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+        --radius: 18px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        font-family: var(--font-body);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 34rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        margin: 0 0 0.25rem;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        margin: 2.25rem 0 0.5rem;
+      }
+      .lede {
+        font-size: 1.05rem;
+      }
+      .card {
+        background: var(--paper-deep);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        padding: 1.25rem 1.25rem 1.4rem;
+        margin: 1.75rem 0;
+      }
+      .count {
+        font-family: var(--font-display);
+        font-size: 3rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .count-label {
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+        margin: 0 0 1rem;
+      }
+      dl {
+        margin: 0;
+        font-size: 0.9375rem;
+      }
+      dt {
+        color: var(--ink-faint);
+        font-size: 0.8125rem;
+      }
+      dd {
+        margin: 0 0 0.6rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      dd:last-child {
+        margin-bottom: 0;
+      }
+      /* A real link rather than a button, because the whole job is navigating
+         to a URL and iOS treats a link tap as the plainest possible user
+         gesture. It also puts the destination in the DOM where it can be read
+         and tested, instead of hiding it inside a handler. */
+      .button {
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        color: var(--paper-deep);
+        background: var(--accent);
+        border-radius: var(--radius);
+        padding: 0.85rem 1.5rem;
+        cursor: pointer;
+      }
+      .button[aria-disabled='true'] {
+        opacity: 0.45;
+        cursor: default;
+        pointer-events: none;
+      }
+      .note {
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+      }
+      /* The address is long and has no spaces, so it has to be allowed to
+         break mid-token or it widens the page on a phone, which is the one
+         device it exists for. */
+      .literal {
+        margin: 0;
+        padding: 0.6rem 0.75rem;
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        overflow-wrap: anywhere;
+        word-break: break-all;
+        line-height: 1.5;
+      }
+      .hidden {
+        display: none;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.9em;
+        color: var(--ink-soft);
+      }
+      footer {
+        margin-top: 3rem;
+        border-top: 1px solid var(--rule);
+        padding-top: 1rem;
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+      }
+    </style>
+    <script>
+      // Match the theme the player already chose, read from the same key the
+      // game writes. Wrapped because localStorage throws outright in some
+      // privacy modes. Theme and tab icon are resolved together, mirroring the
+      // pre-paint script in index.html; applying one without the other is what
+      // once left a crown on a cute-styled page.
+      (function () {
+        var DEFAULT = 'cute';
+        var saved;
+        try {
+          saved = localStorage.getItem('e8-theme');
+        } catch (e) {
+          saved = null; /* storage blocked: fall back to the default */
+        }
+        var theme =
+          saved === 'cute' || saved === 'letterpress' ? saved : DEFAULT;
+        document.documentElement.dataset.theme = theme;
+        var icon = document.getElementById('favicon');
+        if (icon)
+          icon.href =
+            theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Move your streak</h1>
+      <p class="lede">
+        This hands the streak in this browser to the iOS app, once. It is a
+        temporary page for a one-off handoff, not part of the game, and it will
+        be deleted once the move is done.
+      </p>
+
+      <div id="found" class="card hidden">
+        <p class="count" id="count-display">0</p>
+        <p class="count-label">days, as recorded in this browser</p>
+        <dl>
+          <dt>Last day cleared</dt>
+          <dd id="last-display">-</dd>
+          <dt>Day number, counted from 1 January 2026</dt>
+          <dd id="index-display">-</dd>
+        </dl>
+      </div>
+
+      <div id="empty" class="card hidden">
+        <p style="margin: 0">
+          There is no streak saved in this browser. Either the game has not been
+          played here, or this is a different browser from the one you play in.
+          Nothing has been changed.
+        </p>
+      </div>
+
+      <p id="action" class="hidden">
+        <a id="send" class="button" href="#">Send it to the app</a>
+      </p>
+
+      <p id="desktop-note" class="note hidden">
+        The link above only works on the iPhone, with the app installed. If you
+        are reading this on a computer, the streak lives in
+        <em>this</em> browser and cannot be tapped across on its own: use the
+        address below, which carries it.
+      </p>
+
+      <div id="fallback" class="card hidden">
+        <p style="margin: 0 0 0.75rem">
+          <strong>iOS asks the first time.</strong> Tapping the link brings up
+          <em>Open in “Peach of a Word”?</em> and the streak moves when you tap
+          Open. iOS remembers the answer, so it may not ask again after that.
+        </p>
+        <p class="note" style="margin: 0 0 0.9rem">
+          If nothing opens at all, the app is not installed on that device.
+          Nothing is changed either way, and the streak in this browser is
+          untouched.
+        </p>
+        <p class="note" style="margin: 0 0 0.4rem">
+          This address <em>is</em> the transfer. Type it into Safari on the
+          iPhone, or send it to yourself and tap it there. It does exactly what
+          the link above does, and it is the way across if you play here and the
+          app is somewhere else.
+        </p>
+        <p class="literal"><code id="link-literal"></code></p>
+      </div>
+
+      <footer>
+        <a href="/">Back to the game</a>
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        'use strict';
+
+        // The same key the game writes, and the same fixed origin both surfaces
+        // count days from. STORAGE_EPOCH is documented as never moving, which is
+        // the whole reason a day index can cross to the app untranslated.
+        //
+        // Assumption worth knowing about: each side computes local midnight on
+        // whichever device is computing. This page uses this browser's time
+        // zone; the app uses the phone's. Across time zones near midnight the
+        // two can differ by a day. Fine for one handoff in one place.
+        var STORAGE_KEY = 'eight-letters/v1';
+        var EPOCH = { year: 2026, month: 1, day: 1 };
+
+        function dayIndex(date) {
+          var today = Date.UTC(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+          );
+          var start = Date.UTC(EPOCH.year, EPOCH.month - 1, EPOCH.day);
+          return Math.floor((today - start) / 86400000);
+        }
+
+        function readStreak() {
+          var raw;
+          try {
+            raw = localStorage.getItem(STORAGE_KEY);
+          } catch (e) {
+            return null; // storage blocked: same outcome as no streak
+          }
+          if (!raw) return null;
+          var parsed;
+          try {
+            parsed = JSON.parse(raw);
+          } catch (e) {
+            return null;
+          }
+          var streak = parsed && parsed.streak;
+          if (!streak) return null;
+          if (typeof streak.count !== 'number') return null;
+          if (typeof streak.lastClearedDayIndex !== 'number') return null;
+          if (streak.count <= 0) return null;
+          return streak;
+        }
+
+        function describe(index, today) {
+          var gap = today - index;
+          if (gap === 0) return 'today';
+          if (gap === 1) return 'yesterday';
+          if (gap < 0) return 'a day that has not happened yet';
+          return gap + ' days ago';
+        }
+
+        var el = function (id) {
+          return document.getElementById(id);
+        };
+        var show = function (id) {
+          el(id).classList.remove('hidden');
+        };
+
+        var streak = readStreak();
+        if (!streak) {
+          show('empty');
+          return;
+        }
+
+        var today = dayIndex(new Date());
+        el('count-display').textContent = String(streak.count);
+        el('last-display').textContent = describe(
+          streak.lastClearedDayIndex,
+          today,
+        );
+        el('index-display').textContent = String(streak.lastClearedDayIndex);
+        show('found');
+        show('action');
+        show('desktop-note');
+
+        // Both values travel. Sending only the count would give the app a
+        // number with no record of when it was last extended, and the next
+        // morning the app would read that as a broken streak and restart at 1.
+        // The app decides whether to accept; this page only offers.
+        var link =
+          'peachofaword://streak?count=' +
+          encodeURIComponent(streak.count) +
+          '&lastCleared=' +
+          encodeURIComponent(streak.lastClearedDayIndex) +
+          '&v=1';
+
+        el('send').setAttribute('href', link);
+
+        // No timer, and nothing here tries to detect whether the app opened.
+        //
+        // The obvious approach is to start a timeout on the tap and announce
+        // "not installed" if it survives. It does not work, and not only for
+        // the usual reason that a bare timeout also fires on success. Tapping
+        // a custom scheme on iOS raises a system confirmation first, and that
+        // dialog leaves this page visible and its timers running while it
+        // waits for a human. So the timer would race a person reading an
+        // alert, and "no app took the link" and "the alert is still up" are
+        // the same observation from in here.
+        //
+        // Cancelling on pagehide separates success from failure but not
+        // failure from hesitation, so the page states both possibilities up
+        // front instead of claiming one of them wrongly.
+        // The same string, written where it can be read and retyped. One
+        // source, so the address on the page and the address in the link
+        // cannot drift apart.
+        el('link-literal').textContent = link;
+
+        show('fallback');
+      })();
+    </script>
+  </body>
+</html>
