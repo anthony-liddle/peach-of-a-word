@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { Game } from '../Game.tsx';
@@ -232,6 +234,27 @@ describe('How the Words Work explains the current model', () => {
     openPopup();
     expect(body()).toMatch(/every common word/i);
     expect(body()).toMatch(/never required|not required/i);
+  });
+
+  /**
+   * The number drifted because nothing compared it to anything. It read "about
+   * 430,000" against a shipped boundary of 426,900, on this surface and in the
+   * app, from the same source. This ties the sentence to the data so the next
+   * regeneration of the lists reports a stale prose line rather than quietly
+   * disagreeing with it.
+   *
+   * Rounded to the nearest thousand, because the sentence says "about" and only
+   * ever wanted a sense of scale. The prose stays hardcoded: reading meta.json
+   * at render time would couple a paragraph to a data fetch for no benefit.
+   */
+  it('quotes a word count that matches the shipped boundary', () => {
+    const meta = JSON.parse(
+      readFileSync(resolve(process.cwd(), 'public/data/meta.json'), 'utf8'),
+    ) as { counts: { boundary: number } };
+    const rounded = Math.round(meta.counts.boundary / 1000) * 1000;
+    renderGame();
+    openPopup();
+    expect(body()).toContain(rounded.toLocaleString('en-US'));
   });
 
   it('names the real validation boundary, not ENABLE alone', () => {
