@@ -13,7 +13,6 @@ aardwolves
 aargh
 aarrgh
 aarrghh
-aas
 aasvogel
 aasvogels
 aba
@@ -4440,7 +4439,6 @@ amethysts
 ametropia
 ametropias
 ametropic
-ami
 amia
 amiabilities
 amiability
@@ -4770,7 +4768,6 @@ amtrac
 amtrack
 amtracks
 amtracs
-amu
 amuck
 amucks
 amulet
@@ -5181,7 +5178,6 @@ andromedas
 androsterone
 androsterones
 ands
-ane
 anear
 aneared
 anearing
@@ -61818,10 +61814,8 @@ giddyap
 giddying
 giddyup
 gids
-gie
 gied
 gieing
-gien
 gies
 gift
 gifted
@@ -63280,7 +63274,6 @@ goosing
 goosy
 gopher
 gophers
-gor
 goral
 gorals
 gorbellies
@@ -79300,7 +79293,6 @@ jetton
 jettons
 jetty
 jettying
-jeu
 jeux
 jewel
 jeweled
@@ -80116,7 +80108,6 @@ kaddish
 kaddishim
 kadi
 kadis
-kae
 kaes
 kaf
 kaffeeklatsch
@@ -80389,7 +80380,6 @@ kazatskies
 kazatsky
 kazoo
 kazoos
-kbar
 kbars
 kea
 keas
@@ -87108,7 +87098,6 @@ madwort
 madworts
 madzoon
 madzoons
-mae
 maelstrom
 maelstroms
 maenad
@@ -113125,7 +113114,6 @@ pitying
 pityingly
 pityriases
 pityriasis
-piu
 pivot
 pivotable
 pivotal
@@ -131070,7 +131058,6 @@ rolls
 rolltop
 rollway
 rollways
-rom
 romaine
 romaines
 roman
@@ -132400,7 +132387,6 @@ sadomasochisms
 sadomasochist
 sadomasochistic
 sadomasochists
-sae
 safari
 safaried
 safariing
@@ -133531,7 +133517,6 @@ satyric
 satyrid
 satyrids
 satyrs
-sau
 sauce
 sauceboat
 sauceboats
@@ -137892,6 +137877,7 @@ shists
 shit
 shitake
 shitakes
+shite
 shithead
 shitheads
 shits
@@ -138488,6 +138474,7 @@ shyness
 shynesses
 shyster
 shysters
+shyte
 sial
 sialagogue
 sialagogues
@@ -159451,7 +159438,6 @@ tuyer
 tuyere
 tuyeres
 tuyers
-twa
 twaddle
 twaddled
 twaddler
@@ -171911,7 +171897,6 @@ yolkier
 yolkiest
 yolks
 yolky
-yom
 yomim
 yon
 yond

@@ -81,3 +81,62 @@ describe('TierMeter', () => {
     );
   });
 });
+
+describe('TierMeter streak', () => {
+  it('prints the flame and what it counts', () => {
+    const { container } = render(
+      <TierMeter tier={standing()} theme="cute" streak={6} />,
+    );
+    const streak = container.querySelector('.tier__streak') as HTMLElement;
+    expect(streak.querySelector('.tier__flame')).not.toBeNull();
+    // A flame and a number said nothing about what it counted, so the word is
+    // printed, the way the app prints it.
+    expect(streak.textContent).toMatch(/6 days/);
+  });
+
+  it('says one day, not one days', () => {
+    const { container } = render(
+      <TierMeter tier={standing()} theme="cute" streak={1} />,
+    );
+    expect(container.querySelector('.tier__streak')?.textContent).toMatch(
+      /1 day\b/,
+    );
+  });
+
+  it('renders nothing where there is no streak', () => {
+    const { container } = render(
+      <TierMeter tier={standing()} theme="cute" streak={0} />,
+    );
+    expect(container.querySelector('.tier__streak')).toBeNull();
+  });
+
+  it('omits the streak entirely when none is passed', () => {
+    // The two-column placement passes none: the toolbar pill is the streak's
+    // home at that width, and two homes at one width is the thing to avoid.
+    const { container } = render(<TierMeter tier={standing()} theme="cute" />);
+    expect(container.querySelector('.tier__streak')).toBeNull();
+  });
+
+  // The caption row hides the percent and the next-rank note per child rather
+  // than hiding the row, so the streak inside it stays readable. Hiding the row
+  // would take the streak down with it, and the pill it replaces is text.
+  it('keeps the streak out of any aria-hidden subtree', () => {
+    const { container } = render(
+      <TierMeter tier={standing()} theme="cute" streak={6} />,
+    );
+    const streak = container.querySelector('.tier__streak') as HTMLElement;
+    for (
+      let node: HTMLElement | null = streak;
+      node !== null && node !== container;
+      node = node.parentElement
+    ) {
+      expect(node.getAttribute('aria-hidden')).not.toBe('true');
+    }
+    // The two that stay hidden are still hidden: the progressbar's valuetext
+    // already speaks the percent and the rank, so reading them here says it
+    // all twice.
+    expect(
+      container.querySelector('.tier__next')?.getAttribute('aria-hidden'),
+    ).toBe('true');
+  });
+});

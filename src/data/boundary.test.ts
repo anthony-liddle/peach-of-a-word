@@ -128,9 +128,11 @@ describe('ENABLE union SCOWL 95 boundary (live assets)', () => {
     const additions = new Set(readList('scowl95-additions.txt'));
     const beyond95 = readList('beyond-size-95.txt');
     expect(beyond95.some((w) => additions.has(w))).toBe(false);
-    // 5389, not the 5399 the unbaked file held: the bake takes the 10 denied
-    // words out of the shipped tail. The engine never saw them either way, since
-    // the old runtime merge removed the same 10 on every load.
-    expect(beyond95.length).toBe(5389);
+    // 5386, not the 5399 the unbaked file held. The bake takes 13 denied words
+    // out of the shipped tail: the original 10 from the curated patch, which
+    // the old runtime merge removed on every load so the engine never saw them
+    // either way, plus 3 from orchard v1.4.0's curation sweep. Bea's verdicts
+    // reach the mythic tail like any other denial.
+    expect(beyond95.length).toBe(5386);
   });
 });

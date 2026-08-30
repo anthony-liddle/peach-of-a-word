@@ -132,13 +132,56 @@ describe('the committed admissions', () => {
     }
   });
 
-  it('carries a definition and an etymology, so the reveal works', () => {
-    // REQUIRE_ETYMOLOGY is the gate that kept these out of the pool in the
-    // first place, via a cached null. Each must really have one now.
+  /**
+   * Two admitted crowns whose etymology orchard has since refused.
+   *
+   * Pinned by name rather than the assertion being softened to allow null.
+   * These two are known and accounted for; a THIRD appearing is a new fact
+   * about the corpus and should fail this test rather than join a widened rule.
+   *
+   * `dripping` shipped a raw Lua module error under the heading Etymology and
+   * `projects` shipped a Wiktionary maintenance notice. Both are dealt on real
+   * calendar days and both now show a quiet card, which is what the iOS app
+   * has done since orchard v1.3.0.
+   *
+   * **DECIDED 2026-08-26: both stay crowns.**
+   *
+   * Each was admitted on a lemma clearance, recorded in source-admissions.tsv
+   * as "participle lemma of drip" and "plural lemma of project". That reason
+   * is about whether the word is an inflection, and it is unchanged. What
+   * expired is the batch-level expectation, stated in this test's old comment,
+   * that every admitted crown carries a reveal, and that expectation was never
+   * load-bearing: it was simply true until orchard began refusing contaminated
+   * etymologies.
+   *
+   * The quiet card is a deliberate state rather than a degraded one.
+   * `readSourceEntries` was written to return nothing for an absent corpus
+   * rather than throw, and the card renders each section only when its field
+   * has content, so a crown with a definition and no etymology is a shape both
+   * consumers already handle. Two crowns out of 626 showing a definition and
+   * no etymology is a smaller cost than removing two words that pass every
+   * other gate.
+   */
+  const REVEAL_REFUSED = ['dripping', 'projects'];
+
+  it('carries a definition, which no admission has ever lacked', () => {
     for (const { word } of admissions) {
       const entry = byWord.get(word);
       expect(entry).toBeDefined();
       expect(entry?.definition).toBeTruthy();
+    }
+  });
+
+  it('carries an etymology, except the two orchard has refused', () => {
+    // REQUIRE_ETYMOLOGY is the gate that kept these out of the pool in the
+    // first place, via a cached null. Each had to really have one to be
+    // admitted, and all but two still do.
+    for (const { word } of admissions) {
+      const entry = byWord.get(word);
+      if (REVEAL_REFUSED.includes(word)) {
+        expect(entry?.etymology).toBeNull();
+        continue;
+      }
       expect(entry?.etymology).toBeTruthy();
       // Short is fine and well precedented: 118 of the shipped crowns carry a
       // pure surface analysis (chairman, "From chair + -man."). Empty is not.
@@ -151,12 +194,18 @@ describe('the committed admissions', () => {
       const bundle = JSON.parse(
         readFileSync(`public/data/defs/${word}.json`, 'utf8'),
       ) as Record<string, string>;
-      // Existing crowns sit around 81 percent of formable words glossed; a
-      // thin bundle would mean defs:acquire was never run for the new rack.
-      // Bundle size tracks how many words a rack can spell, so the floor is
-      // set low enough for the thinnest rack in the batch (sufferer, 90
-      // formable words). Coverage is asserted as a ratio below.
-      expect(Object.keys(bundle).length).toBeGreaterThan(50);
+      // A thin bundle would mean defs:acquire was never run for the new rack.
+      // Bundle size tracks how many words a rack can spell, so the floor is set
+      // low enough for the thinnest rack in the batch. Coverage is asserted as
+      // a ratio below.
+      //
+      // Lowered from 50 for orchard v1.4.0, which denied 392 words and so took
+      // glosses out of every bundle. `dripping`, the thinnest, went from 52 to
+      // 48. That is a real movement rather than a threshold nudged to make a
+      // suite pass, and it was checked word by word before the number moved:
+      // across all 87 admitted racks, every single gloss lost is a word the
+      // sweep denied. Nothing was lost for any other reason.
+      expect(Object.keys(bundle).length).toBeGreaterThan(40);
       expect(bundle[word]).toBeTruthy();
     }
   });

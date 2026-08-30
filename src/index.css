@@ -757,8 +757,8 @@ button {
   display: flex;
   gap: 0.6rem;
 }
-/* The primary pair carries the weight, so let it take the room it needs; the
-   utility pair stays compact at its content width. */
+/* The pair carrying Submit takes the room it needs; the undo pair stays compact
+   at its content width. */
 .controls__group--primary {
   flex: 1 1 auto;
 }
@@ -821,42 +821,79 @@ button {
   border-color: var(--rule);
   cursor: default;
 }
-/* Narrow widths: the primary pair (Delete, Submit) on the top control row, the
-   utility pair beneath it. The eye scans top to bottom and lands on the most-used
-   actions first, and they stay closest to the rack and composing well where the
-   action flow already is. The visual swap is done with order, so the DOM and
-   focus order stay Shuffle, Clear, Delete, Submit. Same structure in both themes.
-   The 480px break matches the toolbar's. */
+/* Narrow widths: Shuffle and Submit on the top control row, Clear and Delete
+   beneath. The undo pair sits below the row carrying Submit, because Submit is
+   the most obvious action on the screen; see the Controls component for whose
+   decision that is and what it replaced.
+
+   No `order` here any more. The old grouping needed `order: -1` to lift the
+   primary pair above the utility one, which left a keyboard tabbing Shuffle,
+   Clear, Delete, Submit through a screen that read Delete, Submit, Shuffle,
+   Clear. The regrouping makes the DOM order the visual order, so the hack is
+   simply gone. Same structure in both themes. The 480px break matches the
+   toolbar's. */
 @media (max-width: 30em) {
   .controls {
     flex-direction: column;
     align-items: stretch;
   }
-  .controls__group--primary {
-    order: -1;
-  }
   .controls__group .btn {
     flex: 1 1 0;
   }
-  /* Keep Submit weightier than Delete even when the pair fills the row. */
+  /* Keep Submit weightier than whatever shares its row. */
   .controls__group--primary .btn--primary {
     flex: 2 1 0;
   }
 }
 
+/* The message now lives INSIDE the stick, where it replaces the placeholder,
+   so it reserves nothing: the stick was already a fixed height for its own
+   reasons and no string can change it. That is a stronger promise than the old
+   row's reserved line, which was a promise a min-height had to keep.
+
+   Clamped to two lines rather than allowed to grow. The well growing is the one
+   thing that would break the promise the whole arrangement rests on ("the rack
+   never shifts when the first letter lands"), so a message long enough to
+   overrun ellipses instead. The lines fit with room to spare at every text-size
+   step, because both the well and the type are in rem and scale together, so
+   the ratio below holds at 16px and at 20px alike. */
 .message {
-  /* Reserve one line so feedback never shifts the tier bar, but carry no <p>
-     margins, which were doubling into a dead band above the tier. */
   margin: 0;
-  min-height: 1.4rem;
   font-style: italic;
+  /* 0.875rem is 14px at the default root: the same supporting-text floor the
+     rest of the page holds, and the reason this is not smaller even though a
+     smaller size would fit more comfortably.
+
+     Three lines, not two. Measured: the longest rejection string ("Too short.
+     Words need three letters or more.") overran a two-line clamp in letterpress
+     at every text step, because that face is wider than the cute one at the
+     same size, so the clamp was ellipsing an ORDINARY message, not the
+     pathological one it exists for. Three lines at this size occupy 3.4rem of a
+     4rem well, so the clamp is back to being the safety net it was meant to be
+     and no real string reaches it. */
+  font-size: 0.875rem;
+  line-height: 1.3;
   letter-spacing: 0.01em;
   text-align: center;
+  color: var(--ink-faint);
+  /* A flex child will not shrink below its content without these, and the
+     clamp above cannot ellipsis what never wrapped. */
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: 0.4rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.message[data-tone='error'] {
+/* The tone is on the stick now, not on the message: the stick already read it
+   for the error nudge, and one attribute driving both keeps the shake and the
+   ink from ever disagreeing about whether a rejection happened. */
+.stick[data-tone='error'] .message {
   color: var(--error-deep);
 }
-.message[data-tone='success'] {
+.stick[data-tone='success'] .message {
   color: var(--good);
 }
 
@@ -930,6 +967,10 @@ button {
 .tier__ticks {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  /* Only bites when a third item joins the row (the streak, at narrow widths);
+     space-between alone already parts the two at two-column widths. */
+  gap: 0.5rem;
   font-size: 0.875rem;
   color: var(--ink-soft);
   letter-spacing: 0.02em;
@@ -938,6 +979,31 @@ button {
   font-size: 0.875rem;
   color: var(--ink-soft);
   font-style: italic;
+  /* The one item here that can afford to lose characters: the percent is the
+     reading and the streak is the stat, so a squeeze takes the note. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The streak, in the caption row where the app puts it. Crown ink in both
+   themes (amber in letterpress, peach in cute), which is the colour this game
+   already reserves for the thing worth keeping. */
+.tier__streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  flex: none;
+  color: var(--crown-deep);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tier__flame {
+  flex: none;
+  /* currentColor on the path, so the flame is one object with its number and
+     re-skins with the theme rather than carrying a palette of its own. */
+  color: var(--crown);
 }
 /* The named set-versus-off-page split beneath the bar, told apart by label and
    value as well as colour, so it survives colour-blind play. */

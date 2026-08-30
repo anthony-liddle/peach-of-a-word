@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { Game } from './Game.tsx';
@@ -10,9 +12,16 @@ import type { GameData } from '@/data/gameData.ts';
 import type { SourceEntry } from '@/data/types.ts';
 import { NullAudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage, type KeyValueStore } from '@/persistence/storage.ts';
+import { dayIndex } from '@/engine/index.ts';
+import { STORAGE_EPOCH } from '@/engine/config.ts';
 import { useDefinitions } from './useDefinitions.ts';
 import { copy } from './themeCopy.ts';
 import { DEFAULT_THEME, type Theme } from './useTheme.ts';
+import {
+  DESKTOP_WIDTH,
+  PHONE_WIDTH,
+  setViewportWidth,
+} from '@/testing/viewport.ts';
 
 vi.mock('./useDefinitions.ts', () => ({
   useDefinitions: vi.fn(),
@@ -303,7 +312,19 @@ describe('Game', () => {
     expect(bar).toHaveAttribute('aria-valuenow', '4'); // points, not the 2 of 6
   });
 
-  it('renders exactly one progress bar, and it lives in the glossary', () => {
+  // The meter is REPARENTED across the two-column breakpoint, not merely moved:
+  // no stylesheet can lift a node out of the glossary summary and into the play
+  // column, so a JS media query picks the site and renders exactly one node.
+  //
+  // These two tests are why it cannot be the other pattern. A twin hidden with
+  // `display: none` is fully present to getByRole, because jsdom loads no
+  // stylesheet and evaluates no media query, so "exactly one" would be
+  // unassertable and a
+  // second bar could creep back unseen. Both widths are checked because with
+  // matchMedia stubbed to a phone by default, desktop is otherwise never
+  // rendered by the suite at all.
+  it('at two-column widths keeps the one bar in the glossary', () => {
+    setViewportWidth(DESKTOP_WIDTH);
     renderGame();
     type('sea');
     fireEvent.keyDown(window, { key: 'Enter' });
@@ -316,9 +337,52 @@ describe('Game', () => {
     const glossary = screen.getByRole('region', { name: /words found/i });
     expect(within(glossary).getByRole('progressbar')).toBe(bars[0]);
 
-    // The standalone bar under the input is gone: the play column has none.
+    // The play column has none: desktop is unchanged by the narrow-width move.
     const play = document.querySelector('.play') as HTMLElement;
     expect(play.querySelector('[role="progressbar"]')).toBeNull();
+  });
+
+  it('at narrow widths moves the one bar above the compose well', () => {
+    setViewportWidth(PHONE_WIDTH);
+    renderGame();
+    type('sea');
+    fireEvent.keyDown(window, { key: 'Enter' });
+
+    // Still exactly one, on the other side of the breakpoint.
+    const bars = screen.getAllByRole('progressbar');
+    expect(bars).toHaveLength(1);
+
+    // In the play column, and ABOVE the well rather than below the controls:
+    // the app's placement, which is the whole point of the move.
+    const play = document.querySelector('.play') as HTMLElement;
+    const meter = play.querySelector('.tier') as HTMLElement;
+    const stick = play.querySelector('.stick') as HTMLElement;
+    expect(meter).not.toBeNull();
+    expect(meter.contains(bars[0]!)).toBe(true);
+    expect(
+      meter.compareDocumentPosition(stick) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    // And the glossary no longer carries one, so the move is a move.
+    const glossary = screen.getByRole('region', { name: /words found/i });
+    expect(within(glossary).queryByRole('progressbar')).toBeNull();
+  });
+
+  // The defect this forecloses: `.summary` appears with the first find, so a
+  // meter gated on it would arrive mid-play and shove the well and the rack
+  // down on the first word of the day. Above the well it is furniture, present
+  // from the start, reading zeros.
+  it('shows the narrow-width meter on an empty board rather than on first find', () => {
+    setViewportWidth(PHONE_WIDTH);
+    renderGame();
+
+    const play = document.querySelector('.play') as HTMLElement;
+    const bar = within(play).getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+
+    // The glossary summary really is still absent: the meter is not riding in
+    // on something that was there all along.
+    expect(screen.queryByText(/words found$/i)).toBeNull();
   });
 
   it('lets an off-page find feed both the score and the bar', () => {
@@ -925,12 +989,18 @@ describe('Game edition confetti', () => {
   });
 
   it('bursts no confetti under reduced motion, but still shows the card', () => {
-    (window as { matchMedia?: unknown }).matchMedia = vi.fn(() => ({
-      matches: true,
-      media: '(prefers-reduced-motion: reduce)',
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    }));
+    // Answers only the query it means. It used to return true to everything,
+    // which was harmless when nothing else asked; the board's two-column
+    // branch asks now, so a blanket true would quietly change the layout under
+    // a test about confetti.
+    (window as { matchMedia?: unknown }).matchMedia = vi.fn(
+      (query: string) => ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }),
+    );
     document.documentElement.dataset.theme = 'cute';
     renderGame();
     completeTheSet();
@@ -1007,40 +1077,64 @@ describe('Controls layout', () => {
       .getAllByRole('button')
       .map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim() ?? '');
 
-  it('orders the controls Shuffle, Clear, Delete, Submit', () => {
+  /**
+   * These two used to assert the opposite grouping, and the change is Bea's.
+   * The controls were clustered by how often each action is used, utility pair
+   * then primary pair with Delete before Submit; they are now clustered by what
+   * each action does, so the two undo actions sit together. See the `Controls`
+   * component for the reasoning and for the fact that both arrangements came
+   * from her.
+   */
+  it('orders the controls Shuffle, Submit, Clear, Delete', () => {
     renderGame();
     const names = controlNames();
     expect(names).toEqual([
       'Shuffle',
+      submitLabel(),
       'Clear',
       'Delete last letter',
-      submitLabel(),
     ]);
-    // Delete sits before Submit: Bea's "delete before submit".
-    expect(names.indexOf('Delete last letter')).toBeLessThan(
-      names.indexOf(submitLabel()),
+    // Delete sits to the right of Clear, being the more used of the two.
+    expect(names.indexOf('Clear')).toBeLessThan(
+      names.indexOf('Delete last letter'),
     );
   });
 
-  it('groups the controls into a utility cluster and a primary cluster', () => {
+  /**
+   * The DOM order is also the visual order now, which it was not before: the
+   * old arrangement lifted the primary pair above the utility one with
+   * `order: -1`, so a keyboard tabbed Shuffle, Clear, Delete, Submit through a
+   * screen reading Delete, Submit, Shuffle, Clear. Asserting the DOM order
+   * above is therefore asserting what someone sees, which it previously was
+   * not.
+   */
+  it('groups the controls into an action cluster and an undo cluster', () => {
     renderGame();
     const groups = controls().querySelectorAll<HTMLElement>('.controls__group');
     expect(groups).toHaveLength(2);
 
-    const utility = groups[0]!;
-    const primary = groups[1]!;
+    const action = groups[0]!;
+    const undo = groups[1]!;
     expect(
-      within(utility).getByRole('button', { name: 'Shuffle' }),
+      within(action).getByRole('button', { name: 'Shuffle' }),
     ).toBeInTheDocument();
     expect(
-      within(utility).getByRole('button', { name: 'Clear' }),
+      within(action).getByRole('button', { name: submitLabel() }),
     ).toBeInTheDocument();
     expect(
-      within(primary).getByRole('button', { name: 'Delete last letter' }),
+      within(undo).getByRole('button', { name: 'Clear' }),
     ).toBeInTheDocument();
     expect(
-      within(primary).getByRole('button', { name: submitLabel() }),
+      within(undo).getByRole('button', { name: 'Delete last letter' }),
     ).toBeInTheDocument();
+  });
+
+  it('no longer needs a CSS order hack to place the rows', () => {
+    // The regrouping removed the reason for `order: -1`. If it comes back, the
+    // DOM order above stops describing what anyone sees, and the assertion
+    // stops being about the screen.
+    const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
+    expect(css).not.toMatch(/controls__group--primary\s*\{[^}]*order:/);
   });
 
   it('gives every control its accessible name', () => {
@@ -1247,5 +1341,165 @@ describe('Game word tap routing', () => {
     ).not.toBeNull();
     // Crown-only, so assert the element: the wording is theme-dependent now.
     expect(document.querySelector('.reveal__kicker')).toBeNull();
+  });
+});
+
+/**
+ * The message moved into the compose well to match the app, which makes it a
+ * behaviour change rather than a relocation: the well is one slot, so showing
+ * the composed word means the message has to go somewhere, and "go" means
+ * cleared in the model rather than hidden in the view.
+ */
+describe('Game message in the tray', () => {
+  const stick = () => document.querySelector('.stick') as HTMLElement;
+  const reject = () => {
+    // 'rns' is formable but not in ENABLE.
+    type('rns');
+    fireEvent.keyDown(window, { key: 'Enter' });
+  };
+
+  it('shows the message inside the well, not in a row of its own', () => {
+    renderGame();
+    reject();
+    expect(stick().querySelector('.message')?.textContent).toMatch(
+      /not in the word list/i,
+    );
+    // The old standalone row below the controls is gone: the well is the only
+    // place a message renders now.
+    const play = document.querySelector('.play') as HTMLElement;
+    expect(play.querySelectorAll('.message')).toHaveLength(1);
+  });
+
+  it('lets the composed word win the slot the moment a letter lands', () => {
+    renderGame();
+    reject();
+    fireEvent.keyDown(window, { key: 's' });
+
+    expect(stick().querySelector('.message')).toBeNull();
+    expect(stick().querySelector('.stick__slot')?.textContent).toBe('s');
+  });
+
+  // THE defect this design forecloses, and the reason the model clears rather
+  // than the view hiding. Hiding looks identical right up to this moment: with
+  // the value still set, deleting back to an empty well would republish a
+  // rejection the player has already moved on from.
+  it('does not bring a stale rejection back on delete-to-empty', () => {
+    renderGame();
+    reject();
+    fireEvent.keyDown(window, { key: 's' });
+    fireEvent.keyDown(window, { key: 'Backspace' });
+
+    expect(stick().querySelector('.message')).toBeNull();
+    expect(stick().querySelector('.stick__empty')).not.toBeNull();
+  });
+
+  // Clearing a message is not an event worth speaking. The live region is keyed
+  // by the announcement's seq, which ADD_TILE deliberately does not bump, so a
+  // tile landing neither empties the region nor re-fires it.
+  it('does not disturb the live region when a tile clears the message', () => {
+    renderGame();
+    reject();
+    const region = document.querySelector('[role="status"]') as HTMLElement;
+    const before = region.textContent;
+    expect(before).toMatch(/not in the word list/i);
+
+    fireEvent.keyDown(window, { key: 's' });
+    expect(region.textContent).toBe(before);
+  });
+});
+
+/**
+ * The streak has exactly one home at any given width. Narrow: the flame in the
+ * tier meter, as the app has it. Two-column: the toolbar pill, because the
+ * meter lives in the glossary there and the glossary only appears with the
+ * first find. A returning player on a fresh board would otherwise see no
+ * streak at all until they found a word.
+ */
+describe('Game streak placement', () => {
+  /** Six days cleared in a row, as of the day the board is on. */
+  function storeWithStreak(days: number): KeyValueStore {
+    const store = fakeStore();
+    const storage = new GameStorage(store);
+    // Walk the real day index the app will read, so the streak is current
+    // rather than seeded at some future date the check happens to accept.
+    const today = dayIndex(new Date(), STORAGE_EPOCH);
+    for (let i = days - 1; i >= 0; i--) storage.recordDailyCleared(today - i);
+    return store;
+  }
+
+  it('renders the flame in the meter at narrow widths, and no pill', () => {
+    setViewportWidth(PHONE_WIDTH);
+    renderGame(storeWithStreak(6));
+
+    const meter = screen.getByRole('region', { name: /progress/i });
+    const streak = meter.querySelector('.tier__streak') as HTMLElement;
+    expect(streak).not.toBeNull();
+    expect(streak.textContent).toMatch(/6 days/);
+    expect(streak.querySelector('.tier__flame')).not.toBeNull();
+
+    // Exactly one home: the pill is not also on the screen.
+    expect(document.querySelector('.chip')).toBeNull();
+  });
+
+  it('renders the pill at two-column widths, and no flame in the meter', () => {
+    setViewportWidth(DESKTOP_WIDTH);
+    renderGame(storeWithStreak(6));
+
+    const chip = document.querySelector('.chip') as HTMLElement;
+    expect(chip.textContent).toMatch(/Streak\s*6/);
+    // Its explanation lives in a title attribute, which is only ever reachable
+    // by a pointer. That is survivable precisely because this is the
+    // two-column branch; the narrow flame says it in text instead.
+    expect(chip).toHaveAttribute('title', 'Days cleared in a row');
+
+    // The meter appears with the first find here, and carries no streak when
+    // it does: two homes at one width is the thing this split rules out.
+    type('sea');
+    fireEvent.keyDown(window, { key: 'Enter' });
+    const meter = screen.getByRole('region', { name: /progress/i });
+    expect(meter.querySelector('.tier__streak')).toBeNull();
+  });
+
+  // The caption row is aria-hidden per child, not as a row, precisely so the
+  // streak can live in it and still be read. The pill it replaces is readable
+  // text today, so a flame in a hidden subtree would be a silent regression
+  // traded for a visual parity win.
+  it('keeps the flame streak readable rather than inside a hidden subtree', () => {
+    setViewportWidth(PHONE_WIDTH);
+    renderGame(storeWithStreak(6));
+
+    const meter = screen.getByRole('region', { name: /progress/i });
+    const streak = meter.querySelector('.tier__streak') as HTMLElement;
+    for (
+      let node: HTMLElement | null = streak;
+      node !== null;
+      node = node.parentElement
+    ) {
+      expect(node.getAttribute('aria-hidden')).not.toBe('true');
+    }
+    // And it says what it counts, which the flame alone never did.
+    expect(streak.textContent).toMatch(/streak/i);
+    expect(streak.textContent).toMatch(/cleared in a row/i);
+  });
+
+  // The two homes differ at zero, deliberately and asymmetrically. The flame is
+  // gated on a streak existing, which is what the app does and what was asked
+  // for. The pill still prints "Streak 0", which is what it has always done.
+  // Changing it would be a two-column change nobody asked for, and the whole
+  // constraint on this work is that the two-column layout does not move.
+  it('hides the flame before a streak is earned, and leaves the pill alone', () => {
+    setViewportWidth(PHONE_WIDTH);
+    const { unmount } = renderGame();
+    expect(document.querySelector('.tier__streak')).toBeNull();
+    // The meter itself is still there on an empty board: it is the flame that
+    // is conditional, not the furniture it sits in.
+    expect(document.querySelector('.play .tier')).not.toBeNull();
+    unmount();
+
+    setViewportWidth(DESKTOP_WIDTH);
+    renderGame();
+    expect(
+      (document.querySelector('.chip') as HTMLElement).textContent,
+    ).toMatch(/Streak\s*0/);
   });
 });

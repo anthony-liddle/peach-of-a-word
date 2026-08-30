@@ -11,7 +11,9 @@ import {
 import { useTheme, type Theme } from './useTheme.ts';
 import { copy } from './themeCopy.ts';
 import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
+import { useWideBoard } from './useWideBoard.ts';
 import { FoundList } from './components/FoundList.tsx';
+import { TierMeter } from './components/TierMeter.tsx';
 import { ShareButton } from './components/ShareButton.tsx';
 import { Reveal, type QuietCategory } from './components/Reveal.tsx';
 import { HowItWorks } from './components/HowItWorks.tsx';
@@ -60,6 +62,9 @@ export function Game({ data, audio, storage }: Props) {
 
   const { state } = game;
   const [theme] = useTheme();
+  // Which column the board is in, and so where the tier meter goes. One node,
+  // one place, decided here rather than by a stylesheet that cannot reparent.
+  const wide = useWideBoard();
   // Frozen at the moment of the find, so re-skinning never re-speaks it.
   const spokenAnnouncement = useAnnouncedText(
     state.announcement,
@@ -136,16 +141,21 @@ export function Game({ data, audio, storage }: Props) {
 
       <div className="board">
         <div className="play">
+          {/* Narrow widths only: the meter sits above the well, the way the app
+              has it. At two-column widths it stays in the glossary in the right
+              column, in exactly the place it has always been.
+
+              Ungated, unlike its glossary twin. `.summary` appears with the
+              first find, and a meter that appears is a meter whose height
+              arrives later: it would shove the well and the rack down mid-play,
+              on the first word of the day. Zeros on an empty board are honest;
+              furniture that materialises under a thumb is not. */}
+          {!wide && (
+            <TierMeter tier={state.tier} theme={theme} streak={game.streak} />
+          )}
           <ComposingStick game={game} />
           <TypeCase game={game} />
           <Controls game={game} />
-          <p
-            className="message"
-            data-tone={state.message?.tone ?? 'info'}
-            aria-hidden="true"
-          >
-            {state.message ? messageText(state.message, theme) : ' '}
-          </p>
         </div>
 
         <FoundList
@@ -153,6 +163,7 @@ export function Game({ data, audio, storage }: Props) {
           found={state.found}
           tier={state.tier}
           theme={theme}
+          showTier={wide}
           onWordTap={onWordTap}
           summaryExtra={
             <ShareButton
@@ -224,6 +235,14 @@ function Masthead() {
 function Toolbar({ game }: { game: GameApi }) {
   const { state } = game;
   const [theme, setTheme] = useTheme();
+  // The streak has one home at any given width, never two at the same one. At
+  // narrow widths it is the flame in the tier meter, above the well; here it is
+  // the pill. The pill survives at two-column widths because the meter there
+  // lives in the glossary, which only appears with the first find. A returning
+  // player opening a fresh board would otherwise see no streak at all until
+  // they found a word, and the streak is not the stat to make someone earn
+  // twice.
+  const wide = useWideBoard();
   return (
     <div className="toolbar">
       <div className="modes" role="group" aria-label="Mode">
@@ -260,9 +279,11 @@ function Toolbar({ game }: { game: GameApi }) {
         </div>
         <ThemeSwap theme={theme} setTheme={setTheme} />
         {state.mode === 'daily' ? (
-          <span className="chip" title="Days cleared in a row">
-            Streak <strong>{game.streak}</strong>
-          </span>
+          wide && (
+            <span className="chip" title="Days cleared in a row">
+              Streak <strong>{game.streak}</strong>
+            </span>
+          )
         ) : (
           <button className="btn btn--header" onClick={game.newEndless}>
             New puzzle
@@ -367,19 +388,53 @@ function ThemeSwap({
   );
 }
 
+/**
+ * The stick: the letters placed so far, in order, **and the feedback message**.
+ *
+ * **Three states, one slot, and the composed word wins.** Letters if there are
+ * letters, otherwise the message, otherwise the placeholder. The well is the
+ * composing surface and a slot holds one thing, so the only question is which
+ * thing, and the answer is what the player is doing now rather than what they
+ * did last. This is the app's arrangement, brought across on request.
+ *
+ * That is why the reducer clears `message` when a tile lands. Leaving the value
+ * set and merely hiding it here looks equivalent and is not: deleting back to an
+ * empty stick would bring a stale rejection back. See `ADD_TILE`.
+ *
+ * **What this costs.** The message used to have a row of its own below the
+ * controls, and it survived there while composing, so a rejection could still be
+ * read while retyping. It cannot now. That affordance is the price of the app's
+ * placement, and it is the reason the app's own notes declined to port this
+ * behaviour to the web in the first place.
+ *
+ * `aria-hidden` carries over from that row unchanged. The message is already
+ * spoken by the live region at the moment it lands, and hearing every rejection
+ * twice, once when it happens and again on the next swipe, is exactly what the
+ * old row's `aria-hidden` was avoiding.
+ *
+ * The height is fixed at every state, so the rack cannot shift when the first
+ * letter lands. That was already true of this element and it stays true: the
+ * message is clamped rather than allowed to grow the well, because a well that
+ * grows breaks the one promise the whole arrangement rests on.
+ */
 function ComposingStick({ game }: { game: GameApi }) {
   const { state, composedWord } = game;
   const [theme] = useTheme();
+  const empty = composedWord.length === 0;
   return (
     <div className="stick" data-tone={state.message?.tone ?? 'info'}>
-      {composedWord.length === 0 ? (
-        <span className="stick__empty">{copy(theme).inputPlaceholder}</span>
-      ) : (
+      {!empty ? (
         [...composedWord].map((letter, i) => (
           <span className="stick__slot" key={i}>
             {letter}
           </span>
         ))
+      ) : state.message ? (
+        <p className="message" aria-hidden="true">
+          {messageText(state.message, theme)}
+        </p>
+      ) : (
+        <span className="stick__empty">{copy(theme).inputPlaceholder}</span>
       )}
     </div>
   );
@@ -409,12 +464,33 @@ function TypeCase({ game }: { game: GameApi }) {
 }
 
 /**
- * Two clusters, organised by how often each action is used. The utility pair
- * (Shuffle, Clear) is quiet and set apart; the primary pair (Delete, then
- * Submit) is prominent and sits in easy thumb reach. Delete comes before Submit,
- * honouring "delete before submit". One shared structure drives both themes: the
- * skin (colour, shape, font) changes with the theme, the layout never does, so
- * the two rows break at exactly the same widths.
+ * Two clusters, grouped by what each action does:
+ *
+ *   Shuffle   Submit
+ *   Clear     Delete
+ *
+ * **This replaced a grouping by frequency, and both groupings are Bea's.** The
+ * clusters used to be the utility pair (Shuffle, Clear), quiet and set apart,
+ * and the primary pair (Delete, then Submit), prominent and in thumb reach.
+ * Delete came before Submit because she said delete was one of the most-used
+ * buttons and was in the wrong place.
+ *
+ * She then asked for this arrangement, on 2026-08-27: Delete and Clear are both
+ * undo, so they belong together. Delete sits on the right of that pair, being
+ * the more used of the two, and the undo pair sits after the pair carrying
+ * Submit, because Submit is the most obvious action on the screen. The axis
+ * changed rather than the taste, from how often you press a thing to what
+ * pressing it does.
+ *
+ * A consequence worth having: the DOM order is now the visual order. The old
+ * arrangement put the utility pair first in the DOM and used `order: -1` in the
+ * narrow layout to lift the primary pair above it, so a keyboard tabbed
+ * Shuffle, Clear, Delete, Submit through a screen that read Delete, Submit,
+ * Shuffle, Clear. That hack is gone with the regrouping rather than by being
+ * fixed separately.
+ *
+ * One shared structure drives both themes: the skin changes with the theme, the
+ * layout never does, so the two rows break at exactly the same widths.
  */
 function Controls({ game }: { game: GameApi }) {
   const [theme] = useTheme();
@@ -422,26 +498,9 @@ function Controls({ game }: { game: GameApi }) {
   const empty = composedWord.length === 0;
   return (
     <div className="controls">
-      <div className="controls__group controls__group--utility">
+      <div className="controls__group controls__group--primary">
         <button className="btn btn--utility" onClick={game.shuffle}>
           Shuffle
-        </button>
-        <button
-          className="btn btn--utility"
-          onClick={game.clear}
-          disabled={empty}
-        >
-          Clear
-        </button>
-      </div>
-      <div className="controls__group controls__group--primary">
-        <button
-          className="btn btn--delete"
-          onClick={game.removeLast}
-          disabled={empty}
-          aria-label="Delete last letter"
-        >
-          ⌫
         </button>
         <button
           className="btn btn--primary"
@@ -449,6 +508,23 @@ function Controls({ game }: { game: GameApi }) {
           disabled={composedWord.length < 3}
         >
           {copy(theme).submitWord}
+        </button>
+      </div>
+      <div className="controls__group controls__group--undo">
+        <button
+          className="btn btn--utility"
+          onClick={game.clear}
+          disabled={empty}
+        >
+          Clear
+        </button>
+        <button
+          className="btn btn--delete"
+          onClick={game.removeLast}
+          disabled={empty}
+          aria-label="Delete last letter"
+        >
+          ⌫
         </button>
       </div>
     </div>
