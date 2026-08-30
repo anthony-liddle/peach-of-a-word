@@ -89,7 +89,7 @@ export function HowItWorks({ onClose }: Props) {
               SCOWL
             </a>
             , together with a small patch list we keep by hand, decide what
-            counts as a word: about 430,000 of them. Almost anything real you
+            counts as a word: about 427,000 of them. Almost anything real you
             type is accepted. You will rarely be told a real word is not a word.
           </p>
           <p>
