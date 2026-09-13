@@ -53297,6 +53297,7 @@ fadings
 fado
 fados
 fads
+fae
 faecal
 faeces
 faena
@@ -135797,7 +135798,6 @@ seizure
 seizures
 sejant
 sejeant
-sel
 selachian
 selachians
 seladang
@@ -135886,7 +135886,6 @@ selling
 sellout
 sellouts
 sells
-sels
 selsyn
 selsyns
 seltzer
@@ -143902,6 +143901,7 @@ sporicidal
 sporicide
 sporicides
 sporing
+spork
 sporocarp
 sporocarps
 sporocyst
@@ -171698,6 +171698,7 @@ yechs
 yechy
 yeelin
 yeelins
+yeet
 yegg
 yeggman
 yeggmen

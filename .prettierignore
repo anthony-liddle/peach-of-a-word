@@ -3,3 +3,10 @@ node_modules/
 pnpm-lock.yaml
 public/data/
 scripts/.cache/
+
+# A byte-exact copy of peach-of-a-word-swift's Data/meta.json, compared
+# byte-for-byte by src/data/metaParity.test.ts. Prettier appends a trailing
+# newline, which is exactly the difference that test exists to catch, so
+# formatting this file makes the check fail on every commit. The bytes are the
+# point; they are not this repository's to reformat.
+scripts/data-raw/swift-meta.json
