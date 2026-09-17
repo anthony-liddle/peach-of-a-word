@@ -21,6 +21,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { buildBundles } from './lib/emit-definitions.ts';
 import { parseDefinitions } from './lib/definitions.ts';
+import { buildMeta, serialiseMeta, type Meta } from './lib/meta.ts';
 import { loadValidation } from './lib/sources.ts';
 import { ASSET_DIR, VENDOR_DIR, writeAsset } from './lib/util.ts';
 
@@ -65,13 +66,26 @@ async function main(): Promise<void> {
   // step that owes the count. meta.test.ts catches the stale state, which is
   // how it was found rather than shipped.
   // ------------------------------------------------------------------
+  //
+  // BUILT AND SERIALISED THROUGH lib/meta.ts, not through an inline
+  // JSON.stringify. This wrote `${JSON.stringify(meta, null, 2)}\n` until
+  // v1.6.0, one byte longer than what lib/meta.ts documents as the committed
+  // form, so whichever writer ran last decided whether the file ended in a
+  // newline. peach-of-a-word-swift's Data/meta.json is meant to be
+  // byte-identical to this one and its update script matches serialiseMeta
+  // deliberately, with a comment naming the reason, so the stray newline made
+  // the two disagree on every release this script touched. lib/meta.ts says it
+  // exists "because two writers produce it"; this was a third one, and it went
+  // around the reason rather than through it. src/data/metaParity.test.ts now
+  // fails when the committed file is not exactly what serialiseMeta writes.
   const metaPath = join(ASSET_DIR, 'meta.json');
-  const meta = JSON.parse(await readFile(metaPath, 'utf8')) as {
-    counts: Record<string, number>;
-  };
-  const wasCovered = meta.counts.definitionsCovered;
-  meta.counts.definitionsCovered = distinct.size;
-  await writeFile(metaPath, `${JSON.stringify(meta, null, 2)}\n`, 'utf8');
+  const current = JSON.parse(await readFile(metaPath, 'utf8')) as Meta;
+  const wasCovered = current.counts.definitionsCovered;
+  const meta = buildMeta({
+    ...current.counts,
+    definitionsCovered: distinct.size,
+  });
+  await writeFile(metaPath, serialiseMeta(meta), 'utf8');
 
   console.log(
     `\n  Rewrote ${bundles.size.toLocaleString()} per-rack bundles from the ` +

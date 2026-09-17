@@ -58026,7 +58026,6 @@ cricotomy
 cricotracheotomy
 criddle
 criey
-crig
 crikeys
 crile
 crimean
@@ -77058,7 +77057,6 @@ easer
 easers
 easies
 easinesses
-easle
 easles
 eassel
 easselgate
@@ -90743,7 +90741,6 @@ fervorous
 fervors
 fervour
 fervours
-fes
 fescennine
 fescenninity
 fesels
@@ -100078,7 +100075,6 @@ geissospermine
 geist
 geistlich
 geists
-geit
 geitjie
 geitonogamies
 geitonogamous
@@ -105228,7 +105224,6 @@ gressible
 gressing
 gressings
 gressorious
-gret
 grete
 greund
 greves
@@ -161909,7 +161904,6 @@ negrophobes
 negrophobia
 negrophobias
 negros
-negs
 nehemiah
 nehiloth
 neif
@@ -174737,7 +174731,6 @@ oidioid
 oidiomycosis
 oidiomycotic
 oidwlfe
-oii
 oikist
 oikists
 oikology
@@ -238051,7 +238044,6 @@ sekos
 sekoses
 sekt
 sekts
-sel
 selachii
 selachoid
 selachostome
@@ -238191,7 +238183,6 @@ selictar
 selictars
 seligmannite
 selihoth
-seling
 selion
 seljuk
 selkie
@@ -238214,7 +238205,6 @@ sellie
 selliform
 selly
 selma
-sels
 selsoviet
 selsyns
 seltzogene
@@ -313799,7 +313789,6 @@ ylems
 ylike
 ylke
 ylkes
-ymca
 ymolt
 ymolten
 ympe
