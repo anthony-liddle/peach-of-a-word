@@ -1,0 +1,49 @@
+/* =========================================================================
+   The date night page: the two things the game has no class for.
+
+   Everything else on this page is the game's own stylesheet, imported first,
+   so the rack, the tiles, the compose row, the basket, the card, the type
+   scale and the palette all arrive already styled. Nothing below restates a
+   colour, a radius, a shadow or a font size: every value here is a token from
+   index.css, so this page moves when the theme moves.
+   ========================================================================= */
+
+/* The note, and the block that will hold it. A panel in the page rather than a
+   card in an overlay: the game's overlay caps itself to the viewport and
+   scrolls inside, which is right for a definition and wrong for a poem. */
+.note {
+  max-width: 34rem;
+  margin: clamp(2rem, 6vw, 3.5rem) auto 0;
+  background: var(--paper-deep);
+  border: 1px solid var(--crown);
+  border-radius: var(--card-radius);
+  padding: clamp(1.4rem, 4vw, 2.2rem);
+  position: relative;
+  z-index: 1;
+}
+[data-theme='cute'] .note {
+  box-shadow: 0 8px 0 var(--surface-shadow);
+}
+
+.note__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 5vw, 1.9rem);
+  color: var(--crown-deep);
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+}
+
+/* Unmistakably unfinished, so a page that ships before the words arrive cannot
+   ship looking finished. The dashed accent rule is the tell; it goes when the
+   note does. */
+.placeholder {
+  margin: 0;
+  padding: 1rem;
+  border: 2px dashed var(--accent);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  color: var(--accent-deep);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1.5;
+}
