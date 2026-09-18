@@ -25,6 +25,15 @@ const PAGES = ['public/privacy.html', 'public/transfer-temporary.html'];
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), 'utf8');
 
+const exists = (path: string): boolean => {
+  try {
+    read(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 describe.each(PAGES)('%s', (path) => {
   const html = read(path);
 
@@ -132,6 +141,8 @@ describe('vercel.json rewrites', () => {
     rewrites: { source: string; destination: string }[];
   };
 
+  const viteConfig = read('vite.config.ts');
+
   test('/transfer serves the temporary page', () => {
     expect(config.rewrites).toContainEqual({
       source: '/transfer',
@@ -139,9 +150,44 @@ describe('vercel.json rewrites', () => {
     });
   });
 
-  test('every rewrite destination exists', () => {
+  test('/date-night serves the date night page', () => {
+    expect(config.rewrites).toContainEqual({
+      source: '/date-night',
+      destination: '/date-night.html',
+    });
+  });
+
+  /**
+   * A destination is served one of two ways, and the check has to know both or
+   * it fails the moment a page stops being a verbatim copy.
+   *
+   * A file under public/ is copied as-is. A document at the repo root is a
+   * build entry, compiled to the same name in dist. date-night.html moved from
+   * the first kind to the second so it could share the app's components and
+   * stylesheet instead of being a hand-rebuilt lookalike, and this test failed
+   * on exactly that move, which is what it is for.
+   */
+  test('every rewrite destination is served, from public/ or as an entry', () => {
     for (const { destination } of config.rewrites) {
-      expect(() => read(`public${destination}`)).not.toThrow();
+      const inPublic = exists(`public${destination}`);
+      const atRoot = exists(destination.replace(/^\//, ''));
+      expect(
+        inPublic || atRoot,
+        `${destination} is neither a file in public/ nor a document at the repo root`,
+      ).toBe(true);
+    }
+  });
+
+  /**
+   * A root document that is not named as an entry is never built, so the
+   * rewrite would 404 in production while every local check passed. The pairing
+   * this file already guards, one level further out.
+   */
+  test('every root-document destination is a build entry', () => {
+    for (const { destination } of config.rewrites) {
+      const name = destination.replace(/^\//, '');
+      if (exists(`public${destination}`) || !exists(name)) continue;
+      expect(viteConfig).toContain(name);
     }
   });
 });

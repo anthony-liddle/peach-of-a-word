@@ -1,0 +1,98 @@
+/* =========================================================================
+   The date night page: the two things the game has no class for.
+
+   Everything else on this page is the game's own stylesheet, imported first,
+   so the rack, the tiles, the compose row, the basket, the card, the type
+   scale and the palette all arrive already styled. Nothing below restates a
+   colour, a radius, a shadow or a font size: every value here is a token from
+   index.css, so this page moves when the theme moves.
+   ========================================================================= */
+
+/* The note, and the block that will hold it. A panel in the page rather than a
+   card in an overlay: the game's overlay caps itself to the viewport and
+   scrolls inside, which is right for a definition and wrong for a poem. */
+.note {
+  max-width: 34rem;
+  margin: clamp(2rem, 6vw, 3.5rem) auto 0;
+  background: var(--paper-deep);
+  border: 1px solid var(--crown);
+  border-radius: var(--card-radius);
+  padding: clamp(1.4rem, 4vw, 2.2rem);
+  position: relative;
+  z-index: 1;
+}
+[data-theme='cute'] .note {
+  box-shadow: 0 8px 0 var(--surface-shadow);
+}
+
+.note__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 5vw, 1.9rem);
+  color: var(--crown-deep);
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+}
+
+/* The note itself: the game's body face and colour, with room to breathe. */
+.note p {
+  margin: 0 0 0.9rem;
+}
+
+/* Verse, set as verse.
+
+   Centred as a block but ragged-left inside it, which is how poetry is set:
+   centring each line would turn a shaped stanza into a diamond. The stanza gaps
+   are margins rather than empty elements, so a screen reader reads four
+   paragraphs instead of one long line with holes in it. */
+.poem {
+  margin: 1.6rem 0;
+  padding: 1.2rem 0 0.2rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.poem__head {
+  text-align: center;
+  margin-bottom: 1.1rem;
+}
+.poem__title {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--crown-deep);
+  line-height: 1.2;
+}
+.poem__poet {
+  color: var(--accent);
+  font-size: 0.9375rem;
+}
+/* One block, centred as a whole, with every stanza sharing its left edge.
+   Centring each stanza on its own widest line is what pushed the four of them
+   to four different margins. max-content holds the column to the longest line;
+   max-width lets it give way and wrap on a narrow screen rather than overflow. */
+.poem__body {
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: left;
+}
+.poem__stanza {
+  margin: 0 0 1.1rem;
+  line-height: 1.6;
+}
+.poem__stanza:last-child {
+  margin-bottom: 0;
+}
+
+/* Who she was. Quiet, the way a credit line is. */
+.poem__about {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+.poem__about cite {
+  font-style: italic;
+}
