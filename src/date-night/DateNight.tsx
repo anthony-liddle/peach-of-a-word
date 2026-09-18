@@ -128,10 +128,90 @@ export function DateNight() {
           The basket is full
         </h2>
 
-        {/* ANTOINE: your note goes here, then the poem, then the credit line. */}
-        <p className="placeholder">
-          PLACEHOLDER. The note, the poem and the credit line are not written
-          yet. Replace this paragraph with them, and delete the dashed box.
+        <p>Together doesn&apos;t mean much on its own. It needs someone.</p>
+        <p>
+          Every day I spend with you is a life worth living. Hard days, easy
+          days, they&apos;re all better with you in them.
+        </p>
+        <p>
+          Even now, on a blanket in a cemetery, eating with our hands,
+          there&apos;s nobody I&apos;d rather be with.
+        </p>
+        <p>This poem is us.</p>
+
+        {/*
+          The poem is quoted, so its own typography is kept: the curly
+          apostrophes are the ones the published text carries, where the note
+          above uses the straight ones the rest of the app writes with.
+
+          Verse, marked up as verse. Each stanza is its own paragraph and the
+          line breaks inside it are line breaks, rather than one paragraph with
+          doubled <br /> standing in for the gaps. A screen reader pauses at a
+          stanza that way, and the spacing comes from the stylesheet instead of
+          from empty elements.
+        */}
+        <figure className="poem">
+          <figcaption className="poem__head">
+            <span className="poem__title">Together</span>
+            <a
+              className="poem__poet"
+              href="https://poets.org/poet/carrie-williams-clifford"
+            >
+              Carrie Williams Clifford
+            </a>
+          </figcaption>
+
+          <div className="poem__body">
+            <p className="poem__stanza">
+              O, come, Love, let us take a walk,
+              <br />
+              Down the Way-of-Life together;
+              <br />
+              Storms may come, but what care we,
+              <br />
+              If be fair or foul the weather.
+            </p>
+            <p className="poem__stanza">
+              When the sky overhead is blue,
+              <br />
+              Balmy, scented winds will after
+              <br />
+              Us, adown the valley blow
+              <br />
+              Haunting echoes of our laughter.
+            </p>
+            <p className="poem__stanza">
+              When Life’s storms upon us beat
+              <br />
+              Crushing us with fury, after
+              <br />
+              All is done, there’ll ringing come
+              <br />
+              Mocking echoes of our laughter.
+            </p>
+            <p className="poem__stanza">
+              So we’ll walk the Way-of-Life,
+              <br />
+              You and I, Love, both together,
+              <br />
+              Storm or sunshine, happy we
+              <br />
+              If be foul or fair the weather.
+            </p>
+          </div>
+        </figure>
+
+        <p className="poem__about">
+          Carrie Williams Clifford was born in September 1862 in Chillicothe,
+          Ohio. A poet and activist, she is the author of{' '}
+          <cite>The Widening Light</cite> (Walter Reid, 1922) and{' '}
+          <cite>Race Rhymes</cite> (R. L. Pendleton, 1911).
+        </p>
+        <p className="poem__about">
+          A cofounder and the first president of the Ohio State Federation of
+          Colored Women, Clifford hired Black women for the Niagara Movement, a
+          predecessor of the NAACP. She taught in Parkersburg, West Virginia,
+          and worked as an editor for the Cleveland Journal. She died in 1934.
         </p>
       </section>
 

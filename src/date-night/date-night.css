@@ -34,16 +34,65 @@
   margin: 0 0 0.75rem;
 }
 
-/* Unmistakably unfinished, so a page that ships before the words arrive cannot
-   ship looking finished. The dashed accent rule is the tell; it goes when the
-   note does. */
-.placeholder {
-  margin: 0;
-  padding: 1rem;
-  border: 2px dashed var(--accent);
-  border-radius: var(--card-radius);
-  background: var(--paper);
-  color: var(--accent-deep);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  line-height: 1.5;
+/* The note itself: the game's body face and colour, with room to breathe. */
+.note p {
+  margin: 0 0 0.9rem;
+}
+
+/* Verse, set as verse.
+
+   Centred as a block but ragged-left inside it, which is how poetry is set:
+   centring each line would turn a shaped stanza into a diamond. The stanza gaps
+   are margins rather than empty elements, so a screen reader reads four
+   paragraphs instead of one long line with holes in it. */
+.poem {
+  margin: 1.6rem 0;
+  padding: 1.2rem 0 0.2rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.poem__head {
+  text-align: center;
+  margin-bottom: 1.1rem;
+}
+.poem__title {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--crown-deep);
+  line-height: 1.2;
+}
+.poem__poet {
+  color: var(--accent);
+  font-size: 0.9375rem;
+}
+/* One block, centred as a whole, with every stanza sharing its left edge.
+   Centring each stanza on its own widest line is what pushed the four of them
+   to four different margins. max-content holds the column to the longest line;
+   max-width lets it give way and wrap on a narrow screen rather than overflow. */
+.poem__body {
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: left;
+}
+.poem__stanza {
+  margin: 0 0 1.1rem;
+  line-height: 1.6;
+}
+.poem__stanza:last-child {
+  margin-bottom: 0;
+}
+
+/* Who she was. Quiet, the way a credit line is. */
+.poem__about {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+.poem__about cite {
+  font-style: italic;
 }
