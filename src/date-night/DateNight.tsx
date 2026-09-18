@@ -134,8 +134,8 @@ export function DateNight() {
           days, they&apos;re all better with you in them.
         </p>
         <p>
-          Even now, on a blanket in a cemetery, eating with our hands,
-          there&apos;s nobody I&apos;d rather be with.
+          Even now, sitting close to you, eating delicious treats, there&apos;s
+          nobody I&apos;d rather be with.
         </p>
         <p>This poem is us.</p>
 
