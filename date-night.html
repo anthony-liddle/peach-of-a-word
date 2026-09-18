@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A puzzle for you</title>
+    <meta
+      name="description"
+      content="Eight letters. Twenty words. Made for one evening."
+    />
+    <!-- Hers, not the site's. Linked from nowhere and not part of the game, so
+         it stays out of the index entirely. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#fff4ee" />
+
+    <!-- The tab icon is the cute peach, declared and never swapped: this page
+         has one theme. -->
+    <link rel="icon" href="/favicon-cute.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script>
+      // The same no-flash contract as index.html, with one half fixed.
+      //
+      // Theme: pinned to cute before the first paint, with no saved-preference
+      // lookup at all. useTheme reads this attribute rather than storage, so
+      // pinning it here is what makes every shared component render cute, even
+      // for someone whose saved choice in the game is letterpress.
+      //
+      // Text size: read exactly as index.html reads it, because that one is an
+      // accessibility preference rather than a look. Someone who turned the
+      // text up in the game gets it turned up here.
+      (function () {
+        document.documentElement.dataset.theme = 'cute';
+        var size;
+        try {
+          size = localStorage.getItem('e8-text-size');
+        } catch (e) {
+          size = null; /* storage blocked: the browser default rules alone */
+        }
+        if (size === 'large' || size === 'largest')
+          document.documentElement.dataset.textSize = size;
+      })();
+    </script>
+
+    <!-- Link preview. She gets this as a text, so iMessage renders a card. It
+         names the evening and nothing else: the crown is the puzzle. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="A puzzle for you" />
+    <meta
+      property="og:description"
+      content="Eight letters. Twenty words. Made for one evening."
+    />
+    <meta property="og:url" content="%VITE_SITE_URL%/date-night" />
+    <meta property="og:image" content="%VITE_SITE_URL%/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="A smiling cartoon peach above a row of soft letter tiles, one of them peach coloured."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="A puzzle for you" />
+    <meta
+      name="twitter:description"
+      content="Eight letters. Twenty words. Made for one evening."
+    />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/og.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Only the cute pair. The letterpress faces are unreachable here. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/date-night/main.tsx"></script>
+  </body>
+</html>

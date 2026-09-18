@@ -36,6 +36,19 @@ interface Props {
    * Lives here so it sits with the score it brags about; Endless passes none.
    */
   summaryExtra?: ReactNode;
+  /**
+   * Whether this rack has a rarity ladder behind it. True everywhere the daily
+   * and Endless render, and the default, because a rack drawn from the full
+   * dictionary always does.
+   *
+   * False for a rack whose accepted words are the set and nothing else. Then
+   * every rung tally is a zero, the points are all the on-page baseline, and
+   * the key names three categories that cannot occur. Suppressing them is not
+   * a lesser glossary: it is the same glossary without instruments that would
+   * read the same on every word. The length groups, the set count and the
+   * source mark are untouched, because those still say something.
+   */
+  ladder?: boolean;
 }
 
 type Category = 'source' | 'set' | LadderRung;
@@ -162,6 +175,7 @@ export function FoundList({
   onWordTap,
   summaryExtra,
   showTier = true,
+  ladder = true,
 }: Props) {
   // The one classification pass. The grid below and the rung panels above are
   // both derived from it, so a word is never Rare in one readout and not the
@@ -220,7 +234,11 @@ export function FoundList({
       <button
         type="button"
         className={`found__word found__word--${w.category}`}
-        aria-label={`${w.word}, ${categoryName(w.category, theme)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}, show definition`}
+        aria-label={
+          ladder
+            ? `${w.word}, ${categoryName(w.category, theme)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}, show definition`
+            : `${w.word}, ${categoryName(w.category, theme)}, show definition`
+        }
         onClick={(e) => {
           e.currentTarget.focus();
           onWordTap(w.word, e.currentTarget);
@@ -230,8 +248,10 @@ export function FoundList({
         <span className="found__wordtext">{w.word}</span>
         {/* Every find shows what it is worth, set words included. The score is
             the one already classified above, so the number on a chip is the
-            same number the bar and the total counted, never a local sum. */}
-        <span className="found__points">+{w.score}</span>
+            same number the bar and the total counted, never a local sum.
+            Withheld where there is no ladder: every word would read the same
+            baseline, which is a column of noise rather than information. */}
+        {ladder && <span className="found__points">+{w.score}</span>}
         {isLadder(w.category) && (
           /* Hiding rung-note for now */
           <span className="found__rung-note">
@@ -261,40 +281,41 @@ export function FoundList({
                 {setFound} of {setTotal} words
               </span>
             </li>
-            {LADDER_RUNGS.map((r) => {
-              const count = rungWords[r].length;
-              const open = openRungs.has(r);
-              return (
-                <li key={r} className={`summary__stat summary__stat--${r}`}>
-                  <span className={`mark mark--${r}`} aria-hidden="true" />
-                  {/* A rung she has nothing at is a tally, not a control: a
+            {ladder &&
+              LADDER_RUNGS.map((r) => {
+                const count = rungWords[r].length;
+                const open = openRungs.has(r);
+                return (
+                  <li key={r} className={`summary__stat summary__stat--${r}`}>
+                    <span className={`mark mark--${r}`} aria-hidden="true" />
+                    {/* A rung she has nothing at is a tally, not a control: a
                       plain span, so it neither looks tappable nor appears in
                       the accessibility tree as a button that does nothing. */}
-                  {count === 0 ? (
-                    <span className="summary__statline">
-                      {count} {RUNG_NAMES[r]}
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="summary__statline summary__rung"
-                      aria-expanded={open}
-                      aria-controls={panelId(r)}
-                      onClick={() => toggleRung(r)}
-                    >
-                      {count} {RUNG_NAMES[r]}
-                      {/* The state and the action, spoken but not printed: the
-                          visible tally stays a tally. */}
-                      <span className="visually-hidden">
-                        {open
-                          ? ', hide the words you found'
-                          : ', show the words you found'}
+                    {count === 0 ? (
+                      <span className="summary__statline">
+                        {count} {RUNG_NAMES[r]}
                       </span>
-                    </button>
-                  )}
-                </li>
-              );
-            })}
+                    ) : (
+                      <button
+                        type="button"
+                        className="summary__statline summary__rung"
+                        aria-expanded={open}
+                        aria-controls={panelId(r)}
+                        onClick={() => toggleRung(r)}
+                      >
+                        {count} {RUNG_NAMES[r]}
+                        {/* The state and the action, spoken but not printed: the
+                          visible tally stays a tally. */}
+                        <span className="visually-hidden">
+                          {open
+                            ? ', hide the words you found'
+                            : ', show the words you found'}
+                        </span>
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             <li className="summary__stat summary__stat--total">
               <span className="summary__statline">
                 {found.length} {found.length === 1 ? 'word' : 'words'} found
@@ -308,30 +329,31 @@ export function FoundList({
               The count gates the panel as well as the trigger: FoundList is not
               keyed by puzzle, so a rung left open on the last rack would
               otherwise reopen empty on a rack with nothing at it. */}
-          {LADDER_RUNGS.filter(
-            (r) => openRungs.has(r) && rungWords[r].length > 0,
-          ).map((r) => (
-            <div
-              key={r}
-              id={panelId(r)}
-              // A named group, not a landmark region: three panels toggling in
-              // and out of a screen reader's landmark list is noise for lists
-              // this short, and the name still announces what opened.
-              role="group"
-              aria-label={`${RUNG_NAMES[r]} words you found`}
-              className="summary__rungpanel"
-            >
-              {/* The same chip and the same definition path as the grid, so a
+          {ladder &&
+            LADDER_RUNGS.filter(
+              (r) => openRungs.has(r) && rungWords[r].length > 0,
+            ).map((r) => (
+              <div
+                key={r}
+                id={panelId(r)}
+                // A named group, not a landmark region: three panels toggling in
+                // and out of a screen reader's landmark list is noise for lists
+                // this short, and the name still announces what opened.
+                role="group"
+                aria-label={`${RUNG_NAMES[r]} words you found`}
+                className="summary__rungpanel"
+              >
+                {/* The same chip and the same definition path as the grid, so a
                   word behaves identically wherever she taps it. */}
-              <ul className="found__words">{rungWords[r].map(renderChip)}</ul>
-            </div>
-          ))}
+                <ul className="found__words">{rungWords[r].map(renderChip)}</ul>
+              </div>
+            ))}
 
           {/* The one progress bar, here in the glossary where the totals live.
               It carries the named tier, the bold points total, the two-color
               set-versus-off-page climb, and the explicit Set and Off-page numbers
               beneath it. There is no second bar under the input. */}
-          {showTier && <TierMeter tier={tier} theme={theme} />}
+          {ladder && showTier && <TierMeter tier={tier} theme={theme} />}
 
           {/* Her best find, sitting with the tier and the points it belongs
               beside. Deliberately not announced: it changes often during normal
@@ -341,7 +363,7 @@ export function FoundList({
 
               The label carries no metaphor, so it stays shared across themes
               rather than going through themeCopy. */}
-          {bestWord !== null && (
+          {ladder && bestWord !== null && (
             <div className="summary__best">
               <span className="summary__bestlabel">Best word</span>
               {/* The same chip the word list below renders, so the mark, the
@@ -389,20 +411,22 @@ export function FoundList({
         ))
       )}
 
-      <div className="legend" aria-hidden="true">
-        <span className="legend__caption">Key</span>
-        <span>
-          <span className="mark mark--set" /> {copy(theme).keyOnPage}
-        </span>
-        {LADDER_RUNGS.map((r) => (
-          <span key={r}>
-            <span className={`mark mark--${r}`} /> {RUNG_NAMES[r]}
+      {ladder && (
+        <div className="legend" aria-hidden="true">
+          <span className="legend__caption">Key</span>
+          <span>
+            <span className="mark mark--set" /> {copy(theme).keyOnPage}
           </span>
-        ))}
-        <span>
-          <span className="mark mark--source" /> source word
-        </span>
-      </div>
+          {LADDER_RUNGS.map((r) => (
+            <span key={r}>
+              <span className={`mark mark--${r}`} /> {RUNG_NAMES[r]}
+            </span>
+          ))}
+          <span>
+            <span className="mark mark--source" /> source word
+          </span>
+        </div>
+      )}
     </section>
   );
 }

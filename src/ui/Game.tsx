@@ -2,12 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameData } from '@/data/gameData.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
-import {
-  messageText,
-  useAnnouncedText,
-  useGame,
-  type GameApi,
-} from './useGame.ts';
+import { useAnnouncedText, useGame, type GameApi } from './useGame.ts';
 import { useTheme, type Theme } from './useTheme.ts';
 import { copy } from './themeCopy.ts';
 import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
@@ -20,6 +15,10 @@ import { HowItWorks } from './components/HowItWorks.tsx';
 import { EditionCard } from './components/EditionCard.tsx';
 import { Confetti } from './components/Confetti.tsx';
 import { Decorations } from './components/Decorations.tsx';
+import { ComposingStick } from './components/ComposingStick.tsx';
+import { TypeCase } from './components/TypeCase.tsx';
+import { Controls } from './components/Controls.tsx';
+import { useGlobalKeys } from './useGlobalKeys.ts';
 import { useDefinitions } from './useDefinitions.ts';
 import { classifyWord } from '@/engine/index.ts';
 
@@ -388,149 +387,6 @@ function ThemeSwap({
   );
 }
 
-/**
- * The stick: the letters placed so far, in order, **and the feedback message**.
- *
- * **Three states, one slot, and the composed word wins.** Letters if there are
- * letters, otherwise the message, otherwise the placeholder. The well is the
- * composing surface and a slot holds one thing, so the only question is which
- * thing, and the answer is what the player is doing now rather than what they
- * did last. This is the app's arrangement, brought across on request.
- *
- * That is why the reducer clears `message` when a tile lands. Leaving the value
- * set and merely hiding it here looks equivalent and is not: deleting back to an
- * empty stick would bring a stale rejection back. See `ADD_TILE`.
- *
- * **What this costs.** The message used to have a row of its own below the
- * controls, and it survived there while composing, so a rejection could still be
- * read while retyping. It cannot now. That affordance is the price of the app's
- * placement, and it is the reason the app's own notes declined to port this
- * behaviour to the web in the first place.
- *
- * `aria-hidden` carries over from that row unchanged. The message is already
- * spoken by the live region at the moment it lands, and hearing every rejection
- * twice, once when it happens and again on the next swipe, is exactly what the
- * old row's `aria-hidden` was avoiding.
- *
- * The height is fixed at every state, so the rack cannot shift when the first
- * letter lands. That was already true of this element and it stays true: the
- * message is clamped rather than allowed to grow the well, because a well that
- * grows breaks the one promise the whole arrangement rests on.
- */
-function ComposingStick({ game }: { game: GameApi }) {
-  const { state, composedWord } = game;
-  const [theme] = useTheme();
-  const empty = composedWord.length === 0;
-  return (
-    <div className="stick" data-tone={state.message?.tone ?? 'info'}>
-      {!empty ? (
-        [...composedWord].map((letter, i) => (
-          <span className="stick__slot" key={i}>
-            {letter}
-          </span>
-        ))
-      ) : state.message ? (
-        <p className="message" aria-hidden="true">
-          {messageText(state.message, theme)}
-        </p>
-      ) : (
-        <span className="stick__empty">{copy(theme).inputPlaceholder}</span>
-      )}
-    </div>
-  );
-}
-
-function TypeCase({ game }: { game: GameApi }) {
-  const { state } = game;
-  return (
-    <div className="case" role="group" aria-label="Letter tiles">
-      {state.rackOrder.map((id) => {
-        const tile = state.tiles[id]!;
-        const used = state.composing.includes(id);
-        return (
-          <button
-            key={id}
-            className="sort"
-            disabled={used}
-            onClick={() => game.addTile(id)}
-            aria-label={`Letter ${tile.letter}${used ? ', already set' : ''}`}
-          >
-            {tile.letter}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * Two clusters, grouped by what each action does:
- *
- *   Shuffle   Submit
- *   Clear     Delete
- *
- * **This replaced a grouping by frequency, and both groupings are Bea's.** The
- * clusters used to be the utility pair (Shuffle, Clear), quiet and set apart,
- * and the primary pair (Delete, then Submit), prominent and in thumb reach.
- * Delete came before Submit because she said delete was one of the most-used
- * buttons and was in the wrong place.
- *
- * She then asked for this arrangement, on 2026-08-27: Delete and Clear are both
- * undo, so they belong together. Delete sits on the right of that pair, being
- * the more used of the two, and the undo pair sits after the pair carrying
- * Submit, because Submit is the most obvious action on the screen. The axis
- * changed rather than the taste, from how often you press a thing to what
- * pressing it does.
- *
- * A consequence worth having: the DOM order is now the visual order. The old
- * arrangement put the utility pair first in the DOM and used `order: -1` in the
- * narrow layout to lift the primary pair above it, so a keyboard tabbed
- * Shuffle, Clear, Delete, Submit through a screen that read Delete, Submit,
- * Shuffle, Clear. That hack is gone with the regrouping rather than by being
- * fixed separately.
- *
- * One shared structure drives both themes: the skin changes with the theme, the
- * layout never does, so the two rows break at exactly the same widths.
- */
-function Controls({ game }: { game: GameApi }) {
-  const [theme] = useTheme();
-  const { composedWord } = game;
-  const empty = composedWord.length === 0;
-  return (
-    <div className="controls">
-      <div className="controls__group controls__group--primary">
-        <button className="btn btn--utility" onClick={game.shuffle}>
-          Shuffle
-        </button>
-        <button
-          className="btn btn--primary"
-          onClick={game.submit}
-          disabled={composedWord.length < 3}
-        >
-          {copy(theme).submitWord}
-        </button>
-      </div>
-      <div className="controls__group controls__group--undo">
-        <button
-          className="btn btn--utility"
-          onClick={game.clear}
-          disabled={empty}
-        >
-          Clear
-        </button>
-        <button
-          className="btn btn--delete"
-          onClick={game.removeLast}
-          disabled={empty}
-          aria-label="Delete last letter"
-        >
-          ⌫
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function Colophon({
   triggerRef,
   onOpenHow,
@@ -569,35 +425,4 @@ function Colophon({
       <p className="colophon__dedication">for Bea</p>
     </footer>
   );
-}
-
-/** Full keyboard play: type letters, Enter to set, Backspace to delete. */
-function useGlobalKeys(game: GameApi, suppressed: boolean) {
-  const ref = useRef(game);
-  ref.current = game;
-  const suppressedRef = useRef(suppressed);
-  suppressedRef.current = suppressed;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const g = ref.current;
-      // The reveal or the explainer popup owns the keyboard while it is open.
-      if (g.state.revealOpen || suppressedRef.current) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        g.submit();
-      } else if (e.key === 'Backspace') {
-        e.preventDefault();
-        g.removeLast();
-      } else if (e.key === 'Escape') {
-        g.clear();
-      } else if (/^[a-zA-Z]$/.test(e.key)) {
-        g.addLetter(e.key.toLowerCase());
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
 }

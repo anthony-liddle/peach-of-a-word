@@ -111,11 +111,18 @@ export function announcementText(
  */
 export function useAnnouncedText(
   announcement: Announcement,
-  mode: Mode,
+  /**
+   * What the sequence is counted within. The daily passes its mode, because
+   * each mode starts its own count at zero and a fresh Endless would otherwise
+   * read as the daily's last event. Any caller with a single slice can pass a
+   * constant. Typed as a string rather than a `Mode` so a board that is neither
+   * mode still namespaces its own count.
+   */
+  scope: string,
   theme: Theme,
 ): string {
   const [spoken, setSpoken] = useState({ key: '', text: '' });
-  const key = `${mode}:${announcement.seq}`;
+  const key = `${scope}:${announcement.seq}`;
   // Settling this during render (React's own adjust-state-on-change pattern)
   // keeps the region and the visible message in one paint, so the two never
   // disagree about which find is the current one.
@@ -129,7 +136,7 @@ export function useAnnouncedText(
  * One mode's game. Daily and Endless each hold their own slice, so switching
  * modes is a view change and never disturbs the other.
  */
-interface Slice {
+export interface Slice {
   puzzle: Puzzle;
   sourceEntry: SourceEntry | undefined;
   /** Calendar day for the daily; null for endless. */
@@ -149,7 +156,7 @@ interface Slice {
   announcement: Announcement;
 }
 
-interface SlicePayload {
+export interface SlicePayload {
   puzzle: Puzzle;
   sourceEntry: SourceEntry | undefined;
   dayIndex: number | null;
@@ -166,7 +173,7 @@ interface Game {
 /** The flattened view the UI reads: the active slice plus the current mode. */
 export type GameView = Slice & { mode: Mode };
 
-type Action =
+export type Action =
   | { type: 'SET_MODE'; mode: Mode }
   | { type: 'SET_ENDLESS'; slice: Slice }
   | { type: 'ADD_TILE'; id: number }
@@ -209,7 +216,7 @@ function tilesFor(puzzle: Puzzle): Tile[] {
   return [...puzzle.letters].map((letter, id) => ({ id, letter }));
 }
 
-function buildSlice(payload: SlicePayload): Slice {
+export function buildSlice(payload: SlicePayload): Slice {
   const tiles = tilesFor(payload.puzzle);
   const found = payload.restoreFound.filter((w) =>
     payload.puzzle.validationWords.has(w),
@@ -270,7 +277,7 @@ function messageForRejection(
 }
 
 /** Gameplay actions, applied to whichever slice is active. */
-function reduceSlice(slice: Slice, action: Action): Slice {
+export function reduceSlice(slice: Slice, action: Action): Slice {
   switch (action.type) {
     // Starting a word ends the last one's message.
     //
@@ -451,6 +458,33 @@ function reduce(game: Game, action: Action): Game {
       return next === game.daily ? game : { ...game, daily: next };
     }
   }
+}
+
+/**
+ * The play surface, and only it: the letters on the stick, the rack, and the
+ * six actions a hand can take. Narrower than `GameApi` on purpose.
+ *
+ * `ComposingStick`, `TypeCase`, `Controls` and `useGlobalKeys` are typed against
+ * this rather than the whole API, so they can be driven by anything that plays a
+ * rack. `GameApi` satisfies it structurally, so the daily passes itself
+ * unchanged and nothing about its behaviour moves.
+ */
+export interface PlayApi {
+  state: {
+    tiles: readonly Tile[];
+    rackOrder: readonly number[];
+    composing: readonly number[];
+    message: Message | null;
+    /** The reveal owns the keyboard while it is up. */
+    revealOpen: boolean;
+  };
+  composedWord: string;
+  addTile: (id: number) => void;
+  addLetter: (letter: string) => void;
+  removeLast: () => void;
+  clear: () => void;
+  shuffle: () => void;
+  submit: () => void;
 }
 
 export interface GameApi {
