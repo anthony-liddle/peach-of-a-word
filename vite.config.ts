@@ -44,25 +44,6 @@ function versionedData(isBuild: boolean): Plugin {
 
 export default defineConfig(({ command }) => ({
   plugins: [react(), versionedData(command === 'build')],
-  build: {
-    rollupOptions: {
-      /**
-       * Two entries. Naming them here replaces Vite's default of "index.html
-       * alone", so index.html has to be listed even though it is the default:
-       * leaving it out would build the second page and drop the game.
-       *
-       * date-night.html is a one-off gift page served at /date-night by a
-       * rewrite. It is an entry rather than a file in public/ because public/
-       * is copied verbatim and gets no bundle, so a page there cannot share a
-       * single line of the app's CSS or components and a hand-rebuilt
-       * lookalike is the only possible outcome.
-       */
-      input: {
-        index: resolve(__dirname, 'index.html'),
-        'date-night': resolve(__dirname, 'date-night.html'),
-      },
-    },
-  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

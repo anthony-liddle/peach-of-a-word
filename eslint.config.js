@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist', 'public/data', 'scripts/.cache'] },
+  // archive/ is kept as a record, not as code. Its imports go stale the first
+  // time anything in src/ moves, which is expected and not a lint failure.
+  { ignores: ['dist', 'public/data', 'scripts/.cache', 'archive'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

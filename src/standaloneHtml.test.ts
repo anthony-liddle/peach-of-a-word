@@ -150,22 +150,15 @@ describe('vercel.json rewrites', () => {
     });
   });
 
-  test('/date-night serves the date night page', () => {
-    expect(config.rewrites).toContainEqual({
-      source: '/date-night',
-      destination: '/date-night.html',
-    });
-  });
-
   /**
    * A destination is served one of two ways, and the check has to know both or
    * it fails the moment a page stops being a verbatim copy.
    *
    * A file under public/ is copied as-is. A document at the repo root is a
-   * build entry, compiled to the same name in dist. date-night.html moved from
-   * the first kind to the second so it could share the app's components and
-   * stylesheet instead of being a hand-rebuilt lookalike, and this test failed
-   * on exactly that move, which is what it is for.
+   * build entry, compiled to the same name in dist. The date night page was
+   * both in turn, and this test failed on the move between them, which is what
+   * it is for. It has since been retired: its rewrite and its entry are gone
+   * together, which is the pairing this file exists to keep honest.
    */
   test('every rewrite destination is served, from public/ or as an entry', () => {
     for (const { destination } of config.rewrites) {
