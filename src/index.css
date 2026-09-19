@@ -44,7 +44,11 @@
   --tile-edge: #c9bd9c;
   --good: #4b6a52; /* the "in the set" mark */
   --discovery: #3e5c7e; /* the rarity ladder: one ink-blue for every rung */
-  --spark: #3e5c7e; /* decorative sparkles only, not the ladder */
+  /* No --deco-bloom here. The decoration layer is cute only (see
+     [data-theme='letterpress'] .decorations below), so a letterpress value
+     would be unreachable. The retired --spark carried #3e5c7e, the identical
+     hex to --discovery above: in this theme the scenery was not merely close
+     to the ladder colour, it was the ladder colour. */
 
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-body: 'Spectral', Georgia, serif;
@@ -104,7 +108,12 @@
   --tile-edge: #ffd9c8;
   --good: #c42e60; /* the "in the set" heart */
   --discovery: #6e4fb8; /* the rarity ladder: one purple for every rung, 5:1 (AA) */
-  --spark: #7e5bc8; /* decorative sparkles only, not the ladder */
+  /* The decoration hue. Named for what it is rather than for a glyph it no
+     longer uses, so nothing has to add "not the ladder" to keep the two apart.
+     This is the mint of the peach's leaf, the same hex PeachMark and the
+     motifs already draw with, and the only green in either surface. It matches
+     Deco.leaf in the iOS app exactly, so the two decorate alike. */
+  --deco-bloom: #8fd3b6;
 
   --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
   --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
@@ -188,7 +197,7 @@ button {
   z-index: 1;
 }
 
-/* ---- Cute decorations (peaches, dino, sparkles) ------------------------- */
+/* ---- Cute decorations (peaches, dino, florettes) ----------------------- */
 .decorations {
   position: absolute;
   inset: 0;
@@ -222,21 +231,40 @@ button {
   width: 32px;
   transform: rotate(8deg);
 }
-.spark {
+/* Full opacity, and this is a departure worth knowing about.
+
+   The old 0.7 was calibrated against #7e5bc8, a dark purple that supplied its
+   own presence; the mint does not, so keeping 0.7 stacked two kinds of faint.
+   Measured against the page gradient, the mint at 0.7 reached 1.32:1 by the
+   foot of the page, which is not faint scenery, it is absence. At 1.00 it is
+   1.49:1 to 1.58:1, still well under the 2.73:1 the purple used to carry.
+
+   The consequence: iOS runs its florettes between 0.45 and 0.75, on the same
+   mint against the same paper, so the web is now visibly more present than the
+   app, in a change whose whole point was that the two surfaces decorate alike.
+   That is still right. The app's florettes appear in clusters that reinforce
+   each other; these are four singles in the margins, each carrying alone.
+   Alike is the glyph and the hue, which is what a player recognises. Opacity
+   is composition, and the two compositions differ.
+
+   The dino's celebration florette keeps its own peak of 0.9 inside
+   @keyframes dino-bloom below. It is a half-second flash in motion rather than
+   standing scenery, so it was never the thing that had gone absent. */
+.bloom {
   position: absolute;
-  color: var(--spark);
+  color: var(--deco-bloom);
   font-size: 14px;
-  opacity: 0.7;
+  opacity: 1;
 }
-.spark--1 {
+.bloom--1 {
   left: 8%;
   top: 5rem;
 }
-.spark--2 {
+.bloom--2 {
   right: 8%;
   top: 14rem;
 }
-.spark--3 {
+.bloom--3 {
   left: 40%;
   bottom: 3rem;
 }
@@ -278,17 +306,17 @@ button {
     transform: translateY(0) scaleX(1) scaleY(1) rotate(0);
   }
 }
-.deco--dino-spark {
+.deco--dino-bloom {
   right: 1.4rem;
   top: 1.6rem;
-  color: var(--spark);
+  color: var(--deco-bloom);
   font-size: 16px;
   opacity: 0;
 }
-.deco--dino-spark.is-celebrating {
-  animation: dino-spark 1s ease 1;
+.deco--dino-bloom.is-celebrating {
+  animation: dino-bloom 1s ease 1;
 }
-@keyframes dino-spark {
+@keyframes dino-bloom {
   0%,
   15% {
     opacity: 0;
