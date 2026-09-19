@@ -231,11 +231,30 @@ button {
   width: 32px;
   transform: rotate(8deg);
 }
+/* Full opacity, and this is a departure worth knowing about.
+
+   The old 0.7 was calibrated against #7e5bc8, a dark purple that supplied its
+   own presence; the mint does not, so keeping 0.7 stacked two kinds of faint.
+   Measured against the page gradient, the mint at 0.7 reached 1.32:1 by the
+   foot of the page, which is not faint scenery, it is absence. At 1.00 it is
+   1.49:1 to 1.58:1, still well under the 2.73:1 the purple used to carry.
+
+   The consequence: iOS runs its florettes between 0.45 and 0.75, on the same
+   mint against the same paper, so the web is now visibly more present than the
+   app, in a change whose whole point was that the two surfaces decorate alike.
+   That is still right. The app's florettes appear in clusters that reinforce
+   each other; these are four singles in the margins, each carrying alone.
+   Alike is the glyph and the hue, which is what a player recognises. Opacity
+   is composition, and the two compositions differ.
+
+   The dino's celebration florette keeps its own peak of 0.9 inside
+   @keyframes dino-bloom below. It is a half-second flash in motion rather than
+   standing scenery, so it was never the thing that had gone absent. */
 .bloom {
   position: absolute;
   color: var(--deco-bloom);
   font-size: 14px;
-  opacity: 0.7;
+  opacity: 1;
 }
 .bloom--1 {
   left: 8%;
