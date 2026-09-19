@@ -1,5 +1,5 @@
 /**
- * Cute-theme motifs: peaches, a small silly dinosaur, and a few sparkles.
+ * Cute-theme motifs: peaches, a small silly dinosaur, and a few florettes.
  * Original art (no trademarked characters). Hidden in Letterpress via CSS, and
  * aria-hidden so they are never announced. Purely decorative, behind the play.
  */
@@ -68,15 +68,15 @@ export function Decorations({ celebrate = false }: { celebrate?: boolean }) {
         />
       </svg>
 
-      <span className="spark spark--1">✦</span>
-      <span className="spark spark--2">✦</span>
-      <span className="spark spark--3">✦</span>
+      <span className="bloom bloom--1">✿</span>
+      <span className="bloom bloom--2">✿</span>
+      <span className="bloom bloom--3">✿</span>
       <span
         className={
-          'deco deco--dino-spark' + (celebrate ? ' is-celebrating' : '')
+          'deco deco--dino-bloom' + (celebrate ? ' is-celebrating' : '')
         }
       >
-        ✦
+        ✿
       </span>
     </div>
   );
