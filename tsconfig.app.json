@@ -26,5 +26,9 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "vitest.setup.ts"]
+  "include": ["src", "vitest.setup.ts"],
+  // archive/ is outside "include" already. Named anyway, so broadening the
+  // include later cannot quietly start typechecking a retired page whose
+  // imports are expected to go stale.
+  "exclude": ["archive"]
 }

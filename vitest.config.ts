@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
 export default defineConfig({
@@ -11,6 +11,9 @@ export default defineConfig({
     },
   },
   test: {
+    // archive/ holds retired pages kept as a record. Nothing there is built or
+    // served, and nothing there should be collected as a test.
+    exclude: [...configDefaults.exclude, 'archive/**'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
