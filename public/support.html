@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support | Peach of a Word</title>
+    <meta
+      name="description"
+      content="Help with Peach of a Word: how the daily board works, where your progress lives, and how to get in touch."
+    />
+    <!-- Icons: the tab icon follows the theme, same contract as index.html and
+         privacy.html. The default is the cute peach, the default theme. -->
+    <link
+      rel="icon"
+      id="favicon"
+      href="/favicon-cute.svg"
+      type="image/svg+xml"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Spectral:ital,wght@0,400;0,500;0,600&family=Fredoka:wght@400;500;600&family=Nunito:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* The two theme palettes, lifted from src/index.css by way of
+         privacy.html. Only the tokens this page uses are copied. */
+      :root,
+      [data-theme='letterpress'] {
+        --paper: #f1eee6;
+        --ink: #211d17;
+        --ink-faint: #6e6755;
+        --accent: #9d2b25;
+        --rule: #cabf9f;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Spectral', Georgia, serif;
+      }
+      [data-theme='cute'] {
+        --paper: #fff4ee;
+        --ink: #6b4636;
+        --ink-faint: #7e5c4a;
+        --accent: #c42e60;
+        --rule: #ffe0d2;
+        --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+        --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        font-family: var(--font-body);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 34rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        margin: 0 0 2rem;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+        margin: 2.25rem 0 0.5rem;
+      }
+      .lede {
+        font-size: 1.05rem;
+      }
+      a {
+        color: var(--accent);
+      }
+      footer {
+        margin-top: 3rem;
+        border-top: 1px solid var(--rule);
+        padding-top: 1rem;
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+      }
+    </style>
+    <script>
+      // Match the theme the player already chose, read from the same key the
+      // game writes. Wrapped because localStorage throws outright in some
+      // privacy modes. The theme and the tab icon are resolved together, the
+      // same as index.html and privacy.html.
+      (function () {
+        var DEFAULT = 'cute';
+        var saved;
+        try {
+          saved = localStorage.getItem('e8-theme');
+        } catch (e) {
+          saved = null; /* storage blocked: fall back to the default */
+        }
+        var theme =
+          saved === 'cute' || saved === 'letterpress' ? saved : DEFAULT;
+        document.documentElement.dataset.theme = theme;
+        var icon = document.getElementById('favicon');
+        if (icon)
+          icon.href =
+            theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Support</h1>
+
+      <p class="lede">
+        Peach of a Word is a daily word game. You get eight letters and find the
+        words they spell. One of those words uses all eight: the peach of a word
+        the whole board grew from. You can play it here at peachofaword.com or
+        in the iPhone app.
+      </p>
+
+      <h2>One New Board a Day</h2>
+      <p>
+        A new board arrives at midnight where you are, and everyone gets the
+        same board for that date.
+      </p>
+
+      <h2>Your Progress Stays on Your Device</h2>
+      <p>
+        There is no account and no sign-in. Your found words and your streak are
+        stored on the device you play on: inside the app, or in this browser.
+        The app and the website keep their own progress separately. Deleting the
+        app or clearing your browser storage clears it, and there is no copy on
+        a server to restore it from.
+      </p>
+      <p>
+        The <a href="/privacy">privacy page</a> says exactly what the app and
+        the website collect.
+      </p>
+
+      <h2>Get in Touch</h2>
+      <p>
+        Something broken, a word you think should or should not count, or
+        anything else: write to Antoine at
+        <a href="mailto:anthony@anthonyliddle.dev">anthony@anthonyliddle.dev</a
+        >.
+      </p>
+
+      <footer>
+        <a href="/">Back to the game</a>
+      </footer>
+    </main>
+  </body>
+</html>
