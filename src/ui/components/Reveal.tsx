@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import type { SourceEntry } from '@/data/types.ts';
 import { copy, revealKicker } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
+import { creditFor } from '../../data/glossProvenance.ts';
 
 export type QuietCategory = 'set' | 'uncommon' | 'rare' | 'mythic';
 
@@ -127,8 +128,15 @@ export function Reveal(props: RevealProps) {
           {copy(props.theme).revealClose}
         </button>
         <p className="reveal__attribution">
-          Definition{props.register === 'crown' ? ' and etymology' : ''} from
-          Wiktionary, CC BY-SA 4.0.
+          {creditFor({
+            word: props.word,
+            register: props.register,
+            // Only a crown carries an entry, and only an entry can carry an
+            // etymology. Eleven crowns have none, and a card that is not
+            // showing one must not credit one.
+            hasEtymology:
+              props.register === 'crown' && Boolean(props.entry?.etymology),
+          })}
         </p>
       </div>
     </div>

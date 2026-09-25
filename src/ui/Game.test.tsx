@@ -156,12 +156,42 @@ describe('Game', () => {
   it('credits the real validation boundary in the footer', () => {
     renderGame();
     const footer = document.querySelector('.colophon') as HTMLElement;
-    // Validation is ENABLE union SCOWL 95 plus the patch layer, not ENABLE alone.
-    expect(footer.textContent).toMatch(/ENABLE and SCOWL/i);
-    expect(footer.textContent).toMatch(/patch layer/i);
-    // The existing attributions stay intact.
+    // Validation is ENABLE union SCOWL 95 plus the patch layer, not ENABLE
+    // alone. Asserted as three named parts rather than one phrase, so the
+    // sentence can be reworded without the claim going unchecked.
+    expect(footer.textContent).toMatch(/ENABLE/);
     expect(footer.textContent).toMatch(/SCOWL/);
+    expect(footer.textContent).toMatch(/patch layer/i);
     expect(footer.textContent).toMatch(/Wiktionary, CC BY-SA 4\.0/i);
+  });
+
+  // The colophon is the only licence statement most players will ever read,
+  // so it has to survive being read literally.
+  it('does not call SCOWL public domain, which it is not', () => {
+    renderGame();
+    const footer = document.querySelector('.colophon') as HTMLElement;
+    const text = footer.textContent ?? '';
+    // The old sentence was "ENABLE and SCOWL, public domain", where one
+    // appositive covered both lists. It is true of ENABLE and false of
+    // SCOWL, which ships under Kevin Atkinson's permissive notice.
+    expect(text).not.toMatch(/ENABLE and SCOWL,\s*public domain/i);
+    expect(text).toMatch(/SCOWL[^.]*Atkinson/i);
+    // ENABLE keeps the licence it actually has.
+    expect(text).toMatch(/ENABLE,\s*public domain/i);
+  });
+
+  it('says the Wiktionary text was adapted, and that some is ours', () => {
+    renderGame();
+    const footer = document.querySelector('.colophon') as HTMLElement;
+    const text = footer.textContent ?? '';
+    // Not one shipped Wiktionary row is verbatim: every one carries a
+    // part-of-speech prefix the entry did not write, one sense is kept out
+    // of however many were offered, and em dashes are rewritten to commas.
+    // "from Wiktionary" would understate that, so the colophon says adapted.
+    expect(text).toMatch(/adapted from Wiktionary/i);
+    // And it does not claim all of them, because 38 are the project's own.
+    expect(text).toMatch(/most definitions/i);
+    expect(text).toMatch(/written for this game/i);
   });
 
   it('names the game in the masthead, emphasizing Peach', () => {

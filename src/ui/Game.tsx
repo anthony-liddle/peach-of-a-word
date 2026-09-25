@@ -397,9 +397,10 @@ function Colophon({
   const [theme] = useTheme();
   return (
     <footer className="colophon">
-      Validation by ENABLE and SCOWL, public domain, with a curated patch layer.
-      Common words from SCOWL. Definitions and etymologies from Wiktionary, CC
-      BY-SA 4.0.
+      Validation by ENABLE, public domain, and SCOWL, under Kevin Atkinson's
+      permissive notice, with a curated patch layer. Common words from SCOWL.
+      Etymologies, and most definitions, adapted from Wiktionary, CC BY-SA 4.0.
+      A few definitions were written for this game.
       <br />
       {copy(theme).typeCredit}
       <br />
