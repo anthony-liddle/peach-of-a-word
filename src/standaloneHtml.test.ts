@@ -20,7 +20,11 @@ import { faviconHref } from './ui/favicon.ts';
  * was written by copying the first and would have inherited the bug just as
  * easily.
  */
-const PAGES = ['public/privacy.html', 'public/transfer-temporary.html'];
+const PAGES = [
+  'public/privacy.html',
+  'public/support.html',
+  'public/transfer-temporary.html',
+];
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -132,6 +136,28 @@ describe('transfer-temporary.html', () => {
 });
 
 /**
+ * The support page, which is the App Store listing's Support URL.
+ *
+ * Apple requires that URL to "lead to actual contact information", so the
+ * address is the one thing on this page that must never be tidied away.
+ */
+describe('support.html', () => {
+  const html = read('public/support.html');
+
+  test('carries a contact address', () => {
+    expect(html).toContain('href="mailto:anthony@anthonyliddle.dev"');
+  });
+
+  test('links the privacy page', () => {
+    expect(html).toContain('href="/privacy"');
+  });
+
+  test('uses no em dash', () => {
+    expect(html).not.toContain('—');
+  });
+});
+
+/**
  * The rewrite that serves the page, checked here because the pairing is the
  * part that breaks silently: removing one of the two leaves either a dead
  * /transfer or an orphaned file nobody can reach.
@@ -142,6 +168,13 @@ describe('vercel.json rewrites', () => {
   };
 
   const viteConfig = read('vite.config.ts');
+
+  test('/support serves the support page', () => {
+    expect(config.rewrites).toContainEqual({
+      source: '/support',
+      destination: '/support.html',
+    });
+  });
 
   test('/transfer serves the temporary page', () => {
     expect(config.rewrites).toContainEqual({
