@@ -72,8 +72,19 @@ const ATTRIBUTION = {
   enable: 'ENABLE word list. Public domain.',
   scowl:
     'SCOWL (Spell Checker Oriented Word Lists) by Kevin Atkinson. See ATTRIBUTION.md.',
+  // Corrected 2026-09-25. This read "Definitions and etymologies from
+  // Wiktionary", which claimed all of them. 38 definitions were written for
+  // this project and owe Wiktionary nothing, so the line put a licence over
+  // words it had no claim on. "adapted" replaces "from" for the rest: no
+  // Wiktionary-derived definition ships as the entry's own string.
+  //
+  // This is the record that travels WITH the data, so it is the one a person
+  // who takes the corpus reads. gloss-provenance.tsv names the 38, and it
+  // travels beside it.
   wiktionary:
-    'Definitions and etymologies from Wiktionary, CC BY-SA 4.0. See ATTRIBUTION.md.',
+    'Etymologies and most definitions adapted from Wiktionary, CC BY-SA 4.0. ' +
+    'Some definitions were written for this game. ' +
+    'See ATTRIBUTION.md and gloss-provenance.tsv.',
 } as const;
 
 /** Assemble meta.json from counts the caller has already measured. */

@@ -275,3 +275,85 @@ describe('Reveal quiet register', () => {
     trigger.remove();
   });
 });
+
+describe('a card credits its own definition, not every definition', () => {
+  // Three surfaces credited Wiktionary for every gloss. For 38 words that is
+  // false, and they are the words most likely to be read: the odd ones a player
+  // stops on, which is why they were curated by hand in the first place.
+
+  it('does not say Wiktionary on a project word', () => {
+    render(
+      <Reveal
+        register="quiet"
+        theme="letterpress"
+        word="tulpa"
+        category="rare"
+        status="ready"
+        definition="noun. A being or object brought into existence by concentrated imagination, as in Tibetan mysticism."
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.queryByText(/Wiktionary/)).toBeNull();
+    expect(screen.getByText('Written for this game.')).toBeTruthy();
+  });
+
+  it("a Wiktionary word's card still does", () => {
+    render(
+      <Reveal
+        register="quiet"
+        theme="letterpress"
+        word="denote"
+        category="set"
+        status="ready"
+        definition="verb. To indicate; to mark."
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText('Definition from Wiktionary, CC BY-SA 4.0.'),
+    ).toBeTruthy();
+  });
+
+  it('splits the claim on a crown whose definition is ours', () => {
+    // eighteen and fourteen are both project glosses and live calendar crowns,
+    // so this is a card a player opens on two days of the cycle, not a
+    // hypothetical. The etymology is Wiktionary's; the definition is not.
+    render(
+      <Reveal
+        register="crown"
+        theme="letterpress"
+        word="eighteen"
+        entry={{
+          word: 'eighteen',
+          definition: 'numeral. One more than seventeen.',
+          etymology: 'From Old English eahtatiene.',
+        }}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText(
+        'Definition written for this game. Etymology from Wiktionary, CC BY-SA 4.0.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('credits only the definition when a crown has no etymology', () => {
+    render(
+      <Reveal
+        register="crown"
+        theme="letterpress"
+        word="dripping"
+        entry={{
+          word: 'dripping',
+          definition: 'noun. Fat from roasted meat.',
+          etymology: '',
+        }}
+        onClose={() => {}}
+      />,
+    );
+    expect(
+      screen.getByText('Definition from Wiktionary, CC BY-SA 4.0.'),
+    ).toBeTruthy();
+  });
+});

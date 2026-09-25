@@ -14,6 +14,7 @@ import { Reveal, type QuietCategory } from './components/Reveal.tsx';
 import { HowItWorks } from './components/HowItWorks.tsx';
 import { EditionCard } from './components/EditionCard.tsx';
 import { Confetti } from './components/Confetti.tsx';
+import { DevCardProbe } from './DevCardProbe.tsx';
 import { Decorations } from './components/Decorations.tsx';
 import { ComposingStick } from './components/ComposingStick.tsx';
 import { TypeCase } from './components/TypeCase.tsx';
@@ -52,6 +53,24 @@ export function Game({ data, audio, storage }: Props) {
   // global key handler can stand down while it is up (the same precedent as the
   // reveal), and so focus can return to the trigger on close.
   const [howOpen, setHowOpen] = useState(false);
+
+  // Dev only: the card probe's target, read once from the URL. See
+  // `DevCardProbe` for why it exists and what it is allowed to render.
+  const [probe, setProbe] = useState<{
+    word: string;
+    rack: string | null;
+    register: 'quiet' | 'crown';
+  } | null>(() => {
+    if (!import.meta.env.DEV) return null;
+    const params = new URLSearchParams(window.location.search);
+    const word = params.get('card');
+    if (!word) return null;
+    return {
+      word,
+      rack: params.get('rack'),
+      register: params.get('register') === 'crown' ? 'crown' : 'quiet',
+    };
+  });
   const howTriggerRef = useRef<HTMLButtonElement>(null);
   const closeHow = useCallback(() => {
     setHowOpen(false);
@@ -190,7 +209,17 @@ export function Game({ data, audio, storage }: Props) {
 
       {confettiOn && <Confetti onDone={endConfetti} />}
 
-      {state.revealOpen ? (
+      {/* Dev only: ?card=<word> opens that word's card with its real gloss.
+          Compiled out of production by the env guard. See DevCardProbe. */}
+      {import.meta.env.DEV && probe ? (
+        <DevCardProbe
+          word={probe.word}
+          rack={probe.rack}
+          register={probe.register}
+          theme={theme}
+          onClose={() => setProbe(null)}
+        />
+      ) : state.revealOpen ? (
         <Reveal
           register="crown"
           theme={theme}
@@ -397,9 +426,10 @@ function Colophon({
   const [theme] = useTheme();
   return (
     <footer className="colophon">
-      Validation by ENABLE and SCOWL, public domain, with a curated patch layer.
-      Common words from SCOWL. Definitions and etymologies from Wiktionary, CC
-      BY-SA 4.0.
+      Validation by ENABLE, public domain, and SCOWL, under Kevin Atkinson's
+      permissive notice, with a curated patch layer. Common words from SCOWL.
+      Etymologies, and most definitions, adapted from Wiktionary, CC BY-SA 4.0.
+      A few definitions were written for this game.
       <br />
       {copy(theme).typeCredit}
       <br />
