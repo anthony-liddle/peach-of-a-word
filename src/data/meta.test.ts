@@ -98,6 +98,13 @@ describe('meta.json describes the data that ships', () => {
     expect(meta.attribution.enable).toMatch(/public domain/i);
     expect(meta.attribution.scowl).toMatch(/SCOWL/);
     expect(meta.attribution.wiktionary).toMatch(/CC BY-SA/);
+    // The record that travels with the data has to be as true as the one on
+    // screen. It claimed every definition; 38 of them are this project's own.
+    expect(meta.attribution.wiktionary).not.toMatch(
+      /^Definitions and etymologies from Wiktionary/,
+    );
+    expect(meta.attribution.wiktionary).toMatch(/written for this game/i);
+    expect(meta.attribution.wiktionary).toMatch(/gloss-provenance\.tsv/);
   });
 });
 

@@ -12,6 +12,6 @@
   "attribution": {
     "enable": "ENABLE word list. Public domain.",
     "scowl": "SCOWL (Spell Checker Oriented Word Lists) by Kevin Atkinson. See ATTRIBUTION.md.",
-    "wiktionary": "Definitions and etymologies from Wiktionary, CC BY-SA 4.0. See ATTRIBUTION.md."
+    "wiktionary": "Etymologies and most definitions adapted from Wiktionary, CC BY-SA 4.0. Some definitions were written for this game. See ATTRIBUTION.md and gloss-provenance.tsv."
   }
 }
