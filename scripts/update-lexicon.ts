@@ -99,6 +99,16 @@ const BUILD_INPUTS = [
   'dictionary-patch.tsv',
   'definitions.tsv',
   'etymology.tsv',
+  // New at v1.7.0, and NOTHING READS IT YET. It names the words whose gloss was
+  // written for the project rather than derived from Wiktionary, so the
+  // definition card can caption them differently. That is the notice pass.
+  //
+  // Vendored rather than served, on both counts that keep public/data closed:
+  // it is a build input, and public/data is content hashed into its own URL, so
+  // adding a file there would re-download every list for every returning player
+  // to ship a few hundred bytes nothing reads. Taken now anyway, so it arrives
+  // with the release that introduced it instead of out of band later.
+  'gloss-provenance.tsv',
 ] as const;
 const lock = JSON.parse(readFileSync(LOCK_PATH, 'utf8')) as Lock;
 
@@ -285,6 +295,17 @@ function update(): void {
     }
     copyFileSync(join(work, patchName), join(VENDOR_DIR, patchName));
     console.log(`  wrote  vendor/lexicon/${patchName}`);
+
+    // Inside lexicon.tar.gz beside the lists, not an archive of its own, so it
+    // is already unpacked. Verified and vendored like every other build input.
+    const provName = 'gloss-provenance.tsv';
+    const provExpected = lock.files[provName]!;
+    const provActual = sha256(join(unpacked, provName));
+    if (provActual !== provExpected) {
+      fail(`${provName} content checksum mismatch after unpacking.`);
+    }
+    copyFileSync(join(unpacked, provName), join(VENDOR_DIR, provName));
+    console.log(`  wrote  vendor/lexicon/${provName}`);
 
     execFileSync(
       'tar',

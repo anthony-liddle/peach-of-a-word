@@ -1,21 +1,22 @@
 {
-  "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. v1.6.0 is Bea's second curation batch: four of the five lists moved and definitions.tsv gained three rows, so common-pool.txt and etymology.tsv are the two content hashes that did not change while all three archive hashes did. See scripts/update-lexicon.ts.",
+  "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. v1.7.0 carries three things and only one of them moves a list: tulpa, one new boundary word, so enable.txt is the only list whose content hash changed; 38 curated glosses rewritten to remove other dictionaries' apparatus, which moves definitions.tsv and no list; and gloss-provenance.tsv, a NEW file inside lexicon.tar.gz naming the words whose gloss is not Wiktionary derived. etymology.tsv did not move, so its archive hash changed and its content hash did not, which is the repack-only shape. Nothing reads gloss-provenance.tsv yet: it is vendored so it arrives with its own release rather than out of band later, and the notice pass is what will read it. See scripts/update-lexicon.ts.",
   "repo": "anthony-liddle/orchard",
-  "version": "v1.6.0",
+  "version": "v1.7.0",
   "files": {
-    "enable.txt": "875dbaaa3ea6f147d16bb1ac34b010f47d67586c1a015b2505107bf608551775",
+    "enable.txt": "3ef2be25e9802ef45f94fba9e68d766a792cac70789f44f2c6a587222235f2ba",
     "scowl95-additions.txt": "f38d58a159517fd213df5899a099bca8ce0d26dcdc78a1ecbd8d3be347e2d657",
     "common-pool.txt": "10fa33188c8de4fc0d047f0993165365e12d6e739e1072a1275ee94c1fab928f",
     "beyond-size-70.txt": "eb7329d39fe1e22d003053da23d66484cf55e38a2cf1d95f4003e1076a96099b",
     "beyond-size-95.txt": "e9a0eabad9dbea44cffb7ce995df516c68938a33ca15ed2e451f18aaa027b8cd",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tsv": "4c4077d4fad3a81b8c4825a60fa6bd46cd3690157806a682c17e15e0f463b5e9",
-    "etymology.tsv": "d51a4dc38a1cf73d50549b2d176da74db91852b711a4a93348ecd6e02bd44ea0"
+    "definitions.tsv": "a5bd3f3450ca5a4c35f2be69443a1928e4ae39c4a3c9d751634c8da5f4f4ac53",
+    "etymology.tsv": "d51a4dc38a1cf73d50549b2d176da74db91852b711a4a93348ecd6e02bd44ea0",
+    "gloss-provenance.tsv": "c9495365060fca78818388356f9789c9b681e3beb12026d676b09aad570d4cf5"
   },
   "assets": {
-    "lexicon.tar.gz": "dedcea1169203618ed381c87423a936b658aa88decb8c0c7fb2af01117b45553",
+    "lexicon.tar.gz": "9bc411850a9136bbb59e17326daa045085ed43f1f93aa046b47c8a5328d46460",
     "dictionary-patch.tsv": "52200cd5c32f81c0cd64c80bc025bc5575441023e763cbee8996503b320c1b95",
-    "definitions.tar.gz": "e9c80afc16ac555c017665d469f2e87ee0a8202580ec2ff9f074aff57425b36d",
-    "etymology.tar.gz": "c624cf4e0d67bc85049c118f68d8ac3be196c42d24330c764b6f4827aa1c7be8"
+    "definitions.tar.gz": "6749aacdbc62437407626799f9e42021dad167cb1f2efac923d6c347c04556d8",
+    "etymology.tar.gz": "d4c0aeb3613f355056d9cb80ef20367a70a772cda28c49858481a88b69abd3b7"
   }
 }
