@@ -71,10 +71,11 @@ async function main(): Promise<void> {
   // JSON.stringify. This wrote `${JSON.stringify(meta, null, 2)}\n` until
   // v1.6.0, one byte longer than what lib/meta.ts documents as the committed
   // form, so whichever writer ran last decided whether the file ended in a
-  // newline. peach-of-a-word-swift's Data/meta.json is meant to be
-  // byte-identical to this one and its update script matches serialiseMeta
-  // deliberately, with a comment naming the reason, so the stray newline made
-  // the two disagree on every release this script touched. lib/meta.ts says it
+  // newline. peach-of-a-word-swift's Data/meta.json was then held
+  // byte-identical to this one, so the stray newline made the two disagree on
+  // every release this script touched. (Since 2026-09-26 only the attribution
+  // strings are held equal across the two; definitionsCovered, which this
+  // script writes, is web-only.) lib/meta.ts says it
   // exists "because two writers produce it"; this was a third one, and it went
   // around the reason rather than through it. src/data/metaParity.test.ts now
   // fails when the committed file is not exactly what serialiseMeta writes.
