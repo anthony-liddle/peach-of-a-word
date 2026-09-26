@@ -1,50 +1,30 @@
 /**
- * The two meta.json files must be byte-identical, and nothing asserted it.
+ * The attribution strings in the two games' meta.json files must agree.
  *
  * `public/data/meta.json` here and `Data/meta.json` in peach-of-a-word-swift
- * are one file kept in two places. `tools/update-lexicon.sh` says so twice, in
- * its own comments, and acts on it: it carries `sourcePool` and
- * `definitionsCovered` through untouched rather than recomputing them, and
- * declines to add a key, both on the stated grounds that the file "has to stay
- * byte-identical with the web's serialiseMeta output".
+ * used to be held byte-identical, on the grounds that they were one file kept
+ * in two places. They are not, and holding them to it cost a hand step every
+ * release.
  *
- * No test held either repository to that, so both halves drifted, in opposite
- * directions and for different reasons.
+ * WHAT THE TWO GENUINELY SHARE: the `attribution` strings, the credit each
+ * game carries for ENABLE, SCOWL and Wiktionary. That is one fact about one
+ * corpus, and a game that drifted from the other would be crediting its
+ * sources differently, which is worth a red test. It is all this compares.
  *
- *   definitionsCovered  24,596 here against 24,833 there. `pnpm data:rebundle`
- *                       owns this count and rewrote it when orchard v1.4.0's
- *                       392 denials shrank the bundles. The Swift copy carries
- *                       the value through, on the reasoning that "the stale
- *                       figure is the web's to move". The web moved it and the
- *                       Swift copy was never told.
- *
- *   trailing newline    present here, absent there. `serialiseMeta` is
- *                       documented as the one format authority and writes
- *                       `JSON.stringify(meta, null, 2)` and nothing after it,
- *                       and `update-lexicon.sh` matches it deliberately, with a
- *                       comment naming the reason. So the SWIFT copy was right
- *                       and this one was wrong. `scripts/refresh-bundles.ts`
- *                       wrote this file last and inlined the format with a
- *                       `\n` appended instead of calling `serialiseMeta`. That
- *                       is precisely the defect `scripts/lib/meta.ts` exists to
- *                       prevent, arriving through a third writer it was written
- *                       before.
- *
- * WHY THE TEST LIVES HERE, AND WHAT IT COMPARES AGAINST.
- *
- * It has to live in one repository, so it lives in the one that WRITES the
- * file. Both writers are here (`update-lexicon.ts` and `refresh-bundles.ts`);
- * the Swift side only ever receives a copy. That is also the direction the
- * observed drift ran: the web moved a count and the Swift copy did not follow.
- * A test in the Swift repository would have been comparing that repository
- * against a number only it believed.
+ * WHAT THEY DO NOT: `counts.definitionsCovered` counts words carrying a gloss
+ * in this game's per-rack bundles across the 793 source-pool racks. The Swift
+ * app ships neither the bundles nor the source pool, reads nothing in
+ * meta.json at runtime, and stopped shipping the field on 2026-09-26. Keeping
+ * it byte-identical meant copying a web-only number into the app by hand at
+ * every orchard release (v1.6.0, v1.7.0, v1.8.0), for a value the app never
+ * read. `src/data/meta.test.ts` still asserts it here, against the bundles,
+ * which is where it is true. The six list counts are asserted in each
+ * repository against its own lists, by `meta.test.ts` here and by
+ * `SmokeTests.metaJSONMatchesShippedLists` there.
  *
  * `scripts/data-raw/swift-meta.json` is a committed copy of the Swift
- * repository's `Data/meta.json`, as it stands there. It is duplication on
- * purpose: it makes "remember to update the other repository" into a red test
- * rather than a step in a runbook, which is the same move step 12 made for the
- * bundles. Update it in the same pull request that moves `public/data/meta.json`,
- * with the same bytes the Swift pull request writes.
+ * repository's `Data/meta.json`. Update it when the Swift attribution
+ * strings change, with the bytes the Swift pull request writes.
  *
  * The fixture's own existence is asserted first, because a missing or empty
  * fixture would otherwise make this file pass by comparing nothing.
@@ -65,24 +45,32 @@ const SWIFT_COPY = join(
 const web = readFileSync(WEB_META, 'utf8');
 const swift = readFileSync(SWIFT_COPY, 'utf8');
 
-describe('the two meta.json copies agree', () => {
-  it('has a fixture with something in it', () => {
-    // Guards the whole file: an absent or emptied fixture must not read as
-    // agreement. Two closing braces and a count key is the least this can be.
-    expect(swift.length).toBeGreaterThan(200);
-    expect(JSON.parse(swift).counts.definitionsCovered).toEqual(
-      expect.any(Number),
+type Attribution = Record<string, string>;
+const webAttribution = (JSON.parse(web) as { attribution: Attribution })
+  .attribution;
+const swiftAttribution = (JSON.parse(swift) as { attribution: Attribution })
+  .attribution;
+
+describe('the two games credit their sources the same way', () => {
+  it('has a fixture with attribution in it', () => {
+    // Guards the whole file: an absent or emptied fixture, or one with no
+    // attribution block, must not read as agreement.
+    expect(Object.keys(swiftAttribution ?? {}).length).toBeGreaterThanOrEqual(
+      3,
     );
+    for (const value of Object.values(swiftAttribution)) {
+      expect(value.length).toBeGreaterThan(10);
+    }
   });
 
-  it('is byte-identical to the copy peach-of-a-word-swift ships', () => {
-    expect(web).toBe(swift);
+  it('carries the same attribution strings as peach-of-a-word-swift', () => {
+    expect(swiftAttribution).toEqual(webAttribution);
   });
 
   it('is exactly what serialiseMeta writes, with no trailing newline', () => {
-    // The format authority, asserted against the file rather than trusted.
-    // A writer that inlines JSON.stringify instead of calling serialiseMeta
-    // fails here even when both copies happen to agree with each other.
+    // The format authority for this repository's file, asserted against the
+    // file rather than trusted. A writer that inlines JSON.stringify instead
+    // of calling serialiseMeta fails here.
     expect(web).toBe(serialiseMeta(JSON.parse(web) as Meta));
     expect(web.endsWith('\n')).toBe(false);
   });
