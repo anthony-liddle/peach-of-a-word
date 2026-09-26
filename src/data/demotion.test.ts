@@ -66,17 +66,19 @@ function puzzleWith(lists: PatchableLists, rack: string): Puzzle {
 const puzzleFor = (rack: string) => puzzleWith(merged, rack);
 
 describe('the committed demotions', () => {
-  it('demotes the twenty-three decided words', () => {
+  it('demotes the forty-eight decided words', () => {
     // 14 from the register sweep, plus the eight vulgar-not-slur words that
     // came off the denylist and were demoted so they can never be required,
-    // plus abort (2026-08-11).
+    // plus abort (2026-08-11). 48 from orchard v1.8.0 (was 23): 22 forms of
+    // the 13 slur-shadowed words with a live ordinary sense, decided
+    // 2026-09-26, and coulie, eskimo and eskimos. None was in the common pool.
     //
     // The count is pinned on purpose, and this is the second record of it
     // rather than an accident: a stray demote row is a curation change nobody
     // decided, and it should fail here rather than reach a board quietly.
     // Moving this number is part of making the decision, not a chore that
     // follows it.
-    expect(demoted).toHaveLength(23);
+    expect(demoted).toHaveLength(48);
     for (const word of [
       'rape',
       'genocide',

@@ -31345,8 +31345,6 @@ cooler
 coolers
 coolest
 coolheaded
-coolie
-coolies
 cooling
 coolish
 coolly
@@ -80113,8 +80111,6 @@ kaes
 kaf
 kaffeeklatsch
 kaffeeklatsches
-kaffir
-kaffirs
 kaffiyeh
 kaffiyehs
 kafir
@@ -93930,8 +93926,6 @@ mongers
 mongo
 mongoe
 mongoes
-mongol
-mongols
 mongoose
 mongooses
 mongos
@@ -107016,8 +107010,6 @@ palea
 paleae
 paleal
 paled
-paleface
-palefaces
 palely
 paleness
 palenesses
@@ -125074,8 +125066,6 @@ redshirt
 redshirted
 redshirting
 redshirts
-redskin
-redskins
 redstart
 redstarts
 redtail
@@ -134174,7 +134164,6 @@ schistosomiasis
 schists
 schizier
 schiziest
-schizo
 schizocarp
 schizocarps
 schizogonic
@@ -134192,7 +134181,6 @@ schizophrenias
 schizophrenic
 schizophrenically
 schizophrenics
-schizos
 schizy
 schizzier
 schizziest
@@ -138464,10 +138452,8 @@ shyer
 shyers
 shyest
 shying
-shylock
 shylocked
 shylocking
-shylocks
 shyly
 shyness
 shynesses
@@ -169616,7 +169602,6 @@ whitewing
 whitewings
 whitewood
 whitewoods
-whitey
 whither
 whithersoever
 whitherward

@@ -47,11 +47,11 @@ They are built in orchard and vendored here from a pinned release; see
 The two corpora were measured separately, because they do not behave the same
 way:
 
-- **No Wiktionary-derived definition is verbatim.** All 24,858 ship as a
+- **No Wiktionary-derived definition is verbatim.** All 24,856 ship as a
   composed string, a part-of-speech label joined to one sense, which is not a
   string the entry contains: `noun. ` and then the gloss. Not one row lacks it.
-- **13,220 of them had more than one sense to choose from**, 95,418 senses in
-  total, and exactly one is kept per word. The rest are discarded.
+- **13,216 of them had more than one sense to choose from**, 83,750 senses in
+  total across them, and exactly one is kept per word. The rest are discarded.
 - **628 are shorter than the sense they came from**, cut to the first sentence
   or to a character cap.
 - **442 of the 799 etymologies differ from the entry's rendered prose. The
@@ -67,13 +67,13 @@ committed sense cache stores text that rule has already been applied to. Where
 the raw source is still on hand, the etymology cache, none of the 799 entries
 contained an em dash, so there it changed nothing.
 
-**38 of the 24,896 definitions are not from Wiktionary at all.** They were
+**40 of the 24,896 definitions are not from Wiktionary at all.** They were
 written for this game, and `vendor/lexicon/gloss-provenance.tsv` names every
 one. Those rows are this project's own words and carry no third-party licence.
 The definition card and the source-word reveal caption them accordingly, and
 never credit Wiktionary for them.
 
-Two of those 38 words, `eighteen` and `fourteen`, are also source words with an
+Two of those 40 words, `eighteen` and `fourteen`, are also source words with an
 etymology. Their rows are split: the definition is this project's, the etymology
 is Wiktionary's, and the reveal credits both in one line.
 
@@ -91,6 +91,12 @@ English Wiktionary at build time" and named `scripts/data-raw/definitions.tsv`.
 Neither was still true: the corpora are vendored from a pinned orchard release,
 and that path does not exist. It also said nothing about the text being
 modified, and nothing about the 38.
+
+**Corrected 2026-09-26, for orchard v1.8.0.** Two curated rows, `fagot` and
+`sulla`, became this project's in that release, so 38 became 40 and 24,858
+became 24,856. The multi-sense figures were also corrected to describe the
+Wiktionary-derived rows they sit under: 13,220 had been counted over the whole
+generated corpus, and 95,418 is the whole sense cache's total.
 
 ## Fonts
 

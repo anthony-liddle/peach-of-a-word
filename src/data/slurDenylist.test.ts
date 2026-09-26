@@ -76,11 +76,16 @@ const bands = (p: Puzzle) => [
 ];
 
 describe('the denylist is wired to the shipped patch', () => {
-  it('ships both derived blocks, 216 from the source and 23 supplemented', () => {
+  it('ships both derived blocks, 216 from the source and 135 supplemented', () => {
     // Down from 218 and 25: cunt, cunts, slut and sluts are vulgar rather than
     // slurs, so they came off the denylist and were demoted instead.
-    expect(denied).toHaveLength(239);
-    expect(deniedSet.size).toBe(239);
+    //
+    // 135 from orchard v1.8.0 (was 23): the supplement finished and sourced,
+    // checked against vendored Wiktionary and Wikipedia lists, with every
+    // regular plural of a denied word a decision. Each row carries its reason
+    // in orchard's data-raw/supplement-slurs.tsv.
+    expect(denied).toHaveLength(351);
+    expect(deniedSet.size).toBe(351);
     // The supplement covers what a tournament lexicon could justify keeping.
     for (const word of ['faggot', 'fag', 'coon', 'negro', 'tranny', 'homo']) {
       expect(deniedSet.has(word)).toBe(true);

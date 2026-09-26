@@ -17357,8 +17357,6 @@ backplate
 backplates
 backpointer
 backpointers
-backra
-backras
 backrope
 backropes
 backrun
@@ -17835,8 +17833,6 @@ bakhshishing
 bakie
 bakingly
 bakli
-bakra
-bakras
 baksheeshed
 baksheeshing
 bakshis
@@ -19735,8 +19731,6 @@ beamsmen
 beamster
 beamwork
 beancod
-beaner
-beaners
 beanfeast
 beanfeaster
 beanfeasts
@@ -22843,8 +22837,6 @@ bingee
 bingey
 bingeys
 binghamton
-binghi
-binghis
 bingies
 bingle
 bingled
@@ -23653,7 +23645,6 @@ blackcurrants
 blackdamp
 blackdamps
 blacketeer
-blackey
 blackeye
 blackeyes
 blackfaced
@@ -23677,7 +23668,6 @@ blackhearted
 blackheartedly
 blackheartedness
 blackie
-blackies
 blackishly
 blackishness
 blackit
@@ -23715,7 +23705,6 @@ blackwashing
 blackweed
 blackwork
 blackwort
-blacky
 blad
 bladded
 bladdered
@@ -25334,10 +25323,8 @@ boomslangs
 boomster
 boondocker
 boonfellow
-boong
 boongaries
 boongary
-boongs
 boonk
 boonless
 boopic
@@ -25545,8 +25532,6 @@ boryl
 bosbok
 bosboks
 bosc
-bosche
-bosches
 boschvark
 boschveld
 boschvelds
@@ -28545,7 +28530,6 @@ burrels
 burrfish
 burrfishes
 burrgrailer
-burrhead
 burrheaded
 burrheadedness
 burrhel
@@ -35771,7 +35755,6 @@ chiffonnieres
 chiffonniers
 chiffony
 chiffrobe
-chigga
 chiggak
 chiggerflower
 chiggerweed
@@ -37425,7 +37408,6 @@ chuffled
 chuffles
 chuffling
 chughole
-chuhra
 chukor
 chukors
 chulan
@@ -43981,8 +43963,6 @@ coomiest
 cooming
 cooms
 coomy
-coonass
-coonasses
 coondog
 coondogs
 coonier
@@ -55478,7 +55458,6 @@ diedrals
 diedric
 diegeses
 diegesis
-diego
 diegueno
 diehardism
 diehardisms
@@ -72347,7 +72326,6 @@ featherway
 featherweed
 featherwing
 featherwise
-featherwood
 featherwork
 featherworker
 feating
@@ -72439,7 +72417,6 @@ fedexing
 fedifragous
 fedity
 feeable
-feeb
 feeblebrained
 feebled
 feeblehearted
@@ -72448,7 +72425,6 @@ feebleheartedness
 feebles
 feebless
 feebling
-feebs
 feedbin
 feedboard
 feeded
@@ -77584,7 +77560,6 @@ froelichia
 froeman
 frogbit
 frogbits
-frogeater
 frogface
 frogflower
 frogfoot
@@ -78649,7 +78624,6 @@ gadinic
 gadinine
 gaditan
 gadite
-gadjes
 gadling
 gadlings
 gadman
@@ -79927,8 +79901,6 @@ gaugings
 gauguin
 gauguinesque
 gauily
-gauje
-gaujes
 gauk
 gaul
 gaulding
@@ -81486,7 +81458,6 @@ ginormous
 ginshop
 ginshops
 ginward
-ginzos
 giobertite
 giocoso
 giojoso
@@ -81494,10 +81465,6 @@ giornata
 giornatate
 gios
 giottesque
-gippies
-gippo
-gippos
-gippy
 gipseian
 gipsen
 gipsens
@@ -83477,8 +83444,6 @@ gowpenfuls
 gowpens
 gowpin
 goyazite
-goyin
-goyisch
 goyle
 gozell
 gozill
@@ -85665,10 +85630,6 @@ gypaetus
 gype
 gyppery
 gyppie
-gyppies
-gyppo
-gyppos
-gyppy
 gypsine
 gypsiologist
 gypsite
@@ -92265,12 +92226,10 @@ houstonia
 houstonias
 housty
 housy
-hout
 houted
 houting
 houtings
 houtou
-houts
 houttuynia
 houvari
 houve
@@ -95817,7 +95776,6 @@ ijtihads
 ijussite
 ikan
 ikary
-ikey
 ikeyness
 ikona
 ikra
@@ -103829,7 +103787,6 @@ janua
 januaries
 january
 jaob
-jap
 japaconin
 japaconine
 japaconitin
@@ -103848,7 +103805,6 @@ japishness
 japonic
 japped
 japping
-japs
 japygid
 japygoid
 jaquette
@@ -111211,8 +111167,6 @@ leycesteria
 leyland
 leymus
 leysing
-lezes
-lezz
 lherzite
 lherzolite
 lherzolites
@@ -113562,8 +113516,6 @@ lubed
 lubfish
 lubfishes
 lubing
-lubra
-lubras
 lubricational
 lubricatory
 lubriciousness
@@ -123964,7 +123916,6 @@ moneymongering
 moneyocracy
 moneysaving
 moneywise
-mong
 mongcorn
 mongcorns
 mongerer
@@ -123985,7 +123936,6 @@ mongrelity
 mongrelizer
 mongrelly
 mongrelness
-mongs
 monheimite
 monial
 monials
@@ -126619,10 +126569,8 @@ munshi
 munshis
 munsif
 munsiff
-munt
 muntiacus
 muntingia
-munts
 muntu
 muntus
 muntz
@@ -128026,7 +127974,6 @@ nanako
 nanander
 nanawood
 nancere
-nancys
 nandi
 nandine
 nandines
@@ -128875,7 +128822,6 @@ needn
 neednt
 needsly
 needsome
-neeger
 neela
 neeld
 neelds
@@ -128923,7 +128869,6 @@ negationists
 negativate
 negativer
 negatory
-neger
 neginoth
 neglectable
 neglectedly
@@ -128972,7 +128917,6 @@ negrophilism
 negrophilisms
 negrophilist
 negrophilists
-negros
 nehemiah
 nehiloth
 neighborer
@@ -130165,7 +130109,6 @@ niflheim
 nifling
 niftiness
 niftinesses
-nig
 nigella
 nigellas
 niger
@@ -130179,32 +130122,21 @@ niggardizes
 niggardizing
 niggardling
 niggardness
-niggaz
-nigged
 niggerdom
 niggerdoms
 niggered
 niggerfish
 niggerfishes
 niggergoose
-niggerhead
-niggerheads
 niggering
-niggerish
-niggerism
-niggerisms
-niggerling
-niggerlings
 niggertoe
 niggerweed
-niggery
 nigget
 nigging
 nigglier
 niggliest
 niggly
 niggot
-niggra
 niggun
 nighhand
 nighish
@@ -130271,7 +130203,6 @@ nightworkers
 nignay
 nignye
 nigori
-nigra
 nigranilin
 nigraniline
 nigrescence
@@ -149441,10 +149372,6 @@ papingo
 papio
 papion
 papiopio
-papish
-papisher
-papishers
-papishes
 papistical
 papistically
 papistlike
@@ -157698,7 +157625,6 @@ pikemonger
 pikeperch
 pikeperches
 piketail
-pikey
 pikle
 pikuls
 piky
@@ -161734,7 +161660,6 @@ pommer
 pommery
 pommet
 pommetty
-pommey
 pomo
 pomoeriums
 pomolo
@@ -162006,7 +161931,6 @@ pooveries
 poovery
 poovier
 pooviest
-poovy
 popadam
 popadum
 popadums
@@ -178138,8 +178062,6 @@ refertilizing
 refetch
 refete
 reffelt
-reffo
-reffos
 reffroze
 reffrozen
 refillings
@@ -183411,8 +183333,6 @@ roofwise
 roofy
 rooibok
 rooibos
-rooinek
-rooineks
 rooing
 rooker
 rookeried
@@ -184480,7 +184400,6 @@ rushmore
 rushwork
 rusines
 ruskin
-rusky
 rusma
 rusmas
 rusot
@@ -187430,7 +187349,6 @@ schistosternia
 schistothorax
 schistous
 schistus
-schiz
 schizachyrium
 schizaea
 schizaeaceae
@@ -187438,7 +187356,6 @@ schizaeaceous
 schizanthus
 schizanthuses
 schizaxon
-schizes
 schizocarpic
 schizocarpous
 schizochroal
@@ -187509,7 +187426,6 @@ schizothymic
 schizothymics
 schizotrichia
 schiztic
-schizzo
 schlemihl
 schlemihls
 schlenter
@@ -193564,8 +193480,6 @@ shola
 sholas
 shole
 shonde
-shoneen
-shoneens
 shonkier
 shonkiest
 shonkinite
@@ -199332,7 +199246,6 @@ spayard
 spayards
 spaza
 spazas
-spazes
 spazzed
 spazzing
 speakableness
@@ -200087,7 +200000,6 @@ spiflicating
 spiflication
 spiflications
 spig
-spiggoty
 spighted
 spighting
 spights
@@ -212306,13 +212218,11 @@ taiaha
 taiahas
 taich
 taichung
-taig
 taigle
 taigled
 taigles
 taiglesome
 taigling
-taigs
 taihoa
 taikhana
 taikih
@@ -216862,7 +216772,6 @@ thickies
 thicking
 thickleaf
 thickleaves
-thicklips
 thickneck
 thicknessing
 thicko
@@ -219843,8 +219752,6 @@ towbars
 towcock
 towd
 towdie
-towelhead
-towelheads
 towelry
 toweringness
 towerless
@@ -220483,7 +220390,6 @@ trankum
 trankums
 tranky
 tranmissibility
-trannie
 tranquilization
 tranquilizations
 tranquilizingly
@@ -250098,7 +250004,6 @@ whiteblow
 whiteboard
 whiteboards
 whitebottle
-whiteboy
 whiteboyism
 whiteboyisms
 whitecapper
@@ -250418,7 +250323,6 @@ wigdom
 wigeling
 wigful
 wiggen
-wigger
 wiggish
 wiggishness
 wiggism
@@ -251487,7 +251391,6 @@ wootzes
 woozle
 wopped
 wopping
-woppish
 wopsy
 worble
 worcester
