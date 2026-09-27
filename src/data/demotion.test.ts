@@ -32,6 +32,18 @@ const calendar = readCalendarWords();
 const demoted = [...patch.demote];
 const demotedSet = new Set(demoted);
 
+// The rung a demoted word lands on is the rung its own lists give it. A word
+// taken out of the common pool sits inside SCOWL 70, so it lands on uncommon.
+// A word demoted without ever having been common keeps the band it already had:
+// karen and twinks sit beyond SCOWL 70 and grade rare, which is still off-page.
+// Until orchard v1.8.1 every demoted word that a calendar rack could spell had
+// been common, so this read as "always uncommon"; karen, formable from DARKNESS,
+// is the first that is not.
+const beyond70 = new Set(merged.beyond70);
+const beyond95 = new Set(merged.beyond95);
+const expectedRung = (word: string) =>
+  beyond95.has(word) ? 'mythic' : beyond70.has(word) ? 'rare' : 'uncommon';
+
 /** The 18 racks that required rape before the demotion. */
 const RAPE_RACKS = [
   'particle',
@@ -66,19 +78,20 @@ function puzzleWith(lists: PatchableLists, rack: string): Puzzle {
 const puzzleFor = (rack: string) => puzzleWith(merged, rack);
 
 describe('the committed demotions', () => {
-  it('demotes the forty-eight decided words', () => {
+  it('demotes the fifty-one decided words', () => {
     // 14 from the register sweep, plus the eight vulgar-not-slur words that
     // came off the denylist and were demoted so they can never be required,
     // plus abort (2026-08-11). 48 from orchard v1.8.0 (was 23): 22 forms of
     // the 13 slur-shadowed words with a live ordinary sense, decided
     // 2026-09-26, and coulie, eskimo and eskimos. None was in the common pool.
+    // 51 from orchard v1.8.1: twink, twinks and karen, none common either.
     //
     // The count is pinned on purpose, and this is the second record of it
     // rather than an accident: a stray demote row is a curation change nobody
     // decided, and it should fail here rather than reach a board quietly.
     // Moving this number is part of making the decision, not a chore that
     // follows it.
-    expect(demoted).toHaveLength(48);
+    expect(demoted).toHaveLength(51);
     for (const word of [
       'rape',
       'genocide',
@@ -129,7 +142,7 @@ describe('the committed demotions', () => {
 });
 
 describe('a demoted word is permitted, never required', () => {
-  it('is absent from par, the completion count, and every band but uncommon', () => {
+  it('is absent from par and the completion count, and grades on its own rung', () => {
     const affected = calendar.filter((rack) =>
       demoted.some((w) => canForm(w, rack)),
     );
@@ -139,10 +152,12 @@ describe('a demoted word is permitted, never required', () => {
       for (const word of demoted) {
         // Never in the set, so never in the denominator and never in par.
         expect(puzzle.commonWords.has(word)).toBe(false);
-        // And never pushed into the rare or mythic tail either: a common word
-        // sits inside SCOWL 70, so demotion lands it on the uncommon rung.
-        expect(puzzle.rareWords.has(word)).toBe(false);
-        expect(puzzle.mythicWords.has(word)).toBe(false);
+        // And never pushed into a rarer tail than its own lists give it: a
+        // formerly common word lands on uncommon, and a word that was never
+        // common keeps its band. See expectedRung.
+        if (canForm(word, rack)) {
+          expect(classifyWord(word, puzzle)).toBe(expectedRung(word));
+        }
       }
     }
   }, 240_000);
@@ -155,7 +170,7 @@ describe('a demoted word is permitted, never required', () => {
       const result = validateGuess(word, puzzle, new Set());
       expect(result.kind).toBe('valid');
       if (result.kind === 'valid') expect(result.score).toBeGreaterThan(0);
-      expect(classifyWord(word, puzzle)).toBe('uncommon');
+      expect(classifyWord(word, puzzle)).toBe(expectedRung(word));
     }
   });
 
