@@ -71,6 +71,13 @@ export function spreadBetween(a: Measurement, b: Measurement): Spread {
   if (!a.envelopeDbfs.every((v, i) => sameNull(v, b.envelopeDbfs[i])))
     s.membershipChanges += 1;
   s.hz = gap(a.fundamentalHz, b.fundamentalHz);
+  if ((a.pair === undefined) !== (b.pair === undefined))
+    s.membershipChanges += 1;
+  if (a.pair && b.pair)
+    a.pair.notes.forEach((n, i) => {
+      s.hz = Math.max(s.hz, Math.abs(n.hz - b.pair!.notes[i]!.hz));
+      s.db = Math.max(s.db, Math.abs(n.db - b.pair!.notes[i]!.db));
+    });
 
   a.spectrum.forEach((wa, i) => {
     const wb = b.spectrum[i]!;

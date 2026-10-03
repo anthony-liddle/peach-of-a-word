@@ -20,12 +20,14 @@
     "rms": "The RMS level from onset to end, in dBFS.",
     "fundamental": "The pitch of the first note to sound, over 40 ms from the onset: a YIN period estimate, refined to the peak of the Hann-windowed spectrum within 3% of it. For source and edition that is the first arpeggio note, for invalid the first of the pair; for a found word it is the note its length plays, under the octave shimmer and any sparkle.",
     "envelope": "The largest sample magnitude, in dBFS, within a 10 ms window centred on each time in envelopeTimes. null where every sample in the window is zero.",
-    "spectrum": "The strongest partials in a 40 ms Blackman-Harris window centred on each time in spectrumTimes, from a zero-padded FFT, each refined by a parabola through its peak bin. Up to 8, strongest first, down to 60 dB under the window's strongest and never under -120 dBFS. Each level is relative to the strongest partial in its own window, so at 155 ms that is the glint in a cute mythic sound and the main note in its letterpress twin; dbfs is that strongest partial's amplitude, so every level can be made absolute. A window is null when it is silent or under the absolute floor. Partials closer than about 50 Hz are not resolved: the invalid pair, 196 and 174.61 Hz, reads as one where both sound.",
+    "spectrum": "The strongest partials in a 40 ms Blackman-Harris window centred on each time in spectrumTimes, from a zero-padded FFT, each refined by a parabola through its peak bin. Up to 8, strongest first, down to 60 dB under the window's strongest and never under -120 dBFS. Each level is relative to the strongest partial in its own window, so at 155 ms that is the glint in a cute mythic sound and the main note in its letterpress twin; dbfs is that strongest partial's amplitude, so every level can be made absolute. A window is null when it is silent or under the absolute floor. Partials closer than about 50 Hz are not resolved in one window: the invalid pair, 196 and 174.61 Hz, reads as one where both sound. See pair for that cue.",
+    "pair": "The rejected-guess cue only. Its two notes, 21.4 Hz apart, cannot be separated in frequency by any window: they are sequential, 80 ms apart, so a window long enough to resolve 21 Hz holds both, and their offset puts fringes every 12.5 Hz through the spectrum, finer than the gap between them; each note also decays in about 17 ms, which widens it to about 18 Hz on its own. Nor can a beat be measured: the two are within 10 dB of each other for about 3 ms, against a 46.8 ms beat period. So each note is read alone, in time, over as much of the cue as it has to itself: the first from the call to 80 ms, where the second starts; the second from there to the stop, with the first 34 dB under it at the start of that span and falling. hz is that note's fundamental, measured as fundamental is. db is its level relative to the first note, from the magnitude of its untapered spectrum at its own frequency. That still moves with the phase the oscillator starts at, by up to about 0.2 dB on this cue, because a note this short overlaps its own mirror image at minus its frequency; a peak sample moves by about 1.1 dB. intervalSemitones is 12 log2 of the first frequency over the second.",
     "thresholdDb": -40,
     "pitchWindowS": 0.04,
     "envelopeWindowS": 0.01,
     "envelopeTimes": [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6],
-    "spectrumTimes": [0.02, 0.065, 0.11, 0.155, 0.3, 0.6, 1.2]
+    "spectrumTimes": [0.02, 0.065, 0.11, 0.155, 0.3, 0.6, 1.2],
+    "pairSplitS": 0.08
   },
   "tolerance": {
     "about": "How far a number may differ from this record before a comparison calls it a change. Every sound was rendered 5 times; each tolerance is the widest difference seen between those renders, rounded up to the step the value is recorded to, plus one step, because two values rounded independently can land a step apart when nothing changed. This covers render-to-render noise only: a different engine or browser will need its own allowance on top.",
@@ -2407,6 +2409,13 @@
         { "t": 0.6, "dbfs": null, "partials": [] },
         { "t": 1.2, "dbfs": null, "partials": [] }
       ],
+      "pair": {
+        "notes": [
+          { "from": 0, "to": 0.08, "hz": 196.05, "db": 0 },
+          { "from": 0.08, "to": 0.26, "hz": 174.58, "db": 0.19 }
+        ],
+        "intervalSemitones": 2.008
+      },
       "wav": "invalid.wav",
       "samples": 12480,
       "bytes": 49978,

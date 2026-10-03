@@ -49,6 +49,13 @@ export const SPECTRUM_TIMES_S = [
   0.02, 0.065, 0.11, 0.155, 0.3, 0.6, 1.2,
 ] as const;
 
+/**
+ * The rejected-guess cue's second note starts this long after its first: the
+ * engine plays INVALID_NOTES 80 ms apart. The one place the two can be told
+ * apart is in time, so this is where the cue is split.
+ */
+export const PAIR_SPLIT_S = 0.08;
+
 export const METHOD = {
   time: 'Seconds from the moment the cue is called. Every cue schedules its first note at that moment.',
   onset: `The first sample whose magnitude is within ${-THRESHOLD_DB} dB of the sound's own peak.`,
@@ -59,8 +66,23 @@ export const METHOD = {
   rms: 'The RMS level from onset to end, in dBFS.',
   fundamental: `The pitch of the first note to sound, over ${PITCH_WINDOW_S * 1000} ms from the onset: a YIN period estimate, refined to the peak of the Hann-windowed spectrum within 3% of it. For source and edition that is the first arpeggio note, for invalid the first of the pair; for a found word it is the note its length plays, under the octave shimmer and any sparkle.`,
   envelope: `The largest sample magnitude, in dBFS, within a ${ENVELOPE_WINDOW_S * 1000} ms window centred on each time in envelopeTimes. null where every sample in the window is zero.`,
-  spectrum: `The strongest partials in a ${PARTIAL_WINDOW_S * 1000} ms Blackman-Harris window centred on each time in spectrumTimes, from a zero-padded FFT, each refined by a parabola through its peak bin. Up to ${MAX_PARTIALS}, strongest first, down to ${-PARTIAL_FLOOR_DB} dB under the window's strongest and never under ${PARTIAL_ABSOLUTE_FLOOR_DBFS} dBFS. Each level is relative to the strongest partial in its own window, so at 155 ms that is the glint in a cute mythic sound and the main note in its letterpress twin; dbfs is that strongest partial's amplitude, so every level can be made absolute. A window is null when it is silent or under the absolute floor. Partials closer than about 50 Hz are not resolved: the invalid pair, 196 and 174.61 Hz, reads as one where both sound.`,
+  spectrum: `The strongest partials in a ${PARTIAL_WINDOW_S * 1000} ms Blackman-Harris window centred on each time in spectrumTimes, from a zero-padded FFT, each refined by a parabola through its peak bin. Up to ${MAX_PARTIALS}, strongest first, down to ${-PARTIAL_FLOOR_DB} dB under the window's strongest and never under ${PARTIAL_ABSOLUTE_FLOOR_DBFS} dBFS. Each level is relative to the strongest partial in its own window, so at 155 ms that is the glint in a cute mythic sound and the main note in its letterpress twin; dbfs is that strongest partial's amplitude, so every level can be made absolute. A window is null when it is silent or under the absolute floor. Partials closer than about 50 Hz are not resolved in one window: the invalid pair, 196 and 174.61 Hz, reads as one where both sound. See pair for that cue.`,
+  pair: `The rejected-guess cue only. Its two notes, 21.4 Hz apart, cannot be separated in frequency by any window: they are sequential, ${PAIR_SPLIT_S * 1000} ms apart, so a window long enough to resolve 21 Hz holds both, and their offset puts fringes every ${Math.round((1 / PAIR_SPLIT_S) * 10) / 10} Hz through the spectrum, finer than the gap between them; each note also decays in about 17 ms, which widens it to about 18 Hz on its own. Nor can a beat be measured: the two are within 10 dB of each other for about 3 ms, against a 46.8 ms beat period. So each note is read alone, in time, over as much of the cue as it has to itself: the first from the call to ${PAIR_SPLIT_S * 1000} ms, where the second starts; the second from there to the stop, with the first 34 dB under it at the start of that span and falling. hz is that note's fundamental, measured as fundamental is. db is its level relative to the first note, from the magnitude of its untapered spectrum at its own frequency. That still moves with the phase the oscillator starts at, by up to about 0.2 dB on this cue, because a note this short overlaps its own mirror image at minus its frequency; a peak sample moves by about 1.1 dB. intervalSemitones is 12 log2 of the first frequency over the second.`,
 } as const;
+
+export interface PairNote {
+  /** The span the note is read over, in seconds after the cue is called. */
+  from: number;
+  to: number;
+  hz: number;
+  /** Level relative to the first note. */
+  db: number;
+}
+
+export interface NotePair {
+  notes: [PairNote, PairNote];
+  intervalSemitones: number;
+}
 
 export interface Measurement {
   onset: number;
@@ -72,6 +94,8 @@ export interface Measurement {
   fundamentalHz: number | null;
   envelopeDbfs: (number | null)[];
   spectrum: PartialWindow[];
+  /** Only for a cue measured with a split: the rejected guess. */
+  pair?: NotePair;
 }
 
 const dbfs = (linear: number): number => 20 * Math.log10(linear);
@@ -197,7 +221,59 @@ export function fundamental(
   return refinePeak(x, coarse * 0.97, coarse * 1.03, sampleRate);
 }
 
-export function measure(x: Float32Array, sampleRate: number): Measurement {
+/** Magnitude of the untapered spectrum of `x` at `hz`: far steadier across phase than a peak sample. */
+function levelAt(x: Float32Array, hz: number, sampleRate: number): number {
+  const w = (2 * Math.PI * hz) / sampleRate;
+  let re = 0;
+  let im = 0;
+  for (let i = 0; i < x.length; i++) {
+    re += x[i]! * Math.cos(w * i);
+    im -= x[i]! * Math.sin(w * i);
+  }
+  return Math.hypot(re, im);
+}
+
+/**
+ * Two sequential notes, each read alone over the span it has to itself: the
+ * first up to `splitS`, the second from there to the last sound. See
+ * METHOD.pair for why in time and not in frequency.
+ */
+export function notePair(
+  x: Float32Array,
+  sampleRate: number,
+  splitS: number,
+): NotePair {
+  let last = x.length - 1;
+  while (last > 0 && x[last] === 0) last--;
+  const split = Math.round(splitS * sampleRate);
+  const spans = [
+    [0, split],
+    [split, last + 1],
+  ] as const;
+  const read = spans.map(([from, to]) => {
+    const segment = x.subarray(from, to);
+    const hz = fundamental(segment, sampleRate);
+    if (hz === null) throw new Error('A note of the pair is silent.');
+    return { from, to, hz, level: levelAt(segment, hz, sampleRate) };
+  });
+  const [a, b] = read as [(typeof read)[0], (typeof read)[0]];
+  const note = (n: typeof a): PairNote => ({
+    from: round(n.from / sampleRate, 5),
+    to: round(n.to / sampleRate, 5),
+    hz: round(n.hz, 2),
+    db: round(20 * Math.log10(n.level / a.level), 2),
+  });
+  return {
+    notes: [note(a), note(b)],
+    intervalSemitones: round(12 * Math.log2(a.hz / b.hz), 3),
+  };
+}
+
+export function measure(
+  x: Float32Array,
+  sampleRate: number,
+  options: { pairSplitS?: number } = {},
+): Measurement {
   let peak = 0;
   let last = -1;
   for (let i = 0; i < x.length; i++) {
@@ -239,5 +315,8 @@ export function measure(x: Float32Array, sampleRate: number): Measurement {
     fundamentalHz: hz === null ? null : round(hz, 2),
     envelopeDbfs,
     spectrum: SPECTRUM_TIMES_S.map((t) => partialsAt(x, t, sampleRate)),
+    ...(options.pairSplitS !== undefined && {
+      pair: notePair(x, sampleRate, options.pairSplitS),
+    }),
   };
 }

@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { ENVELOPE_TIMES_S, fundamental, measure } from './soundMeasure.ts';
+import {
+  ENVELOPE_TIMES_S,
+  fundamental,
+  measure,
+  notePair,
+} from './soundMeasure.ts';
 
 /**
  * The measurements are checked against signals whose answers are known, so a
@@ -100,5 +105,57 @@ describe('fundamental, over the 40 ms window the baseline uses', () => {
 
   test('silence has no fundamental', () => {
     expect(fundamental(new Float32Array(1920), SR)).toBeNull();
+  });
+});
+
+describe('notePair, the rejected guess read one note at a time', () => {
+  // The engine's note: up to its peak in 12 ms, down to 1e-4 by its end, off
+  // 20 ms later. Two of them 80 ms apart, as playInvalid schedules them.
+  const note =
+    (hz: number, t0: number, phase = 0) =>
+    (t: number) => {
+      const u = t - t0;
+      if (u < 0 || u > 0.18) return 0;
+      const env =
+        u < 0.012
+          ? 1e-4 * (0.5 / 1e-4) ** (u / 0.012)
+          : 0.5 * (1e-4 / 0.5) ** ((u - 0.012) / 0.148);
+      return 0.18 * env * Math.sin(2 * Math.PI * hz * u + phase);
+    };
+  const pair = (second: number, phase = 0) =>
+    signal(0.26, (t) => note(196, 0)(t) + note(second, 0.08, phase)(t));
+
+  test('reads each note at its own pitch, a whole tone apart, at one level', () => {
+    const { notes, intervalSemitones } = notePair(pair(174.61), SR, 0.08);
+    expect(notes[0].hz).toBeCloseTo(196, 0);
+    expect(notes[1].hz).toBeCloseTo(174.61, 0);
+    expect(intervalSemitones).toBeCloseTo(2, 1);
+    expect(Math.abs(notes[1].db)).toBeLessThan(0.5);
+    expect(notes[0]).toMatchObject({ from: 0, to: 0.08 });
+    expect(notes[1]).toMatchObject({ from: 0.08, to: 0.26 });
+  });
+
+  test('a second note a minor third down reads as three semitones', () => {
+    expect(notePair(pair(164.81), SR, 0.08).intervalSemitones).toBeCloseTo(
+      3,
+      1,
+    );
+  });
+
+  test('where the crest falls moves the level by under 0.3 dB, a peak sample by over 1', () => {
+    const phases = Array.from({ length: 8 }, (_, k) => (2 * Math.PI * k) / 8);
+    const swing = (values: number[]) =>
+      Math.max(...values) - Math.min(...values);
+    const spectral = phases.map(
+      (ph) => notePair(pair(174.61, ph), SR, 0.08).notes[1].db,
+    );
+    const peakSample = phases.map((ph) => {
+      const x = pair(174.61, ph);
+      const peak = (from: number, to: number) =>
+        Math.max(...Array.from(x.subarray(from, to), Math.abs));
+      return 20 * Math.log10(peak(3840, x.length) / peak(0, 3840));
+    });
+    expect(swing(spectral)).toBeLessThan(0.3);
+    expect(swing(peakSample)).toBeGreaterThan(1);
   });
 });

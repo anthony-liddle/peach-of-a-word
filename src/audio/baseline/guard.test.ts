@@ -5,13 +5,14 @@ import {
   glintFailures,
   ladderFailures,
   lengths,
+  pairFailures,
   uncommonVersusRare,
   type Fixture,
 } from './guard.ts';
 
 /**
- * The baseline can see what a port is likeliest to lose: the rung ladder and
- * the cute glint.
+ * The baseline can see what a port is likeliest to lose: the rung ladder, the
+ * cute glint, and the rejected guess's two notes.
  *
  * Reads the committed baseline. SOUND_BASELINE_DIR points it at another
  * capture instead, such as one from `pnpm sounds:baseline --out <dir>` with the
@@ -36,6 +37,10 @@ describe('the sound baseline sees the rung ladder and the glint', () => {
 
   test('every cute mythic has the 5x glint its letterpress twin lacks', () => {
     expect(glintFailures(fixture)).toEqual([]);
+  });
+
+  test('the rejected guess is a descending whole tone, its two notes level', () => {
+    expect(pairFailures(fixture)).toEqual([]);
   });
 
   /**

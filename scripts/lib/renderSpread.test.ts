@@ -91,3 +91,28 @@ describe('toleranceFrom', () => {
     expect(t.db).toBe(0.03);
   });
 });
+
+describe('spreadBetween, the rejected-guess pair', () => {
+  const pair = (hz: number, db: number): Measurement['pair'] => ({
+    notes: [
+      { from: 0, to: 0.08, hz: 196.05, db: 0 },
+      { from: 0.08, to: 0.26, hz, db },
+    ],
+    intervalSemitones: 2,
+  });
+
+  test('reads the notes as pitch and level', () => {
+    const s = spreadBetween(
+      { ...base, pair: pair(174.58, 0.1) },
+      { ...base, pair: pair(174.6, 0.12) },
+    );
+    expect(s.hz).toBeCloseTo(0.02, 8);
+    expect(s.db).toBeCloseTo(0.02, 8);
+  });
+
+  test('counts a pair present in one and not the other', () => {
+    expect(
+      spreadBetween({ ...base, pair: pair(174.58, 0) }, base).membershipChanges,
+    ).toBe(1);
+  });
+});

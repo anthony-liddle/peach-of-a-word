@@ -47,6 +47,7 @@ import {
   ENVELOPE_TIMES_S,
   ENVELOPE_WINDOW_S,
   METHOD,
+  PAIR_SPLIT_S,
   PITCH_WINDOW_S,
   SPECTRUM_TIMES_S,
   THRESHOLD_DB,
@@ -173,9 +174,14 @@ try {
   let noise = { largest: 0, dbBelowPeak: -Infinity, sound: '' };
   let reused = 0;
   for (const sound of sounds) {
+    // The rejected guess is the one cue whose notes are too close to tell apart
+    // in a window, so it is also read note by note, split where the second
+    // starts.
+    const options =
+      sound.cue === 'playInvalid' ? { pairSplitS: PAIR_SPLIT_S } : {};
     const renders: Float32Array[] = [];
     for (let r = 0; r < RENDERS; r++) renders.push(await render(sound.id));
-    const first = measure(renders[0]!, SAMPLE_RATE);
+    const first = measure(renders[0]!, SAMPLE_RATE, options);
     if (first.stop > RENDER_SECONDS - QUIET_TAIL_S)
       throw new Error(
         `${sound.id} was still sounding at the end of the render.`,
@@ -197,14 +203,17 @@ try {
 
     // The record is measured from exactly the samples in its WAV, and every
     // fresh render is held against it to see how far the numbers move.
-    const m = measure(recorded, SAMPLE_RATE);
+    const m = measure(recorded, SAMPLE_RATE, options);
     const peak = 10 ** (m.peakDbfs / 20);
     for (const again of renders) {
       const largest = largestDifference(recorded, again);
       const below = largest === 0 ? -Infinity : 20 * Math.log10(largest / peak);
       if (below > noise.dbBelowPeak)
         noise = { largest, dbBelowPeak: below, sound: sound.id };
-      spread = widest(spread, spreadBetween(m, measure(again, SAMPLE_RATE)));
+      spread = widest(
+        spread,
+        spreadBetween(m, measure(again, SAMPLE_RATE, options)),
+      );
     }
 
     const wav = encodeWav(recorded, SAMPLE_RATE);
@@ -257,6 +266,7 @@ try {
       envelopeWindowS: ENVELOPE_WINDOW_S,
       envelopeTimes: ENVELOPE_TIMES_S,
       spectrumTimes: SPECTRUM_TIMES_S,
+      pairSplitS: PAIR_SPLIT_S,
     },
     tolerance: {
       about: `How far a number may differ from this record before a comparison calls it a change. Every sound was rendered ${RENDERS} times; each tolerance is the widest difference seen between those renders, rounded up to the step the value is recorded to, plus one step, because two values rounded independently can land a step apart when nothing changed. This covers render-to-render noise only: a different engine or browser will need its own allowance on top.`,

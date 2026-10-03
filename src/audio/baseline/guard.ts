@@ -6,7 +6,8 @@
  * the note, so uncommon and rare differ in peak, RMS and timing by a hundredth
  * of a dB or nothing. The glint does move the duration and the envelope, but
  * nothing in the summary says what pitch it is. These read both from the
- * partials instead.
+ * partials instead. The rejected guess's two notes are 21 Hz apart, too close for
+ * any one window, so they are read one at a time instead.
  *
  * Pure functions of a parsed fixture, so the same checks run on the committed
  * baseline, on a capture made somewhere else, or on a port's fixture later.
@@ -24,6 +25,13 @@ export interface Window {
   partials: Partial[];
 }
 
+export interface PairNote {
+  from: number;
+  to: number;
+  hz: number;
+  db: number;
+}
+
 export interface Entry {
   onset: number;
   end: number;
@@ -34,6 +42,10 @@ export interface Entry {
   fundamentalHz: number | null;
   envelopeDbfs: (number | null)[];
   spectrum: Window[];
+  pair?: {
+    notes: [PairNote, PairNote];
+    intervalSemitones: number;
+  };
 }
 
 export interface Fixture {
@@ -190,4 +202,46 @@ export function uncommonVersusRare(f: Fixture): RungGap[] {
       sparkleDb: Math.round(sparkle * 100) / 100,
     };
   });
+}
+
+/** The rejected guess steps down a whole tone: two semitones. */
+const WHOLE_TONE = 2;
+/**
+ * How far the measured interval may sit from it, in semitones: 5 cents. The
+ * render reads 2.007, and a note that decays this fast is read to about 0.05 Hz.
+ */
+const INTERVAL_SLACK = 0.05;
+/** The two notes have one gain, so they read within this much of each other. */
+const PAIR_LEVEL_DB = 1;
+
+/**
+ * The rejected guess is a descending whole tone at one level: two notes, read
+ * one at a time, the first at the cue's own pitch and the second two semitones
+ * under it. See METHOD.pair for why they are read in time and not in one
+ * window.
+ */
+export function pairFailures(f: Fixture): string[] {
+  const e = f.sounds['invalid'];
+  if (!e?.pair) return ['invalid has no pair: its two notes were not read'];
+  const failures: string[] = [];
+  const [first, second] = e.pair.notes;
+  const pitch = e.fundamentalHz!;
+  if (Math.abs(first.hz - pitch) > AT * pitch)
+    failures.push(
+      `invalid's first note reads ${first.hz} Hz, not the cue's pitch of ${pitch} Hz`,
+    );
+  if (!(second.hz < first.hz))
+    failures.push(
+      `invalid's second note, ${second.hz} Hz, is not below its first, ${first.hz} Hz`,
+    );
+  const interval = e.pair.intervalSemitones;
+  if (Math.abs(interval - WHOLE_TONE) > INTERVAL_SLACK)
+    failures.push(
+      `invalid's notes are ${interval} semitones apart, ${first.hz} and ${second.hz} Hz; the pair is a whole tone, ${WHOLE_TONE}`,
+    );
+  if (Math.abs(second.db) > PAIR_LEVEL_DB)
+    failures.push(
+      `invalid's second note is ${second.db} dB from its first; the pair is level`,
+    );
+  return failures;
 }
