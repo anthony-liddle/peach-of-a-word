@@ -19,6 +19,7 @@
     "data:rebundle": "tsx scripts/refresh-bundles.ts",
     "data:refresh-reveals": "tsx scripts/refresh-reveals.ts",
     "icons:build": "tsx scripts/build-icons.ts",
+    "sounds:baseline": "tsx scripts/capture-sound-baseline.ts",
     "prepare": "husky || true",
     "lexicon:update": "tsx scripts/update-lexicon.ts",
     "lexicon:check": "tsx scripts/update-lexicon.ts --check"

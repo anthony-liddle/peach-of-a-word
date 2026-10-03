@@ -1,0 +1,423 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the no-argument engine the game builds > playEdition() schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "triangle 523.25 Hz, start 0, stop 0.52, through gain [set 0.0001 at 0, ramp 0.85 at 0.012, ramp 0.0001 at 0.5] to master",
+    "triangle 659.25 Hz, start 0.1, stop 0.62, through gain [set 0.0001 at 0.1, ramp 0.85 at 0.112, ramp 0.0001 at 0.6] to master",
+    "triangle 783.99 Hz, start 0.2, stop 0.72, through gain [set 0.0001 at 0.2, ramp 0.85 at 0.21200000000000002, ramp 0.0001 at 0.7] to master",
+    "triangle 1046.5 Hz, start 0.30000000000000004, stop 0.8200000000000001, through gain [set 0.0001 at 0.30000000000000004, ramp 0.85 at 0.31200000000000006, ramp 0.0001 at 0.8] to master",
+    "triangle 1318.51 Hz, start 0.4, stop 0.92, through gain [set 0.0001 at 0.4, ramp 0.85 at 0.41200000000000003, ramp 0.0001 at 0.9] to master",
+    "triangle 523.25 Hz, start 0.5, stop 1.62, through gain [set 0.0001 at 0.5, ramp 0.7 at 0.512, ramp 0.0001 at 1.6] to master",
+    "triangle 659.25 Hz, start 0.5, stop 1.62, through gain [set 0.0001 at 0.5, ramp 0.7 at 0.512, ramp 0.0001 at 1.6] to master",
+    "triangle 783.99 Hz, start 0.5, stop 1.62, through gain [set 0.0001 at 0.5, ramp 0.7 at 0.512, ramp 0.0001 at 1.6] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(2) with no rung, in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 392 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 784 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(3, 'mythic') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 392 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 784 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1176 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 1568 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+    "sine 1960 Hz, start 0.13, stop 0.25, through gain [set 0.0001 at 0.13, ramp 0.05 at 0.14200000000000002, ramp 0.0001 at 0.23] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(3, 'mythic') in letterpress schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 392 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 784 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1176 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 1568 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(3, 'rare') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 392 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 784 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1176 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.08 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(3, 'set') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 392 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 784 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(3, 'uncommon') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 392 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 784 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1176 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.06 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(4, 'mythic') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 440 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 880 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1320 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 1760 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+    "sine 2200 Hz, start 0.13, stop 0.25, through gain [set 0.0001 at 0.13, ramp 0.05 at 0.14200000000000002, ramp 0.0001 at 0.23] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(4, 'mythic') in letterpress schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 440 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 880 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1320 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 1760 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(4, 'rare') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 440 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 880 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1320 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.08 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(4, 'set') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 440 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 880 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(4, 'uncommon') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 440 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 880 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1320 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.06 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(5, 'mythic') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 523.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1046.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1569.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 2093 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+    "sine 2616.25 Hz, start 0.13, stop 0.25, through gain [set 0.0001 at 0.13, ramp 0.05 at 0.14200000000000002, ramp 0.0001 at 0.23] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(5, 'mythic') in letterpress schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 523.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1046.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1569.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 2093 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(5, 'rare') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 523.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1046.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1569.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.08 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(5, 'set') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 523.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1046.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(5, 'uncommon') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 523.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1046.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1569.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.06 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(5, mythic) with no theme set schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 523.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1046.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1569.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 2093 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(6, 'mythic') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 587.33 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1174.66 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1761.9900000000002 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 2349.32 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+    "sine 2936.65 Hz, start 0.13, stop 0.25, through gain [set 0.0001 at 0.13, ramp 0.05 at 0.14200000000000002, ramp 0.0001 at 0.23] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(6, 'mythic') in letterpress schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 587.33 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1174.66 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1761.9900000000002 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 2349.32 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(6, 'rare') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 587.33 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1174.66 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1761.9900000000002 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.08 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(6, 'set') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 587.33 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1174.66 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(6, 'uncommon') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 587.33 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1174.66 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1761.9900000000002 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.06 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(7, 'mythic') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 659.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1318.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1977.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 2637 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+    "sine 3296.25 Hz, start 0.13, stop 0.25, through gain [set 0.0001 at 0.13, ramp 0.05 at 0.14200000000000002, ramp 0.0001 at 0.23] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(7, 'mythic') in letterpress schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 659.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1318.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1977.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 2637 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(7, 'rare') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 659.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1318.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1977.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.08 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(7, 'set') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 659.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1318.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(7, 'uncommon') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 659.25 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1318.5 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 1977.75 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.06 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(8, 'mythic') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 783.99 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1567.98 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 2351.9700000000003 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 3135.96 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+    "sine 3919.95 Hz, start 0.13, stop 0.25, through gain [set 0.0001 at 0.13, ramp 0.05 at 0.14200000000000002, ramp 0.0001 at 0.23] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(8, 'mythic') in letterpress schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 783.99 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1567.98 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 2351.9700000000003 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.1 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+    "sine 3135.96 Hz, start 0.09, stop 0.21, through gain [set 0.0001 at 0.09, ramp 0.05 at 0.102, ramp 0.0001 at 0.19] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(8, 'rare') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 783.99 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1567.98 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 2351.9700000000003 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.08 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(8, 'set') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 783.99 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1567.98 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(8, 'uncommon') in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 783.99 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1567.98 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 2351.9700000000003 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.06 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playFound(9, rare) in cute schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 783.99 Hz, start 0, stop 0.30000000000000004, through gain [set 0.0001 at 0, ramp 0.9 at 0.012, ramp 0.0001 at 0.28] to master",
+    "sine 1567.98 Hz, start 0, stop 0.19999999999999998, through gain [set 0.0001 at 0, ramp 0.18 at 0.012, ramp 0.0001 at 0.18] to master",
+    "sine 2351.9700000000003 Hz, start 0.04, stop 0.18, through gain [set 0.0001 at 0.04, ramp 0.08 at 0.052000000000000005, ramp 0.0001 at 0.16] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playInvalid() schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "sine 196 Hz, start 0, stop 0.18, through gain [set 0.0001 at 0, ramp 0.5 at 0.012, ramp 0.0001 at 0.16] to master",
+    "sine 174.61 Hz, start 0.08, stop 0.26, through gain [set 0.0001 at 0.08, ramp 0.5 at 0.092, ramp 0.0001 at 0.24] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > playSource() schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "triangle 523.25 Hz, start 0, stop 0.52, through gain [set 0.0001 at 0, ramp 0.8 at 0.012, ramp 0.0001 at 0.5] to master",
+    "triangle 659.25 Hz, start 0.1, stop 0.62, through gain [set 0.0001 at 0.1, ramp 0.8 at 0.112, ramp 0.0001 at 0.6] to master",
+    "triangle 783.99 Hz, start 0.2, stop 0.72, through gain [set 0.0001 at 0.2, ramp 0.8 at 0.21200000000000002, ramp 0.0001 at 0.7] to master",
+    "triangle 1046.5 Hz, start 0.30000000000000004, stop 0.8200000000000001, through gain [set 0.0001 at 0.30000000000000004, ramp 0.8 at 0.31200000000000006, ramp 0.0001 at 0.8] to master",
+  ],
+}
+`;
+
+exports[`the no-argument engine the game builds > tick() schedules what it did before 1`] = `
+{
+  "context": "resumed 1 time(s), master gain 0.18 [] to destination",
+  "notes": [
+    "square 880 Hz, start 0, stop 0.05, through gain [set 0.0001 at 0, ramp 0.12 at 0.012, ramp 0.0001 at 0.03] to master",
+  ],
+}
+`;

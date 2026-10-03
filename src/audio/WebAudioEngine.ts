@@ -49,34 +49,54 @@ const EDITION_CHORD: readonly Hz[] = [523.25, 659.25, 783.99]; // a C-major clos
 
 const INVALID_NOTES: readonly Hz[] = [196.0, 174.61]; // a soft descending pair
 
+/** Every cue passes through one master gain at this level. Keep it gentle. */
+export const MASTER_GAIN = 0.18;
+
 /**
  * Prototype-level synth built on the Web Audio API. Quiet, lo-fi, behind the
  * AudioEngine interface. The context is created lazily on the first cue, since
  * browsers only allow audio to start from a user gesture.
  */
 export class WebAudioEngine implements AudioEngine {
-  private context: AudioContext | null = null;
+  private context: AudioContext | OfflineAudioContext | null = null;
   private master: GainNode | null = null;
   muted = false;
+
+  /**
+   * The game passes nothing, and the engine makes its own AudioContext on the
+   * first cue, exactly as it always has.
+   *
+   * `given` plays the cues into a context the caller made instead, so they can
+   * be rendered offline and recorded. The master gain is built on it the same
+   * way, on the first cue. The caller owns that context, so the engine never
+   * resumes it: an OfflineAudioContext starts when it is rendered, and rejects a
+   * resume before then.
+   */
+  constructor(private readonly given?: AudioContext | OfflineAudioContext) {}
 
   setMuted(muted: boolean): void {
     this.muted = muted;
   }
 
-  private ensureContext(): AudioContext | null {
+  private ensureContext(): AudioContext | OfflineAudioContext | null {
     if (this.muted) return null;
     if (!this.context) {
-      const Ctor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (!Ctor) return null;
-      this.context = new Ctor();
+      if (this.given) {
+        this.context = this.given;
+      } else {
+        const Ctor =
+          window.AudioContext ??
+          (window as unknown as { webkitAudioContext?: typeof AudioContext })
+            .webkitAudioContext;
+        if (!Ctor) return null;
+        this.context = new Ctor();
+      }
       this.master = this.context.createGain();
-      this.master.gain.value = 0.18; // keep it gentle
+      this.master.gain.value = MASTER_GAIN;
       this.master.connect(this.context.destination);
     }
-    if (this.context.state === 'suspended') void this.context.resume();
+    if (!this.given && this.context.state === 'suspended')
+      void this.context.resume();
     return this.context;
   }
 

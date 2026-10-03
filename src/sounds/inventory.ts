@@ -28,6 +28,8 @@ export interface Sound {
   cue: SoundCue;
   /** The button's whole name, visible and spoken: what it plays. */
   label: string;
+  /** What the cue is called with, and the theme it is played in where that matters. */
+  params: { length?: number; rung?: Rung; theme?: Theme };
   play: (engine: AudioEngine) => void;
 }
 
@@ -99,6 +101,7 @@ export const FOUND_ROWS: LengthRow[] = FOUND_NOTES.map((hz, i) => {
           id: `found-${length}-${rung}`,
           cue: 'playFound',
           label: `Length ${length}, ${rung}`,
+          params: { length, rung },
           play: (engine) => engine.playFound(length, rung),
         },
       ];
@@ -107,6 +110,7 @@ export const FOUND_ROWS: LengthRow[] = FOUND_NOTES.map((hz, i) => {
       id: `found-${length}-${rung}-${theme}`,
       cue: 'playFound',
       label: `Length ${length}, ${rung}, ${theme}`,
+      params: { length, rung, theme },
       play: (engine) => inTheme(theme, () => engine.playFound(length, rung)),
     }));
   });
@@ -126,6 +130,7 @@ export const SECTIONS: CueSection[] = (Object.keys(CUES) as SoundCue[]).map(
               id: cue.replace(/^play/, '').toLowerCase(),
               cue,
               label: CUES[cue].title,
+              params: {},
               play: (engine) => engine[cue](),
             },
           ],
