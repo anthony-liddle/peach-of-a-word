@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Every sound · Peach of a Word</title>
+    <!-- A workbench, not part of the game. Linked from nowhere, and kept out of
+         the index entirely. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#fff4ee" />
+
+    <!-- The tab icon is the cute peach, declared and never swapped: this page
+         has one theme. -->
+    <link rel="icon" href="/favicon-cute.svg" type="image/svg+xml" />
+    <script>
+      // The same no-flash contract as index.html, with the theme fixed.
+      //
+      // Theme: pinned to cute before the first paint, with no saved-preference
+      // lookup. The mythic buttons set the theme for the length of one call and
+      // put this value back, so the page itself never leaves cute.
+      //
+      // Text size: read exactly as index.html reads it, because that one is an
+      // accessibility preference rather than a look.
+      (function () {
+        document.documentElement.dataset.theme = 'cute';
+        var size;
+        try {
+          size = localStorage.getItem('e8-text-size');
+        } catch (e) {
+          size = null; /* storage blocked: the browser default rules alone */
+        }
+        if (size === 'large' || size === 'largest')
+          document.documentElement.dataset.textSize = size;
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Only the cute pair. The letterpress faces are never shown here. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/sounds/main.tsx"></script>
+  </body>
+</html>

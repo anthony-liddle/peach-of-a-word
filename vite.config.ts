@@ -44,6 +44,24 @@ function versionedData(isBuild: boolean): Plugin {
 
 export default defineConfig(({ command }) => ({
   plugins: [react(), versionedData(command === 'build')],
+  build: {
+    rollupOptions: {
+      /**
+       * Two entries. Naming them here replaces Vite's default of "index.html
+       * alone", so index.html has to be listed even though it is the default:
+       * leaving it out would build the second page and drop the game.
+       *
+       * sounds.html is an unlisted workbench with one button per sound the
+       * game makes, served at /sounds by a rewrite. It is an entry rather than
+       * a file in public/ so it imports the game's real audio engine and
+       * stylesheet instead of a copy of either.
+       */
+      input: {
+        index: resolve(__dirname, 'index.html'),
+        sounds: resolve(__dirname, 'sounds.html'),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
