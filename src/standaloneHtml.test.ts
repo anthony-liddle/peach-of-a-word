@@ -183,6 +183,13 @@ describe('vercel.json rewrites', () => {
     });
   });
 
+  test('/sounds serves the sounds page', () => {
+    expect(config.rewrites).toContainEqual({
+      source: '/sounds',
+      destination: '/sounds.html',
+    });
+  });
+
   /**
    * A destination is served one of two ways, and the check has to know both or
    * it fails the moment a page stops being a verbatim copy.
