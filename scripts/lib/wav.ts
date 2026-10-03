@@ -39,3 +39,23 @@ export function encodeWav(samples: Float32Array, sampleRate: number): Buffer {
   const data = Buffer.from(samples.buffer, samples.byteOffset, dataBytes);
   return Buffer.concat([header, data]);
 }
+
+/**
+ * The samples of a WAV written by encodeWav, or null for anything else: a
+ * different layout is not one this baseline wrote, so it is not reused.
+ */
+export function decodeWav(wav: Buffer): Float32Array | null {
+  if (
+    wav.length < 58 ||
+    wav.toString('ascii', 0, 4) !== 'RIFF' ||
+    wav.toString('ascii', 8, 16) !== 'WAVEfmt ' ||
+    wav.readUInt16LE(20) !== 3 ||
+    wav.readUInt16LE(22) !== 1 ||
+    wav.toString('ascii', 50, 54) !== 'data'
+  )
+    return null;
+  const bytes = wav.readUInt32LE(54);
+  const samples = new Float32Array(bytes / 4);
+  new Uint8Array(samples.buffer).set(wav.subarray(58, 58 + bytes));
+  return samples;
+}

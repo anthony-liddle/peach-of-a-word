@@ -1,3 +1,12 @@
+import {
+  MAX_PARTIALS,
+  PARTIAL_ABSOLUTE_FLOOR_DBFS,
+  PARTIAL_FLOOR_DB,
+  PARTIAL_WINDOW_S,
+  partialsAt,
+  type PartialWindow,
+} from './spectrum.ts';
+
 /**
  * Measurements of one rendered sound, for the baseline the Soundscape port will
  * be held to. Each one is defined here, in METHOD, in words, and written into
@@ -25,6 +34,21 @@ export const ENVELOPE_TIMES_S = [
   0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6,
 ] as const;
 
+/**
+ * Fixed times, in seconds after the cue is called, where the strongest partials
+ * are read, each over a 40 ms window centred on it. Chosen against the found
+ * cue's schedule so that each layer of the rung ladder has a window of its own:
+ *
+ *   0.02   the note and its octave alone (window 0 to 40 ms), before any sparkle
+ *   0.065  the rung sparkle at 3x near its peak (45 to 85 ms), before the glints
+ *   0.11   the mythic glint at 4x near its peak (90 to 130 ms), before the cute one
+ *   0.155  the cute glint at 5x near its peak (135 to 175 ms)
+ *   0.3, 0.6, 1.2  the later notes of the source arpeggio and the Edition chord
+ */
+export const SPECTRUM_TIMES_S = [
+  0.02, 0.065, 0.11, 0.155, 0.3, 0.6, 1.2,
+] as const;
+
 export const METHOD = {
   time: 'Seconds from the moment the cue is called. Every cue schedules its first note at that moment.',
   onset: `The first sample whose magnitude is within ${-THRESHOLD_DB} dB of the sound's own peak.`,
@@ -35,6 +59,7 @@ export const METHOD = {
   rms: 'The RMS level from onset to end, in dBFS.',
   fundamental: `The pitch of the first note to sound, over ${PITCH_WINDOW_S * 1000} ms from the onset: a YIN period estimate, refined to the peak of the Hann-windowed spectrum within 3% of it. For source and edition that is the first arpeggio note, for invalid the first of the pair; for a found word it is the note its length plays, under the octave shimmer and any sparkle.`,
   envelope: `The largest sample magnitude, in dBFS, within a ${ENVELOPE_WINDOW_S * 1000} ms window centred on each time in envelopeTimes. null where every sample in the window is zero.`,
+  spectrum: `The strongest partials in a ${PARTIAL_WINDOW_S * 1000} ms Blackman-Harris window centred on each time in spectrumTimes, from a zero-padded FFT, each refined by a parabola through its peak bin. Up to ${MAX_PARTIALS}, strongest first, down to ${-PARTIAL_FLOOR_DB} dB under the window's strongest and never under ${PARTIAL_ABSOLUTE_FLOOR_DBFS} dBFS. Each level is relative to the strongest partial in its own window, so at 155 ms that is the glint in a cute mythic sound and the main note in its letterpress twin; dbfs is that strongest partial's amplitude, so every level can be made absolute. A window is null when it is silent or under the absolute floor. Partials closer than about 50 Hz are not resolved: the invalid pair, 196 and 174.61 Hz, reads as one where both sound.`,
 } as const;
 
 export interface Measurement {
@@ -46,6 +71,7 @@ export interface Measurement {
   rmsDbfs: number;
   fundamentalHz: number | null;
   envelopeDbfs: (number | null)[];
+  spectrum: PartialWindow[];
 }
 
 const dbfs = (linear: number): number => 20 * Math.log10(linear);
@@ -212,5 +238,6 @@ export function measure(x: Float32Array, sampleRate: number): Measurement {
     rmsDbfs: round(dbfs(rms(x, onset, end + 1)), 2),
     fundamentalHz: hz === null ? null : round(hz, 2),
     envelopeDbfs,
+    spectrum: SPECTRUM_TIMES_S.map((t) => partialsAt(x, t, sampleRate)),
   };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { encodeWav } from './wav.ts';
+import { decodeWav, encodeWav } from './wav.ts';
 
 describe('encodeWav', () => {
   const samples = Float32Array.from([0, 0.5, -0.25, 1e-6]);
@@ -26,5 +26,20 @@ describe('encodeWav', () => {
       wav.buffer.slice(wav.byteOffset + 58, wav.byteOffset + wav.length),
     );
     expect(Array.from(back)).toEqual(Array.from(samples));
+  });
+});
+
+describe('decodeWav', () => {
+  test('reads back exactly what encodeWav wrote', () => {
+    const samples = Float32Array.from([0, 0.5, -0.25, 6e-8]);
+    expect(Array.from(decodeWav(encodeWav(samples, 48000))!)).toEqual(
+      Array.from(samples),
+    );
+  });
+
+  test('refuses a file it did not write', () => {
+    expect(
+      decodeWav(Buffer.from('not a wav at all, not even close here')),
+    ).toBeNull();
   });
 });
