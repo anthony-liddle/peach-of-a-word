@@ -1,0 +1,48 @@
+/* =========================================================================
+   The sounds page: layout, and the tap floor, and nothing else.
+
+   Everything else is the game's own stylesheet, imported first: the shell, the
+   masthead, the section rule and title, the captions, the buttons, the palette
+   and the type scale. Nothing below restates a colour, a radius or a font:
+   every value is a token from index.css, so the page moves when the game does.
+   ========================================================================= */
+
+.sounds__section {
+  margin-bottom: 2rem;
+}
+
+.sounds__call {
+  margin: -0.4rem 0 0.9rem;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+
+.sounds__note {
+  margin: 0.8rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  max-width: 40rem;
+}
+
+.sounds__group {
+  margin-top: 1.1rem;
+}
+
+.sounds__caption {
+  margin: 0 0 0.5rem;
+}
+
+.sounds__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+/* The game holds its play controls to a 44px floor (.controls .btn). Every
+   button here is a standalone control too, so it gets the same floor, both
+   ways. */
+.sounds__btn {
+  flex: 0 1 auto;
+  min-height: 44px;
+  min-width: 44px;
+}

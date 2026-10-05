@@ -1,0 +1,2474 @@
+{
+  "about": "Every sound the game makes, rendered offline before any move to Soundscape. The baseline a port is measured against. A record: nothing compares against it yet.",
+  "captured": "2026-10-03",
+  "renderer": {
+    "browser": "Chrome/154.0.8037.97",
+    "context": "OfflineAudioContext",
+    "sampleRate": 48000,
+    "channels": 1,
+    "masterGain": 0.18,
+    "renderSeconds": 2,
+    "wav": "32-bit IEEE float, mono, trimmed at stop. A WAV from an earlier capture is kept when a fresh render matches it within 1e-6, so the files change only when a sound does."
+  },
+  "method": {
+    "time": "Seconds from the moment the cue is called. Every cue schedules its first note at that moment.",
+    "onset": "The first sample whose magnitude is within 40 dB of the sound's own peak.",
+    "end": "The last sample whose magnitude is within 40 dB of the sound's own peak.",
+    "duration": "end minus onset.",
+    "stop": "The time just after the last non-zero sample: where the oscillators stop.",
+    "peak": "The largest sample magnitude, in dBFS (1.0 is 0 dBFS).",
+    "rms": "The RMS level from onset to end, in dBFS.",
+    "fundamental": "The pitch of the first note to sound, over 40 ms from the onset: a YIN period estimate, refined to the peak of the Hann-windowed spectrum within 3% of it. For source and edition that is the first arpeggio note, for invalid the first of the pair; for a found word it is the note its length plays, under the octave shimmer and any sparkle.",
+    "envelope": "The largest sample magnitude, in dBFS, within a 10 ms window centred on each time in envelopeTimes. null where every sample in the window is zero.",
+    "spectrum": "The strongest partials in a 40 ms Blackman-Harris window centred on each time in spectrumTimes, from a zero-padded FFT, each refined by a parabola through its peak bin. Up to 8, strongest first, down to 60 dB under the window's strongest and never under -120 dBFS. Each level is relative to the strongest partial in its own window, so at 155 ms that is the glint in a cute mythic sound and the main note in its letterpress twin; dbfs is that strongest partial's amplitude, so every level can be made absolute. A window is null when it is silent or under the absolute floor. Partials closer than about 50 Hz are not resolved in one window: the invalid pair, 196 and 174.61 Hz, reads as one where both sound. See pair for that cue.",
+    "pair": "The rejected-guess cue only. Its two notes, 21.4 Hz apart, cannot be separated in frequency by any window: they are sequential, 80 ms apart, so a window long enough to resolve 21 Hz holds both, and their offset puts fringes every 12.5 Hz through the spectrum, finer than the gap between them; each note also decays in about 17 ms, which widens it to about 18 Hz on its own. Nor can a beat be measured: the two are within 10 dB of each other for about 3 ms, against a 46.8 ms beat period. So each note is read alone, in time, over as much of the cue as it has to itself: the first from the call to 80 ms, where the second starts; the second from there to the stop, with the first 34 dB under it at the start of that span and falling. hz is that note's fundamental, measured as fundamental is. db is its level relative to the first note, from the magnitude of its untapered spectrum at its own frequency. That still moves with the phase the oscillator starts at, by up to about 0.2 dB on this cue, because a note this short overlaps its own mirror image at minus its frequency; a peak sample moves by about 1.1 dB. intervalSemitones is 12 log2 of the first frequency over the second.",
+    "thresholdDb": -40,
+    "pitchWindowS": 0.04,
+    "envelopeWindowS": 0.01,
+    "envelopeTimes": [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6],
+    "spectrumTimes": [0.02, 0.065, 0.11, 0.155, 0.3, 0.6, 1.2],
+    "pairSplitS": 0.08
+  },
+  "tolerance": {
+    "about": "How far a number may differ from this record before a comparison calls it a change. Every sound was rendered 5 times; each tolerance is the widest difference seen between those renders, rounded up to the step the value is recorded to, plus one step, because two values rounded independently can land a step apart when nothing changed. This covers render-to-render noise only: a different engine or browser will need its own allowance on top.",
+    "renders": 5,
+    "largestSampleDifference": 5.960464477539063e-8,
+    "largestSampleDifferenceDbBelowPeak": -134.2,
+    "largestSampleDifferenceIn": "edition",
+    "observed": {
+      "seconds": 0,
+      "db": 0,
+      "hz": 0,
+      "windowDbfs": 0,
+      "partialHz": 0,
+      "partialDb": 0.01,
+      "membershipChanges": 0,
+      "strongestChanges": 0
+    },
+    "allow": {
+      "seconds": 0.00001,
+      "db": 0.01,
+      "hz": 0.01,
+      "partialHz": 0.01,
+      "partialDb": 0.02
+    },
+    "partials": "Match a partial to one within 0.5% of its frequency. Across these renders no partial came or went and no window changed its strongest, so a comparison should expect the same partials, and the same strongest, in every window."
+  },
+  "sounds": {
+    "found-3-set": {
+      "label": "Length 3, set",
+      "cue": "playFound",
+      "params": { "length": 3, "rung": "set" },
+      "onset": 0.00683,
+      "end": 0.1449,
+      "duration": 0.13806,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.2,
+      "fundamentalHz": 392,
+      "envelopeDbfs": [
+        -29.61,
+        -15.31,
+        -16.4,
+        -25.35,
+        -40.23,
+        -70,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.67,
+          "partials": [
+            { "hz": 392.01, "db": 0 },
+            { "hz": 782.64, "db": -14.62 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 784, "db": -18.77 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 784, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 784, "db": -27.09 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.15, "partials": [{ "hz": 391.36, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-3-set.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "1d8b9c9ab2095140bd7a1b2ce4096b1e8457d47abbdaf735c2a630e3d5ddb5a5"
+    },
+    "found-3-uncommon": {
+      "label": "Length 3, uncommon",
+      "cue": "playFound",
+      "params": { "length": 3, "rung": "uncommon" },
+      "onset": 0.00683,
+      "end": 0.14488,
+      "duration": 0.13804,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.19,
+      "fundamentalHz": 392,
+      "envelopeDbfs": [
+        -29.61,
+        -15.31,
+        -16.4,
+        -25.4,
+        -40.94,
+        -70,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.67,
+          "partials": [
+            { "hz": 392.01, "db": 0 },
+            { "hz": 782.64, "db": -14.62 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 1176, "db": -14.33 },
+            { "hz": 783.96, "db": -18.78 },
+            { "hz": 1074.27, "db": -58.84 },
+            { "hz": 1277.72, "db": -58.9 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 784, "db": -22.93 },
+            { "hz": 1176, "db": -24.13 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 784, "db": -27.09 },
+            { "hz": 1176, "db": -33.83 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.15, "partials": [{ "hz": 391.36, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-3-uncommon.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "4d3c69efcd2df2ab0eabab6182836d5b3280cdcdf284cbc163b2e93850a3107d"
+    },
+    "found-3-rare": {
+      "label": "Length 3, rare",
+      "cue": "playFound",
+      "params": { "length": 3, "rung": "rare" },
+      "onset": 0.00683,
+      "end": 0.14488,
+      "duration": 0.13804,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.18,
+      "fundamentalHz": 392,
+      "envelopeDbfs": [
+        -29.61,
+        -15.31,
+        -16.4,
+        -25.4,
+        -41.08,
+        -70,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.67,
+          "partials": [
+            { "hz": 392.01, "db": 0 },
+            { "hz": 782.64, "db": -14.62 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 1176, "db": -12.09 },
+            { "hz": 783.95, "db": -18.78 },
+            { "hz": 1074.3, "db": -56.07 },
+            { "hz": 1277.69, "db": -56.14 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 784, "db": -22.93 },
+            { "hz": 1176, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 784, "db": -27.09 },
+            { "hz": 1176, "db": -33.66 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.15, "partials": [{ "hz": 391.36, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-3-rare.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "18d8e8c6845e0fe00ae10869f512f7fc46a424a7f6f5fdd621f10d7c4649c7d1"
+    },
+    "found-3-mythic-letterpress": {
+      "label": "Length 3, mythic, letterpress",
+      "cue": "playFound",
+      "params": { "length": 3, "rung": "mythic", "theme": "letterpress" },
+      "onset": 0.00683,
+      "end": 0.14983,
+      "duration": 0.143,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.32,
+      "fundamentalHz": 392,
+      "envelopeDbfs": [
+        -29.61,
+        -15.31,
+        -16.4,
+        -25.41,
+        -36.86,
+        -69.7,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.67,
+          "partials": [
+            { "hz": 392.01, "db": 0 },
+            { "hz": 782.64, "db": -14.62 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 1176, "db": -10.36 },
+            { "hz": 783.93, "db": -18.79 },
+            { "hz": 1074.34, "db": -53.93 },
+            { "hz": 1277.65, "db": -54 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 392.02, "db": 0 },
+            { "hz": 1568, "db": -1.44 },
+            { "hz": 1176.53, "db": -21.59 },
+            { "hz": 784.4, "db": -22.84 },
+            { "hz": 1080.71, "db": -51.92 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 1568, "db": -14.91 },
+            { "hz": 784, "db": -27.09 },
+            { "hz": 1176, "db": -33.54 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.15, "partials": [{ "hz": 391.36, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-3-mythic-letterpress.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "62a331c7c09b9a384a8d950ac5df3513b6843b1aaf89f4eea19f7c43fc025d1b"
+    },
+    "found-3-mythic-cute": {
+      "label": "Length 3, mythic, cute",
+      "cue": "playFound",
+      "params": { "length": 3, "rung": "mythic", "theme": "cute" },
+      "onset": 0.00683,
+      "end": 0.17273,
+      "duration": 0.1659,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.96,
+      "fundamentalHz": 392,
+      "envelopeDbfs": [
+        -29.61,
+        -15.31,
+        -16.4,
+        -25.41,
+        -36.86,
+        -65.72,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.67,
+          "partials": [
+            { "hz": 392.01, "db": 0 },
+            { "hz": 782.64, "db": -14.62 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 392, "db": 0 },
+            { "hz": 1176, "db": -10.36 },
+            { "hz": 783.93, "db": -18.79 },
+            { "hz": 1074.34, "db": -53.93 },
+            { "hz": 1277.65, "db": -54 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 392.02, "db": 0 },
+            { "hz": 1568, "db": -1.44 },
+            { "hz": 1176.53, "db": -21.59 },
+            { "hz": 784.4, "db": -22.84 },
+            { "hz": 1080.71, "db": -51.92 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -48.3,
+          "partials": [
+            { "hz": 1960, "db": 0 },
+            { "hz": 392, "db": -9.55 },
+            { "hz": 1567.65, "db": -24.33 },
+            { "hz": 783.61, "db": -36.63 },
+            { "hz": 1858.19, "db": -43.26 },
+            { "hz": 2061.82, "db": -43.27 },
+            { "hz": 1177.45, "db": -43.29 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.15, "partials": [{ "hz": 391.36, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-3-mythic-cute.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "ce5b4b7544050030cf02e4d966402a3d9c093020ce95681e5330205942a08091"
+    },
+    "found-4-set": {
+      "label": "Length 4, set",
+      "cue": "playFound",
+      "params": { "length": 4, "rung": "set" },
+      "onset": 0.00621,
+      "end": 0.14606,
+      "duration": 0.13985,
+      "stop": 0.3,
+      "peakDbfs": -15.6,
+      "rmsDbfs": -28.28,
+      "fundamentalHz": 440,
+      "envelopeDbfs": [
+        -30.98,
+        -15.6,
+        -16.29,
+        -25.26,
+        -40.31,
+        -69.95,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880.99, "db": -14.75 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880, "db": -18.77 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880, "db": -27.09 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.89, "partials": [{ "hz": 438.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-4-set.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "49ebf7e2022716513c46e729f3e8824621385a36ab58bb425940a4ec7b7c8b44"
+    },
+    "found-4-uncommon": {
+      "label": "Length 4, uncommon",
+      "cue": "playFound",
+      "params": { "length": 4, "rung": "uncommon" },
+      "onset": 0.00621,
+      "end": 0.14606,
+      "duration": 0.13985,
+      "stop": 0.3,
+      "peakDbfs": -15.6,
+      "rmsDbfs": -28.27,
+      "fundamentalHz": 440,
+      "envelopeDbfs": [
+        -30.98,
+        -15.6,
+        -16.29,
+        -25.23,
+        -39.87,
+        -69.95,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880.99, "db": -14.75 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 1320, "db": -14.33 },
+            { "hz": 879.94, "db": -18.76 },
+            { "hz": 1421.75, "db": -58.83 },
+            { "hz": 1218.33, "db": -58.88 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880, "db": -22.93 },
+            { "hz": 1320, "db": -24.13 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880, "db": -27.08 },
+            { "hz": 1320, "db": -33.83 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.89, "partials": [{ "hz": 438.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-4-uncommon.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "86b470b4acd5e2718f4f25ace0dd3a33868d323863016438df997e59ea0a9be0"
+    },
+    "found-4-rare": {
+      "label": "Length 4, rare",
+      "cue": "playFound",
+      "params": { "length": 4, "rung": "rare" },
+      "onset": 0.00621,
+      "end": 0.14606,
+      "duration": 0.13985,
+      "stop": 0.3,
+      "peakDbfs": -15.6,
+      "rmsDbfs": -28.26,
+      "fundamentalHz": 440,
+      "envelopeDbfs": [
+        -30.98,
+        -15.6,
+        -16.29,
+        -25.23,
+        -39.78,
+        -69.95,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880.99, "db": -14.75 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 1320, "db": -12.09 },
+            { "hz": 879.92, "db": -18.76 },
+            { "hz": 1421.71, "db": -56.07 },
+            { "hz": 1218.34, "db": -56.12 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880, "db": -22.93 },
+            { "hz": 1320, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880, "db": -27.08 },
+            { "hz": 1320, "db": -33.66 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.89, "partials": [{ "hz": 438.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-4-rare.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "5895cbb0e1a0e26e172ad448d864c9901aa01fdf0db2dc3f8d91fc7c151dfae4"
+    },
+    "found-4-mythic-letterpress": {
+      "label": "Length 4, mythic, letterpress",
+      "cue": "playFound",
+      "params": { "length": 4, "rung": "mythic", "theme": "letterpress" },
+      "onset": 0.00621,
+      "end": 0.15179,
+      "duration": 0.14558,
+      "stop": 0.3,
+      "peakDbfs": -15.6,
+      "rmsDbfs": -28.41,
+      "fundamentalHz": 440,
+      "envelopeDbfs": [
+        -30.98,
+        -15.6,
+        -16.29,
+        -24.88,
+        -35.87,
+        -69.5,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880.99, "db": -14.75 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 1320, "db": -10.36 },
+            { "hz": 879.9, "db": -18.76 },
+            { "hz": 1421.66, "db": -53.93 },
+            { "hz": 1218.37, "db": -53.99 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 439.99, "db": 0 },
+            { "hz": 1760, "db": -1.44 },
+            { "hz": 1318.81, "db": -22.16 },
+            { "hz": 879.76, "db": -23.01 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 1760, "db": -14.91 },
+            { "hz": 880, "db": -27.08 },
+            { "hz": 1320, "db": -33.54 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.89, "partials": [{ "hz": 438.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-4-mythic-letterpress.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "c2105e0b33a0e3dfe0ece2f4c355e463c1a3f29fb2ff91486990f2c91a801fcb"
+    },
+    "found-4-mythic-cute": {
+      "label": "Length 4, mythic, cute",
+      "cue": "playFound",
+      "params": { "length": 4, "rung": "mythic", "theme": "cute" },
+      "onset": 0.00621,
+      "end": 0.17219,
+      "duration": 0.16598,
+      "stop": 0.3,
+      "peakDbfs": -15.6,
+      "rmsDbfs": -28.98,
+      "fundamentalHz": 440,
+      "envelopeDbfs": [
+        -30.98,
+        -15.6,
+        -16.29,
+        -24.88,
+        -35.87,
+        -66.01,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 880.99, "db": -14.75 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 440, "db": 0 },
+            { "hz": 1320, "db": -10.36 },
+            { "hz": 879.9, "db": -18.76 },
+            { "hz": 1421.66, "db": -53.93 },
+            { "hz": 1218.37, "db": -53.99 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 439.99, "db": 0 },
+            { "hz": 1760, "db": -1.44 },
+            { "hz": 1318.81, "db": -22.16 },
+            { "hz": 879.76, "db": -23.01 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -48.3,
+          "partials": [
+            { "hz": 2200, "db": 0 },
+            { "hz": 440.01, "db": -9.55 },
+            { "hz": 1760.23, "db": -24.34 },
+            { "hz": 879.86, "db": -36.68 },
+            { "hz": 1321.47, "db": -43.01 },
+            { "hz": 2301.84, "db": -43.26 },
+            { "hz": 2098.17, "db": -43.28 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.89, "partials": [{ "hz": 438.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-4-mythic-cute.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "85e77490ff4030a1b55b5e3d8b07354bc2ee0634e6c5ad47e4198782aae39b9a"
+    },
+    "found-5-set": {
+      "label": "Length 5, set",
+      "cue": "playFound",
+      "params": { "length": 5, "rung": "set" },
+      "onset": 0.00594,
+      "end": 0.14671,
+      "duration": 0.14077,
+      "stop": 0.3,
+      "peakDbfs": -15.54,
+      "rmsDbfs": -28.3,
+      "fundamentalHz": 523.25,
+      "envelopeDbfs": [
+        -28.48,
+        -15.54,
+        -16.35,
+        -25.38,
+        -40.23,
+        -69.87,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1047.22, "db": -14.71 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1046.5, "db": -18.77 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1046.5, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1046.5, "db": -27.09 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.84, "partials": [{ "hz": 521.95, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-5-set.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "ce774c1ed8f31bfee5e0b3decb6d87f0cc6a450fa185ff235254f79bf04da3a7"
+    },
+    "found-5-uncommon": {
+      "label": "Length 5, uncommon",
+      "cue": "playFound",
+      "params": { "length": 5, "rung": "uncommon" },
+      "onset": 0.00594,
+      "end": 0.14675,
+      "duration": 0.14081,
+      "stop": 0.3,
+      "peakDbfs": -15.54,
+      "rmsDbfs": -28.29,
+      "fundamentalHz": 523.25,
+      "envelopeDbfs": [
+        -28.48,
+        -15.54,
+        -16.35,
+        -25.36,
+        -39.89,
+        -69.87,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1047.22, "db": -14.71 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1569.75, "db": -14.33 },
+            { "hz": 1046.49, "db": -18.77 },
+            { "hz": 1671.5, "db": -58.85 },
+            { "hz": 1468.04, "db": -58.89 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1046.5, "db": -22.93 },
+            { "hz": 1569.75, "db": -24.13 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1046.5, "db": -27.09 },
+            { "hz": 1569.75, "db": -33.83 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.84, "partials": [{ "hz": 521.95, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-5-uncommon.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "5f845787d9b2730207ec581a23c7073fae578de93060fc4dc0e2bfca4d9f3166"
+    },
+    "found-5-rare": {
+      "label": "Length 5, rare",
+      "cue": "playFound",
+      "params": { "length": 5, "rung": "rare" },
+      "onset": 0.00594,
+      "end": 0.14675,
+      "duration": 0.14081,
+      "stop": 0.3,
+      "peakDbfs": -15.54,
+      "rmsDbfs": -28.29,
+      "fundamentalHz": 523.25,
+      "envelopeDbfs": [
+        -28.48,
+        -15.54,
+        -16.35,
+        -25.35,
+        -39.8,
+        -69.87,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1047.22, "db": -14.71 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1569.75, "db": -12.09 },
+            { "hz": 1046.49, "db": -18.78 },
+            { "hz": 1671.48, "db": -56.08 },
+            { "hz": 1468.06, "db": -56.12 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1046.5, "db": -22.93 },
+            { "hz": 1569.75, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1046.5, "db": -27.09 },
+            { "hz": 1569.75, "db": -33.66 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.84, "partials": [{ "hz": 521.95, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-5-rare.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "c0625b8bdab16522ef5a04c8ffb51ead9195cfede486f2fd5af0e751df4b0a91"
+    },
+    "found-5-mythic-letterpress": {
+      "label": "Length 5, mythic, letterpress",
+      "cue": "playFound",
+      "params": { "length": 5, "rung": "mythic", "theme": "letterpress" },
+      "onset": 0.00594,
+      "end": 0.1506,
+      "duration": 0.14467,
+      "stop": 0.3,
+      "peakDbfs": -15.54,
+      "rmsDbfs": -28.39,
+      "fundamentalHz": 523.25,
+      "envelopeDbfs": [
+        -28.48,
+        -15.54,
+        -16.35,
+        -25.15,
+        -35.82,
+        -69.69,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1047.22, "db": -14.71 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1569.75, "db": -10.35 },
+            { "hz": 1046.49, "db": -18.78 },
+            { "hz": 1671.44, "db": -53.94 },
+            { "hz": 1468.1, "db": -53.99 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 523.26, "db": 0 },
+            { "hz": 2093, "db": -1.44 },
+            { "hz": 1570.53, "db": -21.86 },
+            { "hz": 1046.35, "db": -22.99 },
+            { "hz": 1469.58, "db": -56.18 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 2093, "db": -14.91 },
+            { "hz": 1046.5, "db": -27.09 },
+            { "hz": 1569.75, "db": -33.54 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.84, "partials": [{ "hz": 521.95, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-5-mythic-letterpress.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "9b67f3470d14f7202d4484b7204b2a4e65814f0d6ee17affe5fa84fda77fb6d2"
+    },
+    "found-5-mythic-cute": {
+      "label": "Length 5, mythic, cute",
+      "cue": "playFound",
+      "params": { "length": 5, "rung": "mythic", "theme": "cute" },
+      "onset": 0.00594,
+      "end": 0.17348,
+      "duration": 0.16754,
+      "stop": 0.3,
+      "peakDbfs": -15.54,
+      "rmsDbfs": -29.02,
+      "fundamentalHz": 523.25,
+      "envelopeDbfs": [
+        -28.48,
+        -15.54,
+        -16.35,
+        -25.15,
+        -35.82,
+        -65.68,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1047.22, "db": -14.71 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1569.75, "db": -10.35 },
+            { "hz": 1046.49, "db": -18.78 },
+            { "hz": 1671.44, "db": -53.94 },
+            { "hz": 1468.1, "db": -53.99 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 523.26, "db": 0 },
+            { "hz": 2093, "db": -1.44 },
+            { "hz": 1570.53, "db": -21.86 },
+            { "hz": 1046.35, "db": -22.99 },
+            { "hz": 1469.58, "db": -56.18 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -48.3,
+          "partials": [
+            { "hz": 2616.25, "db": 0 },
+            { "hz": 523.25, "db": -9.55 },
+            { "hz": 2093.38, "db": -24.51 },
+            { "hz": 1046.75, "db": -36.62 },
+            { "hz": 1568.66, "db": -43.13 },
+            { "hz": 2718.07, "db": -43.26 },
+            { "hz": 2514.43, "db": -43.27 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.84, "partials": [{ "hz": 521.95, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-5-mythic-cute.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "bcc5faf47c1bcad188d4198a05dd5ae8239b6f9efe4ced72df2d51e9a30879b3"
+    },
+    "found-6-set": {
+      "label": "Length 6, set",
+      "cue": "playFound",
+      "params": { "length": 6, "rung": "set" },
+      "onset": 0.00633,
+      "end": 0.14517,
+      "duration": 0.13883,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.24,
+      "fundamentalHz": 587.32,
+      "envelopeDbfs": [
+        -28.66,
+        -15.31,
+        -16.17,
+        -25.42,
+        -40.27,
+        -69.88,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 587.3, "db": 0 },
+            { "hz": 1174.9, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1174.66, "db": -18.77 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1174.66, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1174.66, "db": -27.09 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.02, "partials": [{ "hz": 588.33, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-6-set.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "042898f08010708b4c9c3c456ed707ac5c3a52c76d36977f3c55a4e0934573eb"
+    },
+    "found-6-uncommon": {
+      "label": "Length 6, uncommon",
+      "cue": "playFound",
+      "params": { "length": 6, "rung": "uncommon" },
+      "onset": 0.00633,
+      "end": 0.14606,
+      "duration": 0.13973,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.26,
+      "fundamentalHz": 587.32,
+      "envelopeDbfs": [
+        -28.66,
+        -15.31,
+        -16.17,
+        -25.38,
+        -39.73,
+        -69.88,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 587.3, "db": 0 },
+            { "hz": 1174.9, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1761.99, "db": -14.33 },
+            { "hz": 1174.63, "db": -18.76 },
+            { "hz": 1660.23, "db": -58.85 },
+            { "hz": 1863.67, "db": -58.88 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1174.66, "db": -22.93 },
+            { "hz": 1761.99, "db": -24.13 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1174.66, "db": -27.09 },
+            { "hz": 1762, "db": -33.83 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.02, "partials": [{ "hz": 588.33, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-6-uncommon.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "9a14674d06225ea08952863f7dffb95bc81ff7cc7f334d6e27675c68c8c8e101"
+    },
+    "found-6-rare": {
+      "label": "Length 6, rare",
+      "cue": "playFound",
+      "params": { "length": 6, "rung": "rare" },
+      "onset": 0.00633,
+      "end": 0.14606,
+      "duration": 0.13973,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.25,
+      "fundamentalHz": 587.32,
+      "envelopeDbfs": [
+        -28.66,
+        -15.31,
+        -16.17,
+        -25.18,
+        -39.61,
+        -69.88,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 587.3, "db": 0 },
+            { "hz": 1174.9, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1761.99, "db": -12.09 },
+            { "hz": 1174.62, "db": -18.76 },
+            { "hz": 1660.27, "db": -56.08 },
+            { "hz": 1863.66, "db": -56.11 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1174.66, "db": -22.93 },
+            { "hz": 1761.99, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1174.66, "db": -27.09 },
+            { "hz": 1762, "db": -33.66 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.02, "partials": [{ "hz": 588.33, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-6-rare.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "58dca827a6e85d1b8ca0102dbbbb0198b0d3ebe0b1447071bf4873c762b1c6c3"
+    },
+    "found-6-mythic-letterpress": {
+      "label": "Length 6, mythic, letterpress",
+      "cue": "playFound",
+      "params": { "length": 6, "rung": "mythic", "theme": "letterpress" },
+      "onset": 0.00633,
+      "end": 0.1495,
+      "duration": 0.14317,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.34,
+      "fundamentalHz": 587.32,
+      "envelopeDbfs": [
+        -28.66,
+        -15.31,
+        -16.17,
+        -24.65,
+        -35.81,
+        -69.49,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 587.3, "db": 0 },
+            { "hz": 1174.9, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1761.99, "db": -10.35 },
+            { "hz": 1174.61, "db": -18.76 },
+            { "hz": 1660.32, "db": -53.95 },
+            { "hz": 1863.63, "db": -53.98 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 587.32, "db": 0 },
+            { "hz": 2349.32, "db": -1.44 },
+            { "hz": 1762.09, "db": -21.8 },
+            { "hz": 1174.52, "db": -22.97 },
+            { "hz": 1663.53, "db": -57.54 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 2349.32, "db": -14.91 },
+            { "hz": 1174.66, "db": -27.09 },
+            { "hz": 1762, "db": -33.54 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.02, "partials": [{ "hz": 588.33, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-6-mythic-letterpress.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "6125cc342995d878b690e4da111b0816d1b0db80a2d348aa38928dd6d3035947"
+    },
+    "found-6-mythic-cute": {
+      "label": "Length 6, mythic, cute",
+      "cue": "playFound",
+      "params": { "length": 6, "rung": "mythic", "theme": "cute" },
+      "onset": 0.00633,
+      "end": 0.17231,
+      "duration": 0.16598,
+      "stop": 0.3,
+      "peakDbfs": -15.31,
+      "rmsDbfs": -28.97,
+      "fundamentalHz": 587.32,
+      "envelopeDbfs": [
+        -28.66,
+        -15.31,
+        -16.17,
+        -24.65,
+        -35.81,
+        -65.73,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 587.3, "db": 0 },
+            { "hz": 1174.9, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 587.33, "db": 0 },
+            { "hz": 1761.99, "db": -10.35 },
+            { "hz": 1174.61, "db": -18.76 },
+            { "hz": 1660.32, "db": -53.95 },
+            { "hz": 1863.63, "db": -53.98 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 587.32, "db": 0 },
+            { "hz": 2349.32, "db": -1.44 },
+            { "hz": 1762.09, "db": -21.8 },
+            { "hz": 1174.52, "db": -22.97 },
+            { "hz": 1663.53, "db": -57.54 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -48.3,
+          "partials": [
+            { "hz": 2936.65, "db": 0 },
+            { "hz": 587.34, "db": -9.55 },
+            { "hz": 2349.01, "db": -24.41 },
+            { "hz": 1174.59, "db": -36.67 },
+            { "hz": 1762.28, "db": -43.23 },
+            { "hz": 2834.79, "db": -43.27 },
+            { "hz": 3038.51, "db": -43.27 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101.02, "partials": [{ "hz": 588.33, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-6-mythic-cute.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "c38d93f6926f9f39409d70dad1775b2b22597be7f98d4742538822fbc4cc1429"
+    },
+    "found-7-set": {
+      "label": "Length 7, set",
+      "cue": "playFound",
+      "params": { "length": 7, "rung": "set" },
+      "onset": 0.00577,
+      "end": 0.146,
+      "duration": 0.14023,
+      "stop": 0.3,
+      "peakDbfs": -15.37,
+      "rmsDbfs": -28.28,
+      "fundamentalHz": 659.26,
+      "envelopeDbfs": [
+        -31.94,
+        -15.37,
+        -16.3,
+        -25.29,
+        -40.26,
+        -69.86,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 659.28, "db": 0 },
+            { "hz": 1318.41, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1318.5, "db": -18.77 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1318.5, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1318.5, "db": -27.09 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.88, "partials": [{ "hz": 660.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-7-set.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "a2147fd61714accf1550471a8fa662778435bc0586ec3f8c049c23d3f5dc1f7e"
+    },
+    "found-7-uncommon": {
+      "label": "Length 7, uncommon",
+      "cue": "playFound",
+      "params": { "length": 7, "rung": "uncommon" },
+      "onset": 0.00577,
+      "end": 0.14527,
+      "duration": 0.1395,
+      "stop": 0.3,
+      "peakDbfs": -15.37,
+      "rmsDbfs": -28.25,
+      "fundamentalHz": 659.26,
+      "envelopeDbfs": [
+        -31.94,
+        -15.37,
+        -16.3,
+        -25.34,
+        -40.49,
+        -69.86,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 659.28, "db": 0 },
+            { "hz": 1318.41, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1977.75, "db": -14.33 },
+            { "hz": 1318.47, "db": -18.77 },
+            { "hz": 1876.03, "db": -58.87 },
+            { "hz": 2079.5, "db": -58.88 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1318.5, "db": -22.93 },
+            { "hz": 1977.75, "db": -24.13 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1318.5, "db": -27.09 },
+            { "hz": 1977.75, "db": -33.83 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.88, "partials": [{ "hz": 660.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-7-uncommon.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "77e4886a27d0eb6471576bce893f9f02d6cb7e1937f2fc9435f21ad83d490c27"
+    },
+    "found-7-rare": {
+      "label": "Length 7, rare",
+      "cue": "playFound",
+      "params": { "length": 7, "rung": "rare" },
+      "onset": 0.00577,
+      "end": 0.14527,
+      "duration": 0.1395,
+      "stop": 0.3,
+      "peakDbfs": -15.37,
+      "rmsDbfs": -28.24,
+      "fundamentalHz": 659.26,
+      "envelopeDbfs": [
+        -31.94,
+        -15.37,
+        -16.3,
+        -25.35,
+        -40.46,
+        -69.86,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 659.28, "db": 0 },
+            { "hz": 1318.41, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1977.75, "db": -12.09 },
+            { "hz": 1318.45, "db": -18.77 },
+            { "hz": 1876.05, "db": -56.1 },
+            { "hz": 2079.46, "db": -56.11 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1318.5, "db": -22.93 },
+            { "hz": 1977.75, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1318.5, "db": -27.09 },
+            { "hz": 1977.75, "db": -33.66 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.88, "partials": [{ "hz": 660.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-7-rare.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "def6ded827101f1998f5be02d4bd3ad4a5525a93bf8fcb7dd4edb8ca10664623"
+    },
+    "found-7-mythic-letterpress": {
+      "label": "Length 7, mythic, letterpress",
+      "cue": "playFound",
+      "params": { "length": 7, "rung": "mythic", "theme": "letterpress" },
+      "onset": 0.00577,
+      "end": 0.14985,
+      "duration": 0.14408,
+      "stop": 0.3,
+      "peakDbfs": -15.37,
+      "rmsDbfs": -28.36,
+      "fundamentalHz": 659.26,
+      "envelopeDbfs": [
+        -31.94,
+        -15.37,
+        -16.3,
+        -25.35,
+        -36.11,
+        -69.39,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 659.28, "db": 0 },
+            { "hz": 1318.41, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1977.75, "db": -10.35 },
+            { "hz": 1318.44, "db": -18.76 },
+            { "hz": 1876.08, "db": -53.97 },
+            { "hz": 2079.41, "db": -53.97 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 2637, "db": -1.44 },
+            { "hz": 1977.58, "db": -21.85 },
+            { "hz": 1318.33, "db": -22.91 },
+            { "hz": 1881.89, "db": -59.23 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 2637, "db": -14.91 },
+            { "hz": 1318.5, "db": -27.09 },
+            { "hz": 1977.75, "db": -33.54 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.88, "partials": [{ "hz": 660.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-7-mythic-letterpress.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "aad1bee4ff24fda0451d283a2c35db22ec434894197144ddd63ed9874826bf4e"
+    },
+    "found-7-mythic-cute": {
+      "label": "Length 7, mythic, cute",
+      "cue": "playFound",
+      "params": { "length": 7, "rung": "mythic", "theme": "cute" },
+      "onset": 0.00577,
+      "end": 0.17165,
+      "duration": 0.16588,
+      "stop": 0.3,
+      "peakDbfs": -15.37,
+      "rmsDbfs": -28.97,
+      "fundamentalHz": 659.26,
+      "envelopeDbfs": [
+        -31.94,
+        -15.37,
+        -16.3,
+        -25.35,
+        -36.11,
+        -66.15,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 659.28, "db": 0 },
+            { "hz": 1318.41, "db": -14.56 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 1977.75, "db": -10.35 },
+            { "hz": 1318.44, "db": -18.76 },
+            { "hz": 1876.08, "db": -53.97 },
+            { "hz": 2079.41, "db": -53.97 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 2637, "db": -1.44 },
+            { "hz": 1977.58, "db": -21.85 },
+            { "hz": 1318.33, "db": -22.91 },
+            { "hz": 1881.89, "db": -59.23 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -48.3,
+          "partials": [
+            { "hz": 3296.25, "db": 0 },
+            { "hz": 659.25, "db": -9.55 },
+            { "hz": 2636.96, "db": -24.5 },
+            { "hz": 1318.39, "db": -36.65 },
+            { "hz": 1978.28, "db": -43.01 },
+            { "hz": 3194.4, "db": -43.26 },
+            { "hz": 3398.1, "db": -43.27 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -100.88, "partials": [{ "hz": 660.32, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-7-mythic-cute.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "0f4066b0d69ef43ed81b7aea52a6aba9ffa2327770e6b20ee3551a6bf982c420"
+    },
+    "found-8-set": {
+      "label": "Length 8, set",
+      "cue": "playFound",
+      "params": { "length": 8, "rung": "set" },
+      "onset": 0.00606,
+      "end": 0.14573,
+      "duration": 0.13967,
+      "stop": 0.3,
+      "peakDbfs": -15.39,
+      "rmsDbfs": -28.28,
+      "fundamentalHz": 783.99,
+      "envelopeDbfs": [
+        -28.27,
+        -15.39,
+        -16.18,
+        -25.43,
+        -40.3,
+        -69.9,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 784, "db": 0 },
+            { "hz": 1568.07, "db": -14.69 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 1567.98, "db": -18.77 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 1567.98, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 1567.98, "db": -27.09 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101, "partials": [{ "hz": 784.7, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-8-set.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "f407dfb81abd12adb141b73e1cc9ae0c05f1d47734587f2dfc5eb2cbd4253418"
+    },
+    "found-8-uncommon": {
+      "label": "Length 8, uncommon",
+      "cue": "playFound",
+      "params": { "length": 8, "rung": "uncommon" },
+      "onset": 0.00606,
+      "end": 0.14571,
+      "duration": 0.13965,
+      "stop": 0.3,
+      "peakDbfs": -15.39,
+      "rmsDbfs": -28.27,
+      "fundamentalHz": 783.99,
+      "envelopeDbfs": [
+        -28.27,
+        -15.39,
+        -16.18,
+        -25.49,
+        -40.66,
+        -69.9,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 784, "db": 0 },
+            { "hz": 1568.07, "db": -14.69 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 2351.97, "db": -14.33 },
+            { "hz": 1568, "db": -18.77 },
+            { "hz": 2250.23, "db": -58.86 },
+            { "hz": 2453.71, "db": -58.87 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 1567.98, "db": -22.93 },
+            { "hz": 2351.97, "db": -24.13 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 1567.98, "db": -27.09 },
+            { "hz": 2351.97, "db": -33.83 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101, "partials": [{ "hz": 784.7, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-8-uncommon.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "1db9bc34726a34419bc1af0ced9625d104ebc17dac3cde1cda92b029fb531d6c"
+    },
+    "found-8-rare": {
+      "label": "Length 8, rare",
+      "cue": "playFound",
+      "params": { "length": 8, "rung": "rare" },
+      "onset": 0.00606,
+      "end": 0.14571,
+      "duration": 0.13965,
+      "stop": 0.3,
+      "peakDbfs": -15.39,
+      "rmsDbfs": -28.26,
+      "fundamentalHz": 783.99,
+      "envelopeDbfs": [
+        -28.27,
+        -15.39,
+        -16.18,
+        -25.5,
+        -40.63,
+        -69.9,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 784, "db": 0 },
+            { "hz": 1568.07, "db": -14.69 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 2351.97, "db": -12.09 },
+            { "hz": 1568.01, "db": -18.77 },
+            { "hz": 2250.26, "db": -56.1 },
+            { "hz": 2453.69, "db": -56.1 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 1567.98, "db": -22.93 },
+            { "hz": 2351.97, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 1567.98, "db": -27.09 },
+            { "hz": 2351.97, "db": -33.66 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101, "partials": [{ "hz": 784.7, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-8-rare.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "bffbf0971597137888d9a79fe1de8c2fe1a764c591b398fb76d1fc4163be197c"
+    },
+    "found-8-mythic-letterpress": {
+      "label": "Length 8, mythic, letterpress",
+      "cue": "playFound",
+      "params": { "length": 8, "rung": "mythic", "theme": "letterpress" },
+      "onset": 0.00606,
+      "end": 0.15021,
+      "duration": 0.14415,
+      "stop": 0.3,
+      "peakDbfs": -15.39,
+      "rmsDbfs": -28.38,
+      "fundamentalHz": 783.99,
+      "envelopeDbfs": [
+        -28.27,
+        -15.39,
+        -16.18,
+        -25.51,
+        -36.23,
+        -69.64,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 784, "db": 0 },
+            { "hz": 1568.07, "db": -14.69 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 2351.97, "db": -10.35 },
+            { "hz": 1568.02, "db": -18.77 },
+            { "hz": 2250.3, "db": -53.96 },
+            { "hz": 2453.65, "db": -53.97 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 3135.96, "db": -1.44 },
+            { "hz": 2352.31, "db": -21.93 },
+            { "hz": 1568.1, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -57.85,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 3135.96, "db": -14.91 },
+            { "hz": 1567.98, "db": -27.09 },
+            { "hz": 2351.97, "db": -33.54 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101, "partials": [{ "hz": 784.7, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-8-mythic-letterpress.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "d939f1c7efa622220459269fc5564108c7e106bb959b72a4a92ae6c89f322593"
+    },
+    "found-8-mythic-cute": {
+      "label": "Length 8, mythic, cute",
+      "cue": "playFound",
+      "params": { "length": 8, "rung": "mythic", "theme": "cute" },
+      "onset": 0.00606,
+      "end": 0.17242,
+      "duration": 0.16635,
+      "stop": 0.3,
+      "peakDbfs": -15.39,
+      "rmsDbfs": -28.99,
+      "fundamentalHz": 783.99,
+      "envelopeDbfs": [
+        -28.27,
+        -15.39,
+        -16.18,
+        -25.51,
+        -36.23,
+        -65.88,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -18.68,
+          "partials": [
+            { "hz": 784, "db": 0 },
+            { "hz": 1568.07, "db": -14.69 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -31.29,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 2351.97, "db": -10.35 },
+            { "hz": 1568.02, "db": -18.77 },
+            { "hz": 2250.3, "db": -53.96 },
+            { "hz": 2453.65, "db": -53.97 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -44.57,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 3135.96, "db": -1.44 },
+            { "hz": 2352.31, "db": -21.93 },
+            { "hz": 1568.1, "db": -22.93 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -48.3,
+          "partials": [
+            { "hz": 3919.95, "db": 0 },
+            { "hz": 783.99, "db": -9.55 },
+            { "hz": 3135.94, "db": -24.42 },
+            { "hz": 1567.93, "db": -36.64 },
+            { "hz": 2351.56, "db": -43.04 },
+            { "hz": 3818.13, "db": -43.26 },
+            { "hz": 4021.77, "db": -43.27 }
+          ]
+        },
+        { "t": 0.3, "dbfs": -101, "partials": [{ "hz": 784.7, "db": 0 }] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "found-8-mythic-cute.wav",
+      "samples": 14400,
+      "bytes": 57658,
+      "sha256": "7662f83462ed04896da914f904f650c9c35868b66aeb8d9b78bc71a92c60026a"
+    },
+    "source": {
+      "label": "Source word",
+      "cue": "playSource",
+      "params": {},
+      "onset": 0.00617,
+      "end": 0.56065,
+      "duration": 0.55448,
+      "stop": 0.82,
+      "peakDbfs": -16.11,
+      "rmsDbfs": -28.59,
+      "fundamentalHz": 523.25,
+      "envelopeDbfs": [
+        -31.03,
+        -17.09,
+        -17.54,
+        -22.3,
+        -30.23,
+        -29.67,
+        -29.42,
+        -94.4,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -20.44,
+          "partials": [
+            { "hz": 523.26, "db": 0 },
+            { "hz": 1569.93, "db": -19.04 },
+            { "hz": 2616.5, "db": -27.92 },
+            { "hz": 3663.05, "db": -33.78 },
+            { "hz": 4709.57, "db": -38.16 },
+            { "hz": 5756.05, "db": -41.67 },
+            { "hz": 6802.5, "db": -44.58 },
+            { "hz": 7848.91, "db": -47.08 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -27.09,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1569.75, "db": -19.08 },
+            { "hz": 2616.25, "db": -27.96 },
+            { "hz": 3662.75, "db": -33.8 },
+            { "hz": 4709.25, "db": -38.17 },
+            { "hz": 5755.75, "db": -41.66 },
+            { "hz": 6802.25, "db": -44.56 },
+            { "hz": 7848.75, "db": -47.04 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -26.02,
+          "partials": [
+            { "hz": 659.3, "db": 0 },
+            { "hz": 523.62, "db": -10.89 },
+            { "hz": 1978.16, "db": -19.16 },
+            { "hz": 444.66, "db": -25.23 },
+            { "hz": 1569.53, "db": -27.61 },
+            { "hz": 3296.04, "db": -27.99 },
+            { "hz": 4614.88, "db": -33.76 },
+            { "hz": 2616.15, "db": -36.01 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -25.49,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 523.24, "db": -16 },
+            { "hz": 1977.75, "db": -19.08 },
+            { "hz": 3296.25, "db": -27.96 },
+            { "hz": 4614.74, "db": -33.8 },
+            { "hz": 1569.75, "db": -35.08 },
+            { "hz": 5933.25, "db": -38.17 },
+            { "hz": 7251.75, "db": -41.66 }
+          ]
+        },
+        {
+          "t": 0.3,
+          "dbfs": -32.69,
+          "partials": [
+            { "hz": 783.34, "db": 0 },
+            { "hz": 657.64, "db": -15.91 },
+            { "hz": 1046.53, "db": -16.44 },
+            { "hz": 2351.87, "db": -19.1 },
+            { "hz": 3920.04, "db": -27.95 },
+            { "hz": 529.56, "db": -32.05 },
+            { "hz": 5486.82, "db": -33.91 },
+            { "hz": 1975.31, "db": -34.97 }
+          ]
+        },
+        {
+          "t": 0.6,
+          "dbfs": -64.68,
+          "partials": [
+            { "hz": 1046.5, "db": 0 },
+            { "hz": 784, "db": -16 },
+            { "hz": 3139.5, "db": -19.08 },
+            { "hz": 5232.5, "db": -27.96 },
+            { "hz": 659.25, "db": -31.67 },
+            { "hz": 7325.5, "db": -33.8 },
+            { "hz": 2351.97, "db": -35.08 },
+            { "hz": 9418.5, "db": -38.17 }
+          ]
+        },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "source.wav",
+      "samples": 39360,
+      "bytes": 157498,
+      "sha256": "42a7537f08a445395045dbf8977b461dd68307e3f201790255fcaf6741df5250"
+    },
+    "edition": {
+      "label": "Edition Complete",
+      "cue": "playEdition",
+      "params": {},
+      "onset": 0.00708,
+      "end": 1.06029,
+      "duration": 1.05321,
+      "stop": 1.62,
+      "peakDbfs": -10.28,
+      "rmsDbfs": -27.09,
+      "fundamentalHz": 523.25,
+      "envelopeDbfs": [
+        -30.59, -16.56, -17.02, -21.81, -29.8, -29.25, -28.99, -31.26, -88.19
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -19.92,
+          "partials": [
+            { "hz": 523.26, "db": 0 },
+            { "hz": 1569.93, "db": -19.04 },
+            { "hz": 2616.5, "db": -27.92 },
+            { "hz": 3663.05, "db": -33.78 },
+            { "hz": 4709.57, "db": -38.16 },
+            { "hz": 5756.06, "db": -41.67 },
+            { "hz": 6802.5, "db": -44.58 },
+            { "hz": 7848.91, "db": -47.08 }
+          ]
+        },
+        {
+          "t": 0.065,
+          "dbfs": -26.62,
+          "partials": [
+            { "hz": 523.25, "db": 0 },
+            { "hz": 1569.75, "db": -19.08 },
+            { "hz": 2616.25, "db": -27.96 },
+            { "hz": 3662.75, "db": -33.8 },
+            { "hz": 4709.25, "db": -38.17 },
+            { "hz": 5755.75, "db": -41.66 },
+            { "hz": 6802.25, "db": -44.56 },
+            { "hz": 7848.75, "db": -47.04 }
+          ]
+        },
+        {
+          "t": 0.11,
+          "dbfs": -25.51,
+          "partials": [
+            { "hz": 659.31, "db": 0 },
+            { "hz": 523.64, "db": -11.03 },
+            { "hz": 1978.17, "db": -19.17 },
+            { "hz": 444.81, "db": -25.16 },
+            { "hz": 1569.53, "db": -27.71 },
+            { "hz": 3296.03, "db": -27.99 },
+            { "hz": 4614.88, "db": -33.76 },
+            { "hz": 2616.15, "db": -36.09 }
+          ]
+        },
+        {
+          "t": 0.155,
+          "dbfs": -25.01,
+          "partials": [
+            { "hz": 659.25, "db": 0 },
+            { "hz": 523.24, "db": -16.1 },
+            { "hz": 1977.75, "db": -19.08 },
+            { "hz": 3296.25, "db": -27.96 },
+            { "hz": 4614.74, "db": -33.8 },
+            { "hz": 1569.75, "db": -35.19 },
+            { "hz": 5933.25, "db": -38.17 },
+            { "hz": 7251.75, "db": -41.66 }
+          ]
+        },
+        {
+          "t": 0.3,
+          "dbfs": -32.25,
+          "partials": [
+            { "hz": 783.33, "db": 0 },
+            { "hz": 657.59, "db": -16.02 },
+            { "hz": 1046.53, "db": -16.4 },
+            { "hz": 2351.86, "db": -19.1 },
+            { "hz": 3920.04, "db": -27.95 },
+            { "hz": 529.83, "db": -32.26 },
+            { "hz": 5486.8, "db": -33.91 },
+            { "hz": 1975.24, "db": -35.08 }
+          ]
+        },
+        {
+          "t": 0.6,
+          "dbfs": -26.02,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 523.25, "db": -0.01 },
+            { "hz": 659.25, "db": -0.01 },
+            { "hz": 1977.75, "db": -19.09 },
+            { "hz": 1569.75, "db": -19.09 },
+            { "hz": 2351.97, "db": -19.1 },
+            { "hz": 1318.51, "db": -22.34 },
+            { "hz": 2616.25, "db": -27.96 }
+          ]
+        },
+        {
+          "t": 1.2,
+          "dbfs": -68.43,
+          "partials": [
+            { "hz": 783.99, "db": 0 },
+            { "hz": 523.25, "db": 0 },
+            { "hz": 659.25, "db": 0 },
+            { "hz": 2351.97, "db": -19.08 },
+            { "hz": 1569.75, "db": -19.08 },
+            { "hz": 1977.75, "db": -19.09 },
+            { "hz": 2616.25, "db": -27.96 },
+            { "hz": 3919.95, "db": -27.96 }
+          ]
+        }
+      ],
+      "wav": "edition.wav",
+      "samples": 77760,
+      "bytes": 311098,
+      "sha256": "5717d4971b74f696bf70351397f53d12d7a9e28a25fb353e06970b0359713699"
+    },
+    "invalid": {
+      "label": "Rejected guess",
+      "cue": "playInvalid",
+      "params": {},
+      "onset": 0.00583,
+      "end": 0.17063,
+      "duration": 0.16479,
+      "stop": 0.26,
+      "peakDbfs": -21.26,
+      "rmsDbfs": -33.33,
+      "fundamentalHz": 196.11,
+      "envelopeDbfs": [
+        -38.48,
+        -21.92,
+        -23.2,
+        -38.28,
+        -22.69,
+        -72.88,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        { "t": 0.02, "dbfs": -25.31, "partials": [{ "hz": 196.27, "db": 0 }] },
+        { "t": 0.065, "dbfs": -46.96, "partials": [{ "hz": 196, "db": 0 }] },
+        { "t": 0.11, "dbfs": -29.48, "partials": [{ "hz": 174.57, "db": 0 }] },
+        { "t": 0.155, "dbfs": -51.96, "partials": [{ "hz": 174.61, "db": 0 }] },
+        { "t": 0.3, "dbfs": null, "partials": [] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "pair": {
+        "notes": [
+          { "from": 0, "to": 0.08, "hz": 196.05, "db": 0 },
+          { "from": 0.08, "to": 0.26, "hz": 174.58, "db": 0.19 }
+        ],
+        "intervalSemitones": 2.008
+      },
+      "wav": "invalid.wav",
+      "samples": 12480,
+      "bytes": 49978,
+      "sha256": "21df9c2a65009146c8e186a2dc427d5e3ef7441333a82a31dd137d76e75ff53f"
+    },
+    "tick": {
+      "label": "Tile tap",
+      "cue": "tick",
+      "params": {},
+      "onset": 0.0044,
+      "end": 0.02344,
+      "duration": 0.01904,
+      "stop": 0.05,
+      "peakDbfs": -33.63,
+      "rmsDbfs": -44.38,
+      "fundamentalHz": 879.93,
+      "envelopeDbfs": [
+        -44.95,
+        -33.63,
+        -44.8,
+        -95,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "spectrum": [
+        {
+          "t": 0.02,
+          "dbfs": -49.79,
+          "partials": [
+            { "hz": 879.93, "db": 0 },
+            { "hz": 2640.04, "db": -9.5 },
+            { "hz": 4400.08, "db": -13.94 },
+            { "hz": 6160.09, "db": -16.88 },
+            { "hz": 7920.08, "db": -19.07 },
+            { "hz": 9680.05, "db": -20.82 },
+            { "hz": 11440.01, "db": -22.27 },
+            { "hz": 13199.99, "db": -23.51 }
+          ]
+        },
+        { "t": 0.065, "dbfs": null, "partials": [] },
+        { "t": 0.11, "dbfs": null, "partials": [] },
+        { "t": 0.155, "dbfs": null, "partials": [] },
+        { "t": 0.3, "dbfs": null, "partials": [] },
+        { "t": 0.6, "dbfs": null, "partials": [] },
+        { "t": 1.2, "dbfs": null, "partials": [] }
+      ],
+      "wav": "tick.wav",
+      "samples": 2400,
+      "bytes": 9658,
+      "sha256": "0ac0ae4db60270b2147fc21edac04aa9111393a9ac2d9bf9ba8b55bbef1fd0e7"
+    }
+  }
+}
