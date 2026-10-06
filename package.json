@@ -36,7 +36,8 @@
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "soundscape-engine": "0.4.0-rc.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
