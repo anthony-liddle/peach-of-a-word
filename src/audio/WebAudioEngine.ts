@@ -1,5 +1,6 @@
 import type { Rung } from '@/engine/index.ts';
 import type { AudioEngine } from './AudioEngine.ts';
+import type { Theme } from '@/ui/useTheme.ts';
 
 /**
  * How much extra sparkle a found cue earns, by rung. The set gets none.
@@ -60,6 +61,7 @@ export const MASTER_GAIN = 0.18;
 export class WebAudioEngine implements AudioEngine {
   private context: AudioContext | OfflineAudioContext | null = null;
   private master: GainNode | null = null;
+  private theme: Theme | null = null;
   muted = false;
 
   /**
@@ -76,6 +78,10 @@ export class WebAudioEngine implements AudioEngine {
 
   setMuted(muted: boolean): void {
     this.muted = muted;
+  }
+
+  setTheme(theme: Theme): void {
+    this.theme = theme;
   }
 
   private ensureContext(): AudioContext | OfflineAudioContext | null {
@@ -152,8 +158,13 @@ export class WebAudioEngine implements AudioEngine {
     }
   }
 
-  /** The active theme, read from the root where useTheme keeps it before paint. */
+  /**
+   * The theme it was given. Until it is given one, the theme on the root, where
+   * useTheme keeps it before paint: that is how this engine always read it, and
+   * how the default-path guard still plays it.
+   */
   private isCute(): boolean {
+    if (this.theme !== null) return this.theme === 'cute';
     return (
       typeof document !== 'undefined' &&
       document.documentElement.dataset.theme === 'cute'

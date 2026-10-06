@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { NullAudioEngine } from '@/audio/AudioEngine.ts';
+import { NullAudioEngine, type AudioEngine } from '@/audio/AudioEngine.ts';
 import { WebAudioEngine } from '@/audio/WebAudioEngine.ts';
 import { installFakeAudio } from '@/testing/fakeAudioContext.ts';
 import { SoundsPage } from './SoundsPage.tsx';
-import { SOUNDS, inTheme } from './inventory.ts';
+import { SOUNDS } from './inventory.ts';
 
 beforeEach(() => {
   // The page's own document pins cute before the first paint.
@@ -52,11 +52,14 @@ describe('the sounds page', () => {
     expect(contexts[0]!.oscillators).toHaveLength(1);
   });
 
-  test('plays each mythic row in its own theme, and leaves the page in cute', () => {
-    const engine = new NullAudioEngine();
-    const seen: (string | undefined)[] = [];
-    vi.spyOn(engine, 'playFound').mockImplementation(() => {
-      seen.push(document.documentElement.dataset.theme);
+  test("gives the engine each mythic row's theme, and leaves the page and the player's theme alone", () => {
+    const engine: AudioEngine = new NullAudioEngine();
+    const calls: string[] = [];
+    vi.spyOn(engine, 'setTheme').mockImplementation((theme) => {
+      calls.push(`setTheme ${theme}`);
+    });
+    vi.spyOn(engine, 'playFound').mockImplementation((length, rung) => {
+      calls.push(`playFound ${length} ${rung}`);
     });
     render(<SoundsPage engine={engine} />);
 
@@ -67,20 +70,16 @@ describe('the sounds page', () => {
       screen.getByRole('button', { name: 'Length 8, mythic, cute' }),
     );
 
-    expect(seen).toEqual(['letterpress', 'cute']);
+    expect(calls).toEqual([
+      'setTheme letterpress',
+      'playFound 8 mythic',
+      'setTheme cute',
+      'playFound 8 mythic',
+    ]);
+    // The engine is told; the page's own theme and the player's saved one are
+    // never touched.
     expect(document.documentElement.dataset.theme).toBe('cute');
-    // Set on the root directly, never through the game's theme setter, so the
-    // player's saved theme is not touched.
     expect(localStorage.getItem('e8-theme')).toBeNull();
-  });
-
-  test('puts the theme back even when the cue throws', () => {
-    expect(() =>
-      inTheme('letterpress', () => {
-        throw new Error('boom');
-      }),
-    ).toThrow('boom');
-    expect(document.documentElement.dataset.theme).toBe('cute');
   });
 
   test('the mute row silences every cue, and unmuting brings them back', () => {

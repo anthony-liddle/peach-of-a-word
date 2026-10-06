@@ -32,10 +32,12 @@ function pressEverything(): { presses: Press[]; methods: Set<string> } {
   const { contexts } = installFakeAudio();
   const engine = new WebAudioEngine();
 
-  // Record each call as the engine receives it, with the theme on the root at
-  // that moment, then pass it through untouched.
+  // Record each call as the engine receives it, with the theme the engine was
+  // last given, then pass it through untouched. Giving the theme is not a
+  // sound, so it is noted rather than logged.
   const log: Call[] = [];
   const methods = new Set<string>();
+  let theme: string | undefined;
   const target = engine as unknown as Record<
     string,
     (...args: unknown[]) => void
@@ -44,14 +46,17 @@ function pressEverything(): { presses: Press[]; methods: Set<string> } {
     const original = target[method]!.bind(engine);
     target[method] = (...args: unknown[]) => {
       methods.add(method);
+      if (method === 'setTheme') {
+        theme = args[0] as string;
+        original(...args);
+        return;
+      }
       const [length, rung] = args as [number?, Call['rung']?];
       log.push({
         method,
         ...(method === 'playFound' && { length: length! }),
         ...(rung && { rung }),
-        ...(document.documentElement.dataset.theme && {
-          theme: document.documentElement.dataset.theme,
-        }),
+        ...(theme && { theme }),
       });
       original(...args);
     };

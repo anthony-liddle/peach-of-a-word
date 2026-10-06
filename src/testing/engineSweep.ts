@@ -45,7 +45,11 @@ function play(engine: AudioEngine, call: Call): void {
   if (call.method === 'playFound') {
     if (call.rung === undefined) engine.playFound(call.length!);
     else engine.playFound(call.length!, call.rung);
-  } else if (call.method !== 'setMuted' && call.method !== 'muted') {
+  } else if (
+    call.method !== 'setMuted' &&
+    call.method !== 'muted' &&
+    call.method !== 'setTheme'
+  ) {
     engine[call.method]();
   }
 }
@@ -53,7 +57,9 @@ function play(engine: AudioEngine, call: Call): void {
 function sweepCalls(): Call[] {
   const calls: Call[] = [];
   for (const method of ENGINE_METHODS) {
-    if (method === 'setMuted' || method === 'muted') continue;
+    // Not sounds: the mute, and the theme, which the sweep sets on the root
+    if (method === 'setMuted' || method === 'muted' || method === 'setTheme')
+      continue;
     for (const theme of THEMES) {
       if (method !== 'playFound') {
         calls.push({ method, ...(theme && { theme }) });

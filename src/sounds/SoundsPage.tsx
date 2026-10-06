@@ -74,9 +74,10 @@ export function SoundsPage({ engine }: { engine: AudioEngine }) {
           {section.cue === 'playFound' ? (
             <>
               <p className="sounds__note">
-                Mythic adds a glint, and one more in the cute theme. Nothing in
-                the call says so: the engine reads the theme from the page. Each
-                mythic button sets its own theme while it plays.
+                Mythic adds a glint, and one more in the cute theme. The call
+                does not carry the theme: the engine is given it with{' '}
+                <code>setTheme</code>, so each mythic button gives it its own
+                theme first.
               </p>
               {FOUND_ROWS.map((row) => (
                 <div key={row.length} className="sounds__group">
