@@ -10,3 +10,8 @@ scripts/.cache/
 # formatting this file makes the check fail on every commit. The bytes are the
 # point; they are not this repository's to reformat.
 scripts/data-raw/swift-meta.json
+
+# The game's sounds as a Soundscape cue document, written by Soundscape's
+# canonical serializer so that saving it unchanged reproduces its bytes, and
+# later by its cue editor. src/audio/peachCues.test.ts holds it to that form.
+src/audio/peach.cues.json

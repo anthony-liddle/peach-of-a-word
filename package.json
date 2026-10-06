@@ -20,6 +20,7 @@
     "data:refresh-reveals": "tsx scripts/refresh-reveals.ts",
     "icons:build": "tsx scripts/build-icons.ts",
     "sounds:baseline": "tsx scripts/capture-sound-baseline.ts",
+    "sounds:cues": "tsx --tsconfig tsconfig.node.json scripts/build-sound-cues.ts",
     "prepare": "husky || true",
     "lexicon:update": "tsx scripts/update-lexicon.ts",
     "lexicon:check": "tsx scripts/update-lexicon.ts --check"
