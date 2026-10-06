@@ -46,3 +46,21 @@
   min-height: 44px;
   min-width: 44px;
 }
+
+.sounds__controls {
+  margin-top: 0.9rem;
+}
+
+/* What the last tap played, under the row it was played from, with the reveal
+   beside it in blind mode. */
+.sounds__played {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.sounds__played .sounds__note {
+  margin: 0;
+}

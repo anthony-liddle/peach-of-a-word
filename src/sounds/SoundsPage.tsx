@@ -1,24 +1,82 @@
-import { useCallback, useState } from 'react';
-import type { AudioEngine } from '@/audio/AudioEngine.ts';
+import { useCallback, useRef, useState } from 'react';
 import { Decorations } from '@/ui/components/Decorations.tsx';
 import { FOUND_ROWS, SECTIONS, SOUNDS, type Sound } from './inventory.ts';
+import { lengthOf, type Pair } from './pair.ts';
 
 /**
- * One button per sound the game makes, for comparing a future engine against
- * this one by ear. Unlisted: linked from nowhere and not indexed.
+ * One button per sound the game makes, each playing that sound twice from the
+ * same tap: as the game played it before Soundscape, then as a Soundscape cue,
+ * for comparing the two by ear. Unlisted: linked from nowhere and not indexed.
  *
- * It plays through the AudioEngine interface it is handed, never around it, so
- * the same page can later be pointed at the Soundscape engine. Nothing plays on
- * load: the engine makes its audio context on the first cue, which is the first
- * tap, the same as in the game.
+ * Blind mode plays the two in an order the page keeps to itself, called A and
+ * B, until the reveal. Nothing on the page says which is which before then: not
+ * a label, an attribute or a title.
+ *
+ * Nothing plays on load. Both engines share one audio context, which the first
+ * tap makes, the same moment the game makes its own.
  */
-export function SoundsPage({ engine }: { engine: AudioEngine }) {
-  const [muted, setMuted] = useState(engine.muted);
+type Side = keyof Pair;
+const SAID: Record<Side, string> = {
+  before: 'the game before Soundscape',
+  soundscape: 'Soundscape',
+};
+/** The pause between the two, after the first has finished. */
+const GAP_S = 0.4;
+
+interface Played {
+  sound: Sound;
+  order: [Side, Side];
+  blind: boolean;
+  revealed: boolean;
+}
+
+export function SoundsPage({
+  pair,
+  random = Math.random,
+}: {
+  /** The two engines, made on the first call; null where there is no Web Audio. */
+  pair: () => Pair | null;
+  /** Which comes first in blind mode. */
+  random?: () => number;
+}) {
+  const engines = useRef<Pair | null>(null);
+  const [muted, setMuted] = useState(false);
+  const [blind, setBlind] = useState(false);
+  const [played, setPlayed] = useState<Played | null>(null);
+
   const toggleMute = useCallback(() => {
-    const next = !engine.muted;
-    engine.setMuted(next);
+    const next = !muted;
+    engines.current?.before.setMuted(next);
+    engines.current?.soundscape.setMuted(next);
     setMuted(next);
-  }, [engine]);
+  }, [muted]);
+
+  const play = useCallback(
+    (sound: Sound) => {
+      // Muted, a tap makes nothing at all, as each engine on its own would
+      if (muted) return;
+      engines.current ??= pair();
+      const both = engines.current;
+      if (!both) return;
+      const first: Side = blind && random() < 0.5 ? 'soundscape' : 'before';
+      const order: [Side, Side] =
+        first === 'before'
+          ? ['before', 'soundscape']
+          : ['soundscape', 'before'];
+      sound.play(both[order[0]]);
+      setTimeout(
+        () => sound.play(both[order[1]]),
+        (lengthOf(sound.id) + GAP_S) * 1000,
+      );
+      setPlayed({ sound, order, blind, revealed: false });
+    },
+    [muted, blind, pair, random],
+  );
+
+  const reveal = useCallback(
+    () => setPlayed((p) => p && { ...p, revealed: true }),
+    [],
+  );
 
   return (
     <div className="app sounds">
@@ -29,20 +87,30 @@ export function SoundsPage({ engine }: { engine: AudioEngine }) {
           Every <em>sound</em>
         </h1>
         <p className="masthead__rule">
-          {SOUNDS.length} sounds, as the game plays them today
+          {SOUNDS.length} sounds, each as it was, then on Soundscape
         </p>
       </header>
 
-      <section className="found sounds__section" aria-labelledby="cue-mute">
-        <h2 className="found__title" id="cue-mute">
-          Mute
+      <section className="found sounds__section" aria-labelledby="listening">
+        <h2 className="found__title" id="listening">
+          Listening
         </h2>
-        <p className="sounds__call">
-          <code>setMuted(muted)</code>
+        <p className="sounds__note">
+          Each button plays its sound twice: as the game played it before
+          Soundscape, then as a Soundscape cue. In blind mode it plays them as A
+          and B, in an order it does not show, until you reveal it.
         </p>
-        <div className="sounds__row">
+        <div className="sounds__row sounds__controls">
           {/* Pressed wears the game's primary fill, so on and off differ by
               more than a word. */}
+          <button
+            type="button"
+            className={'btn sounds__btn' + (blind ? ' btn--primary' : '')}
+            aria-pressed={blind}
+            onClick={() => setBlind((b) => !b)}
+          >
+            Blind
+          </button>
           <button
             type="button"
             className={'btn sounds__btn' + (muted ? ' btn--primary' : '')}
@@ -55,7 +123,9 @@ export function SoundsPage({ engine }: { engine: AudioEngine }) {
         <p className="sounds__note" role="status">
           {muted
             ? 'Muted. Every button below now plays nothing.'
-            : 'Sound on. Mute, then try any button below.'}
+            : blind
+              ? 'Blind. Each button plays A, then B.'
+              : 'Sound on. Mute, then try any button below.'}
         </p>
       </section>
 
@@ -84,12 +154,22 @@ export function SoundsPage({ engine }: { engine: AudioEngine }) {
                   <h3 className="legend__caption sounds__caption">
                     Length {row.length}, {row.hz} Hz
                   </h3>
-                  <SoundRow sounds={row.sounds} engine={engine} />
+                  <SoundRow
+                    sounds={row.sounds}
+                    play={play}
+                    played={played}
+                    reveal={reveal}
+                  />
                 </div>
               ))}
             </>
           ) : (
-            <SoundRow sounds={section.sounds} engine={engine} />
+            <SoundRow
+              sounds={section.sounds}
+              play={play}
+              played={played}
+              reveal={reveal}
+            />
           )}
         </section>
       ))}
@@ -99,24 +179,47 @@ export function SoundsPage({ engine }: { engine: AudioEngine }) {
 
 function SoundRow({
   sounds,
-  engine,
+  play,
+  played,
+  reveal,
 }: {
   sounds: Sound[];
-  engine: AudioEngine;
+  play: (sound: Sound) => void;
+  played: Played | null;
+  reveal: () => void;
 }) {
+  const here = played && sounds.includes(played.sound) ? played : null;
   return (
-    <div className="sounds__row">
-      {sounds.map((sound) => (
-        <button
-          key={sound.id}
-          type="button"
-          className="btn sounds__btn"
-          data-sound={sound.id}
-          onClick={() => sound.play(engine)}
-        >
-          {sound.label}
-        </button>
-      ))}
-    </div>
+    <>
+      <div className="sounds__row">
+        {sounds.map((sound) => (
+          <button
+            key={sound.id}
+            type="button"
+            className="btn sounds__btn"
+            data-sound={sound.id}
+            onClick={() => play(sound)}
+          >
+            {sound.label}
+          </button>
+        ))}
+      </div>
+      {here && (
+        <div className="sounds__played">
+          <p className="sounds__note" role="status">
+            {here.blind && !here.revealed
+              ? `Played ${here.sound.label}: A, then B.`
+              : here.blind
+                ? `Played ${here.sound.label}: A was ${SAID[here.order[0]]}, B was ${SAID[here.order[1]]}.`
+                : `Played ${here.sound.label}: ${SAID[here.order[0]]}, then ${SAID[here.order[1]]}.`}
+          </p>
+          {here.blind && !here.revealed && (
+            <button type="button" className="btn sounds__btn" onClick={reveal}>
+              Reveal which was which
+            </button>
+          )}
+        </div>
+      )}
+    </>
   );
 }

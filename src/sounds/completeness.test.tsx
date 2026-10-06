@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { SoundscapeAudioEngine } from '@/audio/SoundscapeAudioEngine.ts';
 import { WebAudioEngine } from '@/audio/WebAudioEngine.ts';
-import { describeNotes, installFakeAudio } from '@/testing/fakeAudioContext.ts';
+import { FakeAudioContext, describeNotes } from '@/testing/fakeAudioContext.ts';
 import {
   ENGINE_METHODS,
   describeCall,
@@ -12,25 +15,56 @@ import { SoundsPage } from './SoundsPage.tsx';
 
 /**
  * The page is complete: every sound the engine can make has a button, and so
- * does every method on the interface.
+ * does every method on the interface, and every one of those sounds has a
+ * Soundscape cue that its button plays.
  *
  * What counts as a sound comes from playing the engine (see engineSweep), not
  * from the tables the page is built from, so the page is checked against the
- * engine rather than against itself. Every button is then pressed on a real
- * WebAudioEngine and the notes it schedules are compared with the sweep.
+ * engine rather than against itself. Every button is then pressed with a real
+ * WebAudioEngine on a recording context, and the notes it schedules are
+ * compared with the sweep. The Soundscape side is recorded by name: which cue
+ * each button plays. The browser tests hold each cue's sound to the engine's.
  */
 const ENGINE = distinctSounds();
 
+const CUE_NAMES = Object.keys(
+  (
+    JSON.parse(
+      readFileSync(resolve(__dirname, '../audio/peach.cues.json'), 'utf8'),
+    ) as { cues: Record<string, unknown> }
+  ).cues,
+);
+
+const { cuesPlayed } = vi.hoisted(() => ({ cuesPlayed: [] as string[] }));
+vi.mock('soundscape-engine', () => ({
+  AudioEngine: class {
+    initialize(): Promise<void> {
+      return new Promise(() => {});
+    }
+    loadCues(): void {}
+    playCue(name: string): void {
+      cuesPlayed.push(name);
+    }
+  },
+}));
+
 interface Press {
   label: string;
+  sound: string | undefined;
   calls: Call[];
   signature: string;
+  cues: string[];
 }
 
 /** Press every button on the page, once, and record what each one did. */
 function pressEverything(): { presses: Press[]; methods: Set<string> } {
-  const { contexts } = installFakeAudio();
-  const engine = new WebAudioEngine();
+  vi.useFakeTimers();
+  cuesPlayed.length = 0;
+  const context = new FakeAudioContext();
+  const engine = new WebAudioEngine(context as unknown as AudioContext);
+  const soundscape = new SoundscapeAudioEngine(
+    context as unknown as BaseAudioContext,
+  );
 
   // Record each call as the engine receives it, with the theme the engine was
   // last given, then pass it through untouched. Giving the theme is not a
@@ -62,25 +96,29 @@ function pressEverything(): { presses: Press[]; methods: Set<string> } {
     };
   }
 
-  render(<SoundsPage engine={engine} />);
-  // The mute toggle goes last, on and off again: pressed first, it would
+  render(<SoundsPage pair={() => ({ before: engine, soundscape })} />);
+  // The toggles go last, on and off again: the mute pressed first would
   // silence every button after it.
   const buttons = screen.getAllByRole('button');
   const toggles = buttons.filter((b) => b.hasAttribute('aria-pressed'));
-  const sounds = buttons.filter((b) => !b.hasAttribute('aria-pressed'));
+  const sounds = buttons.filter((b) => b.hasAttribute('data-sound'));
   const presses: Press[] = [];
   for (const button of [...sounds, ...toggles, ...toggles]) {
-    const fromNote = contexts[0]?.oscillators.length ?? 0;
+    const fromNote = context.oscillators.length;
     const fromCall = log.length;
+    const fromCue = cuesPlayed.length;
     fireEvent.click(button);
+    // The second of the tap's two sounds, a moment later
+    act(() => vi.runAllTimers());
     presses.push({
       label: button.textContent ?? '',
+      sound: button.dataset.sound,
       calls: log.slice(fromCall),
-      signature: contexts[0]
-        ? describeNotes(contexts[0], fromNote).join('\n')
-        : '',
+      signature: describeNotes(context, fromNote).join('\n'),
+      cues: cuesPlayed.slice(fromCue),
     });
   }
+  vi.useRealTimers();
   return { presses, methods };
 }
 
@@ -90,6 +128,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   delete document.documentElement.dataset.theme;
 });
@@ -118,6 +157,19 @@ describe('the sounds page is complete', () => {
     );
     expect(repeats.map((p) => p.label)).toEqual([]);
     expect(sounding).toHaveLength(ENGINE.size);
+  });
+
+  test('every sound has a Soundscape cue, which its button plays, and every cue is reachable', () => {
+    const { presses } = pressEverything();
+    const sounding = presses.filter((p) => p.sound !== undefined);
+    expect(sounding).toHaveLength(ENGINE.size);
+    for (const press of sounding) {
+      expect(press.cues, press.label).toEqual([press.sound]);
+    }
+    expect(new Set(sounding.flatMap((p) => p.cues))).toEqual(
+      new Set(CUE_NAMES),
+    );
+    expect(CUE_NAMES).toHaveLength(ENGINE.size);
   });
 
   test('each found button names the length and rung it plays, and the theme where the engine hears it', () => {
