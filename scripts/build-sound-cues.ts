@@ -35,16 +35,11 @@ import {
   validateCueDocument,
 } from 'soundscape-engine';
 import type { CueDocument, CueInstrument, CueNote } from 'soundscape-engine';
-
-// The inventory sets the theme on the document root for a mythic row, and the
-// engine reads it back. A root with a dataset is all either of them touches.
-(globalThis as unknown as { document: unknown }).document = {
-  documentElement: { dataset: {} },
-};
-
-const { MASTER_GAIN, ReferenceAudioEngine } =
-  await import('../src/reference/ReferenceAudioEngine.ts');
-const { SOUNDS } = await import('../src/sounds/inventory.ts');
+import {
+  MASTER_GAIN,
+  ReferenceAudioEngine,
+} from '../src/reference/ReferenceAudioEngine.ts';
+import { SOUNDS } from '../src/sounds/inventory.ts';
 
 // note() in src/reference/ReferenceAudioEngine.ts, transcribed:
 //   gain.setValueAtTime(0.0001, t0)                       the floor
