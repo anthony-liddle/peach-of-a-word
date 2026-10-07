@@ -1,0 +1,8 @@
+{
+  // The tests that run in real browsers. They import vitest/browser, whose
+  // matchers replace jest-dom's wherever its types are loaded, so they are
+  // checked here, apart from the tests under tsconfig.app.json.
+  "extends": "./tsconfig.app.json",
+  "include": ["src/**/*.browser.test.ts"],
+  "exclude": []
+}

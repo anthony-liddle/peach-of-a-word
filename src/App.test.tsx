@@ -20,6 +20,7 @@ vi.mock('@/data/gameData.ts', async (importOriginal) => ({
 }));
 
 import { App } from './App.tsx';
+import { SoundscapeAudioEngine } from './audio/SoundscapeAudioEngine.ts';
 import { AssetHttpError } from './data/gameData.ts';
 import { useTheme, type Theme } from './ui/useTheme.ts';
 
@@ -99,6 +100,21 @@ describe('the loading screen', () => {
 
     expect(screen.getByText('Picking the peaches.')).toBeInTheDocument();
     expect(screen.queryByText('Setting the type.')).toBeNull();
+  });
+
+  it('gives the audio engine the theme it shows, and follows a switch', () => {
+    // The mythic found word sounds different in cute. The engine is told the
+    // theme rather than reading the page.
+    const setTheme = vi.spyOn(SoundscapeAudioEngine.prototype, 'setTheme');
+    paintTheme('letterpress');
+    render(<App />);
+    expect(setTheme).toHaveBeenLastCalledWith('letterpress');
+    const { result } = renderHook(() => useTheme());
+
+    act(() => result.current[1]('cute'));
+
+    expect(setTheme).toHaveBeenLastCalledWith('cute');
+    setTheme.mockRestore();
   });
 });
 

@@ -13,7 +13,12 @@ export default defineConfig({
   test: {
     // archive/ holds retired pages kept as a record. Nothing there is built or
     // served, and nothing there should be collected as a test.
-    exclude: [...configDefaults.exclude, 'archive/**'],
+    // Real-browser tests run through vitest.browser.config.ts instead.
+    exclude: [
+      ...configDefaults.exclude,
+      'archive/**',
+      'src/**/*.browser.test.ts',
+    ],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],

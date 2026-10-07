@@ -5,7 +5,7 @@ import {
   loadGameData,
   type GameData,
 } from '@/data/gameData.ts';
-import { WebAudioEngine } from '@/audio/WebAudioEngine.ts';
+import { SoundscapeAudioEngine } from '@/audio/SoundscapeAudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
 import { Game } from '@/ui/Game.tsx';
 import { useTheme } from '@/ui/useTheme.ts';
@@ -61,8 +61,12 @@ export function App() {
   // too. The inline script in index.html puts it on the document root before
   // the first paint, so it resolves correctly this early.
   const [theme] = useTheme();
-  const audio = useMemo(() => new WebAudioEngine(), []);
+  const audio = useMemo(() => new SoundscapeAudioEngine(), []);
   const storage = useMemo(() => new GameStorage(), []);
+
+  // The engine plays the theme it is given. One cue hears it, the mythic found
+  // word, so it follows the theme the game shows rather than reading the page.
+  useEffect(() => audio.setTheme(theme), [audio, theme]);
 
   useEffect(() => {
     let active = true;
