@@ -53,7 +53,7 @@ export default defineConfig(({ command }) => ({
        *
        * sounds.html is an unlisted workbench with one button per sound the
        * game makes, served at /sounds by a rewrite. It is an entry rather than
-       * a file in public/ so it imports the game's real audio engine and
+       * a file in public/ so it imports the real audio engines and the game's
        * stylesheet instead of a copy of either.
        */
       input: {

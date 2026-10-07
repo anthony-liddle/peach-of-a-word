@@ -1,11 +1,11 @@
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { SoundscapeAudioEngine } from '@/audio/SoundscapeAudioEngine.ts';
-import { WebAudioEngine } from '@/audio/WebAudioEngine.ts';
+import { ReferenceAudioEngine } from '@/reference/ReferenceAudioEngine.ts';
 import cues from '@/audio/peach.cues.json';
 
 /**
  * The two engines the page compares: the game's sound before Soundscape, played
- * by WebAudioEngine, and the same sound as a Soundscape cue.
+ * by ReferenceAudioEngine, and the same sound as a Soundscape cue.
  */
 export interface Pair {
   before: AudioEngine;
@@ -30,7 +30,7 @@ export function pairOnTap(): () => Pair | null {
       if (!Ctor) return null;
       context = new Ctor();
       pair = {
-        before: new WebAudioEngine(context),
+        before: new ReferenceAudioEngine(context),
         soundscape: new SoundscapeAudioEngine(context),
       };
     }

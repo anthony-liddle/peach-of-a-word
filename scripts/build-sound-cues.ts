@@ -1,14 +1,16 @@
 /**
  * Writes src/audio/peach.cues.json: the game's 34 sounds as one Soundscape cue
- * document, every value taken from the game's own engine.
+ * document, every value taken from the reference engine: how the game sounded
+ * before Soundscape.
  *
- * Each sound on the /sounds page is played through a real WebAudioEngine with
- * its private note() replaced by a recorder, so every call's arguments arrive
- * exactly as the engine computes them: the frequency, the start offset (3 * 0.1,
- * not 0.3), the duration, the waveform and the peak. The three literals inside
- * note() itself, the floor, the attack and the tail, are copied below, and
- * src/audio/peachCues.test.ts holds the document to what the engine actually
- * schedules, so a change to note() fails there instead of being copied wrongly.
+ * Each sound on the /sounds page is played through a real ReferenceAudioEngine
+ * with its private note() replaced by a recorder, so every call's arguments
+ * arrive exactly as the engine computes them: the frequency, the start offset
+ * (3 * 0.1, not 0.3), the duration, the waveform and the peak. The three
+ * literals inside note() itself, the floor, the attack and the tail, are copied
+ * below, and src/audio/peachCues.test.ts holds the document to what the engine
+ * actually schedules, so a change to note() fails there instead of being copied
+ * wrongly.
  *
  * One instrument per waveform: each fades over its own note, its decay lasting
  * until the note's release, which is where the game's ramp to the floor ends.
@@ -33,18 +35,13 @@ import {
   validateCueDocument,
 } from 'soundscape-engine';
 import type { CueDocument, CueInstrument, CueNote } from 'soundscape-engine';
+import {
+  MASTER_GAIN,
+  ReferenceAudioEngine,
+} from '../src/reference/ReferenceAudioEngine.ts';
+import { SOUNDS } from '../src/sounds/inventory.ts';
 
-// The inventory sets the theme on the document root for a mythic row, and the
-// engine reads it back. A root with a dataset is all either of them touches.
-(globalThis as unknown as { document: unknown }).document = {
-  documentElement: { dataset: {} },
-};
-
-const { MASTER_GAIN, WebAudioEngine } =
-  await import('../src/audio/WebAudioEngine.ts');
-const { SOUNDS } = await import('../src/sounds/inventory.ts');
-
-// note() in src/audio/WebAudioEngine.ts, transcribed:
+// note() in src/reference/ReferenceAudioEngine.ts, transcribed:
 //   gain.setValueAtTime(0.0001, t0)                       the floor
 //   gain.exponentialRampToValueAtTime(peak, t0 + 0.012)   the attack
 //   gain.exponentialRampToValueAtTime(0.0001, t0 + duration)
@@ -126,7 +123,7 @@ const instruments: Record<string, CueInstrument> = {};
 const cues: Record<string, { notes: CueNote[] }> = {};
 for (const sound of SOUNDS) {
   const calls: Call[] = [];
-  const engine = new WebAudioEngine(context as unknown as AudioContext);
+  const engine = new ReferenceAudioEngine(context as unknown as AudioContext);
   (engine as unknown as { note: (...a: unknown[]) => void }).note = (
     freq,
     startOffset,

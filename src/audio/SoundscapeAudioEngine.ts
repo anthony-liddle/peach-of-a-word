@@ -6,8 +6,8 @@ import cues from './peach.cues.json';
 
 /**
  * The game's audio on Soundscape, Antoine's engine: every sound is a cue in
- * peach.cues.json, written from the game's previous engine, WebAudioEngine,
- * which stays as the reference the cues are held to.
+ * peach.cues.json, written from the game's previous engine,
+ * ReferenceAudioEngine, which stays as the reference the cues are held to.
  *
  * It keeps that engine's lifecycle. Nothing exists until the first cue, which
  * must come from a gesture: that cue creates the AudioContext and resumes it in
