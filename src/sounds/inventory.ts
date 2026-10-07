@@ -4,7 +4,7 @@ import {
   FOUND_SHORTEST,
   GLINT_SPARKLE,
   RUNG_SPARKLE,
-} from '@/audio/WebAudioEngine.ts';
+} from '@/reference/ReferenceAudioEngine.ts';
 import type { Rung } from '@/engine/index.ts';
 import type { Theme } from '@/ui/useTheme.ts';
 

@@ -1,6 +1,9 @@
 import { vi } from 'vitest';
 import { NullAudioEngine, type AudioEngine } from '@/audio/AudioEngine.ts';
-import { RUNG_SPARKLE, WebAudioEngine } from '@/audio/WebAudioEngine.ts';
+import {
+  RUNG_SPARKLE,
+  ReferenceAudioEngine,
+} from '@/reference/ReferenceAudioEngine.ts';
 import type { Rung } from '@/engine/index.ts';
 import { describeNotes, installFakeAudio } from './fakeAudioContext.ts';
 
@@ -92,7 +95,7 @@ export function distinctSounds(): Map<Signature, Call[]> {
     for (const call of sweepCalls()) {
       const { contexts } = installFakeAudio();
       setRootTheme(call.theme);
-      play(new WebAudioEngine(), call);
+      play(new ReferenceAudioEngine(), call);
       const signature = describeNotes(contexts[0]!).join('\n');
       sounds.set(signature, [...(sounds.get(signature) ?? []), call]);
       vi.unstubAllGlobals();

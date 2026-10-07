@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { SoundscapeAudioEngine } from '@/audio/SoundscapeAudioEngine.ts';
-import { WebAudioEngine } from '@/audio/WebAudioEngine.ts';
+import { ReferenceAudioEngine } from '@/reference/ReferenceAudioEngine.ts';
 import { FakeAudioContext, describeNotes } from '@/testing/fakeAudioContext.ts';
 import {
   ENGINE_METHODS,
@@ -21,7 +21,7 @@ import { SoundsPage } from './SoundsPage.tsx';
  * What counts as a sound comes from playing the engine (see engineSweep), not
  * from the tables the page is built from, so the page is checked against the
  * engine rather than against itself. Every button is then pressed with a real
- * WebAudioEngine on a recording context, and the notes it schedules are
+ * ReferenceAudioEngine on a recording context, and the notes it schedules are
  * compared with the sweep. The Soundscape side is recorded by name: which cue
  * each button plays. The browser tests hold each cue's sound to the engine's.
  */
@@ -61,7 +61,7 @@ function pressEverything(): { presses: Press[]; methods: Set<string> } {
   vi.useFakeTimers();
   cuesPlayed.length = 0;
   const context = new FakeAudioContext();
-  const engine = new WebAudioEngine(context as unknown as AudioContext);
+  const engine = new ReferenceAudioEngine(context as unknown as AudioContext);
   const soundscape = new SoundscapeAudioEngine(
     context as unknown as BaseAudioContext,
   );

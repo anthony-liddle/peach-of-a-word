@@ -8,9 +8,9 @@ import { vi } from 'vitest';
  * time stands still at zero, so every start and stop reads as an offset from
  * the moment the cue was called.
  *
- * Only the calls WebAudioEngine makes are implemented. Anything else is missing
- * on purpose, so a cue that starts using a new automation method fails loudly
- * here instead of being recorded as if it were silent.
+ * Only the calls ReferenceAudioEngine makes are implemented. Anything else is
+ * missing on purpose, so a cue that starts using a new automation method fails
+ * loudly here instead of being recorded as if it were silent.
  */
 class FakeParam {
   readonly events: string[] = [];
@@ -78,10 +78,11 @@ export class FakeAudioContext {
 }
 
 /**
- * Put the fake where the game's engine looks for a real one, window.AudioContext,
- * and return every context constructed through it. This is the no-argument path
- * the game takes: nothing is handed to the engine, so it cannot tell it is being
- * watched. Undo with vi.unstubAllGlobals().
+ * Put the fake where the reference engine, given no context, looks for a real
+ * one, window.AudioContext, and return every context constructed through it.
+ * This is the no-argument path the game took before Soundscape: nothing is
+ * handed to the engine, so it cannot tell it is being watched. Undo with
+ * vi.unstubAllGlobals().
  */
 export function installFakeAudio(): { contexts: FakeAudioContext[] } {
   const contexts: FakeAudioContext[] = [];

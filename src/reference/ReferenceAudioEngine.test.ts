@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { Rung } from '@/engine/index.ts';
-import type { AudioEngine } from './AudioEngine.ts';
-import { MASTER_GAIN, WebAudioEngine } from './WebAudioEngine.ts';
+import type { AudioEngine } from '@/audio/AudioEngine.ts';
+import { MASTER_GAIN, ReferenceAudioEngine } from './ReferenceAudioEngine.ts';
 import {
   FakeAudioContext,
   describeContext,
@@ -10,8 +10,10 @@ import {
 } from '@/testing/fakeAudioContext.ts';
 
 /**
- * The game's engine, the way the game builds it: `new WebAudioEngine()`, no
- * arguments, finding its AudioContext on window.
+ * The reference engine, the way the game built it before Soundscape:
+ * `new ReferenceAudioEngine()`, no arguments, finding its AudioContext on
+ * window. The describe and test names below are the ones the snapshot was
+ * recorded under, kept so the snapshot stays byte for byte as recorded.
  *
  * The snapshot was written against the engine as it stood on main (7073354),
  * before this branch touched it, so "the same as before" is a recorded fact,
@@ -69,7 +71,7 @@ describe('the no-argument engine the game builds', () => {
   test.each(CALLS)('%s schedules what it did before', (_label, theme, play) => {
     const { contexts } = installFakeAudio();
     setTheme(theme);
-    play(new WebAudioEngine());
+    play(new ReferenceAudioEngine());
 
     expect(contexts).toHaveLength(1);
     const [ctx] = contexts;
@@ -81,13 +83,13 @@ describe('the no-argument engine the game builds', () => {
 
   test('makes no context until the first cue', () => {
     const { contexts } = installFakeAudio();
-    new WebAudioEngine();
+    new ReferenceAudioEngine();
     expect(contexts).toHaveLength(0);
   });
 
   test('makes no context and schedules nothing while muted', () => {
     const { contexts } = installFakeAudio();
-    const engine = new WebAudioEngine();
+    const engine = new ReferenceAudioEngine();
     engine.setMuted(true);
     for (const [, theme, play] of CALLS) {
       setTheme(theme);
@@ -98,7 +100,7 @@ describe('the no-argument engine the game builds', () => {
 
   test('reuses one context, and resumes it only while it is suspended', () => {
     const { contexts } = installFakeAudio();
-    const engine = new WebAudioEngine();
+    const engine = new ReferenceAudioEngine();
     engine.tick();
     engine.tick();
     expect(contexts).toHaveLength(1);
@@ -114,7 +116,10 @@ describe('the no-argument engine the game builds', () => {
 describe('an engine given a context', () => {
   const given = () => {
     const ctx = new FakeAudioContext();
-    return { ctx, engine: new WebAudioEngine(ctx as unknown as AudioContext) };
+    return {
+      ctx,
+      engine: new ReferenceAudioEngine(ctx as unknown as AudioContext),
+    };
   };
 
   test.each(CALLS)(
@@ -122,7 +127,7 @@ describe('an engine given a context', () => {
     (_l, theme, play) => {
       const { contexts } = installFakeAudio();
       setTheme(theme);
-      play(new WebAudioEngine());
+      play(new ReferenceAudioEngine());
       const { ctx, engine } = given();
       play(engine);
 
