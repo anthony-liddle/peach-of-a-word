@@ -15,15 +15,15 @@ const read = (path: string) =>
   };
 
 describe('soundscape-engine', () => {
-  test('is pinned to exactly 0.4.0-rc.1, not a range', () => {
+  test('is pinned to exactly 0.4.0-rc.2, not a range', () => {
     expect(read('package.json').dependencies?.['soundscape-engine']).toBe(
-      '0.4.0-rc.1',
+      '0.4.0-rc.2',
     );
   });
 
   test('is installed at that version, with no runtime dependencies of its own', () => {
     const installed = read('node_modules/soundscape-engine/package.json');
-    expect(installed.version).toBe('0.4.0-rc.1');
+    expect(installed.version).toBe('0.4.0-rc.2');
     expect(installed.dependencies ?? {}).toEqual({});
   });
 });

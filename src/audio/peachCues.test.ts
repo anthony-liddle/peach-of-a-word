@@ -102,7 +102,9 @@ describe.each(SOUNDS.map((s) => [s.id, s] as const))('%s', (id, sound) => {
       // The attack reaches the peak when the game's does, and the decay
       // reaches the floor at the note's duration, to the last bit or two
       const attack = normalizedToADSR(instrument.attack, 'attack');
-      const decay = normalizedToADSR(instrument.decay, 'decay');
+      // Each instrument here has a decay of fixed length, which rc.2 makes optional
+      expect(instrument.decay).toBeTypeOf('number');
+      const decay = normalizedToADSR(instrument.decay!, 'decay');
       expect(Math.abs(g.start + attack - peak!.time)).toBeLessThan(1e-15);
       expect(Math.abs(g.start + attack + decay - end!.time)).toBeLessThan(
         1e-15,

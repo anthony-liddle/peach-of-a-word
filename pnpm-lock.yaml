@@ -18,8 +18,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
       soundscape-engine:
-        specifier: 0.4.0-rc.1
-        version: 0.4.0-rc.1
+        specifier: 0.4.0-rc.2
+        version: 0.4.0-rc.2
     devDependencies:
       '@commitlint/cli':
         specifier: ^21.2.3
@@ -1638,8 +1638,8 @@ packages:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
 
-  soundscape-engine@0.4.0-rc.1:
-    resolution: {integrity: sha512-7sbaYgiyubyKTKzINvaj6kZ18aeEUz+lLhNoYxCoCdL8hhGtLrNJAWHLp5ErmIo7WoHLO2p5T8TOa4ZT5IsfLA==}
+  soundscape-engine@0.4.0-rc.2:
+    resolution: {integrity: sha512-zpCvF9jqbrrTBkgZ4wvDiTi14yjcPwah6gcTK1o4HESdiIqshD6Ylfh+0Tk9hxlG+V8RDktNvRnSyS/1/VhTLw==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -3253,7 +3253,7 @@ snapshots:
       mrmime: 2.0.1
       totalist: 3.0.1
 
-  soundscape-engine@0.4.0-rc.1: {}
+  soundscape-engine@0.4.0-rc.2: {}
 
   source-map-js@1.2.1: {}
 
