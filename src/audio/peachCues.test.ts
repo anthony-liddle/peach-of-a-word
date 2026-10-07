@@ -59,6 +59,21 @@ describe('the cue document', () => {
     expect(serializeCueDocument(document)).toBe(TEXT);
   });
 
+  test('has one instrument per waveform, each fading over its own note', () => {
+    // Notes of every length share an instrument: its decay lasts until each
+    // note's release, so none carries a decay of fixed length
+    expect(Object.keys(document.instruments).sort()).toEqual([
+      'sine',
+      'square',
+      'triangle',
+    ]);
+    for (const [name, instrument] of Object.entries(document.instruments)) {
+      expect(instrument.waveform).toBe(name);
+      expect(instrument.decayUntilRelease).toBe(true);
+      expect(instrument).not.toHaveProperty('decay');
+    }
+  });
+
   test('has one cue per sound the game makes, named as the page names it', () => {
     expect(Object.keys(document.cues).sort()).toEqual(
       SOUNDS.map((s) => s.id).sort(),
@@ -99,16 +114,12 @@ describe.each(SOUNDS.map((s) => [s.id, s] as const))('%s', (id, sound) => {
       expect(note.level).toBe(peak!.value * MASTER_GAIN);
       expect(instrument.envelopeFloor).toBe(floor!.value * MASTER_GAIN);
       expect(end!.value).toBe(floor!.value);
-      // The attack reaches the peak when the game's does, and the decay
-      // reaches the floor at the note's duration, to the last bit or two
+      // The attack reaches the peak when the game's does, to the last bit or
+      // two, and the decay lasts until the note's release, at its duration,
+      // which is where the game's ramp reaches the floor
       const attack = normalizedToADSR(instrument.attack, 'attack');
-      // Each instrument here has a decay of fixed length, which rc.2 makes optional
-      expect(instrument.decay).toBeTypeOf('number');
-      const decay = normalizedToADSR(instrument.decay!, 'decay');
       expect(Math.abs(g.start + attack - peak!.time)).toBeLessThan(1e-15);
-      expect(Math.abs(g.start + attack + decay - end!.time)).toBeLessThan(
-        1e-15,
-      );
+      expect(instrument.decayUntilRelease).toBe(true);
       expect(g.start + note.duration).toBe(end!.time);
       // The release and the voice's 10 ms margin are the game's tail
       expect(

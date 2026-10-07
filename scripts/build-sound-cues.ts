@@ -10,9 +10,12 @@
  * src/audio/peachCues.test.ts holds the document to what the engine actually
  * schedules, so a change to note() fails there instead of being copied wrongly.
  *
- * The script stops rather than approximate: an unknown waveform and duration,
- * a pitch that misses the engine's frequency in float32, or an envelope that
- * does not map back to the engine's times.
+ * One instrument per waveform: each fades over its own note, its decay lasting
+ * until the note's release, which is where the game's ramp to the floor ends.
+ *
+ * The script stops rather than approximate: an unknown waveform, a pitch that
+ * misses the engine's frequency in float32, or an attack that does not map
+ * back to the engine's 12 ms.
  *
  * Run once. From then on the document is the source, which the cue editor will
  * edit; nothing in it is computed when it loads.
@@ -56,31 +59,23 @@ if (normalizedToADSR(0, 'release') + 0.01 !== TAIL) {
   throw new Error('a release of 0 plus the stop margin is not the 20 ms tail');
 }
 
-/** One instrument per waveform and duration, since the decay ends at the duration. */
-const INSTRUMENTS: Record<string, string> = {
-  'sine 0.28': 'found-note',
-  'sine 0.18': 'found-octave',
-  'sine 0.12': 'found-sparkle',
-  'sine 0.1': 'found-glint',
-  'square 0.03': 'tick-square',
-  'triangle 0.5': 'run-note',
-  'triangle 1.1': 'edition-chord',
-  'sine 0.16': 'invalid-note',
-};
+/**
+ * One instrument per waveform the engine plays, named for it. The decay lasts
+ * until each note's release, so a note of any length fades over its own, as
+ * the game's ramp to the floor ends at the note's duration.
+ */
+const WAVEFORMS = new Set(['sine', 'square', 'triangle']);
 
-function instrument(waveform: string, duration: number): CueInstrument {
+function instrument(waveform: string): CueInstrument {
   const attack = Math.sqrt((ATTACK - 0.001) / 1.999);
-  const decay = Math.sqrt((duration - ATTACK - 0.01) / 2.99);
-  const a = normalizedToADSR(attack, 'attack');
-  const d = normalizedToADSR(decay, 'decay');
-  if (Math.abs(a - ATTACK) > 1e-15 || Math.abs(a + d - duration) > 1e-15) {
-    throw new Error(`${waveform} ${duration}: the envelope does not map back`);
+  if (Math.abs(normalizedToADSR(attack, 'attack') - ATTACK) > 1e-15) {
+    throw new Error(`${waveform}: the attack does not map back to 12 ms`);
   }
   return {
     waveform: waveform as CueInstrument['waveform'],
     pitchOffset: 0,
     attack,
-    decay,
+    decayUntilRelease: true,
     sustain: 0,
     release: 0,
     envelopeCurve: 'exponential',
@@ -145,15 +140,12 @@ for (const sound of SOUNDS) {
   if (!calls.length) throw new Error(`${sound.id} played nothing`);
   cues[sound.id] = {
     notes: calls.map((c, i) => {
-      const name = INSTRUMENTS[`${c.type} ${c.duration}`];
-      if (!name)
-        throw new Error(
-          `${sound.id}: no instrument for ${c.type} ${c.duration}`,
-        );
-      instruments[name] ??= instrument(c.type, c.duration);
+      if (!WAVEFORMS.has(c.type))
+        throw new Error(`${sound.id}: no instrument for ${c.type}`);
+      instruments[c.type] ??= instrument(c.type);
       return {
         id: `${sound.id}-${i + 1}`,
-        instrument: name,
+        instrument: c.type,
         start: c.startOffset,
         duration: c.duration,
         pitch: pitchOf(c.freq),
