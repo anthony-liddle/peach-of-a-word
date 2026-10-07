@@ -8,7 +8,10 @@ import {
   serializeCueDocument,
 } from 'soundscape-engine';
 import type { CueDocument } from 'soundscape-engine';
-import { MASTER_GAIN, WebAudioEngine } from './WebAudioEngine.ts';
+import {
+  MASTER_GAIN,
+  ReferenceAudioEngine,
+} from '@/reference/ReferenceAudioEngine.ts';
 import { FakeAudioContext } from '@/testing/fakeAudioContext.ts';
 import { SOUNDS } from '@/sounds/inventory.ts';
 
@@ -34,10 +37,10 @@ interface Scheduled {
   events: { value: number; time: number }[];
 }
 
-/** What the game's engine schedules for a sound, oscillator by oscillator. */
-function schedule(play: (engine: WebAudioEngine) => void): Scheduled[] {
+/** What the reference engine schedules for a sound, oscillator by oscillator. */
+function schedule(play: (engine: ReferenceAudioEngine) => void): Scheduled[] {
   const ctx = new FakeAudioContext();
-  play(new WebAudioEngine(ctx as unknown as AudioContext));
+  play(new ReferenceAudioEngine(ctx as unknown as AudioContext));
   return ctx.oscillators.map((osc) => {
     const gain = osc.outputs[0] as unknown as { gain: { events: string[] } };
     return {

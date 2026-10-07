@@ -1,6 +1,21 @@
 import type { Rung } from '@/engine/index.ts';
-import type { AudioEngine } from './AudioEngine.ts';
+import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import type { Theme } from '@/ui/useTheme.ts';
+
+/**
+ * The reference engine: how the game sounded before Soundscape.
+ *
+ * Until Soundscape, this was the game's engine. It is no longer: the game plays
+ * its sounds as Soundscape cues, through SoundscapeAudioEngine. This stays as
+ * the record those cues are held to, sample by sample, in Chromium, Firefox
+ * and WebKit, and as the "before" on the /sounds page. It is not in the game's
+ * bundle, and a test fails if it gets there.
+ *
+ * Do not edit it to make a comparison pass. If a cue and this engine disagree,
+ * the cue is what is wrong, or the comparison: this file is what the game
+ * sounded like, and changing it changes the past it records. Its schedule is
+ * pinned by ReferenceAudioEngine.test.ts, recorded before Soundscape touched it.
+ */
 
 /**
  * How much extra sparkle a found cue earns, by rung. The set gets none.
@@ -54,19 +69,20 @@ const INVALID_NOTES: readonly Hz[] = [196.0, 174.61]; // a soft descending pair
 export const MASTER_GAIN = 0.18;
 
 /**
- * Prototype-level synth built on the Web Audio API. Quiet, lo-fi, behind the
- * AudioEngine interface. The context is created lazily on the first cue, since
- * browsers only allow audio to start from a user gesture.
+ * The game's sounds as it played them before Soundscape: a quiet, lo-fi synth
+ * on the Web Audio API, behind the AudioEngine interface. The context is
+ * created lazily on the first cue, since browsers only allow audio to start
+ * from a user gesture.
  */
-export class WebAudioEngine implements AudioEngine {
+export class ReferenceAudioEngine implements AudioEngine {
   private context: AudioContext | OfflineAudioContext | null = null;
   private master: GainNode | null = null;
   private theme: Theme | null = null;
   muted = false;
 
   /**
-   * The game passes nothing, and the engine makes its own AudioContext on the
-   * first cue, exactly as it always has.
+   * Given nothing, the engine makes its own AudioContext on the first cue, as
+   * the game built it before Soundscape; the default-path guard plays it so.
    *
    * `given` plays the cues into a context the caller made instead, so they can
    * be rendered offline and recorded. The master gain is built on it the same
@@ -80,6 +96,11 @@ export class WebAudioEngine implements AudioEngine {
     this.muted = muted;
   }
 
+  /**
+   * The theme, given as the game's engine is given it. Nothing reads it from the
+   * page. Until it is given one, the engine plays as it did with no theme on the
+   * page: no cute glint.
+   */
   setTheme(theme: Theme): void {
     this.theme = theme;
   }
@@ -158,17 +179,8 @@ export class WebAudioEngine implements AudioEngine {
     }
   }
 
-  /**
-   * The theme it was given. Until it is given one, the theme on the root, where
-   * useTheme keeps it before paint: that is how this engine always read it, and
-   * how the default-path guard still plays it.
-   */
   private isCute(): boolean {
-    if (this.theme !== null) return this.theme === 'cute';
-    return (
-      typeof document !== 'undefined' &&
-      document.documentElement.dataset.theme === 'cute'
-    );
+    return this.theme === 'cute';
   }
 
   playSource(): void {

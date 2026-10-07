@@ -4,7 +4,7 @@ import { SOUNDS, type Sound } from '@/sounds/inventory.ts';
 import { lengthOf } from '@/sounds/pair.ts';
 import type { AudioEngine } from './AudioEngine.ts';
 import { SoundscapeAudioEngine } from './SoundscapeAudioEngine.ts';
-import { WebAudioEngine } from './WebAudioEngine.ts';
+import { ReferenceAudioEngine } from '@/reference/ReferenceAudioEngine.ts';
 import fixture from './baseline/sounds.json';
 import {
   PAIR_SPLIT_S,
@@ -44,7 +44,7 @@ const TOLERANCE = 1e-6;
 
 type Make = (context: BaseAudioContext) => AudioEngine;
 const soundscape: Make = (c) => new SoundscapeAudioEngine(c);
-const game: Make = (c) => new WebAudioEngine(c as AudioContext);
+const game: Make = (c) => new ReferenceAudioEngine(c as AudioContext);
 
 interface Play {
   sound: Sound;

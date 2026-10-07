@@ -1,7 +1,8 @@
 /**
  * Capture the sound baseline: every sound on the /sounds page, rendered offline
- * through the game's own engine, measured, and written to src/audio/baseline/
- * as sounds.json and one WAV per sound.
+ * through the game's own engine before Soundscape, now the reference engine,
+ * measured, and written to src/audio/baseline/ as sounds.json and one WAV per
+ * sound.
  *
  *   pnpm sounds:baseline
  *
@@ -133,7 +134,7 @@ try {
     sounds: Listed[];
   }>(`(async () => {
     const { SOUNDS } = await import('/src/sounds/inventory.ts');
-    const { MASTER_GAIN } = await import('/src/audio/WebAudioEngine.ts');
+    const { MASTER_GAIN } = await import('/src/reference/ReferenceAudioEngine.ts');
     return {
       masterGain: MASTER_GAIN,
       sounds: SOUNDS.map(({ id, cue, label, params }) => ({ id, cue, label, params })),
