@@ -96,6 +96,11 @@ export class ReferenceAudioEngine implements AudioEngine {
     this.muted = muted;
   }
 
+  /**
+   * The theme, given as the game's engine is given it. Nothing reads it from the
+   * page. Until it is given one, the engine plays as it did with no theme on the
+   * page: no cute glint.
+   */
   setTheme(theme: Theme): void {
     this.theme = theme;
   }
@@ -174,17 +179,8 @@ export class ReferenceAudioEngine implements AudioEngine {
     }
   }
 
-  /**
-   * The theme it was given. Until it is given one, the theme on the root, where
-   * useTheme keeps it before paint: that is how this engine always read it, and
-   * how the default-path guard still plays it.
-   */
   private isCute(): boolean {
-    if (this.theme !== null) return this.theme === 'cute';
-    return (
-      typeof document !== 'undefined' &&
-      document.documentElement.dataset.theme === 'cute'
-    );
+    return this.theme === 'cute';
   }
 
   playSource(): void {

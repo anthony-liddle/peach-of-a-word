@@ -5,6 +5,7 @@ import {
   ReferenceAudioEngine,
 } from '@/reference/ReferenceAudioEngine.ts';
 import type { Rung } from '@/engine/index.ts';
+import type { Theme } from '@/ui/useTheme.ts';
 import { describeNotes, installFakeAudio } from './fakeAudioContext.ts';
 
 /**
@@ -39,11 +40,6 @@ const LENGTHS = Array.from({ length: 23 }, (_, i) => i - 2); // -2 to 20
 const RUNGS = [undefined, ...(Object.keys(RUNG_SPARKLE) as Rung[])];
 const THEMES = [undefined, 'cute', 'letterpress'];
 
-export function setRootTheme(theme: string | undefined): void {
-  if (theme === undefined) delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = theme;
-}
-
 function play(engine: AudioEngine, call: Call): void {
   if (call.method === 'playFound') {
     if (call.rung === undefined) engine.playFound(call.length!);
@@ -60,7 +56,7 @@ function play(engine: AudioEngine, call: Call): void {
 function sweepCalls(): Call[] {
   const calls: Call[] = [];
   for (const method of ENGINE_METHODS) {
-    // Not sounds: the mute, and the theme, which the sweep sets on the root
+    // Not sounds: the mute, and the theme, which the sweep gives each engine
     if (method === 'setMuted' || method === 'muted' || method === 'setTheme')
       continue;
     for (const theme of THEMES) {
@@ -86,23 +82,22 @@ export type Signature = string;
 
 /**
  * Every distinct sound, keyed by what it schedules, with every call that
- * produces it. Leaves the root theme and the global AudioContext as it found
- * neither: unset.
+ * produces it. Leaves the global AudioContext as it found it: unset.
  */
 export function distinctSounds(): Map<Signature, Call[]> {
   const sounds = new Map<Signature, Call[]>();
   try {
     for (const call of sweepCalls()) {
       const { contexts } = installFakeAudio();
-      setRootTheme(call.theme);
-      play(new ReferenceAudioEngine(), call);
+      const engine = new ReferenceAudioEngine();
+      if (call.theme !== undefined) engine.setTheme(call.theme as Theme);
+      play(engine, call);
       const signature = describeNotes(contexts[0]!).join('\n');
       sounds.set(signature, [...(sounds.get(signature) ?? []), call]);
       vi.unstubAllGlobals();
     }
   } finally {
     vi.unstubAllGlobals();
-    setRootTheme(undefined);
   }
   return sounds;
 }

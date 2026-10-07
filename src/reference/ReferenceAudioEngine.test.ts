@@ -57,9 +57,10 @@ const CALLS: [label: string, theme: Theme, play: (e: AudioEngine) => void][] = [
   ['tick()', 'cute', (e) => e.tick()],
 ];
 
-function setTheme(theme: Theme): void {
-  if (theme === undefined) delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = theme;
+/** The engine, told the call's theme if it has one, as the game's is told. */
+function inTheme(engine: AudioEngine, theme: Theme): AudioEngine {
+  if (theme !== undefined) engine.setTheme(theme);
+  return engine;
 }
 
 afterEach(() => {
@@ -70,8 +71,7 @@ afterEach(() => {
 describe('the no-argument engine the game builds', () => {
   test.each(CALLS)('%s schedules what it did before', (_label, theme, play) => {
     const { contexts } = installFakeAudio();
-    setTheme(theme);
-    play(new ReferenceAudioEngine());
+    play(inTheme(new ReferenceAudioEngine(), theme));
 
     expect(contexts).toHaveLength(1);
     const [ctx] = contexts;
@@ -91,10 +91,7 @@ describe('the no-argument engine the game builds', () => {
     const { contexts } = installFakeAudio();
     const engine = new ReferenceAudioEngine();
     engine.setMuted(true);
-    for (const [, theme, play] of CALLS) {
-      setTheme(theme);
-      play(engine);
-    }
+    for (const [, theme, play] of CALLS) play(inTheme(engine, theme));
     expect(contexts).toHaveLength(0);
   });
 
@@ -126,10 +123,9 @@ describe('an engine given a context', () => {
     '%s schedules the same notes as the game',
     (_l, theme, play) => {
       const { contexts } = installFakeAudio();
-      setTheme(theme);
-      play(new ReferenceAudioEngine());
+      play(inTheme(new ReferenceAudioEngine(), theme));
       const { ctx, engine } = given();
-      play(engine);
+      play(inTheme(engine, theme));
 
       expect(describeNotes(ctx)).toEqual(describeNotes(contexts[0]!));
     },
@@ -155,10 +151,37 @@ describe('an engine given a context', () => {
   test('stays silent on the given context while muted', () => {
     const { ctx, engine } = given();
     engine.setMuted(true);
-    for (const [, theme, play] of CALLS) {
-      setTheme(theme);
-      play(engine);
-    }
+    for (const [, theme, play] of CALLS) play(inTheme(engine, theme));
     expect(ctx.oscillators).toHaveLength(0);
+  });
+});
+
+/**
+ * The theme reaches the engine the way it reaches the game's: setTheme. The
+ * page's theme is not read, so the engine sounds the same whatever the page
+ * says, and with none given it plays as it did with no theme on the page.
+ */
+describe('the theme', () => {
+  /** The frequencies a mythic length-5 cue plays, in a theme and a page. */
+  const mythicFive = (
+    given: 'cute' | 'letterpress' | undefined,
+    page: string,
+  ) => {
+    document.documentElement.dataset.theme = page;
+    const ctx = new FakeAudioContext();
+    const engine = new ReferenceAudioEngine(ctx as unknown as AudioContext);
+    if (given) engine.setTheme(given);
+    engine.playFound(5, 'mythic');
+    return ctx.oscillators.map((o) => o.frequency.value);
+  };
+  const CUTE_GLINT = 523.25 * 5;
+
+  test('is never read from the page: given none, a cute page adds no glint', () => {
+    expect(mythicFive(undefined, 'cute')).not.toContain(CUTE_GLINT);
+  });
+
+  test('is the one it was given, whatever the page says', () => {
+    expect(mythicFive('cute', 'letterpress')).toContain(CUTE_GLINT);
+    expect(mythicFive('letterpress', 'cute')).not.toContain(CUTE_GLINT);
   });
 });
