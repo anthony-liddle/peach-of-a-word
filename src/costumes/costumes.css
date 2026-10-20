@@ -1,0 +1,109 @@
+.costumes {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+.costumes h1,
+.costumes h2 {
+  font-family: var(--font-display);
+}
+.costumes h2 {
+  font-size: 1.15rem;
+  margin: 1.75rem 0 0.75rem;
+}
+.costumes__lede {
+  color: var(--ink-soft);
+  margin: 0;
+}
+.costumes__cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+.costumes__cell {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.costumes__cell figcaption {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.costumes__big {
+  width: 160px;
+  height: 160px;
+}
+.costumes__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--paper-deep, #fff);
+  border-radius: var(--card-radius);
+  padding: 1rem 1.5rem;
+  box-shadow: 0 6px 0 var(--surface-shadow);
+}
+.costumes__ornament {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.3rem;
+}
+.costumes__card-line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--accent);
+}
+.costumes__chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.costumes__mark {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+}
+.costumes__tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.costumes__strip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+}
+.costumes__strip--light {
+  background: #dee1e6;
+  color: #202124;
+}
+.costumes__strip--dark {
+  background: #202124;
+  color: #e8eaed;
+}
+.costumes__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font:
+    12px system-ui,
+    sans-serif;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px 8px 0 0;
+}
+.costumes__strip--light .costumes__tab {
+  background: #ffffff;
+}
+.costumes__strip--dark .costumes__tab {
+  background: #35363a;
+}
+.costumes__confetti {
+  display: block;
+}
