@@ -1,8 +1,11 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   createPuzzle,
+  dailySourceWord,
+  dayIndex,
   eligibleSourceWords,
   generateCalendar,
   sourceSetSize,
@@ -242,6 +245,71 @@ describe('the culled, regenerated calendar', () => {
     const step = Math.floor(committed.words.length / 15);
     for (let i = 0; i < committed.words.length; i += step) {
       expect(setSize(committed.words[i]!)).toBeGreaterThanOrEqual(MIN_SET_SIZE);
+    }
+  });
+});
+
+describe('the one trade of two future days', () => {
+  // Antoine's amendment to the append-only rule, 2026-10-20: 31 October 2026
+  // and 17 May 2027 trade words, so the peach's Halloween board is skeleton.
+  // A trade re-dates those two days and no other. These pin that, and the
+  // Swift app pins the same file hash in DailySequencePinTests.
+  const raw = readFileSync(join(DATA, 'daily-calendar.json'), 'utf8');
+  const committed = JSON.parse(raw) as {
+    epoch: { year: number; month: number; day: number };
+    words: string[];
+  };
+  const sha256 = (text: string) =>
+    createHash('sha256').update(text).digest('hex');
+  const atDate = (y: number, m: number, d: number) =>
+    dayIndex(new Date(y, m - 1, d), committed.epoch);
+
+  it('is the calendar the Swift app pins, byte for byte', () => {
+    expect(sha256(raw)).toBe(
+      'ea5b0dc1855d28c947fecafc365f4c50095dfed1a59d46cc965590a6b719e8d2',
+    );
+  });
+
+  it('puts skeleton on 31 October 2026 and genetics on 17 May 2027', () => {
+    expect(atDate(2026, 10, 31)).toBe(130);
+    expect(atDate(2027, 5, 17)).toBe(328);
+    expect(committed.words[130]).toBe('skeleton');
+    expect(committed.words[328]).toBe('genetics');
+  });
+
+  it('traded two days that were both still to come', () => {
+    const tradedOn = atDate(2026, 10, 20);
+    expect(130).toBeGreaterThan(tradedOn);
+    expect(328).toBeGreaterThan(tradedOn);
+  });
+
+  it('moved no other index: traded back, it is the calendar before', () => {
+    const back = raw
+      .replace('"skeleton"', '"\u0000"')
+      .replace('"genetics"', '"skeleton"')
+      .replace('"\u0000"', '"genetics"');
+    expect(sha256(back)).toBe(
+      'dddc844300ab461a1ba1bd217daefa6fcc1e9e5a2abb23bdefbb841d73f17163',
+    );
+  });
+
+  it('moves no other date, in this cycle or any reshuffled one after it', () => {
+    // After 9 March 2028 the calendar reshuffles by index, so the two words
+    // trade dates in every later cycle too, and every other date stays put.
+    const before = [...committed.words];
+    [before[130], before[328]] = [before[328]!, before[130]!];
+    const trade = (w: string) =>
+      w === 'skeleton' ? 'genetics' : w === 'genetics' ? 'skeleton' : w;
+    const start = new Date(2026, 5, 23);
+    for (let d = 0; d < 365 * 6; d++) {
+      const date = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate() + d,
+      );
+      const now = dailySourceWord(committed.words, date, committed.epoch);
+      const then = dailySourceWord(before, date, committed.epoch);
+      expect(now, date.toDateString()).toBe(trade(then));
     }
   });
 });

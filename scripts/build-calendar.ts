@@ -14,6 +14,14 @@
  *   their position and order, and any newly eligible word is appended to the
  *   end. Removing or reordering an entry re-dates every day after it and breaks
  *   the promise that a given day is a fixed puzzle.
+ *
+ *   One amendment, Antoine's, 2026-10-20: two FUTURE days may trade words, by
+ *   hand, because a trade re-dates those two days and no other. Never a past
+ *   or present day, never more than the two, and only with a test that pins
+ *   both days and holds every other index to the calendar before the trade.
+ *   The generator keeps the traded order, since it keeps whatever is committed.
+ *   The one trade so far: 31 October 2026 and 17 May 2027, so the peach's
+ *   Halloween board is `skeleton`. See build-calendar.test.ts.
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
