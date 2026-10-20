@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Costumes · Peach of a Word</title>
+    <!-- A workbench for development only: it is not a build entry, so it never
+         reaches the site (costumes.test.ts holds it out). It shows each costume
+         beside the plain peach at every size the peach appears. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#fff4ee" />
+
+    <!-- The page's own tab icon is the plain peach; the costumed ones are drawn
+         on the page, in a mock tab strip. -->
+    <link rel="icon" href="/favicon-cute.svg" type="image/svg+xml" />
+    <script>
+      // The same no-flash contract as index.html, with the theme fixed.
+      //
+      // Theme: pinned to cute, the only theme a costume is worn in. The page
+      // sets its own text sizes per row, so the saved one is read only for the
+      // page's own chrome.
+      (function () {
+        document.documentElement.dataset.theme = 'cute';
+        var size;
+        try {
+          size = localStorage.getItem('e8-text-size');
+        } catch (e) {
+          size = null; /* storage blocked: the browser default rules alone */
+        }
+        if (size === 'large' || size === 'largest')
+          document.documentElement.dataset.textSize = size;
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Only the cute pair. The letterpress faces are never shown here. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/costumes/main.tsx"></script>
+  </body>
+</html>
