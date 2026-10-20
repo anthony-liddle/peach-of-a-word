@@ -9,6 +9,9 @@
  * rather than keeping a second drawing that could drift: both repos pin the
  * table to one hash, COSTUME_TABLE_SHA256.
  */
+import { STORAGE_EPOCH } from '@/engine/config.ts';
+import type { Theme } from './useTheme.ts';
+
 export type CostumeId = 'witch-hat' | 'lantern' | 'ghost';
 
 export interface CostumePart {
@@ -209,3 +212,62 @@ export function canonicalCostumeTable(): string {
  * 19 to 87) about their shared centre, x 50 and y 53.
  */
 export const SOURCE_MARK_TRANSFORM = 'matrix(0.9412 0 0 0.9189 2.941 4.297)';
+
+/** A day the peach dresses up, and what it wears. */
+export interface CostumeDay {
+  month: number; // 1-12
+  day: number;
+  costume: CostumeId;
+  /** What the day is, for whoever reads this table. Never shown. */
+  occasion: string;
+}
+
+/**
+ * The days the peach dresses up. Other occasions may follow; each is a row.
+ *
+ * The costume goes by the board's date, not today's: today's board on the day
+ * wears it, and so does that day's board played later, while any other day's
+ * board does not, even if it is played on the day.
+ */
+export const COSTUME_DAYS: readonly CostumeDay[] = [
+  { month: 10, day: 31, costume: 'ghost', occasion: 'Halloween' },
+];
+
+/** The costume for a calendar date, or null. */
+export function costumeForDate(month: number, day: number): CostumeId | null {
+  return (
+    COSTUME_DAYS.find((d) => d.month === month && d.day === day)?.costume ??
+    null
+  );
+}
+
+/**
+ * The costume for the board on screen.
+ *
+ * - `dayIndex` is the board's own day, as useGame keys it: days since
+ *   STORAGE_EPOCH. Endless has none, so it never dresses.
+ * - Letterpress never dresses: the costumes are the cute peach's.
+ * - `search` is the address's query string in a development build only
+ *   (the caller passes null otherwise). `?costumeDate=YYYY-MM-DD` previews
+ *   any date, standing in for the board's.
+ */
+export function boardCostume(
+  dayIndex: number | null,
+  theme: Theme,
+  search: string | null,
+): CostumeId | null {
+  if (theme !== 'cute') return null;
+  const preview = search?.match(
+    /[?&]costumeDate=(\d{4})-(\d{2})-(\d{2})(?:&|$)/,
+  );
+  if (preview) return costumeForDate(Number(preview[2]), Number(preview[3]));
+  if (dayIndex === null) return null;
+  const date = new Date(
+    Date.UTC(
+      STORAGE_EPOCH.year,
+      STORAGE_EPOCH.month - 1,
+      STORAGE_EPOCH.day + dayIndex,
+    ),
+  );
+  return costumeForDate(date.getUTCMonth() + 1, date.getUTCDate());
+}

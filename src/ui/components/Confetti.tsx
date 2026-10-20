@@ -4,7 +4,10 @@ import {
   CONFETTI_DURATION_MS,
   CONFETTI_GRAVITY,
   createParticles,
+  paintsPeach,
 } from './confetti.ts';
+import type { CostumeId } from '../costumes.ts';
+import { drawPeach } from '../peachArt.ts';
 
 /**
  * A one-shot confetti burst on a single canvas overlay, for the cute Edition
@@ -13,7 +16,14 @@ import {
  * the parent unmounts it. The overlay never intercepts taps. Reduced-motion and
  * theme gating live at the call site; this component just plays the burst.
  */
-export function Confetti({ onDone }: { onDone: () => void }) {
+export function Confetti({
+  onDone,
+  costume = null,
+}: {
+  onDone: () => void;
+  /** On a costume day, the peaches in the burst wear it. */
+  costume?: CostumeId | null;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -63,8 +73,12 @@ export function Confetti({ onDone }: { onDone: () => void }) {
         ctx.font = `${p.size}px serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        if (p.motif.color) ctx.fillStyle = p.motif.color;
-        ctx.fillText(p.motif.glyph, 0, 0);
+        if (paintsPeach(p.motif, costume)) {
+          drawPeach(ctx, 0, 0, p.size, { costume, face: false });
+        } else {
+          if (p.motif.color) ctx.fillStyle = p.motif.color;
+          ctx.fillText(p.motif.glyph, 0, 0);
+        }
         ctx.restore();
       }
     };
@@ -89,7 +103,7 @@ export function Confetti({ onDone }: { onDone: () => void }) {
       if (raf) cancelAnimationFrame(raf);
       clearTimeout(done);
     };
-  }, [onDone]);
+  }, [onDone, costume]);
 
   return (
     <canvas

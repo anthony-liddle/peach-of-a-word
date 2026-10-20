@@ -1,4 +1,5 @@
 /** Confetti tunables and particle seeding, kept out of the component file. */
+import type { CostumeId } from '../costumes.ts';
 
 /** The whole burst, start to fully torn down. One coordinated beat, never a loop. */
 export const CONFETTI_DURATION_MS = 2600;
@@ -82,4 +83,16 @@ export function createParticles(width: number, height: number): Particle[] {
     });
   }
   return particles;
+}
+
+/** The peach emoji, the one motif a costume replaces. */
+const PEACH_GLYPH = '\u{1F351}';
+
+/**
+ * Whether this motif is drawn as the costumed peach rather than as its glyph.
+ * The emoji cannot wear anything, so on a costume day the burst draws the
+ * peach itself, from the same parts as every other peach.
+ */
+export function paintsPeach(motif: Motif, costume: CostumeId | null): boolean {
+  return costume !== null && motif.glyph === PEACH_GLYPH;
 }

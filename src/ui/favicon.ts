@@ -1,3 +1,5 @@
+import type { CostumeId } from './costumes.ts';
+import { peachSvg } from './peachArt.ts';
 import type { Theme } from './useTheme.ts';
 
 /**
@@ -23,8 +25,13 @@ export function faviconHref(theme: Theme): string {
  * reliably repaint the tab when an existing rel="icon" href changes, but they do
  * when the link node is replaced. Called on every theme toggle so the tab
  * follows. The pre-paint script sets the initial icon before this ever runs.
+ *
+ * `costume` dresses the cute peach, for a board on one of COSTUME_DAYS.
  */
-export function applyFavicon(theme: Theme): void {
+export function applyFavicon(
+  theme: Theme,
+  costume: CostumeId | null = null,
+): void {
   const head = document.head;
   if (!head) return;
   head.querySelectorAll('link[rel="icon"]').forEach((el) => el.remove());
@@ -32,6 +39,12 @@ export function applyFavicon(theme: Theme): void {
   link.id = 'favicon';
   link.rel = 'icon';
   link.type = 'image/svg+xml';
-  link.href = faviconHref(theme);
+  // A costumed peach on its day, drawn from the peach's own parts. The
+  // pre-paint script cannot know the board's date, so the plain mark shows
+  // first and this replaces it once the board is known.
+  link.href =
+    theme === 'cute' && costume
+      ? `data:image/svg+xml,${encodeURIComponent(peachSvg({ costume, face: true }))}`
+      : faviconHref(theme);
   head.appendChild(link);
 }
