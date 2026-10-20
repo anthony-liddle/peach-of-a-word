@@ -6,8 +6,10 @@ import {
   type TierStanding,
 } from '@/engine/index.ts';
 import { LADDER_RUNGS, RUNG_NAMES, type LadderRung } from '../rarity.ts';
+import { COSTUMES, type CostumeId } from '../costumes.ts';
 import { copy } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
+import { SourcePeach } from './PeachMark.tsx';
 import { TierMeter } from './TierMeter.tsx';
 
 interface Props {
@@ -49,6 +51,12 @@ interface Props {
    * source mark are untouched, because those still say something.
    */
   ladder?: boolean;
+  /**
+   * What the peach is wearing on this board, if anything. The source word's
+   * mark, here and in the key, is then drawn wearing it, and the chip's
+   * spoken name says so. See costumes.ts.
+   */
+  costume?: CostumeId | null;
 }
 
 type Category = 'source' | 'set' | LadderRung;
@@ -145,8 +153,16 @@ function isLadder(category: Category): category is LadderRung {
  * can learn it. The set reads in the theme's own vocabulary, the same string the
  * legend prints, so what is spoken and what is printed cannot drift apart.
  */
-function categoryName(category: Category, theme: Theme): string {
-  if (category === 'source') return 'source word';
+function categoryName(
+  category: Category,
+  theme: Theme,
+  costume: CostumeId | null = null,
+): string {
+  if (category === 'source') {
+    return costume
+      ? `source word, the peach ${COSTUMES[costume].spoken}`
+      : 'source word';
+  }
   if (category === 'set') return copy(theme).keyOnPage;
   return RUNG_NAMES[category];
 }
@@ -176,6 +192,7 @@ export function FoundList({
   summaryExtra,
   showTier = true,
   ladder = true,
+  costume = null,
 }: Props) {
   // The one classification pass. The grid below and the rung panels above are
   // both derived from it, so a word is never Rare in one readout and not the
@@ -236,15 +253,15 @@ export function FoundList({
         className={`found__word found__word--${w.category}`}
         aria-label={
           ladder
-            ? `${w.word}, ${categoryName(w.category, theme)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}, show definition`
-            : `${w.word}, ${categoryName(w.category, theme)}, show definition`
+            ? `${w.word}, ${categoryName(w.category, theme, costume)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}, show definition`
+            : `${w.word}, ${categoryName(w.category, theme, costume)}, show definition`
         }
         onClick={(e) => {
           e.currentTarget.focus();
           onWordTap(w.word, e.currentTarget);
         }}
       >
-        <span className={`mark mark--${w.category}`} aria-hidden="true" />
+        <Mark category={w.category} costume={costume} />
         <span className="found__wordtext">{w.word}</span>
         {/* Every find shows what it is worth, set words included. The score is
             the one already classified above, so the number on a chip is the
@@ -423,10 +440,28 @@ export function FoundList({
             </span>
           ))}
           <span>
-            <span className="mark mark--source" /> source word
+            <Mark category="source" costume={costume} /> source word
           </span>
         </div>
       )}
     </section>
   );
+}
+
+/**
+ * A word's mark. The stylesheet draws every mark, the source word's peach
+ * included, except on a board where the peach wears a costume: that one is
+ * drawn here, the source mark's own peach with the costume on it.
+ */
+function Mark({
+  category,
+  costume,
+}: {
+  category: Category;
+  costume: CostumeId | null;
+}) {
+  if (category === 'source' && costume) {
+    return <SourcePeach className="mark mark--source-worn" costume={costume} />;
+  }
+  return <span className={`mark mark--${category}`} aria-hidden="true" />;
 }

@@ -5,6 +5,8 @@ import { GameStorage } from '@/persistence/storage.ts';
 import { useAnnouncedText, useGame, type GameApi } from './useGame.ts';
 import { useTheme, type Theme } from './useTheme.ts';
 import { copy } from './themeCopy.ts';
+import { boardCostume } from './costumes.ts';
+import { applyFavicon } from './favicon.ts';
 import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
 import { useWideBoard } from './useWideBoard.ts';
 import { FoundList } from './components/FoundList.tsx';
@@ -80,6 +82,18 @@ export function Game({ data, audio, storage }: Props) {
 
   const { state } = game;
   const [theme] = useTheme();
+  // What the peach wears on this board, by the board's own date, never
+  // today's: Endless has no date and letterpress never dresses. A development
+  // build previews any date from the address, ?costumeDate=YYYY-MM-DD; the
+  // guard compiles the read out of production.
+  const costume = boardCostume(
+    state.dayIndex,
+    theme,
+    import.meta.env.DEV ? window.location.search : null,
+  );
+  // The tab icon follows the board. A theme toggle resets it to the theme's
+  // mark first (useTheme), and this puts the costume back.
+  useEffect(() => applyFavicon(theme, costume), [theme, costume]);
   // Which column the board is in, and so where the tier meter goes. One node,
   // one place, decided here rather than by a stylesheet that cannot reparent.
   const wide = useWideBoard();
@@ -181,6 +195,7 @@ export function Game({ data, audio, storage }: Props) {
           found={state.found}
           tier={state.tier}
           theme={theme}
+          costume={costume}
           showTier={wide}
           onWordTap={onWordTap}
           summaryExtra={
@@ -204,10 +219,10 @@ export function Game({ data, audio, storage }: Props) {
       </div>
 
       {state.editionOpen && (
-        <EditionCard theme={theme} onClose={dismissEdition} />
+        <EditionCard theme={theme} costume={costume} onClose={dismissEdition} />
       )}
 
-      {confettiOn && <Confetti onDone={endConfetti} />}
+      {confettiOn && <Confetti onDone={endConfetti} costume={costume} />}
 
       {/* Dev only: ?card=<word> opens that word's card with its real gloss.
           Compiled out of production by the env guard. See DevCardProbe. */}

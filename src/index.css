@@ -1455,6 +1455,13 @@ button {
 [data-theme='cute'] .mark--source::before {
   content: none; /* drawn peach above, not the emoji */
 }
+/* The source word's peach in costume, drawn as an inline SVG (PeachMark.tsx,
+   SourcePeach) on the days in costumes.ts. The same footprint as the stylesheet
+   mark above, so a costume moves nothing around it. */
+[data-theme='cute'] .mark--source-worn {
+  width: 1.05em;
+  height: 1.05em;
+}
 
 /* Every off-page rung shares the one discovery ink. */
 .found__word--uncommon,

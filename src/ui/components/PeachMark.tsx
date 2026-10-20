@@ -1,3 +1,6 @@
+import type { CostumeId } from '../costumes.ts';
+import { peachParts, sourceMarkParts, type PeachPart } from '../peachArt.ts';
+
 /**
  * The peach mark: the app's one peach drawing, the same geometry as
  * public/favicon-cute.svg, which is also the peach on the OG card and the share
@@ -9,8 +12,19 @@
  * Decorations.tsx still carries its own inline copy of the same paths, which
  * could adopt this component later; that file holds the dino and is out of
  * scope here.
+ *
+ * A costume, if one is given, is drawn over the peach in the same box, so it
+ * never changes the peach's footprint. See costumes.ts.
  */
-export function PeachMark({ className }: { className?: string }) {
+export function PeachMark({
+  className,
+  costume,
+  face = true,
+}: {
+  className?: string;
+  costume?: CostumeId | null;
+  face?: boolean;
+}) {
   return (
     <svg
       className={className}
@@ -18,27 +32,57 @@ export function PeachMark({ className }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
-      <path d="M50 12c4-8 14-9 18-4-2 6-9 9-14 8z" fill="#8FD3B6" />
-      <path
-        d="M50 16c20 0 34 16 34 36 0 22-16 38-34 38S16 74 16 52c0-20 14-36 34-36z"
-        fill="#FFC27A"
-      />
-      <path
-        d="M50 16c-9 0-17 4-23 11 7 4 15 5 23 5s16-1 23-5c-6-7-14-11-23-11z"
-        fill="#FFD79B"
-        opacity=".7"
-      />
-      <circle cx="40" cy="58" r="3.4" fill="#7A4A33" />
-      <circle cx="60" cy="58" r="3.4" fill="#7A4A33" />
-      <circle cx="34" cy="66" r="4.5" fill="#FF9DAE" opacity=".7" />
-      <circle cx="66" cy="66" r="4.5" fill="#FF9DAE" opacity=".7" />
-      <path
-        d="M45 67c3 3 7 3 10 0"
-        stroke="#7A4A33"
-        strokeWidth="2.2"
-        fill="none"
-        strokeLinecap="round"
-      />
+      {peachParts({ costume, face }).map((p, i) => (
+        <Part key={i} part={p} />
+      ))}
     </svg>
   );
+}
+
+/**
+ * The source-word mark's own peach, from index.css, as a component so a costume
+ * can sit on it. The stylesheet's data URI stays the mark on every other day;
+ * PeachMark.test.tsx pins the two together.
+ */
+export function SourcePeach({
+  className,
+  costume,
+}: {
+  className?: string;
+  costume?: CostumeId | null;
+}) {
+  const { base, worn, transform } = sourceMarkParts(costume);
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {base.map((p, i) => (
+        <Part key={i} part={p} />
+      ))}
+      <g transform={transform}>
+        {worn.map((p, i) => (
+          <Part key={i} part={p} />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+function Part({ part: p }: { part: PeachPart }) {
+  const paint = {
+    fill: p.fill ?? 'none',
+    opacity: p.opacity,
+    stroke: p.stroke,
+    strokeWidth: p.strokeWidth,
+    strokeLinecap: p.stroke ? ('round' as const) : undefined,
+    strokeLinejoin: p.stroke ? ('round' as const) : undefined,
+  };
+  if (p.circle) {
+    const [cx, cy, r] = p.circle;
+    return <circle cx={cx} cy={cy} r={r} {...paint} />;
+  }
+  return <path d={p.d} {...paint} />;
 }
