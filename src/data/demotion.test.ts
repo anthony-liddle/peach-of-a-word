@@ -172,7 +172,10 @@ describe('a demoted word is permitted, never required', () => {
       if (result.kind === 'valid') expect(result.score).toBeGreaterThan(0);
       expect(classifyWord(word, puzzle)).toBe(expectedRung(word));
     }
-  });
+    // A puzzle per demoted word, like the tests either side, and it had the
+    // default 5s where they have 240s: 1.5s on a laptop, 5.6s on a CI runner,
+    // so it timed out there on 2026-10-07 and again on 2026-10-20.
+  }, 240_000);
 
   it('does not require rape on any of the 18 racks that used to', () => {
     for (const rack of RAPE_RACKS) {
