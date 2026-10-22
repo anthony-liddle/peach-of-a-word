@@ -112,6 +112,12 @@
         color: var(--ink-faint);
         font-size: 0.875rem;
       }
+      /* Opened from the iOS app, the page sits in a Safari view whose Done
+         button is the way back. "Back to the game" there would open the web
+         game inside the app, so the footer goes, rule and all. */
+      html[data-from='app'] footer {
+        display: none;
+      }
     </style>
     <script>
       // Match the theme the player already chose, read from the same key the
@@ -138,6 +144,11 @@
           icon.href =
             theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
       })();
+      // The app opens this page at /privacy?from=app. Marked before paint, as
+      // the theme is, so the footer never flashes on screen there; from
+      // anywhere else nothing changes.
+      if (new URLSearchParams(location.search).get('from') === 'app')
+        document.documentElement.dataset.from = 'app';
     </script>
   </head>
   <body>
