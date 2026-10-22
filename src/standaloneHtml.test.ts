@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test } from 'vitest';
 import { DEFAULT_THEME } from './ui/useTheme.ts';
 import { faviconHref } from './ui/favicon.ts';
 
@@ -154,6 +154,62 @@ describe('support.html', () => {
 
   test('uses no em dash', () => {
     expect(html).not.toContain('—');
+  });
+});
+
+/**
+ * The privacy page, which the iOS app opens in a Safari view of its own, at
+ * /privacy?from=app.
+ *
+ * There the way back is the view's Done button. "Back to the game" would open
+ * the web game inside the app instead, so the page drops it for that address
+ * and keeps it for everyone else.
+ *
+ * The page's own style and pre-paint script run against each address, so this
+ * checks what a visitor there is shown rather than searching the markup.
+ */
+describe('privacy.html', () => {
+  const html = read('public/privacy.html');
+
+  const visit = (address: string) => {
+    window.history.replaceState(null, '', address);
+    const page = new DOMParser().parseFromString(html, 'text/html');
+    document.documentElement.removeAttribute('data-from');
+    document.head.innerHTML = page.head.innerHTML;
+    document.body.innerHTML = page.body.innerHTML;
+    // Scripts set through innerHTML never run, so run the page's own.
+    for (const script of page.head.querySelectorAll('script')) {
+      new Function(script.textContent ?? '')();
+    }
+    const back = Array.from(document.querySelectorAll('a')).find(
+      (link) => link.textContent === 'Back to the game',
+    );
+    return back;
+  };
+
+  afterEach(() => {
+    window.history.replaceState(null, '', '/');
+    document.documentElement.removeAttribute('data-from');
+    document.head.innerHTML = '';
+    document.body.innerHTML = '';
+  });
+
+  test('from the web, it leads back to the game', () => {
+    const back = visit('/privacy');
+    expect(back).toBeDefined();
+    expect(back).toHaveAttribute('href', '/');
+    expect(back).toBeVisible();
+  });
+
+  test('from the app, it offers no way back to the web game', () => {
+    const back = visit('/privacy?from=app');
+    expect(back).toBeDefined();
+    expect(back).not.toBeVisible();
+  });
+
+  test('only the app is told apart', () => {
+    expect(visit('/privacy?from=elsewhere')).toBeVisible();
+    expect(visit('/privacy#from=app')).toBeVisible();
   });
 });
 
