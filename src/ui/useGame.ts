@@ -79,6 +79,17 @@ export interface Announcement {
   readonly seq: number;
 }
 
+/**
+ * The last Mythic find made on this board, by play. A restored board has none,
+ * so a Mythic already in the list when the board opens never glints. `seq`
+ * counts them, so two Mythic finds of the same word cannot look alike. What the
+ * view does with it, and when it does nothing, is `Game`'s.
+ */
+export interface Glint {
+  readonly word: string;
+  readonly seq: number;
+}
+
 /** What the message line reads under the active theme. */
 export function messageText(message: Message, theme: Theme): string {
   const { body } = message;
@@ -154,6 +165,7 @@ export interface Slice {
   editionOpen: boolean;
   message: Message | null;
   announcement: Announcement;
+  glint: Glint | null;
 }
 
 export interface SlicePayload {
@@ -252,6 +264,7 @@ export function buildSlice(payload: SlicePayload): Slice {
     editionOpen: false,
     message: null,
     announcement: { body: { kind: 'plain', text: '' }, seq: 0 },
+    glint: null,
   };
 }
 
@@ -384,6 +397,10 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
         editionOpen: justComplete ? true : slice.editionOpen,
         message: { body: messageBody, tone: 'success' },
         announcement: bump(slice.announcement, announceBody),
+        glint:
+          result.rung === 'mythic'
+            ? { word: result.word, seq: (slice.glint?.seq ?? 0) + 1 }
+            : slice.glint,
       };
     }
 

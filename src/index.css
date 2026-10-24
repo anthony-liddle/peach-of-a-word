@@ -1442,6 +1442,53 @@ button {
   content: '\2756'; /* a faceted gem ornament */
   color: var(--discovery);
 }
+/* A new Mythic find's glint: a soft halo and one sweep of light over the gem,
+   then nothing. Drawn over the mark, so the chip, its glyph and its layout are
+   untouched. `Game` starts it from a live find alone, in cute, and never under
+   reduced motion; the stylesheet's reduced-motion rule zeroes a duration but
+   not a delay, which is why the gate is there and not here. */
+[data-theme='cute'] .mark__glint {
+  position: absolute;
+  inset: -0.2em;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    linear-gradient(
+        115deg,
+        transparent 38%,
+        rgb(255 255 255 / 0.95) 50%,
+        transparent 62%
+      )
+      no-repeat,
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--discovery) 35%, transparent),
+      transparent 70%
+    );
+  background-size:
+    300% 100%,
+    100% 100%;
+  animation: mark-glint 900ms ease-out 1 both;
+}
+@keyframes mark-glint {
+  0% {
+    background-position:
+      100% 0,
+      center;
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    background-position:
+      0% 0,
+      center;
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
 /* A small drawn peach (body, leaf, cleft), consistent with the motif art, in
    place of the colour emoji. */
 [data-theme='cute'] .mark--source {
