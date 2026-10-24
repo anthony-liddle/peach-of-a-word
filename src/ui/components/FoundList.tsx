@@ -7,6 +7,7 @@ import {
 } from '@/engine/index.ts';
 import { LADDER_RUNGS, RUNG_NAMES, type LadderRung } from '../rarity.ts';
 import { COSTUMES, type CostumeId } from '../costumes.ts';
+import type { Glint } from '../useGame.ts';
 import { copy } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
 import { SourcePeach } from './PeachMark.tsx';
@@ -57,6 +58,12 @@ interface Props {
    * spoken name says so. See costumes.ts.
    */
   costume?: CostumeId | null;
+  /**
+   * A Mythic find to glint, once: its chips' gems get one sweep of light. Null
+   * whenever nothing should glint. `Game` decides, from a live find alone, in
+   * cute, and never under reduced motion; this only draws it.
+   */
+  glint?: Glint | null;
 }
 
 type Category = 'source' | 'set' | LadderRung;
@@ -193,6 +200,7 @@ export function FoundList({
   showTier = true,
   ladder = true,
   costume = null,
+  glint = null,
 }: Props) {
   // The one classification pass. The grid below and the rung panels above are
   // both derived from it, so a word is never Rare in one readout and not the
@@ -261,7 +269,13 @@ export function FoundList({
           onWordTap(w.word, e.currentTarget);
         }}
       >
-        <Mark category={w.category} costume={costume} />
+        <Mark
+          category={w.category}
+          costume={costume}
+          glint={
+            w.category === 'mythic' && glint?.word === w.word ? glint.seq : null
+          }
+        />
         <span className="found__wordtext">{w.word}</span>
         {/* Every find shows what it is worth, set words included. The score is
             the one already classified above, so the number on a chip is the
@@ -456,12 +470,19 @@ export function FoundList({
 function Mark({
   category,
   costume,
+  glint = null,
 }: {
   category: Category;
   costume: CostumeId | null;
+  /** The glint's count, when this mark glints: a new count is a new sweep. */
+  glint?: number | null;
 }) {
   if (category === 'source' && costume) {
     return <SourcePeach className="mark mark--source-worn" costume={costume} />;
   }
-  return <span className={`mark mark--${category}`} aria-hidden="true" />;
+  return (
+    <span className={`mark mark--${category}`} aria-hidden="true">
+      {glint !== null && <span key={glint} className="mark__glint" />}
+    </span>
+  );
 }

@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameData } from '@/data/gameData.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
-import { useAnnouncedText, useGame, type GameApi } from './useGame.ts';
+import {
+  useAnnouncedText,
+  useGame,
+  type GameApi,
+  type Glint,
+} from './useGame.ts';
 import { useTheme, type Theme } from './useTheme.ts';
 import { copy } from './themeCopy.ts';
 import { boardCostume } from './costumes.ts';
@@ -32,6 +37,9 @@ interface QuietState {
   definition: string | null;
   trigger: HTMLElement | null;
 }
+
+/** How long a Mythic's glint stays drawn: its sweep, and a little after. */
+export const GLINT_MS = 1200;
 
 /** Honour the OS reduced-motion setting. Confetti is pure motion, so suppress it. */
 function prefersReducedMotion(): boolean {
@@ -159,6 +167,29 @@ export function Game({ data, audio, storage }: Props) {
   }, [game.editionPulse, theme]);
   const endConfetti = useCallback(() => setConfettiOn(false), []);
 
+  // A new Mythic find's gem glints, once: the GDD's "Mythic earning a touch
+  // more sparkle in cute". Cute only, never under reduced motion, and only for
+  // a find made by play: a board that opens with Mythics in its list has no
+  // glint to give (`Glint`). Each mode keeps its own slice, so the last glint
+  // seen is kept per mode, and coming back to a board never replays its last
+  // one. The first sight of a mode's board only records it.
+  const [glinting, setGlinting] = useState<Glint | null>(null);
+  const glintSeen = useRef(
+    new Map<string, Glint | null>([[state.mode, state.glint]]),
+  );
+  useEffect(() => {
+    const before = glintSeen.current.get(state.mode);
+    glintSeen.current.set(state.mode, state.glint);
+    if (before === undefined || !state.glint || state.glint === before) return;
+    if (theme === 'cute' && !prefersReducedMotion()) setGlinting(state.glint);
+  }, [state.glint, state.mode, theme]);
+  // Gone after one sweep, so nothing that redraws the chip can replay it.
+  useEffect(() => {
+    if (!glinting) return;
+    const done = setTimeout(() => setGlinting(null), GLINT_MS);
+    return () => clearTimeout(done);
+  }, [glinting]);
+
   return (
     <div className="app">
       <Decorations celebrate={state.editionOpen} />
@@ -196,6 +227,7 @@ export function Game({ data, audio, storage }: Props) {
           tier={state.tier}
           theme={theme}
           costume={costume}
+          glint={glinting}
           showTier={wide}
           onWordTap={onWordTap}
           summaryExtra={
