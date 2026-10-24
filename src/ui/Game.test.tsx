@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { Game } from './Game.tsx';
+import { Game, GLINT_MS } from './Game.tsx';
 import { CONFETTI_DURATION_MS } from './components/confetti.ts';
 import {
   createListDictionary,
@@ -1531,5 +1531,98 @@ describe('Game streak placement', () => {
     expect(
       (document.querySelector('.chip') as HTMLElement).textContent,
     ).toMatch(/Streak\s*0/);
+  });
+});
+
+describe('Game Mythic glint', () => {
+  const enter = () => fireEvent.keyDown(window, { key: 'Enter' });
+  const findWord = (w: string) => {
+    type(w);
+    enter();
+  };
+  const glints = () => document.querySelectorAll('.mark--mythic .mark__glint');
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    document.documentElement.removeAttribute('data-theme');
+    delete (window as { matchMedia?: unknown }).matchMedia;
+    localStorage.clear();
+  });
+
+  it('glints a new Mythic find, in cute, and only that one', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    expect(glints().length).toBeGreaterThan(0);
+    // Every glint is on denar's chip; the rest of the list has none.
+    for (const g of glints()) {
+      expect(g.closest('.found__word')?.textContent).toContain('denar');
+    }
+  });
+
+  it('is gone after one sweep', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    expect(glints().length).toBeGreaterThan(0);
+    act(() => {
+      vi.advanceTimersByTime(GLINT_MS);
+    });
+    expect(glints()).toHaveLength(0);
+  });
+
+  it('never glints a find on another rung', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    ['sea', 'sane', 'sneer'].forEach(findWord);
+    expect(document.querySelectorAll('.mark__glint')).toHaveLength(0);
+  });
+
+  it('does not glint under reduced motion', () => {
+    (window as { matchMedia?: unknown }).matchMedia = vi.fn(
+      (query: string) => ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }),
+    );
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    expect(glints()).toHaveLength(0);
+  });
+
+  it('does not glint in letterpress', () => {
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    findWord('denar');
+    expect(glints()).toHaveLength(0);
+  });
+
+  it('does not glint a Mythic already in the list when the board opens', () => {
+    const store = fakeStore();
+    document.documentElement.dataset.theme = 'cute';
+    const first = renderGame(store);
+    findWord('denar');
+    first.unmount();
+    renderGame(store);
+    expect(screen.getAllByText('denar', GRID).length).toBeGreaterThan(0);
+    expect(glints()).toHaveLength(0);
+  });
+
+  it('does not glint again on a mode switch', () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    act(() => {
+      vi.advanceTimersByTime(GLINT_MS);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Endless' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }));
+    expect(glints()).toHaveLength(0);
   });
 });
