@@ -413,12 +413,16 @@ describe('index.css completion ornament: a quiet entrance that reduced motion ki
     expect(m?.[1]).toMatch(/\*,/);
   });
 
-  test('the peach ornament is sized in rem, so the text-size steps scale it', () => {
-    // px would pin it while the type around it grows, and the largest step at
-    // 375px is exactly where that would crowd the crown title.
+  test('the peach ornament is never sized in px, so the text-size steps reach it', () => {
+    // px would pin it while the type around it grows. It was 3rem; it is now
+    // the cards' shared peach base, which carries the card's 30rem, so it
+    // grows with the text-size steps wherever the card does.
     const b = block('.edition__ornament--peach');
-    expect(b).toMatch(/(width|height|font-size):\s*[\d.]+rem/);
+    expect(b).toMatch(
+      /width:\s*calc\(var\(--card-peach-base\) \* [\d.]+ \/ 402\);/,
+    );
     expect(b).not.toMatch(/(width|height):\s*[\d.]+px/);
+    expect(block(':root')).toMatch(/--card-peach-base:\s*min\(30rem,/);
   });
 });
 
@@ -433,14 +437,31 @@ describe('index.css completion ornament: a quiet entrance that reduced motion ki
 describe('index.css reveal peach: sized to the card it heads', () => {
   test("its size is the iPhone's share of the card's width", () => {
     const b = block('.reveal__peach');
-    const size = 'calc(min(30rem, 100vw - 2.4rem) * 96 / 402)';
+    const size = 'calc(var(--card-peach-base) * 96 / 402)';
     expect(b).toContain(`width: ${size};`);
     expect(b).toContain(`height: ${size};`);
   });
 
   test("the card's width in it is the card's own", () => {
+    expect(block(':root')).toMatch(
+      /--card-peach-base:\s*min\(30rem, 100vw - 2\.4rem\);/,
+    );
     expect(block('.reveal')).toMatch(/max-width:\s*30rem;/);
     expect(block('.reveal-backdrop')).toMatch(/padding:\s*1\.2rem;/);
+  });
+
+  test('the crowned completion peach is bigger than it at every width, as on the iPhone', () => {
+    // The iPhone draws 96pt on the reveal card and 112pt, crowned, on the
+    // completion card, both on full-width sheets. Here both take one base, so
+    // the order holds at every width and every text size by construction.
+    const factor = (sel: string) =>
+      Number(
+        block(sel).match(
+          /width:\s*calc\(var\(--card-peach-base\) \* ([\d.]+) \/ 402\);/,
+        )?.[1],
+      );
+    expect(factor('.reveal__peach')).toBe(96);
+    expect(factor('.edition__ornament--peach')).toBe(112);
   });
 
   test('it settles in as the completion ornament does, transform only', () => {
@@ -488,13 +509,21 @@ describe('index.css completion crown: it moves with the peach it sits on', () =>
   test("it has the peach's box, so the two scale about one centre", () => {
     const b = block('.crowned__crown');
     expect(b).toMatch(/position:\s*absolute;/);
-    expect(b).toMatch(/top:\s*0;/);
+    expect(b).toMatch(/bottom:\s*0;/);
     expect(b).toMatch(/left:\s*0;/);
     expect(b).toMatch(/width:\s*100%;/);
     expect(b).toMatch(/aspect-ratio:\s*1;/);
     // The crown stands above that box, as on the iPhone.
     expect(b).toMatch(/overflow:\s*visible;/);
     expect(block('.crowned')).toMatch(/width:\s*fit-content;/);
+  });
+
+  test("it has the iPhone's room above the peach: 16pt over a 112pt peach", () => {
+    // CompletionOrnament pads the peach 16pt from the top for the crown. Of
+    // the peach's base * 112 / 402, that is base * 16 / 402.
+    expect(block('.crowned')).toMatch(
+      /padding-top:\s*calc\(var\(--card-peach-base\) \* 16 \/ 402\);/,
+    );
   });
 
   test("on the card it settles in with the peach's own entrance", () => {

@@ -102,23 +102,38 @@ describe("the completion card's crown", () => {
     }
   });
 
-  it("fits in the completion card's top padding, so nothing on the card moves", () => {
-    // The crown stands above the 3rem ornament, into the card's top padding.
-    // At the top of the peach's entrance it is scaled about the ornament's
-    // centre, so the overshoot is counted too.
+  it("fits in the completion card's top padding at its largest", () => {
+    // The ornament is the peach under the iPhone's room for the crown, so the
+    // crown rises past the ornament only by the iPhone's 2pt offset. At the
+    // top of the entrance it is scaled about the peach's centre, so the
+    // overshoot counts too. Measured at the peach's largest, when the card's
+    // 30rem wins the base; at any narrower width the peach is smaller and the
+    // padding, in rem, is not.
     const padTop = Number(
       block('.edition').match(/padding:\s*([\d.]+)rem/)![1],
     );
-    const size = Number(
-      block('.edition__ornament--peach').match(/width:\s*([\d.]+)rem/)![1],
+    const base = Number(
+      block(':root').match(/--card-peach-base:\s*min\(([\d.]+)rem,/)![1],
     );
+    const peachFactor = Number(
+      block('.edition__ornament--peach').match(/\* ([\d.]+) \/ 402\)/)![1],
+    );
+    const roomFactor = Number(
+      block('.crowned').match(
+        /padding-top:\s*calc\(var\(--card-peach-base\) \* ([\d.]+) \/ 402\)/,
+      )![1],
+    );
+    const size = (base * peachFactor) / 402;
+    const room = (base * roomFactor) / 402;
     const frames = css.match(/@keyframes peach-settle\s*\{([\s\S]*?)\n\}/)![1]!;
     const overshoot = Math.max(
       1,
       ...[...frames.matchAll(/scale\(([\d.]+)\)/g)].map((m) => Number(m[1])),
     );
-    const above = (-crownBox().y / 100) * size;
-    const risen = overshoot * (size / 2 + above) - size / 2;
+    // From the ornament's top: the peach's centre, and the crown's top at rest.
+    const centre = room + size / 2;
+    const crownTop = room + (crownBox().y / 100) * size;
+    const risen = -(centre - overshoot * (centre - crownTop));
     expect(risen).toBeLessThan(padTop);
   });
 

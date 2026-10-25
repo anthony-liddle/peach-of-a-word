@@ -57,10 +57,10 @@ export function CostumesPage() {
                 <span className="costumes__card-line">Peachy Keen Supreme</span>
               </div>
             </Cell>
-            <Cell label="Completion card, this pass: the iPhone's crown">
+            <Cell label="Completion card, this pass: crowned, and bigger than the reveal's">
               <div className="costumes__card costumes__card--crowned">
                 <CompletionOrnament
-                  className="costumes__ornament"
+                  className="edition__ornament edition__ornament--peach"
                   costume={id}
                 />
                 <span className="costumes__card-line">Peachy Keen Supreme</span>
