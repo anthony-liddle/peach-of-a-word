@@ -589,7 +589,13 @@ button {
 
 .board {
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, 1fr), not 1fr. A bare 1fr is minmax(auto, 1fr), so the column
+     could never be narrower than its content's narrowest width, and one line
+     that will not wrap took the whole page sideways: the caption under a full
+     basket's bar, which holds the percent, the note and the streak, at 320px
+     in cute. The note is the part built to give way, with an ellipsis, and it
+     can only do that in a column that will not grow for it. */
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(1.5rem, 4vw, 2.5rem);
 }
 @media (min-width: 51.25em) {
