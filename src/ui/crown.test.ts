@@ -29,7 +29,9 @@ function commands(d: string): { op: string; points: [number, number][] }[] {
 const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
 function block(sel: string): string {
   const escaped = sel.replace(/[.[\]$()+*?^|{}\\]/g, '\\$&');
-  const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
+  // The selector alone at the start of its line, so `.edition` is never read
+  // off the end of a longer one, such as `.board > .edition`.
+  const match = css.match(new RegExp(`^\\s*${escaped}\\s*\\{([^}]*)\\}`, 'm'));
   if (!match) throw new Error(`No rule found for selector: ${sel}`);
   return match[1]!;
 }

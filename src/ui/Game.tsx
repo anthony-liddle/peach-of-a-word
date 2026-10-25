@@ -144,7 +144,9 @@ export function Game({ data, audio, storage }: Props) {
   // Dismissing the completion card hands the player to the durable Share: the
   // celebration is the in-the-moment offer, the glossary Share is the path that
   // persists. Landing on it means the result never feels gone with the popup.
-  // The card is a fixed overlay, so the Share is already in place to scroll to.
+  // The card never moves the glossary: it is fixed on a phone, and laid over
+  // the glossary in its grid cell at two-column widths, so the Share is already
+  // in place to scroll to.
   const shareRef = useRef<HTMLButtonElement>(null);
   const dismissEdition = useCallback(() => {
     game.closeEdition();
@@ -154,6 +156,9 @@ export function Game({ data, audio, storage }: Props) {
       share.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [game]);
+  const editionCard = state.editionOpen && (
+    <EditionCard theme={theme} costume={costume} onClose={dismissEdition} />
+  );
 
   // Fire the cute confetti once, on the completion beat. The pulse increments
   // only on the completing submit, so a mode switch or a reload of an already
@@ -240,6 +245,12 @@ export function Game({ data, audio, storage }: Props) {
             />
           }
         />
+
+        {/* Two-column widths only: the completion card lands over the top of
+            the glossary's column, beside the well and the rack rather than on
+            them, since play goes on under it. On a phone it is over the page,
+            below. One node, placed here like the meter. */}
+        {wide && editionCard}
       </div>
 
       <Colophon triggerRef={howTriggerRef} onOpenHow={() => setHowOpen(true)} />
@@ -250,9 +261,7 @@ export function Game({ data, audio, storage }: Props) {
         {spokenAnnouncement}
       </div>
 
-      {state.editionOpen && (
-        <EditionCard theme={theme} costume={costume} onClose={dismissEdition} />
-      )}
+      {!wide && editionCard}
 
       {confettiOn && <Confetti onDone={endConfetti} costume={costume} />}
 
