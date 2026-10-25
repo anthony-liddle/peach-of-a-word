@@ -357,3 +357,133 @@ describe('a card credits its own definition, not every definition', () => {
     ).toBeTruthy();
   });
 });
+
+describe('the peach on the crown card', () => {
+  const crown = (
+    theme: 'cute' | 'letterpress',
+    costume: 'ghost' | null = null,
+  ) =>
+    render(
+      <Reveal
+        register="crown"
+        theme={theme}
+        word="serenade"
+        entry={ENTRY}
+        costume={costume}
+        onClose={() => {}}
+      />,
+    );
+
+  it('heads the card in cute, as it does on the iPhone', () => {
+    crown('cute');
+    const card = screen.getByRole('dialog');
+    const peach = card.querySelector('svg.reveal__peach');
+    expect(peach).toBeTruthy();
+    expect(card.firstElementChild).toBe(peach);
+  });
+
+  it('is absent in letterpress, whose reveal stays text', () => {
+    crown('letterpress');
+    expect(screen.getByRole('dialog').querySelector('svg')).toBeNull();
+  });
+
+  it("leaves a found word's quiet card as it is", () => {
+    render(
+      <Reveal
+        register="quiet"
+        theme="cute"
+        word="sea"
+        category="set"
+        status="ready"
+        definition="noun. a body of salt water."
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole('dialog').querySelector('svg')).toBeNull();
+  });
+
+  it('is decorative on a plain day', () => {
+    crown('cute', null);
+    const peach = screen.getByRole('dialog').querySelector('svg.reveal__peach');
+    expect(peach?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryByText(/The peach is/)).toBeNull();
+  });
+
+  it('wears the costume, and says what it is wearing, on a costume day', () => {
+    crown('cute', 'ghost');
+    const peach = screen.getByRole('dialog').querySelector('svg.reveal__peach');
+    // The plain peach draws 8 shapes; the ghost hides the face and adds 7.
+    expect(peach?.querySelectorAll('path, circle').length).toBe(3 + 7);
+    expect(
+      screen.getByText('The peach is in a ghost sheet.'),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("the card's way out, pinned to its foot", () => {
+  // The iPhone pins the button in CardWayOut, so it is on screen when the card
+  // opens at any length. jsdom has no layout, so this holds the structure the
+  // stylesheet pins: the button alone in a bar that ends the card, with the
+  // credit above it, scrolling with the text it credits. The 626-crown count
+  // in a real browser is in the PR.
+  const cards = [
+    {
+      name: 'a crown card in cute',
+      el: (
+        <Reveal
+          register="crown"
+          theme="cute"
+          word="serenade"
+          entry={ENTRY}
+          onClose={() => {}}
+        />
+      ),
+    },
+    {
+      name: 'a crown card in letterpress',
+      el: (
+        <Reveal
+          register="crown"
+          theme="letterpress"
+          word="serenade"
+          entry={ENTRY}
+          onClose={() => {}}
+        />
+      ),
+    },
+    {
+      name: "a found word's card",
+      el: (
+        <Reveal
+          register="quiet"
+          theme="letterpress"
+          word="sea"
+          category="set"
+          status="ready"
+          definition="noun. a body of salt water."
+          onClose={() => {}}
+        />
+      ),
+    },
+  ];
+
+  for (const { name, el } of cards) {
+    it(`ends ${name} with the button alone in its bar`, () => {
+      render(el);
+      const card = screen.getByRole('dialog');
+      const bar = card.lastElementChild!;
+      expect(bar.classList.contains('reveal__way-out')).toBe(true);
+      expect(bar.children).toHaveLength(1);
+      expect(bar.firstElementChild).toBe(screen.getByRole('button'));
+    });
+  }
+
+  it('keeps the credit above the bar, with the text it credits', () => {
+    render(cards[0]!.el);
+    const credit = screen.getByText(/Wiktionary, CC BY-SA 4\.0/);
+    const bar = screen.getByRole('dialog').querySelector('.reveal__way-out')!;
+    expect(
+      credit.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+});

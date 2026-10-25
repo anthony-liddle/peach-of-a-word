@@ -10,6 +10,12 @@
   --control-h: 2.25rem;
   --radius: 3px;
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  /* The cute peach's base on the two cards: the reveal card's width, its
+     max-width or the viewport less the backdrop's padding. The iPhone draws
+     96pt on the reveal card and 112pt, crowned, on the completion card, both
+     on its 402pt sheet; both peaches take this base, so that order holds at
+     every width and text size. */
+  --card-peach-base: min(30rem, 100vw - 2.4rem);
 }
 
 /* Text-size steps. Percentages, never px: a percentage MULTIPLIES with the
@@ -1615,7 +1621,9 @@ button {
     0 0 0 6px var(--paper),
     0 0 0 7px var(--crown-deep),
     0 24px 50px rgba(0, 0, 0, 0.4);
-  padding: clamp(1.5rem, 4vw, 2.4rem);
+  /* One value, so the pinned way out below can take it as its own. */
+  --reveal-pad: clamp(1.5rem, 4vw, 2.4rem);
+  padding: var(--reveal-pad);
   text-align: center;
   animation: press 0.45s var(--ease);
   /* A long entry (a big word plus a long etymology) can be taller than a short
@@ -1624,6 +1632,19 @@ button {
      The 2.4rem matches the backdrop's 1.2rem top and bottom padding. */
   max-height: calc(100dvh - 2.4rem);
   overflow-y: auto;
+}
+/* The cute crown card opens with the peach, as the iPhone's does
+   (SourceRevealCard). Sized to the card in the iPhone's proportion: 96pt on
+   the 402pt sheet of the iPhone 16 Pro, the phone that card's own comments
+   measure on, of --card-peach-base, this card's width. So the share holds at
+   every width and follows the text-size steps where the card does. It settles
+   in as the completion ornament does, transform only. */
+.reveal__peach {
+  display: block;
+  width: calc(var(--card-peach-base) * 96 / 402);
+  height: calc(var(--card-peach-base) * 96 / 402);
+  margin: 0 auto 0.8rem;
+  animation: peach-settle 0.42s var(--ease) both;
 }
 .reveal__kicker {
   font-size: 0.78rem;
@@ -1684,6 +1705,22 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+/* The way out, pinned to the card's foot as the iPhone pins it (CardWayOut).
+   The card stays its own scroll container and the bar is sticky inside it, so
+   the text scrolls under the bar and the button is on screen when the card
+   opens, at any length and any text size. The bar takes the card's padding as
+   its own at the sides and the foot, so it sits flush with the card's edge,
+   and it is opaque, so text scrolling under it never shows through. */
+.reveal__way-out {
+  position: sticky;
+  bottom: calc(-1 * var(--reveal-pad));
+  margin: 1rem calc(-1 * var(--reveal-pad)) calc(-1 * var(--reveal-pad));
+  padding: 0.8rem var(--reveal-pad) var(--reveal-pad);
+  background: var(--paper);
+}
+.reveal__way-out .reveal__close {
+  margin-top: 0;
 }
 .reveal__attribution {
   margin-top: 1rem;
@@ -1834,14 +1871,39 @@ button {
   color: var(--accent);
   margin: 0 0 0.2rem;
 }
-/* The cute ornament is the peach mark, not a glyph. Sized in rem so the
-   text-size steps carry it along with the type it sits above, and centred
-   explicitly because a block element ignores the card's text-align. */
+/* The cute ornament is the peach mark, not a glyph, and bigger than the
+   reveal card's, as on the iPhone: 112pt to its 96pt, of the same base. So it
+   follows the text-size steps where the card's 30rem wins, and the wrapper
+   below centres it and gives the crown its room. */
 .edition__ornament--peach {
   display: block;
-  width: 3rem;
-  height: 3rem;
+  width: calc(var(--card-peach-base) * 112 / 402);
+  height: calc(var(--card-peach-base) * 112 / 402);
+  animation: peach-settle 0.42s var(--ease) both;
+}
+/* The crowned peach (CompletionOrnament). The crown is a second drawing in the
+   peach's own box, laid over it, and stands above that box as on the iPhone
+   (crown.ts). The wrapper takes the peach's width, centres it, and gives the
+   crown the iPhone's room above the peach, 16pt over a 112pt peach, so the
+   crown rises past the wrapper only by the iPhone's 2pt offset, into the
+   card's top padding. */
+.crowned {
+  position: relative;
+  width: fit-content;
   margin: 0 auto 0.3rem;
+  padding-top: calc(var(--card-peach-base) * 16 / 402);
+}
+.crowned__crown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+/* On the card it settles in with the peach under it: the same keyframes on
+   the same box, so the two move as one. */
+.edition .crowned__crown {
   animation: peach-settle 0.42s var(--ease) both;
 }
 /* Transform only, and no delay. The global reduced-motion switch zeroes

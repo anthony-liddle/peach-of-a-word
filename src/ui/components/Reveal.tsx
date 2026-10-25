@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef } from 'react';
 import type { SourceEntry } from '@/data/types.ts';
+import type { CostumeId } from '../costumes.ts';
 import { copy, revealKicker } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
 import { creditFor } from '../../data/glossProvenance.ts';
+import { PeachMark, SaysWhatThePeachWears } from './PeachMark.tsx';
 
 export type QuietCategory = 'set' | 'uncommon' | 'rare' | 'mythic';
 
@@ -17,6 +19,8 @@ type RevealProps = {
       register: 'crown';
       word: string;
       entry: SourceEntry | undefined;
+      /** What the peach is wearing on this board, if anything. See costumes.ts. */
+      costume?: CostumeId | null;
     }
   | {
       register: 'quiet';
@@ -39,9 +43,9 @@ export function Reveal(props: RevealProps) {
 
   useEffect(() => {
     capturedRef.current = document.activeElement;
-    // The card is its own scroll container and this button sits near its
-    // bottom, so a plain focus() would scroll a long entry to the end. Take the
-    // focus without the scroll; the effect below owns the position.
+    // The card is its own scroll container and this button ends it, pinned to
+    // the foot, so a plain focus() could scroll a long entry to the end. Take
+    // the focus without the scroll; the effect below owns the position.
     closeRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -89,6 +93,19 @@ export function Reveal(props: RevealProps) {
         aria-modal="true"
         aria-labelledby={wordId}
       >
+        {/* The cute card opens with the peach, as the iPhone's does. Decorative,
+            as the completion card's is: on a costume day a sentence says what
+            it is wearing. Letterpress stays text, and a found word's quiet
+            card has no peach. */}
+        {props.register === 'crown' && props.theme === 'cute' ? (
+          <>
+            <PeachMark
+              className="reveal__peach"
+              costume={props.costume ?? null}
+            />
+            <SaysWhatThePeachWears costume={props.costume} />
+          </>
+        ) : null}
         {props.register === 'crown' ? (
           <p className="reveal__kicker">{revealKicker(props.theme)}</p>
         ) : null}
@@ -124,9 +141,6 @@ export function Reveal(props: RevealProps) {
           </div>
         )}
 
-        <button ref={closeRef} className="reveal__close" onClick={onClose}>
-          {copy(props.theme).revealClose}
-        </button>
         <p className="reveal__attribution">
           {creditFor({
             word: props.word,
@@ -138,6 +152,16 @@ export function Reveal(props: RevealProps) {
               props.register === 'crown' && Boolean(props.entry?.etymology),
           })}
         </p>
+        {/* The way out, pinned to the card's foot as the iPhone pins it
+            (CardWayOut): the text scrolls under it, so the button is on screen
+            when the card opens, at any length and any text size. Only the
+            button is pinned. The credit stays above, scrolling with the text it
+            credits, as it does on the iPhone. */}
+        <div className="reveal__way-out">
+          <button ref={closeRef} className="reveal__close" onClick={onClose}>
+            {copy(props.theme).revealClose}
+          </button>
+        </div>
       </div>
     </div>
   );

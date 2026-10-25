@@ -79,3 +79,39 @@ describe('the completion ornament', () => {
     expect(mark.querySelectorAll('path').length).toBeGreaterThan(0);
   });
 });
+
+describe("the crown on the completion card's peach", () => {
+  const crownOf = (container: HTMLElement) =>
+    container.querySelector('svg.crowned__crown');
+
+  it('is worn in cute, drawn over the peach and left out of what is said', () => {
+    const { container } = render(
+      <EditionCard theme="cute" onClose={() => {}} />,
+    );
+    const peach = container.querySelector('.edition__ornament--peach')!;
+    const crown = crownOf(container);
+    expect(crown).toBeTruthy();
+    // Later in the document, so it is painted over the peach.
+    expect(
+      peach.compareDocumentPosition(crown!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(crown!.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('is absent in letterpress, which keeps the printer ornament', () => {
+    const { container } = render(
+      <EditionCard theme="letterpress" onClose={() => {}} />,
+    );
+    expect(crownOf(container)).toBeNull();
+    expect(container.querySelector('svg')).toBeNull();
+  });
+
+  it('sits on the ghost, as it does on the iPhone', () => {
+    const { container } = render(
+      <EditionCard theme="cute" costume="ghost" onClose={() => {}} />,
+    );
+    const peach = container.querySelector('.edition__ornament--peach')!;
+    expect(peach.querySelector('path[stroke="#D6C9EE"]')).toBeTruthy();
+    expect(crownOf(container)).toBeTruthy();
+  });
+});

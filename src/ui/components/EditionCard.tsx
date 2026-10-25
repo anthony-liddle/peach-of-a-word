@@ -1,7 +1,7 @@
-import { COSTUMES, type CostumeId } from '../costumes.ts';
+import type { CostumeId } from '../costumes.ts';
 import type { Theme } from '../useTheme.ts';
 import { crownName, copy, ornament } from '../themeCopy.ts';
-import { PeachMark } from './PeachMark.tsx';
+import { CompletionOrnament, SaysWhatThePeachWears } from './PeachMark.tsx';
 
 interface Props {
   theme: Theme;
@@ -19,9 +19,10 @@ interface Props {
  * the live region in Game.
  *
  * The ornament is theme-skinned too: the printer's fleuron on letterpress, the
- * peach mark on cute. Decorative in both, so the card's accessible name comes
- * from the crown alone. On a costume day the peach wears it, and a sentence a
- * screen reader can find says what it is wearing.
+ * peach mark on cute, with the iPhone's drawn crown on its head. Decorative in
+ * both, so the card's accessible name comes from the crown title alone. On a
+ * costume day the peach wears it under the drawn crown, and a sentence a screen
+ * reader can find says what it is wearing.
  */
 export function EditionCard({ theme, costume = null, onClose }: Props) {
   const crown = crownName(theme);
@@ -30,15 +31,11 @@ export function EditionCard({ theme, costume = null, onClose }: Props) {
     <div className="edition" role="region" aria-label={crown}>
       {mark.kind === 'peach' ? (
         <>
-          <PeachMark
+          <CompletionOrnament
             className="edition__ornament edition__ornament--peach"
             costume={costume}
           />
-          {costume && (
-            <p className="visually-hidden">
-              The peach is {COSTUMES[costume].spoken}.
-            </p>
-          )}
+          <SaysWhatThePeachWears costume={costume} />
         </>
       ) : (
         <p className="edition__ornament" aria-hidden="true">

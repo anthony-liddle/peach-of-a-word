@@ -413,12 +413,125 @@ describe('index.css completion ornament: a quiet entrance that reduced motion ki
     expect(m?.[1]).toMatch(/\*,/);
   });
 
-  test('the peach ornament is sized in rem, so the text-size steps scale it', () => {
-    // px would pin it while the type around it grows, and the largest step at
-    // 375px is exactly where that would crowd the crown title.
+  test('the peach ornament is never sized in px, so the text-size steps reach it', () => {
+    // px would pin it while the type around it grows. It was 3rem; it is now
+    // the cards' shared peach base, which carries the card's 30rem, so it
+    // grows with the text-size steps wherever the card does.
     const b = block('.edition__ornament--peach');
-    expect(b).toMatch(/(width|height|font-size):\s*[\d.]+rem/);
+    expect(b).toMatch(
+      /width:\s*calc\(var\(--card-peach-base\) \* [\d.]+ \/ 402\);/,
+    );
     expect(b).not.toMatch(/(width|height):\s*[\d.]+px/);
+    expect(block(':root')).toMatch(/--card-peach-base:\s*min\(30rem,/);
+  });
+});
+
+/**
+ * The reveal card's peach. It takes the share of the card the iPhone's 96pt
+ * takes of its 402pt sheet, and the card's width is written into its size: the
+ * card's max-width, or the viewport less the backdrop's padding either side.
+ * That is two more copies of two numbers, and this is the guard. It catches
+ * the card or the backdrop moving away from the peach's size, in one direction:
+ * change both together and it passes, as it should.
+ */
+describe('index.css reveal peach: sized to the card it heads', () => {
+  test("its size is the iPhone's share of the card's width", () => {
+    const b = block('.reveal__peach');
+    const size = 'calc(var(--card-peach-base) * 96 / 402)';
+    expect(b).toContain(`width: ${size};`);
+    expect(b).toContain(`height: ${size};`);
+  });
+
+  test("the card's width in it is the card's own", () => {
+    expect(block(':root')).toMatch(
+      /--card-peach-base:\s*min\(30rem, 100vw - 2\.4rem\);/,
+    );
+    expect(block('.reveal')).toMatch(/max-width:\s*30rem;/);
+    expect(block('.reveal-backdrop')).toMatch(/padding:\s*1\.2rem;/);
+  });
+
+  test('the crowned completion peach is bigger than it at every width, as on the iPhone', () => {
+    // The iPhone draws 96pt on the reveal card and 112pt, crowned, on the
+    // completion card, both on full-width sheets. Here both take one base, so
+    // the order holds at every width and every text size by construction.
+    const factor = (sel: string) =>
+      Number(
+        block(sel).match(
+          /width:\s*calc\(var\(--card-peach-base\) \* ([\d.]+) \/ 402\);/,
+        )?.[1],
+      );
+    expect(factor('.reveal__peach')).toBe(96);
+    expect(factor('.edition__ornament--peach')).toBe(112);
+  });
+
+  test('it settles in as the completion ornament does, transform only', () => {
+    // The same keyframes, so the reduced-motion switch and the no-opacity pin
+    // above cover it too, and no delay to hold a stuck opening frame.
+    const b = block('.reveal__peach');
+    expect(b).toMatch(
+      /animation:\s*peach-settle\s+[\d.]+s\s+var\(--ease\)\s+both;/,
+    );
+    expect(b).not.toMatch(/animation-delay/);
+  });
+});
+
+/**
+ * The crown on the completion card's peach is a second drawing over the peach,
+ * in the peach's own box (CompletionOrnament). It has to arrive with the peach,
+ * not after it or apart from it.
+ */
+/**
+ * The reveal card's way out, pinned to the card's foot as the iPhone pins it
+ * (CardWayOut). The card stays its own scroll container, so the bar is sticky
+ * inside it: the text scrolls under the bar and the button is on screen when
+ * the card opens. The bar takes the card's padding as its own at the sides and
+ * the foot, so it sits flush and nothing shows past it.
+ */
+describe("index.css reveal way out: pinned to the card's foot", () => {
+  test("the card's padding is one value the bar can mirror", () => {
+    const b = block('.reveal');
+    expect(b).toMatch(/--reveal-pad:\s*clamp\(1\.5rem, 4vw, 2\.4rem\);/);
+    expect(b).toMatch(/padding:\s*var\(--reveal-pad\);/);
+  });
+
+  test('the bar sticks to the foot, flush, and is opaque', () => {
+    const b = block('.reveal__way-out');
+    expect(b).toMatch(/position:\s*sticky;/);
+    expect(b).toMatch(/bottom:\s*calc\(-1 \* var\(--reveal-pad\)\);/);
+    expect(b).toMatch(
+      /margin:\s*[\d.]+rem calc\(-1 \* var\(--reveal-pad\)\) calc\(-1 \* var\(--reveal-pad\)\);/,
+    );
+    expect(b).toMatch(/background:\s*var\(--paper\);/);
+  });
+});
+
+describe('index.css completion crown: it moves with the peach it sits on', () => {
+  test("it has the peach's box, so the two scale about one centre", () => {
+    const b = block('.crowned__crown');
+    expect(b).toMatch(/position:\s*absolute;/);
+    expect(b).toMatch(/bottom:\s*0;/);
+    expect(b).toMatch(/left:\s*0;/);
+    expect(b).toMatch(/width:\s*100%;/);
+    expect(b).toMatch(/aspect-ratio:\s*1;/);
+    // The crown stands above that box, as on the iPhone.
+    expect(b).toMatch(/overflow:\s*visible;/);
+    expect(block('.crowned')).toMatch(/width:\s*fit-content;/);
+  });
+
+  test("it has the iPhone's room above the peach: 16pt over a 112pt peach", () => {
+    // CompletionOrnament pads the peach 16pt from the top for the crown. Of
+    // the peach's base * 112 / 402, that is base * 16 / 402.
+    expect(block('.crowned')).toMatch(
+      /padding-top:\s*calc\(var\(--card-peach-base\) \* 16 \/ 402\);/,
+    );
+  });
+
+  test("on the card it settles in with the peach's own entrance", () => {
+    const entrance = (sel: string) =>
+      block(sel).match(/animation:\s*([^;]+);/)?.[1];
+    expect(entrance('.edition .crowned__crown')).toBe(
+      entrance('.edition__ornament--peach'),
+    );
   });
 });
 

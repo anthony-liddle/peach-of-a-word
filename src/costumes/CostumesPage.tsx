@@ -1,12 +1,18 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { COSTUMES, COSTUME_ORDER, type CostumeId } from '@/ui/costumes.ts';
 import { drawPeach, peachSvg } from '@/ui/peachArt.ts';
-import { PeachMark, SourcePeach } from '@/ui/components/PeachMark.tsx';
+import { REVEAL_KICKERS } from '@/ui/themeCopy.ts';
+import {
+  CompletionOrnament,
+  PeachMark,
+  SourcePeach,
+} from '@/ui/components/PeachMark.tsx';
 
 /**
  * Every costume beside the plain peach, at every size the cute peach appears
- * on the web: the source-word mark at each text size, the completion card's
- * ornament, the tab icon on a light and a dark tab strip, and the confetti.
+ * on the web: the reveal card's peach and the crowned completion peach, each
+ * beside the card as it was before them, the source-word mark at each text
+ * size, the tab icon on a light and a dark tab strip, and the confetti.
  */
 const ROWS: readonly (CostumeId | null)[] = [null, ...COSTUME_ORDER];
 
@@ -29,7 +35,8 @@ export function CostumesPage() {
       <h1>Costumes</h1>
       <p className="costumes__lede">
         Each costume beside the plain peach, at every size the cute peach is
-        drawn on the web. A development page only.
+        drawn on the web, and the two cards beside how they were before their
+        peaches. A development page only.
       </p>
       {ROWS.map((id) => (
         <section className="costumes__row" key={id ?? 'plain'}>
@@ -38,9 +45,24 @@ export function CostumesPage() {
             <Cell label="Large">
               <PeachMark className="costumes__big" costume={id} />
             </Cell>
-            <Cell label="Completion card, 3rem">
+            <Cell label="Reveal card today: no peach">
+              <RevealTop costume={id} peach={false} />
+            </Cell>
+            <Cell label="Reveal card, this pass: the peach, sized to the card">
+              <RevealTop costume={id} peach />
+            </Cell>
+            <Cell label="Completion card today, 3rem">
               <div className="costumes__card">
                 <PeachMark className="costumes__ornament" costume={id} />
+                <span className="costumes__card-line">Peachy Keen Supreme</span>
+              </div>
+            </Cell>
+            <Cell label="Completion card, this pass: crowned, and bigger than the reveal's">
+              <div className="costumes__card costumes__card--crowned">
+                <CompletionOrnament
+                  className="edition__ornament edition__ornament--peach"
+                  costume={id}
+                />
                 <span className="costumes__card-line">Peachy Keen Supreme</span>
               </div>
             </Cell>
@@ -81,6 +103,27 @@ function Cell({ label, children }: { label: string; children: ReactNode }) {
       {children}
       <figcaption>{label}</figcaption>
     </figure>
+  );
+}
+
+/**
+ * The top of the eight-letter word's card, in the card's own classes and at
+ * the card's own width, min(30rem, 100vw - 2.4rem), so the peach is sized
+ * here as it is on the card. Narrow the window to see a phone's.
+ */
+function RevealTop({
+  costume,
+  peach,
+}: {
+  costume: CostumeId | null;
+  peach: boolean;
+}) {
+  return (
+    <div className="costumes__card costumes__reveal">
+      {peach && <PeachMark className="reveal__peach" costume={costume} />}
+      <p className="reveal__kicker">{REVEAL_KICKERS.cute}</p>
+      <p className="reveal__word">skeleton</p>
+    </div>
   );
 }
 

@@ -264,6 +264,7 @@ export function Game({ data, audio, storage }: Props) {
           rack={probe.rack}
           register={probe.register}
           theme={theme}
+          costume={costume}
           onClose={() => setProbe(null)}
         />
       ) : state.revealOpen ? (
@@ -272,6 +273,7 @@ export function Game({ data, audio, storage }: Props) {
           theme={theme}
           word={state.puzzle.sourceWord}
           entry={state.sourceEntry}
+          costume={costume}
           onClose={game.closeReveal}
         />
       ) : quiet ? (

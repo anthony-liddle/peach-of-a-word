@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Reveal, type QuietCategory } from './components/Reveal.tsx';
+import type { CostumeId } from './costumes.ts';
 import { createDefinitionLookup } from '../data/definitions.ts';
 import { assetUrl } from '../data/gameData.ts';
 
@@ -32,6 +33,8 @@ export function DevCardProbe(props: {
   rack: string | null;
   register: 'quiet' | 'crown';
   theme: 'letterpress' | 'cute';
+  /** The board's costume, so a crown card opened here dresses as the real one. */
+  costume: CostumeId | null;
   onClose: () => void;
 }): React.JSX.Element | null {
   const [definition, setDefinition] = useState<string | null>(null);
@@ -79,6 +82,7 @@ export function DevCardProbe(props: {
           definition: definition ?? '',
           etymology: etymology ?? '',
         }}
+        costume={props.costume}
         onClose={props.onClose}
       />
     );
