@@ -357,3 +357,65 @@ describe('a card credits its own definition, not every definition', () => {
     ).toBeTruthy();
   });
 });
+
+describe('the peach on the crown card', () => {
+  const crown = (
+    theme: 'cute' | 'letterpress',
+    costume: 'ghost' | null = null,
+  ) =>
+    render(
+      <Reveal
+        register="crown"
+        theme={theme}
+        word="serenade"
+        entry={ENTRY}
+        costume={costume}
+        onClose={() => {}}
+      />,
+    );
+
+  it('heads the card in cute, as it does on the iPhone', () => {
+    crown('cute');
+    const card = screen.getByRole('dialog');
+    const peach = card.querySelector('svg.reveal__peach');
+    expect(peach).toBeTruthy();
+    expect(card.firstElementChild).toBe(peach);
+  });
+
+  it('is absent in letterpress, whose reveal stays text', () => {
+    crown('letterpress');
+    expect(screen.getByRole('dialog').querySelector('svg')).toBeNull();
+  });
+
+  it("leaves a found word's quiet card as it is", () => {
+    render(
+      <Reveal
+        register="quiet"
+        theme="cute"
+        word="sea"
+        category="set"
+        status="ready"
+        definition="noun. a body of salt water."
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole('dialog').querySelector('svg')).toBeNull();
+  });
+
+  it('is decorative on a plain day', () => {
+    crown('cute', null);
+    const peach = screen.getByRole('dialog').querySelector('svg.reveal__peach');
+    expect(peach?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryByText(/The peach is/)).toBeNull();
+  });
+
+  it('wears the costume, and says what it is wearing, on a costume day', () => {
+    crown('cute', 'ghost');
+    const peach = screen.getByRole('dialog').querySelector('svg.reveal__peach');
+    // The plain peach draws 8 shapes; the ghost hides the face and adds 7.
+    expect(peach?.querySelectorAll('path, circle').length).toBe(3 + 7);
+    expect(
+      screen.getByText('The peach is in a ghost sheet.'),
+    ).toBeInTheDocument();
+  });
+});

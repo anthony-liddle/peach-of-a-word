@@ -1619,6 +1619,20 @@ button {
   max-height: calc(100dvh - 2.4rem);
   overflow-y: auto;
 }
+/* The cute crown card opens with the peach, as the iPhone's does
+   (SourceRevealCard). Sized to the card in the iPhone's proportion: 96pt on
+   the 402pt sheet of the iPhone 16 Pro, the phone that card's own comments
+   measure on. This card is min(30rem, 100vw - 2.4rem) wide, its max-width or
+   the viewport less the backdrop's padding, so the share holds at every width
+   and follows the text-size steps where the card does. It settles in as the
+   completion ornament does, transform only. */
+.reveal__peach {
+  display: block;
+  width: calc(min(30rem, 100vw - 2.4rem) * 96 / 402);
+  height: calc(min(30rem, 100vw - 2.4rem) * 96 / 402);
+  margin: 0 auto 0.8rem;
+  animation: peach-settle 0.42s var(--ease) both;
+}
 .reveal__kicker {
   font-size: 0.78rem;
   letter-spacing: 0.4em;

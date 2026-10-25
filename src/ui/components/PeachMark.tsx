@@ -1,4 +1,4 @@
-import type { CostumeId } from '../costumes.ts';
+import { COSTUMES, type CostumeId } from '../costumes.ts';
 import { peachParts, sourceMarkParts, type PeachPart } from '../peachArt.ts';
 
 /**
@@ -68,6 +68,23 @@ export function SourcePeach({
         ))}
       </g>
     </svg>
+  );
+}
+
+/**
+ * What the peach is wearing, said to a screen reader on its day. The drawing
+ * stays decorative, so on any other day this renders nothing and a plain peach
+ * says nothing at all. One sentence for every card the peach dresses on, so no
+ * two cards word it differently.
+ */
+export function SaysWhatThePeachWears({
+  costume,
+}: {
+  costume?: CostumeId | null | undefined;
+}) {
+  if (!costume) return null;
+  return (
+    <p className="visually-hidden">The peach is {COSTUMES[costume].spoken}.</p>
   );
 }
 

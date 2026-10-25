@@ -422,6 +422,38 @@ describe('index.css completion ornament: a quiet entrance that reduced motion ki
   });
 });
 
+/**
+ * The reveal card's peach. It takes the share of the card the iPhone's 96pt
+ * takes of its 402pt sheet, and the card's width is written into its size: the
+ * card's max-width, or the viewport less the backdrop's padding either side.
+ * That is two more copies of two numbers, and this is the guard. It catches
+ * the card or the backdrop moving away from the peach's size, in one direction:
+ * change both together and it passes, as it should.
+ */
+describe('index.css reveal peach: sized to the card it heads', () => {
+  test("its size is the iPhone's share of the card's width", () => {
+    const b = block('.reveal__peach');
+    const size = 'calc(min(30rem, 100vw - 2.4rem) * 96 / 402)';
+    expect(b).toContain(`width: ${size};`);
+    expect(b).toContain(`height: ${size};`);
+  });
+
+  test("the card's width in it is the card's own", () => {
+    expect(block('.reveal')).toMatch(/max-width:\s*30rem;/);
+    expect(block('.reveal-backdrop')).toMatch(/padding:\s*1\.2rem;/);
+  });
+
+  test('it settles in as the completion ornament does, transform only', () => {
+    // The same keyframes, so the reduced-motion switch and the no-opacity pin
+    // above cover it too, and no delay to hold a stuck opening frame.
+    const b = block('.reveal__peach');
+    expect(b).toMatch(
+      /animation:\s*peach-settle\s+[\d.]+s\s+var\(--ease\)\s+both;/,
+    );
+    expect(b).not.toMatch(/animation-delay/);
+  });
+});
+
 describe('index.css two-column breakpoint: the stylesheet and the meter agree', () => {
   /**
    * The tier meter is REPARENTED at this width, not repositioned: no stylesheet

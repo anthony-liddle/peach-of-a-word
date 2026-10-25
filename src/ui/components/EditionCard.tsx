@@ -1,7 +1,7 @@
-import { COSTUMES, type CostumeId } from '../costumes.ts';
+import type { CostumeId } from '../costumes.ts';
 import type { Theme } from '../useTheme.ts';
 import { crownName, copy, ornament } from '../themeCopy.ts';
-import { PeachMark } from './PeachMark.tsx';
+import { PeachMark, SaysWhatThePeachWears } from './PeachMark.tsx';
 
 interface Props {
   theme: Theme;
@@ -34,11 +34,7 @@ export function EditionCard({ theme, costume = null, onClose }: Props) {
             className="edition__ornament edition__ornament--peach"
             costume={costume}
           />
-          {costume && (
-            <p className="visually-hidden">
-              The peach is {COSTUMES[costume].spoken}.
-            </p>
-          )}
+          <SaysWhatThePeachWears costume={costume} />
         </>
       ) : (
         <p className="edition__ornament" aria-hidden="true">
