@@ -15,7 +15,7 @@ import { GameStorage, type KeyValueStore } from '@/persistence/storage.ts';
 import { dayIndex } from '@/engine/index.ts';
 import { STORAGE_EPOCH } from '@/engine/config.ts';
 import { useDefinitions } from './useDefinitions.ts';
-import { copy } from './themeCopy.ts';
+import { copy, crownName, tierName } from './themeCopy.ts';
 import { DEFAULT_THEME, type Theme } from './useTheme.ts';
 import {
   DESKTOP_WIDTH,
@@ -32,6 +32,10 @@ const getDefinition = vi.fn(async (w: string) =>
 );
 
 beforeEach(() => {
+  // Every test starts in the default theme, whatever the one before it left.
+  // A test that needs another theme sets it; one that must hold in both reads
+  // the theme's own copy (activeTheme), so it can't pass by finding nothing.
+  delete document.documentElement.dataset.theme;
   (useDefinitions as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
     getDefinition,
   });
@@ -232,13 +236,9 @@ describe('Game', () => {
 
   it('keeps the dedication present in the cute theme too', () => {
     document.documentElement.dataset.theme = 'cute';
-    try {
-      renderGame();
-      const footer = document.querySelector('.colophon') as HTMLElement;
-      expect(footer.textContent).toMatch(/for Bea/);
-    } finally {
-      document.documentElement.dataset.theme = 'letterpress';
-    }
+    renderGame();
+    const footer = document.querySelector('.colophon') as HTMLElement;
+    expect(footer.textContent).toMatch(/for Bea/);
   });
 
   it('accepts a typed word and prints it to the glossary', () => {
@@ -432,13 +432,14 @@ describe('Game', () => {
   it('updates the tier as common words are found', () => {
     renderGame();
     // The bar appears with the first find, at the opening rank.
-    type('sea'); // 1 point of the reachable 32: still Blank Page.
+    const opening = tierName(activeTheme(), 0);
+    type('sea'); // 1 point of the reachable 32: still the opening rank.
     fireEvent.keyDown(window, { key: 'Enter' });
-    expect(screen.getByText('Blank Page')).toBeInTheDocument();
+    expect(screen.getByText(opening)).toBeInTheDocument();
     type('serenade'); // 15 of the common total in one word
     fireEvent.keyDown(window, { key: 'Enter' });
-    // Tier should have climbed off Blank Page.
-    expect(screen.queryByText('Blank Page')).not.toBeInTheDocument();
+    // Tier should have climbed off the opening rank.
+    expect(screen.queryByText(opening)).not.toBeInTheDocument();
   });
 
   it('reveals the source word with definition and etymology', () => {
@@ -659,8 +660,10 @@ describe('Game edition complete', () => {
     type(w);
     enter();
   };
+  // By the crown's own name in the theme on the page: a name from the other
+  // theme would never match, and every "no card" check would pass blind.
   const editionCard = () =>
-    screen.queryByRole('region', { name: /the complete works/i });
+    screen.queryByRole('region', { name: crownName(activeTheme()) });
   // Every common word on this rack: finding all of them is 100% of the set.
   const SET = ['sea', 'near', 'dean', 'eased', 'erase'];
 
@@ -745,7 +748,9 @@ describe('Game edition complete', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     // The quiet completed state holds the themed crown on the meter.
     const meter = screen.getByRole('region', { name: /progress/i });
-    expect(within(meter).getByText('The Complete Works')).toBeInTheDocument();
+    expect(
+      within(meter).getByText(crownName(activeTheme())),
+    ).toBeInTheDocument();
   });
 
   it('keeps Share available and working after the celebration is dismissed', async () => {
