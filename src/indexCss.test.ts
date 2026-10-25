@@ -454,6 +454,33 @@ describe('index.css reveal peach: sized to the card it heads', () => {
   });
 });
 
+/**
+ * The crown on the completion card's peach is a second drawing over the peach,
+ * in the peach's own box (CompletionOrnament). It has to arrive with the peach,
+ * not after it or apart from it.
+ */
+describe('index.css completion crown: it moves with the peach it sits on', () => {
+  test("it has the peach's box, so the two scale about one centre", () => {
+    const b = block('.crowned__crown');
+    expect(b).toMatch(/position:\s*absolute;/);
+    expect(b).toMatch(/top:\s*0;/);
+    expect(b).toMatch(/left:\s*0;/);
+    expect(b).toMatch(/width:\s*100%;/);
+    expect(b).toMatch(/aspect-ratio:\s*1;/);
+    // The crown stands above that box, as on the iPhone.
+    expect(b).toMatch(/overflow:\s*visible;/);
+    expect(block('.crowned')).toMatch(/width:\s*fit-content;/);
+  });
+
+  test("on the card it settles in with the peach's own entrance", () => {
+    const entrance = (sel: string) =>
+      block(sel).match(/animation:\s*([^;]+);/)?.[1];
+    expect(entrance('.edition .crowned__crown')).toBe(
+      entrance('.edition__ornament--peach'),
+    );
+  });
+});
+
 describe('index.css two-column breakpoint: the stylesheet and the meter agree', () => {
   /**
    * The tier meter is REPARENTED at this width, not repositioned: no stylesheet

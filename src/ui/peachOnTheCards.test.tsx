@@ -9,6 +9,7 @@ import type { GameData } from '@/data/gameData.ts';
 import { NullAudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage, type KeyValueStore } from '@/persistence/storage.ts';
 import { useDefinitions } from './useDefinitions.ts';
+import { copy } from './themeCopy.ts';
 import type { Theme } from './useTheme.ts';
 
 vi.mock('./useDefinitions.ts', () => ({
@@ -17,8 +18,9 @@ vi.mock('./useDefinitions.ts', () => ({
 
 /**
  * The cute peach at the game's two big moments, played through the game rather
- * than handed in as props: the reveal card when the eight-letter word is found.
- * It wears the costume of the board's own date, as the source mark does.
+ * than handed in as props: the reveal card when the eight-letter word is found,
+ * and the completion card, crowned, when the basket is full. Each wears the
+ * costume of the board's own date, as the source mark does.
  */
 const COMMON = ['serenade', 'sea', 'near', 'dean', 'eased', 'erase'];
 
@@ -138,5 +140,42 @@ describe('the peach on the reveal card', () => {
     expect(peach).toBeTruthy();
     expect(wearsGhost(peach)).toBe(false);
     expect(screen.queryByText(/The peach is/)).toBeNull();
+  });
+});
+
+/** Every common word, the source first and its reveal put away. */
+function fillTheBasket(theme: Theme) {
+  find('serenade');
+  fireEvent.click(
+    screen.getByRole('button', { name: copy(theme).revealClose }),
+  );
+  for (const word of COMMON.slice(1)) find(word);
+}
+
+describe("the crown on the completion card's peach", () => {
+  const card = () => document.querySelector('.edition')!;
+
+  it("sits on the ghost on 31 October's board", () => {
+    playOn(2026, 10, 31);
+    fillTheBasket('cute');
+    expect(wearsGhost(card().querySelector('.edition__ornament--peach'))).toBe(
+      true,
+    );
+    expect(card().querySelector('svg.crowned__crown')).toBeTruthy();
+  });
+
+  it('is worn by the plain peach on another day', () => {
+    playOn(2026, 10, 30);
+    fillTheBasket('cute');
+    expect(wearsGhost(card().querySelector('.edition__ornament--peach'))).toBe(
+      false,
+    );
+    expect(card().querySelector('svg.crowned__crown')).toBeTruthy();
+  });
+
+  it('is absent in letterpress', () => {
+    playOn(2026, 10, 31, 'letterpress');
+    fillTheBasket('letterpress');
+    expect(card().querySelector('svg')).toBeNull();
   });
 });

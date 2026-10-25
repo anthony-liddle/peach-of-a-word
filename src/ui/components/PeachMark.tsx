@@ -1,4 +1,5 @@
 import { COSTUMES, type CostumeId } from '../costumes.ts';
+import { CROWN, crownTransform } from '../crown.ts';
 import { peachParts, sourceMarkParts, type PeachPart } from '../peachArt.ts';
 
 /**
@@ -68,6 +69,36 @@ export function SourcePeach({
         ))}
       </g>
     </svg>
+  );
+}
+
+/**
+ * The completion card's peach, wearing the crown that gives the card its name,
+ * and a costume if it has one: the iPhone's `CompletionOrnament`. The crown is
+ * a second drawing laid over the peach, in the peach's own box, so the peach
+ * under it is the same PeachMark as everywhere else, and the crown stands where
+ * the iPhone stands it (crown.ts): on the head, above the box, in front of any
+ * costume. Both drawings are decorative.
+ */
+export function CompletionOrnament({
+  className,
+  costume,
+}: {
+  className: string;
+  costume: CostumeId | null;
+}) {
+  return (
+    <div className="crowned">
+      <PeachMark className={className} costume={costume} />
+      <svg
+        className="crowned__crown"
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path d={CROWN.d} fill={CROWN.fill} transform={crownTransform()} />
+      </svg>
+    </div>
   );
 }
 
