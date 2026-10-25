@@ -47,6 +47,19 @@
   padding: 1rem 1.5rem;
   box-shadow: 0 6px 0 var(--surface-shadow);
 }
+/* The crown stands above the peach's box, as on the card, where the card's
+   top padding gives it room. */
+.costumes__card--crowned {
+  padding-top: 1.2rem;
+}
+/* The reveal card's own width and padding, so its peach sizes as it does on
+   the card. */
+.costumes__reveal {
+  box-sizing: border-box;
+  width: min(30rem, 100vw - 2.4rem);
+  padding: clamp(1.5rem, 4vw, 2.4rem);
+  text-align: center;
+}
 .costumes__ornament {
   display: block;
   width: 3rem;
