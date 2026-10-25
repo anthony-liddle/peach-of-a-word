@@ -3,6 +3,8 @@
   // matchers replace jest-dom's wherever its types are loaded, so they are
   // checked here, apart from the tests under tsconfig.app.json.
   "extends": "./tsconfig.app.json",
-  "include": ["src/**/*.browser.test.ts"],
+  // vite-env.d.ts declares what Vite resolves, such as a stylesheet imported
+  // `?raw` to measure the page's own layout.
+  "include": ["src/**/*.browser.test.ts", "src/vite-env.d.ts"],
   "exclude": []
 }
