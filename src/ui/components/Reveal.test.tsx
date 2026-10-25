@@ -419,3 +419,71 @@ describe('the peach on the crown card', () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("the card's way out, pinned to its foot", () => {
+  // The iPhone pins the button in CardWayOut, so it is on screen when the card
+  // opens at any length. jsdom has no layout, so this holds the structure the
+  // stylesheet pins: the button alone in a bar that ends the card, with the
+  // credit above it, scrolling with the text it credits. The 626-crown count
+  // in a real browser is in the PR.
+  const cards = [
+    {
+      name: 'a crown card in cute',
+      el: (
+        <Reveal
+          register="crown"
+          theme="cute"
+          word="serenade"
+          entry={ENTRY}
+          onClose={() => {}}
+        />
+      ),
+    },
+    {
+      name: 'a crown card in letterpress',
+      el: (
+        <Reveal
+          register="crown"
+          theme="letterpress"
+          word="serenade"
+          entry={ENTRY}
+          onClose={() => {}}
+        />
+      ),
+    },
+    {
+      name: "a found word's card",
+      el: (
+        <Reveal
+          register="quiet"
+          theme="letterpress"
+          word="sea"
+          category="set"
+          status="ready"
+          definition="noun. a body of salt water."
+          onClose={() => {}}
+        />
+      ),
+    },
+  ];
+
+  for (const { name, el } of cards) {
+    it(`ends ${name} with the button alone in its bar`, () => {
+      render(el);
+      const card = screen.getByRole('dialog');
+      const bar = card.lastElementChild!;
+      expect(bar.classList.contains('reveal__way-out')).toBe(true);
+      expect(bar.children).toHaveLength(1);
+      expect(bar.firstElementChild).toBe(screen.getByRole('button'));
+    });
+  }
+
+  it('keeps the credit above the bar, with the text it credits', () => {
+    render(cards[0]!.el);
+    const credit = screen.getByText(/Wiktionary, CC BY-SA 4\.0/);
+    const bar = screen.getByRole('dialog').querySelector('.reveal__way-out')!;
+    expect(
+      credit.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+});

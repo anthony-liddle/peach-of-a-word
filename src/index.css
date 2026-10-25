@@ -1609,7 +1609,9 @@ button {
     0 0 0 6px var(--paper),
     0 0 0 7px var(--crown-deep),
     0 24px 50px rgba(0, 0, 0, 0.4);
-  padding: clamp(1.5rem, 4vw, 2.4rem);
+  /* One value, so the pinned way out below can take it as its own. */
+  --reveal-pad: clamp(1.5rem, 4vw, 2.4rem);
+  padding: var(--reveal-pad);
   text-align: center;
   animation: press 0.45s var(--ease);
   /* A long entry (a big word plus a long etymology) can be taller than a short
@@ -1692,6 +1694,22 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+/* The way out, pinned to the card's foot as the iPhone pins it (CardWayOut).
+   The card stays its own scroll container and the bar is sticky inside it, so
+   the text scrolls under the bar and the button is on screen when the card
+   opens, at any length and any text size. The bar takes the card's padding as
+   its own at the sides and the foot, so it sits flush with the card's edge,
+   and it is opaque, so text scrolling under it never shows through. */
+.reveal__way-out {
+  position: sticky;
+  bottom: calc(-1 * var(--reveal-pad));
+  margin: 1rem calc(-1 * var(--reveal-pad)) calc(-1 * var(--reveal-pad));
+  padding: 0.8rem var(--reveal-pad) var(--reveal-pad);
+  background: var(--paper);
+}
+.reveal__way-out .reveal__close {
+  margin-top: 0;
 }
 .reveal__attribution {
   margin-top: 1rem;

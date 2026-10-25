@@ -459,6 +459,31 @@ describe('index.css reveal peach: sized to the card it heads', () => {
  * in the peach's own box (CompletionOrnament). It has to arrive with the peach,
  * not after it or apart from it.
  */
+/**
+ * The reveal card's way out, pinned to the card's foot as the iPhone pins it
+ * (CardWayOut). The card stays its own scroll container, so the bar is sticky
+ * inside it: the text scrolls under the bar and the button is on screen when
+ * the card opens. The bar takes the card's padding as its own at the sides and
+ * the foot, so it sits flush and nothing shows past it.
+ */
+describe("index.css reveal way out: pinned to the card's foot", () => {
+  test("the card's padding is one value the bar can mirror", () => {
+    const b = block('.reveal');
+    expect(b).toMatch(/--reveal-pad:\s*clamp\(1\.5rem, 4vw, 2\.4rem\);/);
+    expect(b).toMatch(/padding:\s*var\(--reveal-pad\);/);
+  });
+
+  test('the bar sticks to the foot, flush, and is opaque', () => {
+    const b = block('.reveal__way-out');
+    expect(b).toMatch(/position:\s*sticky;/);
+    expect(b).toMatch(/bottom:\s*calc\(-1 \* var\(--reveal-pad\)\);/);
+    expect(b).toMatch(
+      /margin:\s*[\d.]+rem calc\(-1 \* var\(--reveal-pad\)\) calc\(-1 \* var\(--reveal-pad\)\);/,
+    );
+    expect(b).toMatch(/background:\s*var\(--paper\);/);
+  });
+});
+
 describe('index.css completion crown: it moves with the peach it sits on', () => {
   test("it has the peach's box, so the two scale about one centre", () => {
     const b = block('.crowned__crown');
