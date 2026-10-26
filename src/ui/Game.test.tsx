@@ -1641,10 +1641,78 @@ describe('Game Mythic glint', () => {
     renderGame();
     findWord('denar');
     expect(glints().length).toBeGreaterThan(0);
-    // Every glint is on denar's chip; the rest of the list has none.
+    // Every glint is on denar's chip or on its line in the well; the rest of
+    // the list has none.
     for (const g of glints()) {
-      expect(g.closest('.found__word')?.textContent).toContain('denar');
+      expect(
+        (g.closest('.found__word') ?? g.closest('.stick'))?.textContent,
+      ).toContain('denar');
     }
+  });
+
+  // The well's line leads with the same mark, and it glints with the list's:
+  // the same glint, from the same find, at the same time.
+  const wellGlint = () => document.querySelector('.stick .mark__glint');
+
+  it("glints the well's mark with the list's", () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    expect(wellGlint()?.closest('.mark')).toHaveClass('mark--mythic');
+    expect(document.querySelector('.found .mark__glint')).toBeTruthy();
+    act(() => {
+      vi.advanceTimersByTime(GLINT_MS);
+    });
+    expect(wellGlint()).toBeNull();
+  });
+
+  it("glints only the well's line for the find just made", () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    expect(wellGlint()).toBeTruthy();
+    // Still inside denar's glint: a rejection, a basket word and a Rare
+    // find, each with its own line, and none of them glints.
+    findWord('red'); // not in this board's list
+    expect(document.querySelector('.stick')).toHaveAttribute(
+      'data-tone',
+      'error',
+    );
+    expect(wellGlint()).toBeNull();
+    findWord('sea');
+    expect(wellGlint()).toBeNull();
+    findWord('sneer');
+    expect(document.querySelector('.stick .mark--rare')).toBeTruthy();
+    expect(wellGlint()).toBeNull();
+  });
+
+  it("does not glint the well's line again when it is redrawn", () => {
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    const first = wellGlint();
+    expect(first).toBeTruthy();
+    // A redraw of the same line keeps the same glint, never a new one, so
+    // its sweep is not started again.
+    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    expect(wellGlint()).toBe(first);
+  });
+
+  it("does not glint the well's mark under reduced motion", () => {
+    (window as { matchMedia?: unknown }).matchMedia = vi.fn(
+      (query: string) => ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }),
+    );
+    document.documentElement.dataset.theme = 'cute';
+    renderGame();
+    findWord('denar');
+    expect(document.querySelector('.stick .mark--mythic')).toBeTruthy();
+    expect(wellGlint()).toBeNull();
   });
 
   it('is gone after one sweep', () => {

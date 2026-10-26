@@ -221,7 +221,7 @@ export function Game({ data, audio, storage }: Props) {
           {!wide && (
             <TierMeter tier={state.tier} theme={theme} streak={game.streak} />
           )}
-          <ComposingStick game={game} />
+          <ComposingStick game={game} glint={glinting} />
           <TypeCase game={game} />
           <Controls game={game} />
         </div>

@@ -49,7 +49,7 @@ export type MessageBody =
   // Any other find: `tel, 5 points`, led by its rarity's mark when it has one.
   // The same form in both themes and in the app, so it is settled at find
   // time like a plain line; only the mark's drawing follows the theme.
-  | { readonly kind: 'find'; readonly line: WellLine };
+  | { readonly kind: 'find'; readonly word: string; readonly line: WellLine };
 
 export interface Message {
   readonly body: MessageBody;
@@ -368,7 +368,7 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
 
       const messageBody: MessageBody = result.isSourceWord
         ? { kind: 'source-found' }
-        : { kind: 'find', line };
+        : { kind: 'find', word: result.word, line };
 
       return {
         ...slice,
