@@ -16,22 +16,31 @@ import type { TextSize } from './useTextSize.ts';
 import type { Theme } from './useTheme.ts';
 
 /**
- * A Mythic find's line in the well, `❖ reseaus, 15 points`, at a phone's
- * width and every text size, in both themes: the well keeps its height, the
- * words are not clamped, and the mark stays on the line it leads.
+ * A find's line in the well, led by its mark, at a phone's width and every
+ * text size, in both themes: the well keeps its height, the words are not
+ * clamped, and the mark stays on the line it leads.
  *
  * jsdom has no layout, so this is measured in a real browser with the game's
  * own stylesheet. Its fonts are the browser's fallbacks rather than the web
  * fonts the page loads, so the pictures in the pull request are the check on
- * the faces themselves. RESEAUS, seven letters and fifteen points, is the
- * longest find line 21 October's board can make; RES the shortest.
+ * the faces themselves.
+ *
+ * On 21 October's board: `erasures, 16 points`, Uncommon, is its longest find
+ * line, and as long as any can be, since an eight-letter Mythic is 19
+ * characters too. RESEAUS, fifteen points, is its longest Mythic line, and
+ * RES its shortest.
  */
 const COMMON = ['reassure', 'sure', 'ease'];
 const MYTHIC = ['reseaus', 'res'];
+const UNCOMMON = ['erasures'];
+const FINDS = [
+  ...MYTHIC.map((word) => ({ word, rung: 'mythic' })),
+  ...UNCOMMON.map((word) => ({ word, rung: 'uncommon' })),
+];
 
 function fakeData(): GameData {
   return {
-    dictionary: createListDictionary([...COMMON, ...MYTHIC]),
+    dictionary: createListDictionary([...COMMON, ...MYTHIC, ...UNCOMMON]),
     commonPool: createListWordSource(COMMON),
     beyond70Pool: createListWordSource(MYTHIC),
     beyond95Pool: createListWordSource(MYTHIC),
@@ -93,11 +102,11 @@ async function until<T>(read: () => T | null | undefined): Promise<T> {
   throw new Error('timed out');
 }
 
-describe("a Mythic find's line in the well, at a phone's width", () => {
+describe("a find's line in the well, at a phone's width", () => {
   for (const width of [320, 375]) {
     for (const theme of ['cute', 'letterpress'] as const) {
       for (const textSize of ['regular', 'large', 'largest'] as const) {
-        for (const word of MYTHIC) {
+        for (const { word, rung } of FINDS) {
           test(`${width}px, ${theme}, ${textSize} text, ${word}: the well keeps its height and the line its words`, async () => {
             await page.viewport(width, 800);
             mountGame(theme, textSize);
@@ -108,7 +117,7 @@ describe("a Mythic find's line in the well, at a phone's width", () => {
 
             await userEvent.keyboard(`${word}{Enter}`);
             const mark = await until(() =>
-              stick.querySelector<HTMLElement>('.mark--mythic'),
+              stick.querySelector<HTMLElement>(`.mark--${rung}`),
             );
             const message = stick.querySelector<HTMLElement>('.message')!;
             const after = stick.getBoundingClientRect().height;
