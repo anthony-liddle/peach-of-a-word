@@ -600,7 +600,12 @@ button {
 }
 @media (min-width: 51.25em) {
   .board {
-    grid-template-columns: 1.4fr 1fr;
+    /* The glossary is the column that gives way, as at a phone's width: its
+       minimum is zero, so its note shortens and its text wraps. The play
+       column keeps its automatic minimum, so it grows to hold the rack. With
+       a bare 1fr the glossary could not shrink below a full basket's caption,
+       and at the larger text sizes the two columns ran past the board. */
+    grid-template-columns: 1.4fr minmax(0, 1fr);
     align-items: start;
   }
   /* The glossary's cell also holds the completion card, laid over the
@@ -754,6 +759,22 @@ button {
 @media (min-width: 64em) {
   .sort {
     font-size: clamp(1.75rem, 7vw, 2.75rem);
+  }
+}
+/* Two-column widths: what the rack needs, said once, for every engine. Only
+   there can the play column grow to hold it (the board's query). A tile's own
+   minimum comes from its 3:4 shape and its letter, and each engine made
+   something different of that: Chromium grew the play column for it, WebKit
+   kept the column and let the tiles run out into the glossary, and Firefox
+   let the glossary squeeze them. The widest letter, letterpress's m, is
+   0.94em, so 1.1em leaves it a margin. 1.2em would leave more, but at the
+   largest text it narrows the glossary until the completion card's title runs
+   past the card's edge; at 1.1em the title fits. At the regular size the
+   column's share already gives a tile more than this, so the floor only acts
+   as the letters grow. */
+@media (min-width: 51.25em) {
+  .sort {
+    min-width: 1.1em;
   }
 }
 .sort:active:not(:disabled) {
