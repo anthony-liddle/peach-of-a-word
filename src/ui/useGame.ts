@@ -22,12 +22,8 @@ import {
   type Puzzle,
   type TierStanding,
 } from '@/engine/index.ts';
-import { RUNG_NAMES } from './rarity.ts';
-import {
-  copy,
-  sourceFoundAnnouncement,
-  sourceFoundMessage,
-} from './themeCopy.ts';
+import { sourceFoundAnnouncement, sourceFoundMessage } from './themeCopy.ts';
+import { findLine, type WellLine } from './wellLine.ts';
 import type { Theme } from './useTheme.ts';
 import type { GameData } from '@/data/gameData.ts';
 import type { SourceEntry } from '@/data/types.ts';
@@ -50,10 +46,10 @@ export interface Tile {
 export type MessageBody =
   | { readonly kind: 'plain'; readonly text: string }
   | { readonly kind: 'source-found' }
-  // A find inside the set. The word is structure, the framing is a skin, so the
-  // reducer records which word landed and the view says it in the active
-  // theme's vocabulary. Resolving here would freeze it at find time.
-  | { readonly kind: 'set-found'; readonly word: string };
+  // Any other find: `tel, 5 points`, led by its rarity's mark when it has one.
+  // The same form in both themes and in the app, so it is settled at find
+  // time like a plain line; only the mark's drawing follows the theme.
+  | { readonly kind: 'find'; readonly line: WellLine };
 
 export interface Message {
   readonly body: MessageBody;
@@ -94,7 +90,7 @@ export interface Glint {
 export function messageText(message: Message, theme: Theme): string {
   const { body } = message;
   if (body.kind === 'plain') return body.text;
-  if (body.kind === 'set-found') return copy(theme).setFind(body.word);
+  if (body.kind === 'find') return body.line.shown;
   return sourceFoundMessage(theme);
 }
 
@@ -355,7 +351,7 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
         slice.tier.setFound < slice.tier.setTotal &&
         tier.setFound >= tier.setTotal;
 
-      const points = `${result.score} ${result.score === 1 ? 'point' : 'points'}`;
+      const line = findLine(result.word, result.score, result.rung);
       // Rank name is theme-skinned in the view; the spoken cue stays generic.
       // The crown name is theme-skinned in the view; the spoken cue stays
       // generic, like the tier-up cue. Completion is the word-count peak.
@@ -364,26 +360,15 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
         : tier.index > slice.tier.index
           ? ' New rank.'
           : '';
-      // The screen reader hears the rung on every off-page find ("Rare find: ...").
+      // The screen reader hears the rung on every off-page find ("Rare find:
+      // ..."), where the eye sees its mark. One `WellLine` for both.
       const announceBody: AnnouncementBody = result.isSourceWord
         ? { kind: 'source-found', word: result.word, tail }
-        : {
-            kind: 'plain',
-            text:
-              (result.rung === 'set'
-                ? `${result.word}, ${points}.`
-                : `${RUNG_NAMES[result.rung]} find: ${result.word}, ${points}.`) +
-              tail,
-          };
+        : { kind: 'plain', text: line.spoken + tail };
 
       const messageBody: MessageBody = result.isSourceWord
         ? { kind: 'source-found' }
-        : result.rung === 'set'
-          ? { kind: 'set-found', word: result.word }
-          : {
-              kind: 'plain',
-              text: `${result.word}, ${RUNG_NAMES[result.rung].toLowerCase()} find.`,
-            };
+        : { kind: 'find', line };
 
       return {
         ...slice,

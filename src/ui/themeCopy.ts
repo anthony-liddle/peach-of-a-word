@@ -154,8 +154,6 @@ export interface ThemeCopy {
   readonly typeCredit: string;
   /** The completion card's one line. */
   readonly completionLine: string;
-  /** Visible feedback for a find inside the set. */
-  readonly setFind: (word: string) => string;
 }
 
 export const THEME_COPY: Record<Theme, ThemeCopy> = {
@@ -175,7 +173,6 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     ladderPeak: 'Top rank. The full set is the peak.',
     typeCredit: 'Set in Fraunces and Spectral.',
     completionLine: 'Every common word the rack can spell, found.',
-    setFind: (word) => `${word}, in the set.`,
   },
   cute: {
     mastheadSubline: 'Pick the peaches',
@@ -195,7 +192,6 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     ladderPeak: `Top rank. The full ${BASKET} is the peak.`,
     typeCredit: 'Written in Fredoka and Nunito.',
     completionLine: 'Every common word these letters can grow, picked.',
-    setFind: (word) => `${word}, in the ${BASKET}.`,
   },
 };
 

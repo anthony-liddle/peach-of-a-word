@@ -1,6 +1,7 @@
 import { messageText, type PlayApi } from '../useGame.ts';
 import { useTheme } from '../useTheme.ts';
 import { copy } from '../themeCopy.ts';
+import { Mark } from './Mark.tsx';
 
 /**
  * The stick: the letters placed so far, in order, **and the feedback message**.
@@ -30,6 +31,12 @@ import { copy } from '../themeCopy.ts';
  * letter lands. That was already true of this element and it stays true: the
  * message is clamped rather than allowed to grow the well, because a well that
  * grows breaks the one promise the whole arrangement rests on.
+ *
+ * **An Uncommon, Rare or Mythic find leads with its rarity's mark,** the found
+ * list's own, in the active theme's drawing: `❖ tel, 5 points`. Beside the
+ * text rather than inside it, so it stays with the word when the line wraps,
+ * and outside the clamp's `overflow: hidden`, which would cut the Mythic
+ * glint's halo. The app's well is built the same way.
  */
 export function ComposingStick({ game }: { game: PlayApi }) {
   const { state, composedWord } = game;
@@ -43,6 +50,12 @@ export function ComposingStick({ game }: { game: PlayApi }) {
             {letter}
           </span>
         ))
+      ) : state.message?.body.kind === 'find' &&
+        state.message.body.line.mark ? (
+        <div className="message__line" aria-hidden="true">
+          <Mark category={state.message.body.line.mark} costume={null} />
+          <p className="message">{messageText(state.message, theme)}</p>
+        </div>
       ) : state.message ? (
         <p className="message" aria-hidden="true">
           {messageText(state.message, theme)}

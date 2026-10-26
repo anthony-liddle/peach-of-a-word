@@ -826,6 +826,80 @@ describe('Game edition complete', () => {
   });
 });
 
+// Every find but the source word reads `word, N points` in the well, in both
+// themes and in the app, led by its rarity's mark when it has one: the found
+// list's own mark, in the theme's drawing. A screen reader hears the rarity in
+// words instead, since a mark read aloud says nothing.
+describe("Game the well's line", () => {
+  const stick = () => document.querySelector('.stick') as HTMLElement;
+  const find = (word: string) => {
+    type(word);
+    fireEvent.keyDown(window, { key: 'Enter' });
+  };
+
+  it.each([
+    ['sane', 'uncommon', 'sane, 4 points'],
+    ['sneer', 'rare', 'sneer, 7 points'],
+    ['denar', 'mythic', 'denar, 9 points'],
+  ] as const)('leads %s, a %s find, with its mark', (word, rung, shown) => {
+    renderGame();
+    find(word);
+    const marks = stick().querySelectorAll('.mark');
+    expect(marks).toHaveLength(1);
+    expect(marks[0]).toHaveClass(`mark--${rung}`);
+    expect(stick().querySelector('.message')!.textContent).toBe(shown);
+    // The mark first, then the words: nothing stands between them.
+    const line = marks[0]!.parentElement!;
+    expect(line.firstElementChild).toBe(marks[0]);
+    expect(line.textContent).toBe(shown);
+  });
+
+  it.each(['letterpress', 'cute'] as const)(
+    'gives a word in the basket no mark, and one form, in %s',
+    (theme) => {
+      document.documentElement.dataset.theme = theme;
+      renderGame();
+      find('sea');
+      expect(stick().querySelector('.mark')).toBeNull();
+      expect(stick().querySelector('.message')!.textContent).toBe(
+        'sea, 1 point',
+      );
+    },
+  );
+
+  it('draws each theme its own mark for the same find', () => {
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    find('denar');
+    expect(stick().querySelector('.mark--mythic')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    // The same element; the stylesheet draws a pressmark in letterpress and
+    // the gem in cute.
+    expect(stick().querySelector('.mark--mythic')).toBeTruthy();
+    expect(stick().querySelector('.message')!.textContent).toBe(
+      'denar, 9 points',
+    );
+  });
+
+  it.each([
+    ['sane', 'Uncommon find: sane, 4 points.'],
+    ['sneer', 'Rare find: sneer, 7 points.'],
+    ['denar', 'Mythic find: denar, 9 points.'],
+    ['sea', 'sea, 1 point.'],
+  ] as const)('announces %s with its rarity in words', (word, spoken) => {
+    renderGame();
+    find(word);
+    const status = screen.getByRole('status').textContent ?? '';
+    // A rank or completion cue may follow; the find itself leads.
+    expect(status.startsWith(spoken)).toBe(true);
+    // The line on screen is hidden from the reader, mark and all, so the
+    // find is heard once, in words.
+    expect(
+      stick().querySelector('.message')!.closest('[aria-hidden="true"]'),
+    ).toBeTruthy();
+  });
+});
+
 // Finding the source word is the game's biggest beat, so its celebration is
 // theme-skinned like the rank and crown names: classic keeps the plain line,
 // cute makes the game's own joke on its own name. State holds the fact of the
@@ -869,22 +943,6 @@ describe('Game source-word celebration', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
     expect(message().textContent).toBe('You found the source word.');
-  });
-
-  it('re-skins an ordinary set find live, the same as the source word does', () => {
-    // This one passes through the reducer, so it is the case that breaks if a
-    // string is resolved at find time instead of in the view.
-    document.documentElement.dataset.theme = 'letterpress';
-    renderGame();
-    type('sea');
-    fireEvent.keyDown(window, { key: 'Enter' });
-    expect(message().textContent).toBe('sea, in the set.');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
-    expect(message().textContent).toBe('sea, in the basket.');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
-    expect(message().textContent).toBe('sea, in the set.');
   });
 
   it('re-skins the whole board live, with nothing frozen from before the switch', () => {

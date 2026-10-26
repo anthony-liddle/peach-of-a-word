@@ -10,7 +10,7 @@ import { COSTUMES, type CostumeId } from '../costumes.ts';
 import type { Glint } from '../useGame.ts';
 import { copy } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
-import { SourcePeach } from './PeachMark.tsx';
+import { Mark, type MarkCategory } from './Mark.tsx';
 import { TierMeter } from './TierMeter.tsx';
 
 interface Props {
@@ -66,7 +66,7 @@ interface Props {
   glint?: Glint | null;
 }
 
-type Category = 'source' | 'set' | LadderRung;
+type Category = MarkCategory;
 
 interface Word {
   word: string;
@@ -459,30 +459,5 @@ export function FoundList({
         </div>
       )}
     </section>
-  );
-}
-
-/**
- * A word's mark. The stylesheet draws every mark, the source word's peach
- * included, except on a board where the peach wears a costume: that one is
- * drawn here, the source mark's own peach with the costume on it.
- */
-function Mark({
-  category,
-  costume,
-  glint = null,
-}: {
-  category: Category;
-  costume: CostumeId | null;
-  /** The glint's count, when this mark glints: a new count is a new sweep. */
-  glint?: number | null;
-}) {
-  if (category === 'source' && costume) {
-    return <SourcePeach className="mark mark--source-worn" costume={costume} />;
-  }
-  return (
-    <span className={`mark mark--${category}`} aria-hidden="true">
-      {glint !== null && <span key={glint} className="mark__glint" />}
-    </span>
   );
 }
