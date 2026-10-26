@@ -798,6 +798,27 @@ describe('Game edition complete', () => {
 
     scrollIntoView.mockRestore();
   });
+
+  // Moved, like the meter, by a JS media query, so exactly one card in each
+  // layout. Where it lands on the screen is measured in a real browser, in
+  // completionCard.browser.test.ts.
+  it("at two-column widths opens the one card in the glossary's column", () => {
+    setViewportWidth(DESKTOP_WIDTH);
+    renderGame();
+    completeTheSet();
+    const cards = document.querySelectorAll('.edition');
+    expect(cards).toHaveLength(1);
+    expect(cards[0]!.parentElement).toBe(document.querySelector('.board'));
+  });
+
+  it('at narrow widths keeps the one card off the board, over the page', () => {
+    setViewportWidth(PHONE_WIDTH);
+    renderGame();
+    completeTheSet();
+    const cards = document.querySelectorAll('.edition');
+    expect(cards).toHaveLength(1);
+    expect(cards[0]!.parentElement).toBe(document.querySelector('.app'));
+  });
 });
 
 // Finding the source word is the game's biggest beat, so its celebration is

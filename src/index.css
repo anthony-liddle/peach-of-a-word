@@ -603,6 +603,14 @@ button {
     grid-template-columns: 1.4fr 1fr;
     align-items: start;
   }
+  /* The glossary's cell also holds the completion card, laid over the
+     glossary's top (Game moves the card into the board at these widths).
+     Both are placed, since an auto-placed glossary would step down a row to
+     make way for the card. */
+  .board > .found,
+  .board > .edition {
+    grid-area: 1 / 2;
+  }
 }
 
 .play {
@@ -1836,7 +1844,9 @@ button {
 
 /* ---- Edition Complete (the win state) ----------------------------------- */
 /* A sibling to the reveal, but ink and oxblood, ornamental, and non-blocking:
-   no backdrop, fixed near the top, so the board below stays live. */
+   no backdrop, near the top, so the board below stays live. Fixed over a
+   phone's one column; at two-column widths, over the glossary's column
+   (below). */
 /* The cute Edition Complete confetti: a full-viewport canvas above the card,
    never intercepting taps so the card's button stays reachable. Drawing and
    teardown live in the Confetti component; this only places the overlay. */
@@ -1864,6 +1874,18 @@ button {
   padding: 1.2rem 1.5rem 1.4rem;
   text-align: center;
   animation: drop 0.5s var(--ease);
+}
+/* At two-column widths the card sits over the top of the glossary's column,
+   in its grid cell (the board's query places it), so it never covers the well
+   or the rack, where play goes on. It takes the column's width, and once the
+   page scrolls it sticks under the top of the screen for as long as the
+   column runs. The centring goes, from the place and from the entrance. */
+.board > .edition {
+  position: sticky;
+  left: auto; /* on a sticky box, an inset is a place to stick */
+  width: auto;
+  transform: none;
+  animation-name: drop-in-place;
 }
 .edition__ornament {
   font-size: 1.7rem;
@@ -1954,6 +1976,16 @@ button {
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+@keyframes drop-in-place {
+  from {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

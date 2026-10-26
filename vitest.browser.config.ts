@@ -19,6 +19,11 @@ export default defineConfig({
       '@': resolve(import.meta.dirname, './src'),
     },
   },
+  // Found late, once a test renders the whole game, Vite reloaded the page
+  // mid-run to optimise it. CI starts with no cache, so it is named up front.
+  optimizeDeps: {
+    include: ['@vercel/analytics/react'],
+  },
   test: {
     include: ['src/**/*.browser.test.ts'],
     // Each browser logs the largest difference it found, passing or not
