@@ -114,11 +114,10 @@ describe('theme-skinned vocabulary', () => {
     expect(lp.completionLine).toBe(
       'Every common word the rack can spell, found.',
     );
-    expect(lp.setFind('sea')).toBe('sea, in the set.');
     expect(lp.loadingLine).toBe('Setting the type.');
   });
 
-  it('gives cute its own vocabulary for the same fourteen strings', () => {
+  it('gives cute its own vocabulary for the same thirteen strings', () => {
     expect(cute.mastheadSubline).toBe('Pick the peaches');
     expect(cute.submitWord).toBe('Pick word');
     expect(cute.inputPlaceholder).toBe('Pick letters to make a word');
@@ -135,7 +134,6 @@ describe('theme-skinned vocabulary', () => {
     expect(cute.completionLine).toBe(
       'Every common word these letters can grow, picked.',
     );
-    expect(cute.setFind('sea')).toBe('sea, in the basket.');
     expect(cute.loadingLine).toBe('Picking the peaches.');
   });
 
@@ -159,7 +157,7 @@ describe('theme-skinned vocabulary', () => {
   });
 
   it('spells the container noun one way everywhere it appears', () => {
-    // Six strings share it, so swapping basket for crate has to be one edit.
+    // Five strings share it, so swapping basket for crate has to be one edit.
     const noun = cute.onPageLabel.toLowerCase();
     const carriers = [
       cute.emptyGlossary,
@@ -167,10 +165,9 @@ describe('theme-skinned vocabulary', () => {
       cute.revealClose,
       cute.keyOnPage,
       cute.ladderPeak,
-      cute.setFind('sea'),
     ];
     for (const s of carriers) expect(s.toLowerCase()).toContain(noun);
-    expect(carriers).toHaveLength(6);
+    expect(carriers).toHaveLength(5);
   });
 });
 
@@ -198,8 +195,6 @@ describe('the vocabulary lives only in the copy module', () => {
     'Back to the case',
     'Back to the basket',
     'The glossary',
-    'in the set.',
-    'in the basket.',
     'is the peak.',
     'Set in Fraunces',
     'Written in Fredoka',

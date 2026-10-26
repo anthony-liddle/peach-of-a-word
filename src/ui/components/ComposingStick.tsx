@@ -1,6 +1,7 @@
-import { messageText, type PlayApi } from '../useGame.ts';
+import { messageText, type Glint, type PlayApi } from '../useGame.ts';
 import { useTheme } from '../useTheme.ts';
 import { copy } from '../themeCopy.ts';
+import { Mark } from './Mark.tsx';
 
 /**
  * The stick: the letters placed so far, in order, **and the feedback message**.
@@ -30,11 +31,36 @@ import { copy } from '../themeCopy.ts';
  * letter lands. That was already true of this element and it stays true: the
  * message is clamped rather than allowed to grow the well, because a well that
  * grows breaks the one promise the whole arrangement rests on.
+ *
+ * **An Uncommon, Rare or Mythic find leads with its rarity's mark,** the found
+ * list's own, in the active theme's drawing: `❖ tel, 5 points`. Beside the
+ * text rather than inside it, so it stays with the word when the line wraps,
+ * and outside the clamp's `overflow: hidden`, which would cut the Mythic
+ * glint's halo. The app's well is built the same way.
+ *
+ * **A Mythic find's mark glints with the list's,** and only on the line of the
+ * find that set the glint. `Game` keeps the glint a moment past its sweep, and
+ * a Rare find made inside that moment draws its own mark here, freshly, which a
+ * glint passed on whole would play over.
  */
-export function ComposingStick({ game }: { game: PlayApi }) {
+export function ComposingStick({
+  game,
+  glint = null,
+}: {
+  game: PlayApi;
+  /** A Mythic find to glint, from `Game`: null whenever nothing should. */
+  glint?: Glint | null;
+}) {
   const { state, composedWord } = game;
   const [theme] = useTheme();
   const empty = composedWord.length === 0;
+  const body = state.message?.body;
+  const glintSeq =
+    body?.kind === 'find' &&
+    body.line.mark === 'mythic' &&
+    glint?.word === body.word
+      ? glint.seq
+      : null;
   return (
     <div className="stick" data-tone={state.message?.tone ?? 'info'}>
       {!empty ? (
@@ -43,6 +69,16 @@ export function ComposingStick({ game }: { game: PlayApi }) {
             {letter}
           </span>
         ))
+      ) : state.message?.body.kind === 'find' &&
+        state.message.body.line.mark ? (
+        <div className="message__line" aria-hidden="true">
+          <Mark
+            category={state.message.body.line.mark}
+            costume={null}
+            glint={glintSeq}
+          />
+          <p className="message">{messageText(state.message, theme)}</p>
+        </div>
       ) : state.message ? (
         <p className="message" aria-hidden="true">
           {messageText(state.message, theme)}

@@ -956,6 +956,24 @@ button {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* A find's line led by its rarity's mark: the mark, then the text in its own
+   column, so a wrapped line keeps the word against its mark. Sized as the
+   message is, since every mark is drawn in em; first baseline, so the mark sits
+   on the line it leads; the text starts at its mark rather than centring away
+   from it. The message keeps its clamp; the mark stays outside it. */
+.message__line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: 0.4rem;
+  font-size: 0.875rem;
+}
+.message__line .message {
+  padding-inline: 0;
+  text-align: start;
+}
 /* The tone is on the stick now, not on the message: the stick already read it
    for the error nudge, and one attribute driving both keeps the shake and the
    ink from ever disagreeing about whether a rejection happened. */
