@@ -98,6 +98,21 @@ describe('How the Words Work popup', () => {
     expect(document.activeElement).toBe(trigger());
   });
 
+  it('keeps its Escape from the page, so a word in the well stays', () => {
+    renderGame();
+    'se'.split('').forEach((ch) => fireEvent.keyDown(window, { key: ch }));
+    openPopup();
+    const reached: string[] = [];
+    const heard = (e: KeyboardEvent) => reached.push(e.key);
+    window.addEventListener('keydown', heard);
+    fireEvent.keyDown(popup() as HTMLElement, { key: 'Escape' });
+    window.removeEventListener('keydown', heard);
+    expect(popup()).not.toBeInTheDocument();
+    expect(reached).not.toContain('Escape');
+    const slots = [...document.querySelectorAll('.stick__slot')];
+    expect(slots.map((s) => s.textContent)).toEqual(['s', 'e']);
+  });
+
   it('closes via an outside click and returns focus to the trigger', () => {
     renderGame();
     openPopup();
