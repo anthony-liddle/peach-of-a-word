@@ -13,6 +13,12 @@ import {
 } from '@/engine/index.ts';
 import type { SourceEntry } from '@/data/types.ts';
 import type { Dictionary, WordSource } from '@/engine/types.ts';
+import {
+  parseTrades,
+  tradeProblems,
+  undoTrades,
+  type CalendarTrade,
+} from './lib/calendar-trades.ts';
 import { parseExclusions } from './lib/exclusions.ts';
 import { parseReasonedWords } from './lib/denylist.ts';
 import { loadPatchedPools } from './lib/pools.ts';
@@ -213,11 +219,23 @@ describe('the culled, regenerated calendar', () => {
     expect(committed.words).toHaveLength(626);
     // No duplicate introduced, so no two dates resolve to the same puzzle.
     // The swaps happened in place at 544 days; the calendar has since been
-    // appended to, and appending cannot disturb an index before it.
+    // appended to, and appending cannot disturb an index before it. Recorded
+    // trades of future days have since moved some words, sunlight among them,
+    // so each index is read from the calendar with the trades undone.
     expect(new Set(committed.words).size).toBe(626);
+    const asBuilt = undoTrades(
+      committed.words,
+      parseTrades(
+        readFileSync(
+          join(import.meta.dirname, 'data-raw', 'calendar-trades.tsv'),
+          'utf8',
+        ),
+      ),
+      { year: 2026, month: 6, day: 23 },
+    );
 
     for (const [index, removed, added] of swaps) {
-      expect(committed.words[index]).toBe(added);
+      expect(asBuilt[index]).toBe(added);
       expect(committed.words).not.toContain(removed);
       // The outgoing word is culled from the crown pool, so a regeneration
       // cannot reintroduce it; it stays a valid, scorable find.
@@ -249,58 +267,192 @@ describe('the culled, regenerated calendar', () => {
   });
 });
 
-describe('the one trade of two future days', () => {
-  // Antoine's amendment to the append-only rule, 2026-10-20: 31 October 2026
-  // and 17 May 2027 trade words, so the peach's Halloween board is skeleton.
-  // A trade re-dates those two days and no other. These pin that, and the
-  // Swift app pins the same file hash in DailySequencePinTests.
+describe('the recorded trades of future days', () => {
+  // Antoine's amendment to the append-only rule: one trade on 2026-10-20, so
+  // the peach's Halloween board is skeleton, then on 2026-10-27 a year of
+  // holiday words, and the words held back for next year moved past it. A
+  // trade re-dates its two days and no other. The Swift app pins the same file
+  // hash in CalendarTradeTests, so the two copies cannot drift apart.
   const raw = readFileSync(join(DATA, 'daily-calendar.json'), 'utf8');
   const committed = JSON.parse(raw) as {
     epoch: { year: number; month: number; day: number };
     words: string[];
   };
+  const trades = parseTrades(
+    readFileSync(
+      join(import.meta.dirname, 'data-raw', 'calendar-trades.tsv'),
+      'utf8',
+    ),
+  );
+  const yearOfWords = trades.filter((t) => t.made === '2026-10-27');
   const sha256 = (text: string) =>
     createHash('sha256').update(text).digest('hex');
-  const atDate = (y: number, m: number, d: number) =>
-    dayIndex(new Date(y, m - 1, d), committed.epoch);
+  const dateOf = (day: string) => {
+    const [y, m, d] = day.split('-').map(Number);
+    return new Date(y!, m! - 1, d!);
+  };
+  /** The committed bytes with these trades undone, last first, by swapping quoted words. */
+  const undone = (rows: readonly CalendarTrade[]) =>
+    [...rows]
+      .reverse()
+      .reduce(
+        (text, t) =>
+          text
+            .replace(`"${t.first.word}"`, '"\u0000"')
+            .replace(`"${t.second.word}"`, `"${t.first.word}"`)
+            .replace('"\u0000"', `"${t.second.word}"`),
+        raw,
+      );
+
+  // Every day the year of words changed, and the word it now has.
+  const CHANGED: ReadonlyArray<readonly [string, string]> = [
+    ['2026-11-19', 'chemical'],
+    ['2026-11-26', 'thankful'],
+    ['2026-12-02', 'keyboard'],
+    ['2026-12-12', 'premises'],
+    ['2026-12-18', 'smoothly'],
+    ['2026-12-21', 'daylight'],
+    ['2026-12-24', 'wondrous'],
+    ['2026-12-25', 'wrapping'],
+    ['2026-12-31', 'midnight'],
+    ['2027-01-01', 'calendar'],
+    ['2027-01-03', 'intimate'],
+    ['2027-01-07', 'constant'],
+    ['2027-01-12', 'anecdote'],
+    ['2027-02-04', 'redefine'],
+    ['2027-02-06', 'lifetime'],
+    ['2027-02-09', 'detector'],
+    ['2027-02-11', 'previous'],
+    ['2027-02-12', 'irritate'],
+    ['2027-02-13', 'personal'],
+    ['2027-02-14', 'romantic'],
+    ['2027-02-18', 'misprint'],
+    ['2027-02-24', 'suppress'],
+    ['2027-03-13', 'sufferer'],
+    ['2027-03-20', 'fountain'],
+    ['2027-04-01', 'disguise'],
+    ['2027-04-16', 'birthday'],
+    ['2027-04-18', 'distract'],
+    ['2027-04-22', 'mountain'],
+    ['2027-04-23', 'marriage'],
+    ['2027-05-11', 'regional'],
+    ['2027-05-18', 'puncture'],
+    ['2027-05-23', 'blasting'],
+    ['2027-05-25', 'formally'],
+    ['2027-05-27', 'rephrase'],
+    ['2027-06-10', 'supplier'],
+    ['2027-06-15', 'together'],
+    ['2027-06-21', 'sunshine'],
+    ['2027-06-23', 'original'],
+    ['2027-06-27', 'proclaim'],
+    ['2027-06-29', 'instruct'],
+    ['2027-07-03', 'consumer'],
+    ['2027-07-06', 'discover'],
+    ['2027-08-23', 'distress'],
+    ['2027-08-24', 'gorgeous'],
+    ['2027-08-26', 'document'],
+    ['2027-08-28', 'learning'],
+    ['2027-09-04', 'bankrupt'],
+    ['2027-09-19', 'spectrum'],
+    ['2027-09-23', 'suddenly'],
+    ['2027-09-24', 'paranoia'],
+    ['2027-09-30', 'northern'],
+    ['2027-10-31', 'frighten'],
+    ['2027-11-04', 'eternity'],
+    ['2027-11-09', 'alphabet'],
+    ['2027-11-16', 'laughing'],
+    ['2027-11-19', 'umbrella'],
+    ['2027-11-24', 'faithful'],
+    ['2027-12-01', 'generous'],
+    ['2027-12-02', 'inventor'],
+    ['2027-12-06', 'delicate'],
+    ['2027-12-12', 'grateful'],
+    ['2027-12-15', 'football'],
+    ['2027-12-17', 'freezing'],
+    ['2027-12-20', 'outgoing'],
+    ['2027-12-23', 'sunlight'],
+    ['2027-12-28', 'farewell'],
+    ['2028-01-02', 'heritage'],
+    ['2028-01-09', 'newcomer'],
+    ['2028-01-14', 'sinister'],
+    ['2028-01-19', 'emerging'],
+    ['2028-01-22', 'planning'],
+    ['2028-01-24', 'vacation'],
+    ['2028-01-29', 'postcard'],
+    ['2028-02-04', 'universe'],
+    ['2028-02-09', 'cheerful'],
+    ['2028-02-15', 'peculiar'],
+    ['2028-02-20', 'goodness'],
+    ['2028-02-23', 'artistic'],
+    ['2028-02-25', 'stuffing'],
+    ['2028-03-01', 'creation'],
+    ['2028-03-07', 'elephant'],
+  ];
 
   it('is the calendar the Swift app pins, byte for byte', () => {
     expect(sha256(raw)).toBe(
-      'ea5b0dc1855d28c947fecafc365f4c50095dfed1a59d46cc965590a6b719e8d2',
+      '32c3ed91528d4c64857d8da41e3362b358789639aaf178bc1129d54faa460ec2',
     );
   });
 
-  it('puts skeleton on 31 October 2026 and genetics on 17 May 2027', () => {
-    expect(atDate(2026, 10, 31)).toBe(130);
-    expect(atDate(2027, 5, 17)).toBe(328);
+  it('records the Halloween trade and the year of words', () => {
+    expect(trades).toHaveLength(42);
+    expect(yearOfWords).toHaveLength(41);
+    expect(CHANGED).toHaveLength(81);
+  });
+
+  it('gives every changed day its new word', () => {
+    for (const [day, word] of CHANGED) {
+      expect(
+        dailySourceWord(committed.words, dateOf(day), committed.epoch),
+        day,
+      ).toBe(word);
+    }
+  });
+
+  it('keeps skeleton on 31 October 2026, and genetics on 17 May 2027', () => {
+    expect(dayIndex(dateOf('2026-10-31'), committed.epoch)).toBe(130);
     expect(committed.words[130]).toBe('skeleton');
     expect(committed.words[328]).toBe('genetics');
   });
 
-  it('traded two days that were both still to come', () => {
-    const tradedOn = atDate(2026, 10, 20);
-    expect(130).toBeGreaterThan(tradedOn);
-    expect(328).toBeGreaterThan(tradedOn);
+  it('traded only days still to come, and nothing before 8 November this time', () => {
+    expect(tradeProblems(committed.words, trades, committed.epoch)).toEqual([]);
+    // A week past the last day these can merge, so Bea's phone has them first.
+    for (const t of yearOfWords) {
+      expect(t.first.day >= '2026-11-08', t.first.day).toBe(true);
+      expect(t.second.day >= '2026-11-08', t.second.day).toBe(true);
+    }
   });
 
-  it('moved no other index: traded back, it is the calendar before', () => {
-    const back = raw
-      .replace('"skeleton"', '"\u0000"')
-      .replace('"genetics"', '"skeleton"')
-      .replace('"\u0000"', '"genetics"');
-    expect(sha256(back)).toBe(
+  it('moved no other index: undone, it is the calendar before', () => {
+    // Before the year of words: main as Halloween left it.
+    expect(sha256(undone(yearOfWords))).toBe(
+      'ea5b0dc1855d28c947fecafc365f4c50095dfed1a59d46cc965590a6b719e8d2',
+    );
+    // Before any trade: the calendar as the generator built it.
+    expect(sha256(undone(trades))).toBe(
       'dddc844300ab461a1ba1bd217daefa6fcc1e9e5a2abb23bdefbb841d73f17163',
     );
   });
 
-  it('moves no other date, in this cycle or any reshuffled one after it', () => {
-    // After 9 March 2028 the calendar reshuffles by index, so the two words
-    // trade dates in every later cycle too, and every other date stays put.
-    const before = [...committed.words];
-    [before[130], before[328]] = [before[328]!, before[130]!];
-    const trade = (w: string) =>
-      w === 'skeleton' ? 'genetics' : w === 'genetics' ? 'skeleton' : w;
+  it('holds the same words: none added, none lost, none repeated', () => {
+    const before = undoTrades(committed.words, trades, committed.epoch);
+    expect([...committed.words].sort()).toEqual([...before].sort());
+    expect(new Set(committed.words).size).toBe(committed.words.length);
+    expect(committed.words).toHaveLength(626);
+  });
+
+  it('moves only the traded words, in this cycle and every reshuffled one after it', () => {
+    // After 9 March 2028 the calendar reshuffles by index, so a traded word
+    // takes its new index into every later cycle, and every other date stays.
+    // `becomes` holds that a word keeps its index into every cycle; `moved`
+    // holds that only the words the record names change dates.
+    const before = undoTrades(committed.words, trades, committed.epoch);
+    const becomes = new Map(before.map((w, i) => [w, committed.words[i]!]));
+    const moved = new Set(trades.flatMap((t) => [t.first.word, t.second.word]));
     const start = new Date(2026, 5, 23);
+    let firstCycle = 0;
     for (let d = 0; d < 365 * 6; d++) {
       const date = new Date(
         start.getFullYear(),
@@ -309,7 +461,11 @@ describe('the one trade of two future days', () => {
       );
       const now = dailySourceWord(committed.words, date, committed.epoch);
       const then = dailySourceWord(before, date, committed.epoch);
-      expect(now, date.toDateString()).toBe(trade(then));
+      expect(now, date.toDateString()).toBe(becomes.get(then));
+      if (!moved.has(then)) expect(now, date.toDateString()).toBe(then);
+      if (d < committed.words.length && now !== then) firstCycle++;
     }
+    // The 81 days of the year of words and Halloween's two.
+    expect(firstCycle).toBe(83);
   });
 });

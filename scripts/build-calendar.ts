@@ -15,13 +15,22 @@
  *   end. Removing or reordering an entry re-dates every day after it and breaks
  *   the promise that a given day is a fixed puzzle.
  *
- *   One amendment, Antoine's, 2026-10-20: two FUTURE days may trade words, by
- *   hand, because a trade re-dates those two days and no other. Never a past
- *   or present day, never more than the two, and only with a test that pins
- *   both days and holds every other index to the calendar before the trade.
- *   The generator keeps the traded order, since it keeps whatever is committed.
- *   The one trade so far: 31 October 2026 and 17 May 2027, so the peach's
- *   Halloween board is `skeleton`. See build-calendar.test.ts.
+ *   The amendment, Antoine's, 2026-10-20 and widened 2026-10-27: FUTURE days
+ *   may trade words, by hand, because a trade re-dates its two days and no
+ *   other. A set of trades is allowed, each between two days still to come on
+ *   the day it is made, never a past or present day. Each is a row in
+ *   scripts/data-raw/calendar-trades.tsv with its date and reason, and
+ *   build-calendar.test.ts pins the result: every traded day, every other
+ *   index through the calendar with the trades undone, the same words, and
+ *   the reshuffled cycles after the first. The generator keeps the traded
+ *   order, since it keeps whatever is committed, and this build refuses a
+ *   calendar its record does not undo cleanly.
+ *
+ *   Why the widening: the app carries its calendar, and a day's saved words
+ *   only load while the saved crown matches the calendar's. Once the app is
+ *   public a traded day someone has already played would hide their words, so
+ *   a year of holiday words was traded in before 1.0 shipped. A later trade
+ *   needs that fixed first, or must touch only days nobody can have played.
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -29,6 +38,7 @@ import { eligibleSourceWords } from '../src/engine/eligibility.ts';
 import { generateCalendar } from '../src/engine/calendar.ts';
 import { DAILY_EPOCH } from '../src/engine/config.ts';
 import type { SourceEntry } from '../src/data/types.ts';
+import { loadTrades, tradeProblems } from './lib/calendar-trades.ts';
 import { loadExclusions } from './lib/exclusions.ts';
 import { loadPatchedPools } from './lib/pools.ts';
 import { writeAsset } from './lib/util.ts';
@@ -103,6 +113,24 @@ async function main(): Promise<void> {
           `at epoch ${DAILY_EPOCH.year}-${DAILY_EPOCH.month}-${DAILY_EPOCH.day}.`
       : `  Append-only: kept ${base.length} days, appended ${words.length - base.length} new.`,
   );
+
+  // The recorded trades must undo cleanly from what is about to be written.
+  // A re-anchor regenerates every day, so no trade can survive it: clearing
+  // the record is a deliberate step before re-anchoring, never a side effect.
+  const trades = await loadTrades();
+  if (reanchor && trades.length > 0) {
+    throw new Error(
+      `Re-anchoring regenerates every day, so the ${trades.length} trades in ` +
+        'calendar-trades.tsv would no longer apply. Clear it deliberately first.',
+    );
+  }
+  const problems = tradeProblems(words, trades, DAILY_EPOCH);
+  if (problems.length > 0) {
+    throw new Error(
+      `The calendar breaks its trade record:\n  ${problems.join('\n  ')}`,
+    );
+  }
+  console.log(`  ${trades.length} recorded trades of future days hold.`);
 
   const calendar: CalendarFile = { epoch: DAILY_EPOCH, words };
   await writeAsset('daily-calendar.json', JSON.stringify(calendar));
