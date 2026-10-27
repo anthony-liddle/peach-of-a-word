@@ -35,6 +35,10 @@ export function HowItWorks({ onClose }: Props) {
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
+      // Its Escape is its own. Closing can re-render before the page's key
+      // handler runs on the window, which would then read nothing open and
+      // clear the word in the well; Chromium and WebKit do.
+      e.stopPropagation();
       onClose();
       return;
     }
