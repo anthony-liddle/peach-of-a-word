@@ -86,7 +86,6 @@ export function Game({ data, audio, storage }: Props) {
     setHowOpen(false);
     howTriggerRef.current?.focus();
   }, []);
-  useGlobalKeys(game, howOpen);
 
   const { state } = game;
   const [theme] = useTheme();
@@ -115,6 +114,12 @@ export function Game({ data, audio, storage }: Props) {
   const { getDefinition } = useDefinitions(state.puzzle.sourceWord);
 
   const [quiet, setQuiet] = useState<QuietState | null>(null);
+
+  // A word's card owns the keyboard while it is open, as the crown's card
+  // (`revealOpen`) and the explainer do: Enter is its way out's, and no key
+  // reaches the board behind it.
+  const tilesRef = useRef<HTMLDivElement>(null);
+  useGlobalKeys(game, howOpen || quiet !== null, tilesRef);
 
   const onWordTap = useCallback(
     (word: string, trigger: HTMLElement) => {
@@ -222,7 +227,7 @@ export function Game({ data, audio, storage }: Props) {
             <TierMeter tier={state.tier} theme={theme} streak={game.streak} />
           )}
           <ComposingStick game={game} glint={glinting} onWordTap={onWordTap} />
-          <TypeCase game={game} />
+          <TypeCase game={game} ref={tilesRef} />
           <Controls game={game} />
         </div>
 

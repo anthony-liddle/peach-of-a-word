@@ -112,6 +112,7 @@ export function ComposingStick({
         <button
           type="button"
           className="stick__open"
+          data-opens-card
           aria-label={
             body?.kind === 'find'
               ? body.line.name
@@ -123,9 +124,6 @@ export function ComposingStick({
             // focus here when it closes, as it does to a chip.
             e.currentTarget.focus();
             onWordTap(opens, e.currentTarget);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.stopPropagation();
           }}
         >
           {line}
