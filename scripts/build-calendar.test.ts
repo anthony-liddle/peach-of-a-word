@@ -20,6 +20,7 @@ import {
   type CalendarTrade,
 } from './lib/calendar-trades.ts';
 import { parseExclusions } from './lib/exclusions.ts';
+import { FLOOR_EXCEPTIONS, floorProblems } from './lib/floor.ts';
 import { parseReasonedWords } from './lib/denylist.ts';
 import { loadPatchedPools } from './lib/pools.ts';
 
@@ -259,6 +260,27 @@ describe('the culled, regenerated calendar', () => {
       expect(ADMISSIONS.has(added)).toBe(true);
       expect(EXCLUSIONS.has(added)).toBe(false);
     }
+  });
+
+  it('holds every crown to the floor, but its named exceptions', () => {
+    // A list change can take a crown under the floor without moving its day.
+    // Each one is named in floor.ts at its exact size, with its reason, and
+    // the floor holds for every other crown. The build checks the same.
+    const committed = JSON.parse(
+      readFileSync(join(DATA, 'daily-calendar.json'), 'utf8'),
+    ) as { words: string[] };
+    expect(
+      floorProblems(committed.words.map((w) => [w, setSize(w)] as const)),
+    ).toEqual([]);
+    expect([...FLOOR_EXCEPTIONS.keys()]).toEqual(['approach']);
+    expect(FLOOR_EXCEPTIONS.get('approach')?.size).toBe(MIN_SET_SIZE - 1);
+  }, 300_000);
+
+  it('names a crown under the floor that no exception covers, or one off its size', () => {
+    expect(floorProblems([['basement', MIN_SET_SIZE]])).toEqual([]);
+    expect(floorProblems([['basement', MIN_SET_SIZE - 1]])).toHaveLength(1);
+    expect(floorProblems([['approach', MIN_SET_SIZE - 1]])).toEqual([]);
+    expect(floorProblems([['approach', MIN_SET_SIZE - 2]])).toHaveLength(1);
   });
 
   it('every committed crown is clean, and the floor holds on a sample', () => {

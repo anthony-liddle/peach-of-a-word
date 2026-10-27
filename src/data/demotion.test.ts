@@ -7,6 +7,7 @@ import {
   type Puzzle,
 } from '@/engine/index.ts';
 import { createListDictionary, createListWordSource } from './listSource.ts';
+import { FLOOR_EXCEPTIONS } from '../../scripts/lib/floor.ts';
 import type { PatchableLists } from '../../scripts/lib/patch.ts';
 import {
   readCalendarWords,
@@ -221,16 +222,14 @@ describe('the floor still holds', () => {
     // rape alone came out of 18 racks, so a rack already near the floor could
     // have fallen under it and made a day thinner than the calendar promises.
     //
-    // approach is the one exception, and a decided one. crap's demotion
-    // (orchard v1.10.0) took its basket from 15 to 14, where it sat before the
-    // allowlist counted. Antoine kept crap out of every basket, and approach
-    // keeps its day: the floor admits crowns, and a committed day never moves.
-    const below = new Map([['approach', 14]]);
+    // Except the named exceptions, each at its recorded size, with its reason:
+    // approach, since crap's demotion in orchard v1.10.0. See floor.ts.
     let lowest = Number.POSITIVE_INFINITY;
     for (const rack of calendar) {
       const size = puzzleFor(rack).commonWords.size;
-      if (below.has(rack)) {
-        expect(size, rack).toBe(below.get(rack));
+      const exception = FLOOR_EXCEPTIONS.get(rack);
+      if (exception) {
+        expect(size, rack).toBe(exception.size);
         continue;
       }
       lowest = Math.min(lowest, size);
