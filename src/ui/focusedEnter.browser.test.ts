@@ -156,3 +156,34 @@ describe('Enter on a focused chip or line', () => {
     );
   });
 });
+
+/**
+ * A word's card owns the keyboard while it is open, as the crown's card does:
+ * Enter on its way out closes it, and no key reaches the board behind it.
+ */
+describe("a word's card, by keyboard", () => {
+  test('Enter on its way out closes it, and no key reaches the board', async () => {
+    const res = await findRes();
+    const slots = () =>
+      [...host!.querySelectorAll('.stick__slot')].map((s) => s.textContent);
+    await userEvent.keyboard('su');
+    res.focus();
+    await userEvent.keyboard('{Enter}');
+    await until(card, "Enter did not open the chip's card");
+    await userEvent.keyboard('r');
+    expect(slots(), 'a letter landed behind the card').toEqual(['s', 'u']);
+    await userEvent.keyboard('{Enter}');
+    await until(
+      () => (card() ? null : true),
+      'Enter on its way out did not close the card',
+    );
+    expect(slots(), 'Enter set or cleared the word behind').toEqual(['s', 'u']);
+    expect(document.activeElement, 'focus after its way out').toBe(res);
+
+    await userEvent.keyboard('{Enter}');
+    await until(card, "Enter did not open the chip's card again");
+    await userEvent.keyboard('{Escape}');
+    await closed();
+    expect(slots(), 'Escape cleared the word behind').toEqual(['s', 'u']);
+  });
+});

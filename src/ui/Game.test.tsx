@@ -1146,6 +1146,20 @@ describe('Game Enter and letters on a chip or the line', () => {
     },
   );
 
+  it("leaves the keyboard to a word's card while it is open", () => {
+    renderGame();
+    find('sea');
+    type('ne');
+    fireEvent.click(chip('sea'));
+    const wayOut = closeReveal();
+    expect(document.activeElement).toBe(wayOut);
+    expect(cancels(wayOut, 'Enter')).toBe(false);
+    cancels(wayOut, 'r');
+    cancels(wayOut, 'Escape');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(composed()).toEqual(['n', 'e']);
+  });
+
   it('leaves Enter to the page on any other button, which sets the word', () => {
     renderGame();
     find('sea');

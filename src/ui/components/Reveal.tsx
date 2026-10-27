@@ -48,7 +48,12 @@ export function Reveal(props: RevealProps) {
     // the focus without the scroll; the effect below owns the position.
     closeRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      // The card's Escape is its own. Closing it can re-render before the
+      // page's key handler runs on the window, which would then read no card
+      // open and clear the word in the well; Chromium and WebKit do.
+      e.stopPropagation();
+      onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => {
