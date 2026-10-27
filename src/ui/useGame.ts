@@ -45,7 +45,7 @@ export interface Tile {
  */
 export type MessageBody =
   | { readonly kind: 'plain'; readonly text: string }
-  | { readonly kind: 'source-found' }
+  | { readonly kind: 'source-found'; readonly word: string }
   // Any other find: `tel, 5 points`, led by its rarity's mark when it has one.
   // The same form in both themes and in the app, so it is settled at find
   // time like a plain line; only the mark's drawing follows the theme.
@@ -367,7 +367,7 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
         : { kind: 'plain', text: line.spoken + tail };
 
       const messageBody: MessageBody = result.isSourceWord
-        ? { kind: 'source-found' }
+        ? { kind: 'source-found', word: result.word }
         : { kind: 'find', word: result.word, line };
 
       return {

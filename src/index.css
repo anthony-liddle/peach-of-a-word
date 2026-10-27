@@ -974,6 +974,25 @@ button {
   padding-inline: 0;
   text-align: start;
 }
+/* A find's line is a button that opens the find's card, as its chip does. Laid
+   over the well rather than in its flow, so the whole well is the target and
+   the well's fixed height is untouched; it centres the line as the well
+   does. */
+.stick__open {
+  appearance: none;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0 0.6rem;
+  font: inherit;
+  color: inherit;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* The tone is on the stick now, not on the message: the stick already read it
    for the error nudge, and one attribute driving both keeps the shake and the
    ink from ever disagreeing about whether a rejection happened. */

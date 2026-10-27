@@ -900,6 +900,92 @@ describe("Game the well's line", () => {
   });
 });
 
+/**
+ * After a find, a tap on its line in the well opens that word's card, the one
+ * its chip in the found list opens, through the same path.
+ */
+describe("Game the well's line opens its card", () => {
+  const stick = () => document.querySelector('.stick') as HTMLElement;
+  const lineButton = () =>
+    document.querySelector<HTMLButtonElement>('.stick button');
+  const find = (word: string) => {
+    type(word);
+    fireEvent.keyDown(window, { key: 'Enter' });
+  };
+  const tapLine = () => {
+    const button = lineButton();
+    expect(button, 'the line is not a button').not.toBeNull();
+    fireEvent.click(button!);
+  };
+
+  it("tapping a Rare find's line opens that word's card", async () => {
+    renderGame();
+    find('sneer');
+    tapLine();
+    const card = await screen.findByRole('dialog', { name: 'sneer' });
+    expect(card).toHaveClass('reveal--quiet', 'reveal--rare');
+    expect(getDefinition).toHaveBeenCalledWith('sneer');
+  });
+
+  it("tapping a basket word's line opens its card too", async () => {
+    renderGame();
+    find('sea');
+    tapLine();
+    expect(await screen.findByRole('dialog', { name: 'sea' })).toHaveClass(
+      'reveal--quiet',
+    );
+    expect(
+      await screen.findByText('noun. a body of salt water.'),
+    ).toBeInTheDocument();
+  });
+
+  it("tapping the source word's line reopens its reveal", () => {
+    renderGame();
+    find('serenade');
+    // The reveal opens by itself on the find; this is the way back to it.
+    fireEvent.click(closeReveal());
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    tapLine();
+    const card = screen.getByRole('dialog', { name: 'serenade' });
+    expect(card.querySelector('.reveal__kicker')).not.toBeNull();
+    expect(within(card).getByText(ENTRY.etymology!)).toBeInTheDocument();
+  });
+
+  it('opens nothing from the placeholder, a rejection, or a word being composed', () => {
+    renderGame();
+    fireEvent.click(stick());
+    expect(lineButton()).toBeNull();
+
+    find('sen'); // not a word
+    fireEvent.click(stick());
+    expect(lineButton()).toBeNull();
+
+    find('sea');
+    expect(lineButton()).not.toBeNull();
+    type('n');
+    fireEvent.click(stick());
+    expect(lineButton()).toBeNull();
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(stick().querySelectorAll('.stick__slot')).toHaveLength(1);
+  });
+
+  it('closing the card returns to the board with the line still showing', async () => {
+    renderGame();
+    find('sea');
+    tapLine();
+    await screen.findByRole('dialog', { name: 'sea' });
+    fireEvent.click(closeReveal());
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(stick().querySelector('.message')!.textContent).toBe('sea, 1 point');
+    expect(lineButton()).not.toBeNull();
+    // The tap placed no letter and took none away.
+    expect(stick().querySelectorAll('.stick__slot')).toHaveLength(0);
+  });
+});
+
 // Finding the source word is the game's biggest beat, so its celebration is
 // theme-skinned like the rank and crown names: classic keeps the plain line,
 // cute makes the game's own joke on its own name. State holds the fact of the

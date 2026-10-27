@@ -42,14 +42,25 @@ import { Mark } from './Mark.tsx';
  * find that set the glint. `Game` keeps the glint a moment past its sweep, and
  * a Rare find made inside that moment draws its own mark here, freshly, which a
  * glint passed on whole would play over.
+ *
+ * **A find's line opens that word's card,** the one its chip in the found list
+ * opens, through the same `onWordTap`: the quiet card, or the crown's reveal
+ * for the source word. The line is a button only while it reports a find; the
+ * placeholder, a rejection and the letters being composed are not buttons at
+ * all. The button is laid over the well rather than in its flow, so the whole
+ * well is the target and the well's fixed height is untouched. Spans rather
+ * than a paragraph inside it, since a button holds phrasing content only.
  */
 export function ComposingStick({
   game,
   glint = null,
+  onWordTap,
 }: {
   game: PlayApi;
   /** A Mythic find to glint, from `Game`: null whenever nothing should. */
   glint?: Glint | null;
+  /** What a tap on a find's line does, which is what a tap on its chip does. */
+  onWordTap?: (word: string, trigger: HTMLElement) => void;
 }) {
   const { state, composedWord } = game;
   const [theme] = useTheme();
@@ -61,6 +72,24 @@ export function ComposingStick({
     glint?.word === body.word
       ? glint.seq
       : null;
+  // The find the line reports, whose card a tap on it opens. Null for the
+  // placeholder, a rejection, and a word being composed.
+  const opens =
+    empty && (body?.kind === 'find' || body?.kind === 'source-found')
+      ? body.word
+      : null;
+  const line =
+    state.message &&
+    (body?.kind === 'find' && body.line.mark ? (
+      <span className="message__line" aria-hidden="true">
+        <Mark category={body.line.mark} costume={null} glint={glintSeq} />
+        <span className="message">{messageText(state.message, theme)}</span>
+      </span>
+    ) : (
+      <span className="message" aria-hidden="true">
+        {messageText(state.message, theme)}
+      </span>
+    ));
   return (
     <div className="stick" data-tone={state.message?.tone ?? 'info'}>
       {!empty ? (
@@ -69,22 +98,23 @@ export function ComposingStick({
             {letter}
           </span>
         ))
-      ) : state.message?.body.kind === 'find' &&
-        state.message.body.line.mark ? (
-        <div className="message__line" aria-hidden="true">
-          <Mark
-            category={state.message.body.line.mark}
-            costume={null}
-            glint={glintSeq}
-          />
-          <p className="message">{messageText(state.message, theme)}</p>
-        </div>
-      ) : state.message ? (
-        <p className="message" aria-hidden="true">
-          {messageText(state.message, theme)}
-        </p>
+      ) : opens && onWordTap ? (
+        <button
+          type="button"
+          className="stick__open"
+          onClick={(e) => {
+            // Safari does not focus a button on click; the card returns
+            // focus here when it closes, as it does to a chip.
+            e.currentTarget.focus();
+            onWordTap(opens, e.currentTarget);
+          }}
+        >
+          {line}
+        </button>
       ) : (
-        <span className="stick__empty">{copy(theme).inputPlaceholder}</span>
+        (line ?? (
+          <span className="stick__empty">{copy(theme).inputPlaceholder}</span>
+        ))
       )}
     </div>
   );
