@@ -162,3 +162,36 @@ describe("a find's line in the well, at a phone's width", () => {
     }
   }
 });
+
+/**
+ * A find's line can be tapped to open its card, and says so the way the found
+ * list's chips do, so the two read as one idea: the pointer, and the words
+ * underlined on hover. No instruction text, and nothing the chips lack.
+ */
+describe("a find's line shows it can be tapped, as a chip does", () => {
+  for (const theme of ['cute', 'letterpress'] as const) {
+    test(`${theme}: the pointer, and its words underlined on hover`, async () => {
+      await page.viewport(375, 800);
+      mountGame(theme, 'regular');
+      await userEvent.keyboard('res{Enter}');
+      const line = await until(() =>
+        host!.querySelector<HTMLElement>('.stick__open'),
+      );
+      const chip = await until(() =>
+        host!.querySelector<HTMLElement>('.found__group .found__word'),
+      );
+      const words = (el: Element, selector: string) =>
+        getComputedStyle(el.querySelector(selector)!).textDecorationLine;
+
+      // The chip's cue, which the line is held to.
+      expect(getComputedStyle(chip).cursor).toBe('pointer');
+      await userEvent.hover(chip);
+      expect(words(chip, '.found__wordtext')).toBe('underline');
+
+      expect(getComputedStyle(line).cursor, 'the pointer').toBe('pointer');
+      expect(words(line, '.message'), 'at rest').toBe('none');
+      await userEvent.hover(line);
+      expect(words(line, '.message'), 'on hover').toBe('underline');
+    });
+  }
+});

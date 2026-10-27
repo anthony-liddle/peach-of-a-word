@@ -993,6 +993,13 @@ button {
   align-items: center;
   justify-content: center;
 }
+/* It says it can be tapped the way a chip does, so the two read as one idea:
+   its words underlined on hover and keyboard focus, as a chip's are, and the
+   pointer every button already has. */
+.stick__open:hover .message,
+.stick__open:focus-visible .message {
+  text-decoration: underline;
+}
 /* The tone is on the stick now, not on the message: the stick already read it
    for the error nudge, and one attribute driving both keeps the shake and the
    ink from ever disagreeing about whether a rejection happened. */
