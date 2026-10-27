@@ -1,0 +1,56 @@
+# Calendar trades: Antoine's amendment to the append-only calendar, read by
+# scripts/build-calendar.ts. Each row swaps the words of two days, both still to
+# come on the day the trade was made, so it re-dates those two days and no
+# other. Applied in order they take the calendar as the generator built it to
+# the one committed; undone in reverse they take it back. The build refuses a
+# committed calendar this record does not undo cleanly, and
+# build-calendar.test.ts pins the result. The Swift app pins the same file.
+#
+# A trade never touches a past or present day. A row is never edited or
+# removed once shipped: a later change is a new row.
+#
+# Columns: made, first day, the word it takes, second day, the word it takes,
+# reason. Days are YYYY-MM-DD, counted from the calendar's epoch.
+made	first day	its word	second day	its word	reason
+2026-10-20	2026-10-31	skeleton	2027-05-17	genetics	Halloween 2026 is skeleton, for the ghost sheet
+2026-10-27	2026-11-26	thankful	2027-02-12	irritate	Thanksgiving 2026 is thankful
+2026-10-27	2026-12-21	daylight	2027-12-15	football	Winter solstice 2026 is daylight
+2026-10-27	2026-12-24	wondrous	2027-09-19	spectrum	Christmas Eve 2026 is wondrous
+2026-10-27	2026-12-25	wrapping	2027-05-23	blasting	Christmas Day 2026 is wrapping
+2026-10-27	2026-12-31	midnight	2027-06-23	artistic	New Year's Eve 2026 is midnight; the game's birthday then takes original
+2026-10-27	2027-01-01	calendar	2027-06-27	proclaim	New Year's Day 2027 is calendar
+2026-10-27	2027-02-06	lifetime	2027-02-18	misprint	Lunar New Year 2027 is lifetime
+2026-10-27	2027-02-14	romantic	2027-09-04	bankrupt	Valentine's Day 2027 is romantic
+2026-10-27	2027-03-20	fountain	2028-01-22	planning	First day of spring 2027 is fountain
+2026-10-27	2027-04-01	disguise	2026-12-18	smoothly	April Fools' Day 2027 is disguise
+2026-10-27	2027-04-16	birthday	2026-12-12	premises	Bea's birthday 2027 is birthday
+2026-10-27	2027-04-22	mountain	2027-05-27	rephrase	Earth Day 2027 is mountain
+2026-10-27	2027-06-15	together	2027-12-02	inventor	The anniversary 2027 is together
+2026-10-27	2027-06-21	sunshine	2027-12-20	outgoing	Summer solstice 2027 is sunshine
+2026-10-27	2027-06-23	original	2028-02-23	artistic	The game's birthday 2027 is original, after New Year's Eve took midnight
+2026-10-27	2027-08-24	gorgeous	2027-08-28	learning	National Peach Day 2027 is gorgeous
+2026-10-27	2027-10-31	frighten	2027-09-30	northern	Halloween 2027 is frighten
+2026-10-27	2026-11-19	chemical	2027-11-04	eternity	eternity held back for next year's list, past Halloween 2027
+2026-10-27	2026-12-02	keyboard	2027-11-09	alphabet	alphabet held back for next year's list, past Halloween 2027
+2026-10-27	2027-01-03	intimate	2027-11-16	laughing	laughing held back for next year's list, past Halloween 2027
+2026-10-27	2027-01-07	constant	2027-11-19	umbrella	umbrella held back for next year's list, past Halloween 2027
+2026-10-27	2027-01-12	anecdote	2027-11-24	faithful	faithful held back for next year's list, past Halloween 2027
+2026-10-27	2027-02-04	redefine	2027-12-01	generous	generous held back for next year's list, past Halloween 2027
+2026-10-27	2027-02-09	detector	2027-12-06	delicate	delicate held back for next year's list, past Halloween 2027
+2026-10-27	2027-02-11	previous	2027-12-12	grateful	grateful held back for next year's list, past Halloween 2027
+2026-10-27	2027-02-13	personal	2027-12-17	freezing	freezing held back for next year's list, past Halloween 2027
+2026-10-27	2027-02-24	suppress	2027-12-23	sunlight	sunlight held back for next year's list, past Halloween 2027
+2026-10-27	2027-03-13	sufferer	2027-12-28	farewell	farewell held back for next year's list, past Halloween 2027
+2026-10-27	2027-04-18	distract	2028-01-02	heritage	heritage held back for next year's list, past Halloween 2027
+2026-10-27	2027-04-23	marriage	2028-01-09	newcomer	newcomer held back for next year's list, past Halloween 2027
+2026-10-27	2027-05-11	regional	2028-01-14	sinister	sinister held back for next year's list, past Halloween 2027
+2026-10-27	2027-05-18	puncture	2028-01-19	emerging	emerging held back for next year's list, past Halloween 2027
+2026-10-27	2027-05-25	formally	2028-01-24	vacation	vacation held back for next year's list, past Halloween 2027
+2026-10-27	2027-06-10	supplier	2028-01-29	postcard	postcard held back for next year's list, past Halloween 2027
+2026-10-27	2027-06-29	instruct	2028-02-04	universe	universe held back for next year's list, past Halloween 2027
+2026-10-27	2027-07-03	consumer	2028-02-09	cheerful	cheerful held back for next year's list, past Halloween 2027
+2026-10-27	2027-07-06	discover	2028-02-15	peculiar	peculiar held back for next year's list, past Halloween 2027
+2026-10-27	2027-08-23	distress	2028-02-20	goodness	goodness held back for next year's list, past Halloween 2027
+2026-10-27	2027-08-26	document	2028-02-25	stuffing	stuffing held back for next year's list, past Halloween 2027
+2026-10-27	2027-09-23	suddenly	2028-03-01	creation	creation held back for next year's list, past Halloween 2027
+2026-10-27	2027-09-24	paranoia	2028-03-07	elephant	elephant held back for next year's list, past Halloween 2027
