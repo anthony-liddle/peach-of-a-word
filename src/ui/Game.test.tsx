@@ -15,7 +15,7 @@ import { GameStorage, type KeyValueStore } from '@/persistence/storage.ts';
 import { dayIndex } from '@/engine/index.ts';
 import { STORAGE_EPOCH } from '@/engine/config.ts';
 import { useDefinitions } from './useDefinitions.ts';
-import { copy, crownName, tierName } from './themeCopy.ts';
+import { copy, crownName, sourceFoundMessage, tierName } from './themeCopy.ts';
 import { DEFAULT_THEME, type Theme } from './useTheme.ts';
 import {
   DESKTOP_WIDTH,
@@ -983,6 +983,124 @@ describe("Game the well's line opens its card", () => {
     expect(lineButton()).not.toBeNull();
     // The tap placed no letter and took none away.
     expect(stick().querySelectorAll('.stick__slot')).toHaveLength(0);
+  });
+});
+
+/**
+ * The line was kept out of the tree on purpose, since the live region already
+ * says each find as it lands. While it shows a find it is now a real button,
+ * named by what the live region says and hinted as a chip is; at other times
+ * it stays out, and the find is still heard once.
+ */
+describe("Game the well's line, to a screen reader", () => {
+  const stick = () => document.querySelector('.stick') as HTMLElement;
+  const find = (word: string) => {
+    type(word);
+    fireEvent.keyDown(window, { key: 'Enter' });
+  };
+
+  it.each([
+    ['sneer', 'Rare find: sneer, 7 points'],
+    ['denar', 'Mythic find: denar, 9 points'],
+    ['sea', 'sea, 1 point'],
+  ] as const)(
+    'is a button named by its spoken form while it shows %s',
+    (word, name) => {
+      renderGame();
+      find(word);
+      const line = within(stick()).getByRole('button');
+      expect(line).toHaveAccessibleName(name);
+      expect(line).toHaveAccessibleDescription('Shows the definition');
+    },
+  );
+
+  it("names the source word's line by what it shows", () => {
+    renderGame();
+    find('serenade');
+    fireEvent.click(closeReveal());
+    expect(within(stick()).getByRole('button')).toHaveAccessibleName(
+      sourceFoundMessage(activeTheme()),
+    );
+  });
+
+  it('stays out of the tree on the placeholder, a rejection and a word being composed', () => {
+    renderGame();
+    expect(within(stick()).queryByRole('button')).toBeNull();
+    find('sen'); // not a word
+    expect(within(stick()).queryByRole('button')).toBeNull();
+    expect(
+      stick().querySelector('.message')!.closest('[aria-hidden="true"]'),
+    ).toBeTruthy();
+    find('sea');
+    type('n');
+    expect(within(stick()).queryByRole('button')).toBeNull();
+  });
+
+  it('says the find once, in the live region, and leaves focus where it was', () => {
+    renderGame();
+    const before = document.activeElement;
+    find('sneer');
+    const line = within(stick()).getByRole('button');
+    const status = screen.getByRole('status');
+    expect(status.textContent).toMatch(/^Rare find: sneer, 7 points\./);
+    // Said once: the button is no live region and not inside one, and its
+    // own text is hidden, so only its name speaks for it.
+    expect(status.contains(line)).toBe(false);
+    expect(line.closest('[aria-live]')).toBeNull();
+    expect(
+      line.querySelector('.message')!.closest('[aria-hidden]'),
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(before);
+    expect(document.activeElement).not.toBe(line);
+  });
+
+  it('returns focus to the line when its card closes, by its way out or by Escape', async () => {
+    renderGame();
+    find('sneer');
+    const line = within(stick()).getByRole('button');
+
+    fireEvent.click(line);
+    await screen.findByRole('dialog', { name: 'sneer' });
+    fireEvent.click(closeReveal());
+    expect(document.activeElement).toBe(line);
+
+    fireEvent.click(line);
+    await screen.findByRole('dialog', { name: 'sneer' });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(line);
+  });
+
+  it("returns focus to the source word's line when its reveal closes", () => {
+    renderGame();
+    find('serenade');
+    fireEvent.click(closeReveal());
+    const line = within(stick()).getByRole('button');
+    fireEvent.click(line);
+    expect(
+      screen.getByRole('dialog', { name: 'serenade' }),
+    ).toBeInTheDocument();
+    fireEvent.click(closeReveal());
+    expect(document.activeElement).toBe(line);
+  });
+
+  it('keeps Enter on the line for the line, so it opens rather than submits', () => {
+    renderGame();
+    find('sneer');
+    const line = within(stick()).getByRole('button');
+    const enter = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    line.dispatchEvent(enter);
+    // The page's own Enter, which submits a word, never sees it, so the
+    // button's own activation goes ahead: a browser clicks a button on Enter
+    // unless the keydown is cancelled. The browser test presses the key.
+    expect(enter.defaultPrevented).toBe(false);
+    expect(stick().querySelector('.message')!.textContent).toBe(
+      'sneer, 7 points',
+    );
   });
 });
 

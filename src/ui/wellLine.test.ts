@@ -10,6 +10,7 @@ import { findLine, type WellLine } from './wellLine.ts';
  * other, or the two platforms' lines can drift apart with both suites still
  * green. The spoken form here is the find alone: the announcement adds
  * " New rank." or the completion line after it, which the app says elsewhere.
+ * The name is what the line is called as a button.
  */
 const FIXTURE: readonly (readonly [string, number, Rung, WellLine])[] = [
   [
@@ -20,6 +21,7 @@ const FIXTURE: readonly (readonly [string, number, Rung, WellLine])[] = [
       mark: 'mythic',
       shown: 'tel, 5 points',
       spoken: 'Mythic find: tel, 5 points.',
+      name: 'Mythic find: tel, 5 points',
     },
   ],
   [
@@ -30,6 +32,7 @@ const FIXTURE: readonly (readonly [string, number, Rung, WellLine])[] = [
       mark: 'mythic',
       shown: 'relit, 9 points',
       spoken: 'Mythic find: relit, 9 points.',
+      name: 'Mythic find: relit, 9 points',
     },
   ],
   [
@@ -40,6 +43,7 @@ const FIXTURE: readonly (readonly [string, number, Rung, WellLine])[] = [
       mark: 'rare',
       shown: 'aret, 5 points',
       spoken: 'Rare find: aret, 5 points.',
+      name: 'Rare find: aret, 5 points',
     },
   ],
   [
@@ -50,19 +54,30 @@ const FIXTURE: readonly (readonly [string, number, Rung, WellLine])[] = [
       mark: 'uncommon',
       shown: 'airt, 4 points',
       spoken: 'Uncommon find: airt, 4 points.',
+      name: 'Uncommon find: airt, 4 points',
     },
   ],
   [
     'early',
     5,
     'set',
-    { mark: null, shown: 'early, 5 points', spoken: 'early, 5 points.' },
+    {
+      mark: null,
+      shown: 'early, 5 points',
+      spoken: 'early, 5 points.',
+      name: 'early, 5 points',
+    },
   ],
   [
     'lay',
     1,
     'set',
-    { mark: null, shown: 'lay, 1 point', spoken: 'lay, 1 point.' },
+    {
+      mark: null,
+      shown: 'lay, 1 point',
+      spoken: 'lay, 1 point.',
+      name: 'lay, 1 point',
+    },
   ],
 ];
 
@@ -95,5 +110,14 @@ describe("the well's line", () => {
     expect(findLine('tel', 5, rung).spoken).toBe(
       `${name} find: tel, 5 points.`,
     );
+  });
+
+  // A button's name is not a sentence, so it is the spoken form without its
+  // closing period.
+  it('names the line as a button by its spoken form, without the period', () => {
+    for (const [word, points, rung] of FIXTURE) {
+      const line = findLine(word, points, rung);
+      expect(line.name, word).toBe(line.spoken.slice(0, -1));
+    }
   });
 });

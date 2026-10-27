@@ -21,16 +21,21 @@ export interface WellLine {
   readonly shown: string;
   /** What the live region says, before any rank or completion cue. */
   readonly spoken: string;
+  /**
+   * What the line is called as a button: the spoken form without its closing
+   * period, since a control's name is not a sentence.
+   */
+  readonly name: string;
 }
 
 /** A find's line, for any find but the source word. */
 export function findLine(word: string, points: number, rung: Rung): WellLine {
   const line = `${word}, ${points} ${points === 1 ? 'point' : 'points'}`;
-  return isLadderRung(rung)
-    ? {
-        mark: rung,
-        shown: line,
-        spoken: `${RUNG_NAMES[rung]} find: ${line}.`,
-      }
-    : { mark: null, shown: line, spoken: `${line}.` };
+  const name = isLadderRung(rung) ? `${RUNG_NAMES[rung]} find: ${line}` : line;
+  return {
+    mark: isLadderRung(rung) ? rung : null,
+    shown: line,
+    spoken: `${name}.`,
+    name,
+  };
 }

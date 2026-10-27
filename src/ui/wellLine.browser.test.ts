@@ -107,7 +107,7 @@ describe("a find's line in the well, at a phone's width", () => {
     for (const theme of ['cute', 'letterpress'] as const) {
       for (const textSize of ['regular', 'large', 'largest'] as const) {
         for (const { word, rung } of FINDS) {
-          test(`${width}px, ${theme}, ${textSize} text, ${word}: the well keeps its height and the line its words`, async () => {
+          test(`${width}px, ${theme}, ${textSize} text, ${word}: the well keeps its height, the line its words, and the target 44px`, async () => {
             await page.viewport(width, 800);
             mountGame(theme, textSize);
             const stick = await until(() =>
@@ -122,6 +122,12 @@ describe("a find's line in the well, at a phone's width", () => {
             const message = stick.querySelector<HTMLElement>('.message')!;
             const after = stick.getBoundingClientRect().height;
             expect(after, "the well's height").toBe(before);
+            // The line is a button that fills the well, so its target is the
+            // well's height, past 44px at every size, with nothing grown.
+            const target = stick
+              .querySelector<HTMLElement>('.stick__open')!
+              .getBoundingClientRect();
+            expect(target.height, 'the tap target').toBeGreaterThanOrEqual(44);
 
             // The words are all there: the clamp hides nothing.
             expect(
@@ -154,7 +160,7 @@ describe("a find's line in the well, at a phone's width", () => {
             expect(doc.scrollWidth).toBeLessThanOrEqual(doc.clientWidth);
 
             console.log(
-              `WELL ${width} ${theme} ${textSize} ${word} well=${before}->${after} lines=${Math.round(t.height / lineHeight)}`,
+              `WELL ${width} ${theme} ${textSize} ${word} well=${before}->${after} target=${target.height} lines=${Math.round(t.height / lineHeight)}`,
             );
           });
         }
@@ -194,4 +200,50 @@ describe("a find's line shows it can be tapped, as a chip does", () => {
       expect(words(line, '.message'), 'on hover').toBe('underline');
     });
   }
+});
+
+/**
+ * The line by keyboard: a real button, reached by Tab, opened by Enter and by
+ * Space, with focus back on it when the card closes. The page's own Enter
+ * submits a word, so this is where a key that should open the card could
+ * submit instead; jsdom presses no keys, so a browser does.
+ */
+describe("a find's line, by keyboard", () => {
+  test('Tab reaches it, Enter and Space open its card, and focus comes back', async () => {
+    await page.viewport(375, 800);
+    mountGame('cute', 'regular');
+    await userEvent.keyboard('res{Enter}');
+    const line = await until(() =>
+      host!.querySelector<HTMLButtonElement>('.stick__open'),
+    );
+    const shown = line.querySelector('.message')!.textContent;
+    const card = () => host!.querySelector('[role="dialog"]');
+    const closed = () => until(() => (card() ? null : true));
+
+    // Safari's Tab moves between fields and links only, unless its reader
+    // turns on "Press Tab to highlight each item"; Option-Tab reaches every
+    // button, the chips included. WebKit here keeps Safari's default.
+    (document.activeElement as HTMLElement | null)?.blur();
+    for (const key of ['{Tab}', '{Alt>}{Tab}{/Alt}']) {
+      for (let i = 0; i < 40 && document.activeElement !== line; i++) {
+        await userEvent.keyboard(key);
+      }
+    }
+    expect(document.activeElement, 'Tab never reached the line').toBe(line);
+
+    await userEvent.keyboard('{Enter}');
+    expect((await until(card)).textContent).toContain('res');
+    expect(line.querySelector('.message')!.textContent, 'Enter submitted').toBe(
+      shown,
+    );
+    await userEvent.keyboard('{Escape}');
+    await closed();
+    expect(document.activeElement, 'after Escape').toBe(line);
+
+    await userEvent.keyboard(' ');
+    await until(card);
+    await userEvent.click(host!.querySelector<HTMLElement>('.reveal__close')!);
+    await closed();
+    expect(document.activeElement, 'after its way out').toBe(line);
+  });
 });

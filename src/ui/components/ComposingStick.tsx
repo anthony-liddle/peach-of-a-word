@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { messageText, type Glint, type PlayApi } from '../useGame.ts';
 import { useTheme } from '../useTheme.ts';
 import { copy } from '../themeCopy.ts';
@@ -50,6 +51,14 @@ import { Mark } from './Mark.tsx';
  * all. The button is laid over the well rather than in its flow, so the whole
  * well is the target and the well's fixed height is untouched. Spans rather
  * than a paragraph inside it, since a button holds phrasing content only.
+ *
+ * **To a screen reader it is a real button only while it shows a find,**
+ * named by what the live region said ("Mythic find: tel, 5 points") and
+ * hinted as a chip is. Its own text stays hidden, so the name alone speaks for
+ * it, and nothing moves focus to it: the find is still heard once, from the
+ * live region, as it lands. Enter on it is its own, which the page's Enter,
+ * the one that submits a word, would otherwise take: the line is gone the
+ * moment a letter is placed, so there is never a word for it to submit.
  */
 export function ComposingStick({
   game,
@@ -64,6 +73,7 @@ export function ComposingStick({
 }) {
   const { state, composedWord } = game;
   const [theme] = useTheme();
+  const hintId = useId();
   const empty = composedWord.length === 0;
   const body = state.message?.body;
   const glintSeq =
@@ -102,14 +112,26 @@ export function ComposingStick({
         <button
           type="button"
           className="stick__open"
+          aria-label={
+            body?.kind === 'find'
+              ? body.line.name
+              : messageText(state.message!, theme)
+          }
+          aria-describedby={hintId}
           onClick={(e) => {
             // Safari does not focus a button on click; the card returns
             // focus here when it closes, as it does to a chip.
             e.currentTarget.focus();
             onWordTap(opens, e.currentTarget);
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.stopPropagation();
+          }}
         >
           {line}
+          <span id={hintId} hidden>
+            Shows the definition
+          </span>
         </button>
       ) : (
         (line ?? (

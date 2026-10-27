@@ -1000,6 +1000,11 @@ button {
 .stick__open:focus-visible .message {
   text-decoration: underline;
 }
+/* And the chip's focus ring, around the well it fills. */
+.stick__open:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 /* The tone is on the stick now, not on the message: the stick already read it
    for the error nudge, and one attribute driving both keeps the shake and the
    ink from ever disagreeing about whether a rejection happened. */
