@@ -39,7 +39,11 @@ export function useGlobalKeys(
       } else if (e.key === 'Escape') {
         g.clear();
       } else if (/^[a-zA-Z]$/.test(e.key)) {
-        if (onOpener) tiles.current?.focus();
+        // The page stays put, as it did before focus moved: a plain focus()
+        // scrolls the tiles' top edge into view in Chromium and WebKit,
+        // leaving the well above the screen at a phone's width, and Firefox
+        // doesn't scroll at all.
+        if (onOpener) tiles.current?.focus({ preventScroll: true });
         g.addLetter(e.key.toLowerCase());
       }
     };

@@ -131,6 +131,18 @@ describe('Enter on a focused chip or line', () => {
     await until(() => chip('sure'), 'Enter did not set SURE');
   });
 
+  test('a letter typed on a chip leaves the page where it is', async () => {
+    const res = await findRes();
+    // At a phone's width the list is below the well and the tiles
+    await page.viewport(375, 700);
+    res.scrollIntoView({ block: 'center' });
+    res.focus({ preventScroll: true });
+    const before = window.scrollY;
+    await userEvent.keyboard('s');
+    expect(document.activeElement, 'focus after a letter').toBe(tiles());
+    expect(window.scrollY, 'the page scrolled').toBe(before);
+  });
+
   test("a letter typed on the well's line hands focus to the tiles", async () => {
     await findRes();
     const line = host!.querySelector<HTMLButtonElement>('.stick__open')!;
