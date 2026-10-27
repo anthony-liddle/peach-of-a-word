@@ -1094,13 +1094,66 @@ describe("Game the well's line, to a screen reader", () => {
       cancelable: true,
     });
     line.dispatchEvent(enter);
-    // The page's own Enter, which submits a word, never sees it, so the
-    // button's own activation goes ahead: a browser clicks a button on Enter
-    // unless the keydown is cancelled. The browser test presses the key.
+    // The page's own Enter, which submits a word, stands aside for it, so
+    // the button's own activation goes ahead: a browser clicks a button on
+    // Enter unless the keydown is cancelled. The browser test presses the key.
     expect(enter.defaultPrevented).toBe(false);
     expect(stick().querySelector('.message')!.textContent).toBe(
       'sneer, 7 points',
     );
+  });
+});
+
+describe('Game Enter and letters on a chip or the line', () => {
+  const find = (word: string) => {
+    type(word);
+    fireEvent.keyDown(window, { key: 'Enter' });
+  };
+  const chip = (word: string) =>
+    screen.getByText(word, GRID).closest('button') as HTMLElement;
+  const line = () =>
+    within(document.querySelector('.stick') as HTMLElement).getByRole('button');
+  const tiles = () => screen.getByRole('group', { name: 'Letter tiles' });
+  const composed = () =>
+    [...document.querySelectorAll('.stick__slot')].map((s) => s.textContent);
+  /** Presses a key on `target`; true when the page cancelled it. */
+  const cancels = (target: HTMLElement, key: string) =>
+    !fireEvent.keyDown(target, { key });
+
+  it('keeps Enter on a chip for the chip, so it opens rather than submits', () => {
+    renderGame();
+    find('sea');
+    type('ne');
+    const sea = chip('sea');
+    sea.focus();
+    expect(cancels(sea, 'Enter')).toBe(false);
+    expect(composed()).toEqual(['n', 'e']);
+  });
+
+  it.each([
+    ['a chip', () => chip('sea')],
+    ['the line', line],
+  ])(
+    'hands focus to the letter tiles when a letter is typed on %s',
+    (_, on) => {
+      renderGame();
+      find('sea');
+      const target = on();
+      target.focus();
+      cancels(target, 'n');
+      expect(document.activeElement).toBe(tiles());
+      expect(composed()).toEqual(['n']);
+    },
+  );
+
+  it('leaves Enter to the page on any other button, which sets the word', () => {
+    renderGame();
+    find('sea');
+    type('near');
+    const shuffle = screen.getByRole('button', { name: /shuffle/i });
+    shuffle.focus();
+    expect(cancels(shuffle, 'Enter')).toBe(true);
+    expect(screen.getByText('near', GRID)).toBeInTheDocument();
   });
 });
 

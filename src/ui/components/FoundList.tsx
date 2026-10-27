@@ -259,6 +259,7 @@ export function FoundList({
       <button
         type="button"
         className={`found__word found__word--${w.category}`}
+        data-opens-card
         aria-label={
           ladder
             ? `${w.word}, ${categoryName(w.category, theme, costume)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}, show definition`

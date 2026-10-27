@@ -86,7 +86,8 @@ export function Game({ data, audio, storage }: Props) {
     setHowOpen(false);
     howTriggerRef.current?.focus();
   }, []);
-  useGlobalKeys(game, howOpen);
+  const tilesRef = useRef<HTMLDivElement>(null);
+  useGlobalKeys(game, howOpen, tilesRef);
 
   const { state } = game;
   const [theme] = useTheme();
@@ -222,7 +223,7 @@ export function Game({ data, audio, storage }: Props) {
             <TierMeter tier={state.tier} theme={theme} streak={game.streak} />
           )}
           <ComposingStick game={game} glint={glinting} onWordTap={onWordTap} />
-          <TypeCase game={game} />
+          <TypeCase game={game} ref={tilesRef} />
           <Controls game={game} />
         </div>
 
