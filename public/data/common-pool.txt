@@ -619,7 +619,6 @@ asks
 asleep
 aspect
 aspects
-ass
 assault
 assemble
 assembled
@@ -860,8 +859,6 @@ basis
 basket
 bass
 basses
-bastard
-bastards
 bat
 batch
 bath
@@ -2283,7 +2280,6 @@ cramp
 cramped
 cramping
 cramps
-crap
 crash
 crashed
 crashes
@@ -2428,9 +2424,7 @@ damage
 damaged
 damages
 damaging
-damn
 damnation
-damned
 damning
 damns
 damp
@@ -4607,7 +4601,6 @@ height
 heights
 held
 helicopter
-hell
 hello
 helmet
 help
@@ -5220,7 +5213,6 @@ interactions
 interactive
 interactively
 interacts
-intercourse
 interest
 interested
 interesting
@@ -7227,7 +7219,6 @@ populating
 population
 populations
 pork
-pornography
 port
 portability
 portable
@@ -8582,7 +8573,6 @@ screen
 screens
 screenshot
 screw
-screwed
 screwing
 screws
 script
@@ -8725,7 +8715,6 @@ severity
 sexes
 sexist
 sexuality
-sexy
 shade
 shades
 shadow

@@ -85,13 +85,15 @@ describe('the committed demotions', () => {
     // the 13 slur-shadowed words with a live ordinary sense, decided
     // 2026-09-26, and coulie, eskimo and eskimos. None was in the common pool.
     // 51 from orchard v1.8.1: twink, twinks and karen, none common either.
+    // 62 from orchard v1.10.0, 2026-10-27: the eleven crude words Antoine took
+    // out of every basket, each of them common before.
     //
     // The count is pinned on purpose, and this is the second record of it
     // rather than an accident: a stray demote row is a curation change nobody
     // decided, and it should fail here rather than reach a board quietly.
     // Moving this number is part of making the decision, not a chore that
     // follows it.
-    expect(demoted).toHaveLength(51);
+    expect(demoted).toHaveLength(62);
     for (const word of [
       'rape',
       'genocide',
@@ -113,6 +115,19 @@ describe('the committed demotions', () => {
       // demoted is incoherent. See abortDemotion.test.ts for what a player
       // actually experiences.
       'abort',
+      // Antoine, 2026-10-27: no word is bad, but the basket shouldn't make
+      // anyone type one.
+      'ass',
+      'bastard',
+      'bastards',
+      'crap',
+      'damn',
+      'damned',
+      'hell',
+      'intercourse',
+      'pornography',
+      'screwed',
+      'sexy',
     ]) {
       expect(demotedSet.has(word)).toBe(true);
     }
@@ -205,11 +220,21 @@ describe('the floor still holds', () => {
   it('leaves no rack below the set-size floor', () => {
     // rape alone came out of 18 racks, so a rack already near the floor could
     // have fallen under it and made a day thinner than the calendar promises.
+    //
+    // approach is the one exception, and a decided one. crap's demotion
+    // (orchard v1.10.0) took its basket from 15 to 14, where it sat before the
+    // allowlist counted. Antoine kept crap out of every basket, and approach
+    // keeps its day: the floor admits crowns, and a committed day never moves.
+    const below = new Map([['approach', 14]]);
     let lowest = Number.POSITIVE_INFINITY;
     for (const rack of calendar) {
       const size = puzzleFor(rack).commonWords.size;
+      if (below.has(rack)) {
+        expect(size, rack).toBe(below.get(rack));
+        continue;
+      }
       lowest = Math.min(lowest, size);
-      expect(size).toBeGreaterThanOrEqual(MIN_SET_SIZE);
+      expect(size, rack).toBeGreaterThanOrEqual(MIN_SET_SIZE);
     }
     expect(lowest).toBeGreaterThanOrEqual(MIN_SET_SIZE);
   }, 300_000);

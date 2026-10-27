@@ -143,11 +143,16 @@ describe('the calendar build derives from patched pools', () => {
 });
 
 describe('eligibility against the real baked data', () => {
-  it('keeps 670 of the 793 shipped source words (the rest are sub-floor)', () => {
+  it('keeps 668 of the 793 shipped source words (the rest are sub-floor)', () => {
     // 707, plus six hand admissions replacing crowns retired for register,
-    // plus the 80 the cached-null-etymology fix made eligible.
+    // plus the 80 the cached-null-etymology fix made eligible. Less two since
+    // orchard v1.10.0, each taken to 14 when a crude word left every basket:
+    // approach (crap), which keeps its day, since the generator keeps every
+    // committed word, and sexually (sexy), already retired for register.
     expect(sourceWords.length).toBe(793);
-    expect(eligible.length).toBe(670);
+    expect(eligible.length).toBe(668);
+    expect(eligible).not.toContain('approach');
+    expect(eligible).not.toContain('sexually');
   });
 
   it('treats known thin words as sub-floor (crown-inclusive)', () => {
@@ -170,12 +175,12 @@ describe('the culled, regenerated calendar', () => {
   const culledWords = () => eligible.filter((w) => !EXCLUSIONS.has(w));
 
   it('drops exactly the excluded words from the eligible pool', () => {
-    // 670 eligible minus 44 of the 54 exclusions that sit in the pool = 626
+    // 668 eligible minus 43 of the 54 exclusions that sit in the pool = 625
     // clean crowns. The first six register retirements each had a replacement
     // admitted, holding the count steady; the three added from the widened
     // candidate set were never in the pool, so they subtract nothing.
-    expect(eligible.length).toBe(670);
-    expect(culledWords().length).toBe(626);
+    expect(eligible.length).toBe(668);
+    expect(culledWords().length).toBe(625);
   });
 
   it('first run contains exactly the culled words, no excluded word', () => {
@@ -193,7 +198,11 @@ describe('the culled, regenerated calendar', () => {
       words: string[];
     };
     expect(committed.words.length).toBe(626);
-    expect([...committed.words].sort()).toEqual([...culledWords()].sort());
+    // The culled pool and approach, which no longer clears the floor but keeps
+    // its committed day: the generator never drops a word already placed.
+    expect([...committed.words].sort()).toEqual(
+      [...culledWords(), 'approach'].sort(),
+    );
     expect(committed.epoch).toEqual({ year: 2026, month: 6, day: 23 });
   });
 
