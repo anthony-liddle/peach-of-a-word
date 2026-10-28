@@ -34,12 +34,16 @@
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { eligibleSourceWords } from '../src/engine/eligibility.ts';
+import {
+  eligibleSourceWords,
+  sourceSetSize,
+} from '../src/engine/eligibility.ts';
 import { generateCalendar } from '../src/engine/calendar.ts';
 import { DAILY_EPOCH } from '../src/engine/config.ts';
 import type { SourceEntry } from '../src/data/types.ts';
 import { loadTrades, tradeProblems } from './lib/calendar-trades.ts';
 import { loadExclusions } from './lib/exclusions.ts';
+import { floorProblems } from './lib/floor.ts';
 import { loadPatchedPools } from './lib/pools.ts';
 import { writeAsset } from './lib/util.ts';
 
@@ -131,6 +135,21 @@ async function main(): Promise<void> {
     );
   }
   console.log(`  ${trades.length} recorded trades of future days hold.`);
+
+  // Every committed crown clears the floor, or is a named exception at its
+  // recorded size. A list change can take a crown under the floor without
+  // moving its day, so this is where that is caught. See lib/floor.ts.
+  const underFloor = floorProblems(
+    words.map((w) => [
+      w,
+      sourceSetSize(w, dictionary, commonPool, beyond70Pool, beyond95Pool),
+    ]),
+  );
+  if (underFloor.length > 0) {
+    throw new Error(
+      `A crown breaks the set-size floor:\n  ${underFloor.join('\n  ')}`,
+    );
+  }
 
   const calendar: CalendarFile = { epoch: DAILY_EPOCH, words };
   await writeAsset('daily-calendar.json', JSON.stringify(calendar));

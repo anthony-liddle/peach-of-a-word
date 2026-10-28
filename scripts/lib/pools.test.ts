@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MIN_SET_SIZE } from '../../src/engine/config.ts';
 import { sourceSetSize } from '../../src/engine/eligibility.ts';
 import { loadPatchedPools } from './pools.ts';
+import { FLOOR_EXCEPTIONS } from './floor.ts';
 
 /**
  * The pools the calendar derives eligibility from, read from the committed
@@ -18,7 +19,7 @@ const setSize = (word: string) =>
   );
 
 describe('loadPatchedPools', () => {
-  it('counts the allowlist, so appalled and approach clear the floor', () => {
+  it('counts the allowlist, so appalled clears the floor', () => {
     // The allowlist used to be subtracted here, to hold the derivation exactly
     // where it was while the patch moved to build time. That was an
     // implementation-level choice recorded in a comment, and the comment said
@@ -27,8 +28,11 @@ describe('loadPatchedPools', () => {
     // Both sat at 14 against a floor of 15, and the allowlist lifts each to
     // exactly 15, so the special case existed to hold back two words on a
     // technicality. Counting the allowlist retires the special case.
+    // approach cleared it too, until crap left every basket in orchard
+    // v1.10.0 and took it back to 14. It keeps its day, as a named exception
+    // to the floor; see floor.ts.
     expect(setSize('appalled')).toBeGreaterThanOrEqual(MIN_SET_SIZE);
-    expect(setSize('approach')).toBeGreaterThanOrEqual(MIN_SET_SIZE);
+    expect(setSize('approach')).toBe(FLOOR_EXCEPTIONS.get('approach')?.size);
   });
 
   it('matches the runtime, which has always counted the allowlist', () => {
@@ -36,6 +40,6 @@ describe('loadPatchedPools', () => {
     // lists, so a player could already find an allowlisted word in these racks
     // and have it counted. The build was the half that disagreed.
     expect(setSize('appalled')).toBe(15);
-    expect(setSize('approach')).toBe(15);
+    expect(setSize('approach')).toBe(FLOOR_EXCEPTIONS.get('approach')?.size);
   });
 });

@@ -1,22 +1,22 @@
 {
-  "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. v1.9.1 gives thousand's found-word gloss the numeral its reveal has carried since v1.9.0, so definitions.tsv moves by one row; no other content hash does. Every archive was repacked, so every download hash moves. No file was added. See scripts/update-lexicon.ts.",
+  "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. v1.10.0 demotes eleven crude words out of the common pool, gives fret its common sense, and strips Wiktionary's scaffolding from twenty-one cards, so common-pool.txt, dictionary-patch.tsv, definitions.tsv and etymology.tsv move; no other content hash does. Every archive was repacked, so every download hash moves. No file was added. See scripts/update-lexicon.ts.",
   "repo": "anthony-liddle/orchard",
-  "version": "v1.9.1",
+  "version": "v1.10.0",
   "files": {
     "enable.txt": "98d038730d9046da39c09e834bfe44ad948e5809c54ab2f926106b576c1844a1",
     "scowl95-additions.txt": "ffa1a153e2c48a085383bebc0a9a1ae6323756b62e605b07ccf59ea3b6352d38",
-    "common-pool.txt": "10fa33188c8de4fc0d047f0993165365e12d6e739e1072a1275ee94c1fab928f",
+    "common-pool.txt": "3f07fce97aee84410efccd6aac3308d97a4c122f2a549fb6f943ad2539ddcfdf",
     "beyond-size-70.txt": "1c164693fa9d6963d1cc915aa3f65fdc1122ed706c368d8490e094c44ba956d2",
     "beyond-size-95.txt": "e9a0eabad9dbea44cffb7ce995df516c68938a33ca15ed2e451f18aaa027b8cd",
-    "dictionary-patch.tsv": "3073e7aa8b419aef3e95d8e3c075e836a79ad7594d724ce883841468038277e6",
-    "definitions.tsv": "27074502cd3230097327455676ffc51e4a910ca6add48f7c1a4feefd7a0e4503",
-    "etymology.tsv": "c53342410c7b75dd63f27a3cc042a2427feb7a6ca6e30b619ab25eba6b17cd7e",
+    "dictionary-patch.tsv": "b57127cdeb33cc19a84216b5436762e4b190b02456326820f7ea73a2ff42c848",
+    "definitions.tsv": "1408a5d259e1b939619db50c761e42f02ba4ca6711db0c10e9acfa95ab1b0e03",
+    "etymology.tsv": "dc8f5ba472cdb1aad03643226a9404d4e29f40d86a88e213538d9a38630c4f43",
     "gloss-provenance.tsv": "0b6719c97fc47e0acce41072634b2fff1ca23606d051e2d7fa329a07821481ff"
   },
   "assets": {
-    "lexicon.tar.gz": "b82177811fed4287c9dfcd21454de6acb849e8a1890059b120d69287e752362b",
-    "dictionary-patch.tsv": "3073e7aa8b419aef3e95d8e3c075e836a79ad7594d724ce883841468038277e6",
-    "definitions.tar.gz": "4094cffa448138f99a15ae681722ce4e8e298515f4474cdf68b23665cd18362b",
-    "etymology.tar.gz": "25dd2d195bdc48ac39c1781c221d0f39d3ae962898722749ae02159112ce12c6"
+    "lexicon.tar.gz": "4f701b93d811a1acfbea9049084543458442f5802b1878005bb1289243e6669e",
+    "dictionary-patch.tsv": "b57127cdeb33cc19a84216b5436762e4b190b02456326820f7ea73a2ff42c848",
+    "definitions.tar.gz": "d84ed8b374bd120595654a96410f8f88e93c956a14b0c6d6bde9c74666475d23",
+    "etymology.tar.gz": "8240f6a9e66b2a5868ee3318a70f42edc16aca76232b7d50b0cc7c8304227858"
   }
 }
