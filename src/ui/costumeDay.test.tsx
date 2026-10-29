@@ -40,7 +40,9 @@ describe('the dates the peach dresses up', () => {
         costume: 'pie-crust',
         occasion: 'Thanksgiving',
       },
+      { month: 12, day: 21, costume: 'beanie', occasion: 'Winter solstice' },
       { month: 12, day: 24, costume: 'antlers', occasion: 'Christmas Eve' },
+      { month: 12, day: 25, costume: 'santa-hat', occasion: 'Christmas Day' },
       { month: 12, day: 31, costume: 'top-hat', occasion: "New Year's Eve" },
       { month: 1, day: 1, costume: 'top-hat', occasion: "New Year's Day" },
     ]);
@@ -127,7 +129,7 @@ const either = (days: readonly Ymd[]): Ymd[] =>
  *
  * - **New Year's Eve and Day share the top hat,** so they are one span here:
  *   the day before is 30 December and the day after 2 January.
- * - **Christmas Eve's day after is Christmas Day,** which will have its own
+ * - **Christmas Eve and Christmas Day are neighbours,** each in its own
  *   costume, so each day's neighbours are held to not wearing that day's
  *   costume rather than to wearing nothing.
  */
@@ -146,11 +148,25 @@ const WINTER: readonly {
     neighbours: either(THANKSGIVINGS),
   },
   {
+    name: 'The winter solstice',
+    costume: 'beanie',
+    spoken: 'wearing a knit beanie and scarf',
+    days: every(12, 21),
+    neighbours: either(every(12, 21)),
+  },
+  {
     name: 'Christmas Eve',
     costume: 'antlers',
     spoken: 'wearing antlers and a red nose',
     days: every(12, 24),
     neighbours: either(every(12, 24)),
+  },
+  {
+    name: 'Christmas Day',
+    costume: 'santa-hat',
+    spoken: 'wearing a Santa hat',
+    days: every(12, 25),
+    neighbours: either(every(12, 25)),
   },
   {
     name: "New Year's Eve and Day",

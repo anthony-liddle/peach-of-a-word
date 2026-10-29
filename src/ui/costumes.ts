@@ -13,7 +13,14 @@ import { STORAGE_EPOCH } from '@/engine/config.ts';
 import type { Theme } from './useTheme.ts';
 
 export type CostumeId =
-  'witch-hat' | 'lantern' | 'ghost' | 'pie-crust' | 'antlers' | 'top-hat';
+  | 'witch-hat'
+  | 'lantern'
+  | 'ghost'
+  | 'pie-crust'
+  | 'beanie'
+  | 'antlers'
+  | 'santa-hat'
+  | 'top-hat';
 
 export interface CostumePart {
   /** SVG path data, absolute M, L, C and Z only. */
@@ -231,6 +238,171 @@ export const COSTUMES: Record<CostumeId, Costume> = {
       },
     ],
   },
+  beanie: {
+    id: 'beanie',
+    spoken: 'wearing a knit beanie and scarf',
+    replacesFace: false,
+    parts: [
+      // The knit dome, leaning 14 degrees about the head's centre. Lowered to
+      // seat the pompom on top, upright it would leave the leaf peeking out
+      // beside the pompom, and the lean carries the pompom over it.
+      {
+        d:
+          'M26.7 24.5 C29.2 10.2 43.8 3.5 61.2 7.9 ' +
+          'C78.7 12.2 88.4 25 83.9 38.8 C73.8 40.4 34.9 30.7 26.7 24.5 Z',
+        fill: '#4C7FD3',
+      },
+      // The dome's knit ribs, fanning from the top, at the sizes that show a
+      // face.
+      {
+        d: 'M46.6 8.9 C42.8 15.7 40 18.6 36.5 24.4',
+        opacity: 0.55,
+        stroke: '#355FAF',
+        strokeWidth: 1.5,
+        faceOnly: true,
+      },
+      {
+        d: 'M53.4 10.6 C50.6 17.6 48.8 20.7 46.2 26.8',
+        opacity: 0.55,
+        stroke: '#355FAF',
+        strokeWidth: 1.5,
+        faceOnly: true,
+      },
+      {
+        d: 'M60.2 12.2 C58.3 19.5 57.5 22.9 55.9 29.2',
+        opacity: 0.55,
+        stroke: '#355FAF',
+        strokeWidth: 1.5,
+        faceOnly: true,
+      },
+      {
+        d: 'M67 13.9 C66.1 21.5 66.2 25.1 65.6 31.6',
+        opacity: 0.55,
+        stroke: '#355FAF',
+        strokeWidth: 1.5,
+        faceOnly: true,
+      },
+      {
+        d: 'M73.7 15.6 C73.9 23.4 75 27.3 75.3 34.1',
+        opacity: 0.55,
+        stroke: '#355FAF',
+        strokeWidth: 1.5,
+        faceOnly: true,
+      },
+      // The cuff, folded up and hugging the head, with soft round ends where it
+      // wraps out of sight.
+      {
+        d:
+          'M28.3 20.3 C37.1 26.1 74 35.3 84.5 34.3 ' +
+          'C88.2 36.2 87.7 42.3 83.8 43.4 C71.7 44.5 34.8 35.3 24.6 28.6 ' +
+          'C21.7 25.9 24.1 20.3 28.3 20.3 Z',
+        fill: '#5E8CDB',
+      },
+      // Its ribs, the knit's up-and-down, at the sizes that show a face.
+      {
+        d: 'M32.3 24.7 L30.9 30.3',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M37.9 27 L36.5 32.6',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M43.6 28.9 L42.2 34.6',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M49.4 30.8 L48 36.4',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M55.2 32.3 L53.7 38',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M61 33.7 L59.6 39.3',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M66.9 34.8 L65.5 40.4',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M72.9 35.7 L71.5 41.3',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      {
+        d: 'M78.9 36.3 L77.5 41.9',
+        opacity: 0.55,
+        stroke: '#3D68B8',
+        strokeWidth: 1.3,
+        faceOnly: true,
+      },
+      // The fold along its top, lit.
+      {
+        d: 'M28.3 20.3 C37.1 26.1 74 35.3 84.5 34.3',
+        stroke: '#7FA6E8',
+        strokeWidth: 1.4,
+      },
+      // The pompom, on top, fluffy: white, with a faint edge on its bumps so it
+      // holds on a cream page and a light tab strip.
+      {
+        d:
+          'M62.4 3.1 C64.1 1.7 67.3 4 66.3 6.1 C68 6.1 68.7 8.7 67.3 9.5 ' +
+          'C69.3 11 67.3 15 64.9 14.3 C65.1 16.1 62.2 17.2 61.2 15.7 ' +
+          'C60.1 17.6 56.7 16.5 56.9 14.3 C55.5 14.8 54 12.8 54.8 11.6 ' +
+          'C52.6 11 52.8 6.9 55.1 6.5 C54.2 4.9 56.1 2.8 57.8 3.7 ' +
+          'C58 1.5 61.7 1.1 62.4 3.1 Z',
+        fill: '#FFFFFF',
+        stroke: '#BFD0EE',
+        strokeWidth: 1.4,
+      },
+      // The scarf, round the neck, its tail hanging down the front with a white
+      // stripe, and its top edge lit.
+      {
+        d: 'M17 70.5 C33 76 67 76 83 70.5 L81 79 C66 84.5 34 84.5 19 79 Z',
+        fill: '#4C7FD3',
+      },
+      {
+        d: 'M58 78 L69 76.5 L74 94 L63 96 Z',
+        fill: '#4C7FD3',
+      },
+      {
+        d: 'M60.2 85 L70.6 83.3 L71.9 87.5 L61.4 89.3 Z',
+        fill: '#FFFFFF',
+        opacity: 0.9,
+      },
+      {
+        d: 'M17 70.5 C33 76 67 76 83 70.5',
+        stroke: '#7FA6E8',
+        strokeWidth: 1.4,
+      },
+    ],
+  },
   antlers: {
     id: 'antlers',
     spoken: 'wearing antlers and a red nose',
@@ -312,6 +484,57 @@ export const COSTUMES: Record<CostumeId, Costume> = {
       },
     ],
   },
+  'santa-hat': {
+    id: 'santa-hat',
+    spoken: 'wearing a Santa hat',
+    replacesFace: false,
+    parts: [
+      // The elf hat's body and its fold, in Santa's red, the tip flopping over
+      // to the side.
+      {
+        d:
+          'M22 25 C26 16 36 6 50 3 C62 1 74 4 84 12 C78 11 70 11 64 14 ' +
+          'C70 17 74 21 78 25 Z',
+        fill: '#D93A36',
+      },
+      {
+        d: 'M50 3 C62 1 74 4 84 12 C76 9 66 8 58 11 Z',
+        fill: '#AE2A2A',
+        opacity: 0.6,
+      },
+      // The fur trim, following the band's curve round the head, its lower edge
+      // in soft bumps. White, with an edge so it holds on a cream page and a
+      // light tab strip.
+      {
+        d:
+          'M19 24.5 C21.3 23.2 24.4 21.6 26.8 23 ' +
+          'C29.1 21.6 32.2 20.6 34.5 21.9 C36.8 20.6 39.9 19.9 42.2 21.2 ' +
+          'C44.6 19.9 47.7 19.7 50 21 C52.3 19.7 55.4 19.9 57.8 21.2 ' +
+          'C60.1 19.9 63.2 20.6 65.5 21.9 C67.8 20.6 70.9 21.6 73.2 23 ' +
+          'C75.6 21.6 78.7 23.2 81 24.5 C83.6 26 83.6 30.5 81 32 ' +
+          'C79.5 34.2 74.8 32.7 73.2 30.5 C71.7 32.7 67 31.6 65.5 29.4 ' +
+          'C64 31.6 59.3 30.9 57.8 28.7 C56.2 30.9 51.5 30.7 50 28.5 ' +
+          'C48.5 30.7 43.8 30.9 42.2 28.7 C40.7 30.9 36 31.6 34.5 29.4 ' +
+          'C33 31.6 28.3 32.7 26.8 30.5 C25.2 32.7 20.6 34.2 19 32 ' +
+          'C16.4 30.5 16.4 26 19 24.5 Z',
+        fill: '#FFFFFF',
+        stroke: '#E2D3D3',
+        strokeWidth: 1.6,
+      },
+      // The pompom, where the elf's bell hangs, fluffy, with the same edge.
+      {
+        d:
+          'M84 10.1 C85 8.8 87.8 10 87.5 11.6 ' +
+          'C88.8 11.4 89.8 13.5 88.9 14.4 C90.5 15.5 89.1 18.9 87.2 18.7 ' +
+          'C87.4 20.2 84.9 21.1 84 19.9 C82.9 21.3 79.9 19.8 80.2 18.1 ' +
+          'C79 18.1 78.2 16 79.1 15.2 C77.7 14.1 79 11.1 80.8 11.3 ' +
+          'C80.6 9.9 83.1 8.9 84 10.1 Z',
+        fill: '#FFFFFF',
+        stroke: '#E2D3D3',
+        strokeWidth: 1.6,
+      },
+    ],
+  },
   'top-hat': {
     id: 'top-hat',
     spoken: 'wearing a top hat',
@@ -365,7 +588,9 @@ export const COSTUME_ORDER: readonly CostumeId[] = [
   'lantern',
   'ghost',
   'pie-crust',
+  'beanie',
   'antlers',
+  'santa-hat',
   'top-hat',
 ];
 
@@ -451,7 +676,9 @@ export const COSTUME_DAYS: readonly CostumeDay[] = [
     costume: 'pie-crust',
     occasion: 'Thanksgiving',
   },
+  { month: 12, day: 21, costume: 'beanie', occasion: 'Winter solstice' },
   { month: 12, day: 24, costume: 'antlers', occasion: 'Christmas Eve' },
+  { month: 12, day: 25, costume: 'santa-hat', occasion: 'Christmas Day' },
   { month: 12, day: 31, costume: 'top-hat', occasion: "New Year's Eve" },
   { month: 1, day: 1, costume: 'top-hat', occasion: "New Year's Day" },
 ];

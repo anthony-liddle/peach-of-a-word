@@ -81,7 +81,9 @@ const wearsGhost = (el: Element | null) =>
 /** Each winter costume's day, and what its peach says on it. */
 const WINTER_DAYS: readonly (readonly [number, number, number, string])[] = [
   [2026, 11, 26, 'The peach is wearing a pie crust hat.'],
+  [2026, 12, 21, 'The peach is wearing a knit beanie and scarf.'],
   [2026, 12, 24, 'The peach is wearing antlers and a red nose.'],
+  [2026, 12, 25, 'The peach is wearing a Santa hat.'],
   [2026, 12, 31, 'The peach is wearing a top hat.'],
   [2027, 1, 1, 'The peach is wearing a top hat.'],
 ];
