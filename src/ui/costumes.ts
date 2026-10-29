@@ -12,7 +12,8 @@
 import { STORAGE_EPOCH } from '@/engine/config.ts';
 import type { Theme } from './useTheme.ts';
 
-export type CostumeId = 'witch-hat' | 'lantern' | 'ghost';
+export type CostumeId =
+  'witch-hat' | 'lantern' | 'ghost' | 'pie-crust' | 'antlers' | 'top-hat';
 
 export interface CostumePart {
   /** SVG path data, absolute M, L, C and Z only. */
@@ -168,6 +169,194 @@ export const COSTUMES: Record<CostumeId, Costume> = {
       },
     ],
   },
+  'pie-crust': {
+    id: 'pie-crust',
+    spoken: 'wearing a pie crust hat',
+    replacesFace: false,
+    parts: [
+      // The dish's side, under the rim, sitting into the head.
+      {
+        d: 'M17 21 L83 21 L76 30 C64 33.5 36 33.5 24 30 Z',
+        fill: '#B66E2C',
+      },
+      // The filling, domed, which the lattice is laid over. It covers the leaf.
+      {
+        d: 'M18 21 C19 7 34 3 50 3 C66 3 81 7 82 21 Z',
+        fill: '#9C3434',
+      },
+      // The lattice: two strips across, then four down over them.
+      {
+        d: 'M30.5 6.1 L69.5 6.1 L76 9.9 L24 9.9 Z',
+        fill: '#F6C677',
+      },
+      {
+        d: 'M21.5 12.7 L78.5 12.7 L80.5 16.5 L19.5 16.5 Z',
+        fill: '#F6C677',
+      },
+      {
+        d: 'M27.7 7.7 L32.3 5.8 L32.3 21 L27.7 21 Z',
+        fill: '#F6C677',
+      },
+      {
+        d: 'M41.2 4.1 L45.8 3.7 L45.8 21 L41.2 21 Z',
+        fill: '#F6C677',
+      },
+      {
+        d: 'M54.2 3.7 L58.8 4.1 L58.8 21 L54.2 21 Z',
+        fill: '#F6C677',
+      },
+      {
+        d: 'M67.7 5.8 L72.3 7.7 L72.3 21 L67.7 21 Z',
+        fill: '#F6C677',
+      },
+      // The crimped rim, its top edge in scallops, outlined so it holds on the
+      // peach's own orange.
+      {
+        d:
+          'M15 25.5 L15 19.5 C15.8 15.5 22 15.5 22.8 19.5 ' +
+          'C23.6 15.5 29.8 15.5 30.6 19.5 C31.3 15.5 37.6 15.5 38.3 19.5 ' +
+          'C39.1 15.5 45.3 15.5 46.1 19.5 C46.9 15.5 53.1 15.5 53.9 19.5 ' +
+          'C54.7 15.5 60.9 15.5 61.7 19.5 C62.4 15.5 68.7 15.5 69.4 19.5 ' +
+          'C70.2 15.5 76.4 15.5 77.2 19.5 C78 15.5 84.2 15.5 85 19.5 ' +
+          'L85 25.5 C70 27.5 30 27.5 15 25.5 Z',
+        fill: '#E09A48',
+        stroke: '#8A4E1E',
+        strokeWidth: 1.4,
+      },
+      // The dome's edge, so the pie's outline reads at the chip's size.
+      {
+        d: 'M18 21 C19 7 34 3 50 3 C66 3 81 7 82 21',
+        stroke: '#8A4E1E',
+        strokeWidth: 1.4,
+      },
+    ],
+  },
+  antlers: {
+    id: 'antlers',
+    spoken: 'wearing antlers and a red nose',
+    replacesFace: false,
+    parts: [
+      // The antlers: thick strokes, since a hairline vanishes at the chip's
+      // size. Each is a beam swept up and out, a tine out and a tine up,
+      // mirrored. They keep clear of the crown's band, so the crown stands
+      // between them, and the leaf shows whole between them.
+      {
+        d: 'M37 22 L31 13 L25 3.5',
+        stroke: '#9A6238',
+        strokeWidth: 6.5,
+      },
+      {
+        d: 'M63 22 L69 13 L75 3.5',
+        stroke: '#9A6238',
+        strokeWidth: 6.5,
+      },
+      {
+        d: 'M31.5 14 L19 11.5',
+        stroke: '#9A6238',
+        strokeWidth: 6.5,
+      },
+      {
+        d: 'M68.5 14 L81 11.5',
+        stroke: '#9A6238',
+        strokeWidth: 6.5,
+      },
+      {
+        d: 'M27.5 7.5 L18.5 4',
+        stroke: '#9A6238',
+        strokeWidth: 6.5,
+      },
+      {
+        d: 'M72.5 7.5 L81.5 4',
+        stroke: '#9A6238',
+        strokeWidth: 6.5,
+      },
+      // Ears, low beside the antlers, at the sizes that show a face.
+      {
+        d: 'M33 26 C27 22 19 22 15 25 C19 30 27 31 33 26 Z',
+        fill: '#C98D5E',
+        faceOnly: true,
+      },
+      {
+        d: 'M67 26 C73 22 81 22 85 25 C81 30 73 31 67 26 Z',
+        fill: '#C98D5E',
+        faceOnly: true,
+      },
+      {
+        d: 'M31 26 C27 24 22 24 19 25.3 C22 28 27 28.5 31 26 Z',
+        fill: '#F2B9A8',
+        faceOnly: true,
+      },
+      {
+        d: 'M69 26 C73 24 78 24 81 25.3 C78 28 73 28.5 69 26 Z',
+        fill: '#F2B9A8',
+        faceOnly: true,
+      },
+      // The red nose, between the eyes and the smile, with a glint. It goes
+      // with the face: where the face drops, the antlers carry the day.
+      {
+        d:
+          'M45.4 61.5 C45.4 59 47.5 56.9 50 56.9 ' +
+          'C52.5 56.9 54.6 59 54.6 61.5 C54.6 64 52.5 66.1 50 66.1 ' +
+          'C47.5 66.1 45.4 64 45.4 61.5 Z',
+        fill: '#E5383B',
+        faceOnly: true,
+      },
+      {
+        d:
+          'M47.1 59.9 C47.1 59.2 47.7 58.6 48.4 58.6 ' +
+          'C49.1 58.6 49.7 59.2 49.7 59.9 C49.7 60.6 49.1 61.2 48.4 61.2 ' +
+          'C47.7 61.2 47.1 60.6 47.1 59.9 Z',
+        fill: '#FFFFFF',
+        opacity: 0.85,
+        faceOnly: true,
+      },
+    ],
+  },
+  'top-hat': {
+    id: 'top-hat',
+    spoken: 'wearing a top hat',
+    replacesFace: false,
+    parts: [
+      // The brim, tilted with the hat.
+      {
+        d:
+          'M21.2 20.5 C21.8 16 79.3 24.1 78.6 28.5 ' +
+          'C78 33 20.6 24.9 21.2 20.5 Z',
+        fill: '#2E2A3A',
+      },
+      // The crown. It stands tall enough, tilted, to keep the leaf covered.
+      {
+        d: 'M35 1.7 C35.2 0.2 70.8 5.2 70.6 6.7 L65.8 26.2 L34.2 21.8 Z',
+        fill: '#2E2A3A',
+      },
+      // Its gold band.
+      {
+        d: 'M34.5 14.8 L67.4 19.4 L66.1 24.7 L34.4 20.3 Z',
+        fill: '#FFD34D',
+      },
+      // The lit edges, which hold it on a dark tab strip.
+      {
+        d: 'M36.3 2.9 L35.8 21',
+        stroke: '#6C6588',
+        strokeWidth: 1.6,
+      },
+      {
+        d: 'M23.4 19.3 C34.6 18.8 66.3 23.3 76.9 26.8',
+        stroke: '#6C6588',
+        strokeWidth: 1.4,
+      },
+      // A sparkle beside it.
+      {
+        d:
+          'M20 4.5 C21.4 10.7 21.4 10.7 27.5 12 ' +
+          'C21.4 13.3 21.4 13.3 20 19.5 C18.6 13.3 18.6 13.3 12.5 12 ' +
+          'C18.6 10.7 18.6 10.7 20 4.5 Z',
+        fill: '#FFD34D',
+        stroke: '#D9A52B',
+        strokeWidth: 1.1,
+      },
+    ],
+  },
 };
 
 /** In a fixed order, so the table hashes the same in both apps. */
@@ -175,6 +364,9 @@ export const COSTUME_ORDER: readonly CostumeId[] = [
   'witch-hat',
   'lantern',
   'ghost',
+  'pie-crust',
+  'antlers',
+  'top-hat',
 ];
 
 /**
@@ -231,6 +423,10 @@ export interface CostumeDay {
  */
 export const COSTUME_DAYS: readonly CostumeDay[] = [
   { month: 10, day: 31, costume: 'ghost', occasion: 'Halloween' },
+  { month: 11, day: 26, costume: 'pie-crust', occasion: 'Thanksgiving' },
+  { month: 12, day: 24, costume: 'antlers', occasion: 'Christmas Eve' },
+  { month: 12, day: 31, costume: 'top-hat', occasion: "New Year's Eve" },
+  { month: 1, day: 1, costume: 'top-hat', occasion: "New Year's Day" },
 ];
 
 /** The costume for a calendar date, or null. */

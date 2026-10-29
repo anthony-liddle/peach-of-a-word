@@ -15,7 +15,7 @@ import {
  * fails in the one that was not changed.
  */
 const COSTUME_TABLE_SHA256 =
-  '86fb74a3168949f186ff187839540a19b8c65525547fe3b86cc4968ae9bf6040';
+  '79c6c6cce86a6e5cfc106aa1ea08345f802b14180d0a51760890a48433a93055';
 
 /** Each command and its numbers, for absolute M, L, C and Z only. */
 function commands(d: string): { op: string; points: [number, number][] }[] {
