@@ -1,0 +1,178 @@
+/* The artwork: cute's page, at Apple's pixel size. Sizes inside are set inline,
+   in hundredths of the safe area's height. */
+.store-art {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fff4ee, #ffe6dc);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+/* For checking only: never in a file to upload. */
+.store-art__safe {
+  position: absolute;
+  box-sizing: border-box;
+  border-style: dashed;
+  border-color: #1f8fff;
+  background: rgb(31 143 255 / 0.07);
+}
+
+.store-art-index {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+  font-family: var(--font-body);
+}
+.store-art-index h1 {
+  font-family: var(--font-display);
+}
+
+/* Side by side: each direction's three artworks at one height. */
+.store-art-side {
+  width: max-content;
+  padding: 24px 40px 40px;
+  background: #ffffff;
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+.store-art-side h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  margin: 20px 0 10px;
+}
+.store-art-side__row {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+.store-art-side__head {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* On a phone: a product page's top and a search result, light or dark. The
+   system's own look, roughly, around the art; only the art is the game's. */
+.phones {
+  display: flex;
+  gap: 40px;
+  padding: 40px;
+  width: max-content;
+  background: #d8d8dc;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  --page: #ffffff;
+  --text: #000000;
+  --muted: #8a8a8e;
+  --chip: #e9e9eb;
+  --blue: #007aff;
+  --field: #eeeef0;
+}
+.phones--dark {
+  background: #3a3a3c;
+  --page: #000000;
+  --text: #ffffff;
+  --muted: #8d8d93;
+  --chip: #2c2c2e;
+  --blue: #0a84ff;
+  --field: #1c1c1e;
+}
+.phone {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--page);
+  color: var(--text);
+  border-radius: 44px;
+  overflow: hidden;
+  padding-bottom: 28px;
+}
+.phone__header {
+  position: relative;
+}
+.phone__clock {
+  position: absolute;
+  left: 44px;
+  top: 16px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #000;
+}
+.phone__button {
+  position: absolute;
+  top: 52px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  background: rgb(255 255 255 / 0.72);
+  color: #000;
+  font-size: 22px;
+  line-height: 1;
+}
+.phone__button--back {
+  left: 16px;
+}
+.phone__button--share {
+  right: 16px;
+  font-size: 17px;
+}
+.phone__inset {
+  padding: 14px 16px 0;
+}
+.phone__search {
+  margin-top: 26px;
+  padding: 16px 18px 0;
+  border-top: 8px solid var(--field);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.phone__field {
+  background: var(--field);
+  color: var(--muted);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 16px;
+}
+.phone__app {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.phone__app img {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+}
+.phone__app div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 16px;
+}
+.phone__app span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.phone__app b {
+  background: var(--chip);
+  color: var(--blue);
+  border-radius: 999px;
+  padding: 6px 20px;
+  font-size: 15px;
+}
+.phone__card {
+  border-radius: 16px;
+  overflow: hidden;
+  align-self: center;
+}
+.phone figcaption {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
