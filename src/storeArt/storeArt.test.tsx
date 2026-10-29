@@ -71,8 +71,10 @@ describe('the store art page', () => {
         render(<MotionFrame placement="search" t={t} />).container;
       const settled = at(ARRIVALS[i]! + SETTLED_S);
       const layers = [...settled.querySelectorAll<SVGGElement>('[data-stage]')];
-      expect(layers.at(-1)!.getAttribute('data-stage')).toBe(id);
-      expect(layers.at(-1)!.getAttribute('opacity')).toBe('1');
+      expect(layers.map((l) => l.getAttribute('data-stage'))).toEqual(
+        id === 'first-sprout' ? [id, 'soil'] : [id],
+      );
+      for (const l of layers) expect(l.getAttribute('opacity')).toBe('1');
       const box = (c: HTMLElement) =>
         c.querySelector('[data-focal]')!.getAttribute('viewBox');
       expect(box(settled)).toBe(box(at(0)));

@@ -8,11 +8,12 @@
  *
  * With `--preview`, what the timing and the mix are judged by, at half of
  * Apple's size, into `<dir>`:
- * - each video three loops long at its real speed, the header's with its
- *   sound and the search results' silent, so the loop is seen and heard
- *   joining twice;
+ * - each video as its file will be, at its real speed: the loop twice,
+ *   turned to start and end on the settled crown, its poster frame; the
+ *   header's with its sound and the search results' silent;
  * - the frames where each stage arrives, for each placement;
- * - the loop point at a quarter of its speed;
+ * - the way back to the soil at a quarter of its speed, from just before
+ *   the file joins until the next sprout has settled;
  * - the header's sound alone, as it goes into the video, a 32-bit float WAV;
  * - `numbers.txt`: when each stage arrives and what it plays, and the
  *   sound's loudness, peak and edges, as rendered and as mixed.
@@ -23,9 +24,10 @@
  * mid-arrival is checked against the page's own render of it.
  *
  * **Guards:** every frame's focal element sits in Apple's safe area; the
- * loop's last frame is its first; one frame captured twice is the same twice;
- * the sound doesn't clip, and its first and last moments are silent, so the
- * loop's join can't click.
+ * loop's last frame is its first, and so is each file's; one frame captured
+ * twice is the same twice; the sound doesn't clip, and each file's first and
+ * last moments are silent, as rendered and as encoded, so its join can't
+ * click.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
@@ -47,10 +49,13 @@ import { GROWTH_STAGES } from '../src/storeArt/growthStages.ts';
 import {
   ARRIVALS,
   BEATS,
-  FADE_AT,
   LOOP_S,
+  RETURN_AT,
   SAMPLE_RATE,
   SETTLED_S,
+  SINK_S,
+  SOIL_S,
+  START_AT,
 } from '../src/storeArt/motion.ts';
 import { PLACEMENTS, type PlacementId } from '../src/storeArt/storeArtSpec.ts';
 
@@ -75,12 +80,18 @@ const FPS = 30;
  * page.
  */
 const PREVIEW_SCALE = 0.5;
-/** The previews play the loop this many times, so it joins twice. */
-const PREVIEW_LOOPS = 3;
-/** The loop point at a quarter of its speed. */
+/**
+ * Each file plays the loop this many times: clear of every minimum length
+ * anyone reports, and under Apple's 30 s.
+ */
+const FILE_LOOPS = 2;
+/** The way back to the soil at a quarter of its speed. */
 const SLOWED = 4;
-/** From just before the crown fades until the next sprout has settled. */
-const SEAM_FROM = FADE_AT - 0.2;
+/**
+ * From just before each file joins, on the crown, through its sinking and
+ * the soil's return, until the next sprout has settled.
+ */
+const SEAM_FROM = START_AT - 0.2;
 const SEAM_TO = LOOP_S + ARRIVALS[0]! + SETTLED_S;
 /**
  * The sound is brought to this loudness with one gain for the whole mix, so
@@ -103,6 +114,19 @@ const DUAL_MONO = 'pan=stereo|c0=c0|c1=c0';
 
 const LOOP_FRAMES = Math.round(LOOP_S * FPS);
 const LOOP_SAMPLES = Math.round(LOOP_S * SAMPLE_RATE);
+const START_FRAME = Math.round(START_AT * FPS);
+const START_SAMPLE = Math.round(START_AT * SAMPLE_RATE);
+
+/** One loop, turned to start at `at`, where a file starts. */
+function turned<T extends Buffer[] | Float32Array>(loop: T, at: number): T {
+  if (loop instanceof Float32Array) {
+    const out = new Float32Array(loop.length);
+    out.set(loop.subarray(at));
+    out.set(loop.subarray(0, at), loop.length - at);
+    return out as T;
+  }
+  return [...loop.slice(at), ...loop.slice(0, at)] as T;
+}
 
 const BT709 = [
   '-colorspace',
@@ -184,6 +208,35 @@ function loudness(path: string): { lufs: number; truePeak: number } {
 }
 
 const dbfs = (x: number) => (x > 0 ? 20 * Math.log10(x) : -Infinity);
+
+/** The first channel of a file's sound, decoded, at the sample rate. */
+function decoded(path: string): Float32Array {
+  const run = spawnSync(
+    'ffmpeg',
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      path,
+      '-map',
+      '0:a',
+      '-af',
+      'pan=mono|c0=c0',
+      '-ar',
+      String(SAMPLE_RATE),
+      '-f',
+      'f32le',
+      '-',
+    ],
+    { maxBuffer: 1 << 30 },
+  );
+  if (run.status !== 0) throw new Error(`Couldn't decode ${path}`);
+  const bytes = run.stdout;
+  const samples = new Float32Array(bytes.length / 4);
+  new Uint8Array(samples.buffer).set(bytes);
+  return samples;
+}
 
 /** The RMS of `samples`, in dBFS. */
 function rms(samples: Float32Array): number {
@@ -428,7 +481,7 @@ try {
   // ---- The sound -------------------------------------------------------------
   await size(chrome, 1280, 800);
   await open(chrome, '?motion=header');
-  const raw = await soundtrack(chrome);
+  const raw = turned(await soundtrack(chrome), START_SAMPLE);
   const rawPath = join(OUT, 'header-sound-as-rendered.wav');
   writeFileSync(rawPath, encodeWav(raw, SAMPLE_RATE));
   const before = loudness(rawPath);
@@ -451,10 +504,10 @@ try {
   if (peak >= 1) throw new Error(`The sound clips: its peak is ${peak}.`);
   if (first > SILENT_DBFS || last > SILENT_DBFS)
     throw new Error(
-      `The loop's ends aren't silent: ${first.toFixed(1)} and ${last.toFixed(1)} dBFS.`,
+      `The file's ends aren't silent: ${first.toFixed(1)} and ${last.toFixed(1)} dBFS.`,
     );
   notes.push(
-    `Sound, ${SAMPLE_RATE} Hz mono, one ${LOOP_S} s loop.`,
+    `Sound, ${SAMPLE_RATE} Hz mono, one ${LOOP_S.toFixed(2)} s loop, turned to start at ${START_AT.toFixed(2)} s.`,
     `  As rendered, the game's own level: ${before.lufs} LUFS integrated, true peak ${before.truePeak} dBTP.`,
     `  Mixed, one gain of ${gainDb >= 0 ? '+' : ''}${gainDb.toFixed(2)} dB: ` +
       `${after.lufs} LUFS, true peak ${after.truePeak} dBTP, sample peak ${dbfs(peak).toFixed(2)} dBFS.`,
@@ -464,13 +517,15 @@ try {
   // ---- The frames and the previews -----------------------------------------
   for (const placement of ['header', 'search'] as const) {
     const shots = await loopFrames(chrome, placement, PREVIEW_SCALE);
+    if (!shots[START_FRAME - 1]!.equals(shots[START_FRAME]!))
+      throw new Error(`${placement}: the file's last frame isn't its first.`);
     notes.push(
       await sameAsThePage(chrome, placement, PREVIEW_SCALE, shots[MID_FRAME]!),
     );
     await encodePreview(
-      shots,
+      turned(shots, START_FRAME),
       join(OUT, `${placement}-preview.mp4`),
-      PREVIEW_LOOPS,
+      FILE_LOOPS,
       placement === 'header' ? soundPath : undefined,
     );
     await transparent(chrome, false);
@@ -481,12 +536,34 @@ try {
     writeFileSync(sheet, await screenshot(chrome, box.width, box.height, 2));
     console.log(`wrote ${sheet.slice(OUT.length + 1)}`);
   }
-  const header = loudness(join(OUT, 'header-preview.mp4'));
+  const headerPath = join(OUT, 'header-preview.mp4');
+  const header = loudness(headerPath);
+  // As encoded: the file's first and last moments, and where its two loops
+  // join, all on the crown after the sound has rung out.
+  const heard = decoded(headerPath);
+  if (heard.length !== FILE_LOOPS * LOOP_SAMPLES)
+    throw new Error(
+      `The header's sound decodes to ${heard.length} samples, not ${FILE_LOOPS * LOOP_SAMPLES}.`,
+    );
+  const quiet = [
+    ['its start', rms(heard.subarray(0, edge))],
+    ['its end', rms(heard.subarray(-edge))],
+    [
+      'its loops joining',
+      rms(heard.subarray(LOOP_SAMPLES - edge, LOOP_SAMPLES + edge)),
+    ],
+  ] as const;
+  const loud = quiet.filter(([, db]) => db > SILENT_DBFS);
+  if (loud.length)
+    throw new Error(
+      `The header's AAC isn't silent at ${loud.map(([at, db]) => `${at}, ${db.toFixed(1)} dBFS`).join('; ')}.`,
+    );
   notes.push(
-    `The header preview's AAC, ${PREVIEW_LOOPS} loops: ${header.lufs} LUFS, true peak ${header.truePeak} dBTP.`,
+    `The header preview's AAC, ${FILE_LOOPS} loops: ${header.lufs} LUFS, true peak ${header.truePeak} dBTP.`,
+    `  Decoded, RMS at ${quiet.map(([at, db]) => `${at} ${db.toFixed(1)}`).join(', ')} dBFS.`,
   );
 
-  // ---- The loop point, slowed ------------------------------------------------
+  // ---- The way back to the soil, slowed --------------------------------------
   const steps = Math.round((SEAM_TO - SEAM_FROM) * FPS * SLOWED);
   const times = Array.from(
     { length: steps + 1 },
@@ -494,22 +571,29 @@ try {
   );
   const seam = await bareFrames(chrome, 'header', PREVIEW_SCALE, times);
   await encodePreview(seam, join(OUT, 'loop-point-quarter-speed.mp4'), 1);
+  const into = (t: number) => `${((t - SEAM_FROM) * SLOWED).toFixed(2)} s`;
   notes.push(
-    `The loop point at a quarter speed: ${SEAM_FROM.toFixed(2)} s to the next loop's ` +
-      `${(SEAM_TO - LOOP_S).toFixed(2)} s, ${steps + 1} frames; the loop joins ` +
-      `${((LOOP_S - SEAM_FROM) * SLOWED).toFixed(2)} s into the clip.`,
+    `The way back to the soil at a quarter speed: ${SEAM_FROM.toFixed(2)} s to the next loop's ` +
+      `${(SEAM_TO - LOOP_S).toFixed(2)} s, ${steps + 1} frames. Into the clip: ` +
+      `the file joins at ${into(START_AT)}; the crown sinks from ${into(RETURN_AT)}; ` +
+      `the soil fades in from ${into(RETURN_AT + SINK_S)}, whole at ${into(RETURN_AT + SINK_S + SOIL_S)}; ` +
+      `the loop's own join, on the soil, at ${into(LOOP_S)}; the sprout at ${into(LOOP_S + ARRIVALS[0]!)}.`,
   );
 
   // ---- The numbers -----------------------------------------------------------
   notes.unshift(
-    `A ${LOOP_S} s loop at ${FPS} fps, ${LOOP_FRAMES} frames.`,
+    `A ${LOOP_S.toFixed(2)} s loop at ${FPS} fps, ${LOOP_FRAMES} frames.`,
+    `Each file starts on the crown at ${START_AT.toFixed(2)} s, frame ${START_FRAME}, its poster frame, ` +
+      `and plays the loop ${FILE_LOOPS} times: ${FILE_LOOPS * LOOP_FRAMES} frames, ${(FILE_LOOPS * LOOP_S).toFixed(2)} s.`,
     ...BEATS.map(
       (b) =>
         `${b.at.toFixed(2)} s, frame ${Math.round(b.at * FPS)}: ` +
         `${GROWTH_STAGES.find((s) => s.id === b.stage)!.spoken}, ` +
         (b.call === 'edition' ? 'edition' : `found-${b.length}-set`),
     ),
-    `${FADE_AT.toFixed(2)} s, frame ${Math.round(FADE_AT * FPS)}: back to the soil, silent`,
+    `${RETURN_AT.toFixed(2)} s, frame ${Math.round(RETURN_AT * FPS)}: the crown sinks into the soil, silent`,
+    `${(RETURN_AT + SINK_S).toFixed(2)} s, frame ${Math.round((RETURN_AT + SINK_S) * FPS)}: the crown has gone; the soil fades in`,
+    `${(RETURN_AT + SINK_S + SOIL_S).toFixed(2)} s, frame ${Math.round((RETURN_AT + SINK_S + SOIL_S) * FPS)}: the soil, whole`,
   );
   writeFileSync(join(OUT, 'numbers.txt'), `${notes.join('\n')}\n`);
   console.log(notes.join('\n'));

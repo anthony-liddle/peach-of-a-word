@@ -5,11 +5,13 @@ import { GROWTH_STAGES, bounds, type GrowthStage } from './growthStages.ts';
 import cues from '@/audio/peach.cues.json';
 import {
   BEATS,
-  FADE_AT,
-  FADE_S,
   LOOP_S,
   PEACH_BOX,
+  RETURN_AT,
   SETTLED_S,
+  SINK_S,
+  SOIL_S,
+  START_AT,
   peachAt,
   type Beat,
 } from './motion.ts';
@@ -608,8 +610,9 @@ const AFTER = [0, 0.1, 0.2, 0.4, SETTLED_S];
 
 /**
  * For each stage, the frame where it arrives and the frames after, until it
- * has settled, with the cue it plays; then the fade back to the soil. Each
- * frame is cropped to 4:3 about the peach.
+ * has settled, with the cue it plays; then the crown sinking into the soil,
+ * and the soil coming back once it has gone. Each frame is cropped to 4:3
+ * about the peach.
  */
 function Arrivals({ placement }: { placement: PlacementId }) {
   const rows = [
@@ -618,18 +621,28 @@ function Arrivals({ placement }: { placement: PlacementId }) {
       at: beat.at,
       sound: `${cueOf(beat)}: ${notesOf(beat)}`,
       after: AFTER,
+      first: 'arrives',
     })),
     {
-      title: 'back to the soil',
-      at: FADE_AT,
+      title: 'sinking into the soil',
+      at: RETURN_AT,
       sound: 'silent',
-      after: [0, 0.2, 0.4, 0.6, FADE_S],
+      after: [0, 0.1, 0.2, 0.3, 0.4],
+      first: 'starts',
+    },
+    {
+      title: 'the soil again',
+      at: RETURN_AT + SINK_S,
+      sound: 'silent',
+      after: [0, 0.1, 0.2, 0.3, SOIL_S],
+      first: 'starts',
     },
   ];
   return (
     <main className="store-art-sheet" data-sheet="arrivals">
       <h1>
-        {PLACEMENTS[placement].label}: a {LOOP_S} s loop
+        {PLACEMENTS[placement].label}: a {LOOP_S.toFixed(2)} s loop, each file
+        starting at {START_AT.toFixed(2)} s
       </h1>
       {rows.map((row) => (
         <section key={row.title}>
@@ -646,7 +659,7 @@ function Arrivals({ placement }: { placement: PlacementId }) {
                   t={row.at + d}
                 />
                 <figcaption>
-                  {d === 0 ? 'arrives' : `+${d.toFixed(1)} s`}
+                  {d === 0 ? row.first : `+${d.toFixed(1)} s`}
                 </figcaption>
               </figure>
             ))}

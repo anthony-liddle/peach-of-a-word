@@ -5,7 +5,7 @@ import type { Rect } from './storeArtSpec.ts';
 /**
  * The store art in motion: one peach growing in place, from the empty soil
  * through each stage to the crown, as the iOS title's peach grows over a day,
- * then a soft fade back to the soil, on a loop with no seam.
+ * then sinking back into the soil, on a loop with no seam.
  *
  * **Everything is a function of the time it's given,** never of the clock, so
  * a frame captured twice is the same frame, and the capture can step through
@@ -18,8 +18,11 @@ import type { Rect } from './storeArtSpec.ts';
  * shoot grows in, from the soil.
  */
 
-/** The loop, in seconds. */
-export const LOOP_S = 9.6;
+/**
+ * The loop, in seconds: 304 frames at 30 fps, 10.13 s. The video frames and
+ * the AAC frames line up every 8/15 s, and this is 19 of those.
+ */
+export const LOOP_S = 304 / 30;
 
 /**
  * When each stage arrives, in seconds into the loop, in the order of
@@ -27,9 +30,23 @@ export const LOOP_S = 9.6;
  */
 export const ARRIVALS: readonly number[] = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.6];
 
-/** When the crown starts to fade back to the soil, and for how long. */
-export const FADE_AT = 8.4;
-export const FADE_S = 0.8;
+/**
+ * When the crown starts back to the soil, at 8.83 s. It sinks, shrinking into
+ * the middle of where the soil will be, as it fades; only once it has gone
+ * does the soil fade in, so the two faces never overlap.
+ */
+export const RETURN_AT = 265 / 30;
+export const SINK_S = 0.5;
+export const SOIL_S = 0.4;
+/** The share of its size the crown has sunk to as it goes. */
+export const SUNK = 0.3;
+
+/**
+ * Where each video starts, and its poster frame, at 8.30 s: the crown,
+ * settled, after Edition Complete has rung out at 8.22 s and before it sinks.
+ * The loop is the same wherever it starts; each file is turned to start here.
+ */
+export const START_AT = 249 / 30;
 
 /**
  * The frame rates Apple takes, and the audio frame an AAC encoder works in at
@@ -70,11 +87,11 @@ export function spring(s: number): number {
   );
 }
 
-/** The fade back to the soil: a half cosine, soft at both ends. */
-export function fade(s: number): number {
+/** The way back to the soil: 0 to 1 over `over` seconds, a half cosine, soft at both ends. */
+export function ease(s: number, over: number): number {
   if (s <= 0) return 0;
-  if (s >= FADE_S) return 1;
-  return 0.5 - 0.5 * Math.cos((Math.PI * s) / FADE_S);
+  if (s >= over) return 1;
+  return 0.5 - 0.5 * Math.cos((Math.PI * s) / over);
 }
 
 // ---- What's drawn ---------------------------------------------------------
@@ -100,6 +117,8 @@ const SHOOT = SPROUT!.parts.slice(0, 3);
 const MIDDLE = [50, 50] as const;
 /** The shoot grows from where its stem meets the soil. */
 const STEM_FOOT = [50, 72] as const;
+/** The crown sinks into the middle of the soil's mound. */
+const SOIL_MIDDLE = [50, 80] as const;
 
 /**
  * The one box every stage is drawn in: all of them together, so the peach
@@ -135,23 +154,21 @@ const since = (t: number, at: number) => t - at;
 export function peachAt(t: number): Layer[] {
   const u = ((t % LOOP_S) + LOOP_S) % LOOP_S;
   const [sprout, ...rest] = ARRIVALS as [number, ...number[]];
+  const sinks = ease(since(u, RETURN_AT), SINK_S);
   const growsOut = (i: number) =>
-    i + 1 < ARRIVALS.length
-      ? spring(since(u, ARRIVALS[i + 1]!))
-      : fade(since(u, FADE_AT));
+    i + 1 < ARRIVALS.length ? spring(since(u, ARRIVALS[i + 1]!)) : sinks;
 
-  // The soil is there from the last fade until the sprout gives way to the
-  // little bud, and fades back in at the end of the loop.
+  // The soil is there from the end of one loop until the sprout gives way to
+  // the little bud, and fades back in once the crown has sunk.
   const soil =
     u < ARRIVALS[1]!
       ? 1
-      : u < FADE_AT
+      : u < RETURN_AT
         ? 1 - spring(since(u, ARRIVALS[1]!))
-        : fade(since(u, FADE_AT));
+        : ease(since(u, RETURN_AT + SINK_S), SOIL_S);
   const shootIn = spring(since(u, sprout));
 
   const layers: Layer[] = [
-    { key: 'soil', parts: SOIL, opacity: soil, scale: 1, anchor: STEM_FOOT },
     {
       key: 'first-sprout',
       parts: SHOOT,
@@ -159,18 +176,35 @@ export function peachAt(t: number): Layer[] {
       scale: 0.8 + 0.2 * shootIn,
       anchor: STEM_FOOT,
     },
+    // Over the shoot, as the sprout draws its mound over the foot of its stem.
+    { key: 'soil', parts: SOIL, opacity: soil, scale: 1, anchor: STEM_FOOT },
     ...LATER.map((stage, j) => {
       const grownIn = spring(since(u, rest[j]!));
-      return {
-        key: stage.id,
-        parts: stage.parts,
-        opacity: grownIn * (1 - growsOut(j + 1)),
-        scale: 0.8 + 0.2 * grownIn,
-        anchor: MIDDLE,
-      };
+      const opacity = grownIn * (1 - growsOut(j + 1));
+      // The crown has long settled by the time it sinks, at its full size,
+      // so moving the point it's scaled about moves nothing.
+      return j + 1 < LATER.length || u < RETURN_AT
+        ? {
+            key: stage.id,
+            parts: stage.parts,
+            opacity,
+            scale: 0.8 + 0.2 * grownIn,
+            anchor: MIDDLE,
+          }
+        : {
+            key: stage.id,
+            parts: stage.parts,
+            opacity,
+            scale: 1 - (1 - SUNK) * sinks,
+            anchor: SOIL_MIDDLE,
+          };
     }),
   ];
-  return layers.map((l) => ({ ...l, opacity: Math.min(1, l.opacity) }));
+  // The spring's overshoot takes a fading layer a hair past 0.
+  return layers.map((l) => ({
+    ...l,
+    opacity: Math.min(1, Math.max(0, l.opacity)),
+  }));
 }
 
 // ---- What's heard ---------------------------------------------------------
