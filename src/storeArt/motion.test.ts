@@ -12,8 +12,8 @@ import {
   RETURN_AT,
   SAMPLE_RATE,
   SETTLED_S,
+  FACE_S,
   SINK_S,
-  SOIL_S,
   START_AT,
   peachAt,
   spring,
@@ -44,7 +44,7 @@ describe('the store art in motion', () => {
     expect(LOOP_S).toBeGreaterThanOrEqual(8);
     expect(LOOP_S).toBeLessThanOrEqual(12);
     expect(ARRIVALS.length).toBe(GROWTH_STAGES.length);
-    expect(RETURN_AT + SINK_S + SOIL_S).toBeLessThan(LOOP_S);
+    expect(RETURN_AT + SINK_S + FACE_S).toBeLessThan(LOOP_S);
   });
 
   it('changes no more than three times a second', () => {
@@ -68,8 +68,8 @@ describe('the store art in motion', () => {
   });
 
   it('starts and ends on the empty soil', () => {
-    expect(shown(0)).toEqual(['soil']);
-    expect(shown(LOOP_S - 1e-6)).toEqual(['soil']);
+    expect(shown(0)).toEqual(['soil', 'soil-face']);
+    expect(shown(LOOP_S - 1e-6)).toEqual(['soil', 'soil-face']);
     expect(state(LOOP_S)).toEqual(state(0));
   });
 
@@ -86,7 +86,7 @@ describe('the store art in motion', () => {
     'shows %s alone, whole, once it has settled',
     (id, i) => {
       const t = ARRIVALS[i]! + SETTLED_S;
-      const expected = id === 'first-sprout' ? [id, 'soil'] : [id];
+      const expected = id === 'first-sprout' ? [id, 'soil', 'soil-face'] : [id];
       expect(shown(t)).toEqual(expected);
       const drawn = peachAt(t).filter((l) => l.opacity > 0);
       for (const l of drawn) expect([l.opacity, l.scale]).toEqual([1, 1]);
@@ -96,11 +96,34 @@ describe('the store art in motion', () => {
     },
   );
 
-  it('never shows the crown and the soil at once, so their faces never overlap', () => {
+  it("never shows the crown's face and the soil's at once", () => {
+    // By the parts drawn, whichever layer carries them.
+    const soilFace = GROWTH_STAGES[0]!.parts.slice(5);
     for (let t = 0; t < LOOP_S; t += 1 / 240) {
-      expect(shown(t), `at ${t.toFixed(3)} s`).not.toEqual(
-        expect.arrayContaining(['soil', 'crown']),
-      );
+      const drawn = peachAt(t).filter((l) => l.opacity > 0);
+      const both =
+        drawn.some((l) => l.key === 'crown') &&
+        drawn.some((l) => l.parts.some((p) => soilFace.includes(p)));
+      expect(both, `at ${t.toFixed(3)} s`).toBe(false);
+    }
+  });
+
+  it('sinks the crown into the bare mound, and gives the soil its face once the crown has gone', () => {
+    const sinking = RETURN_AT + SINK_S / 2;
+    expect(shown(sinking)).toEqual(['soil', 'crown']);
+    expect(peachAt(sinking).find((l) => l.key === 'soil')!.parts).toEqual(
+      GROWTH_STAGES[0]!.parts.slice(3, 5),
+    );
+    expect(shown(RETURN_AT + SINK_S + FACE_S / 2)).toEqual([
+      'soil',
+      'soil-face',
+    ]);
+  });
+
+  it('never leaves the frame nearly empty: something is always at least half drawn', () => {
+    for (let t = 0; t < LOOP_S; t += 1 / 240) {
+      const most = Math.max(...peachAt(t).map((l) => l.opacity));
+      expect(most, `at ${t.toFixed(3)} s`).toBeGreaterThanOrEqual(0.5);
     }
   });
 

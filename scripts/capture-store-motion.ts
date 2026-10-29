@@ -49,12 +49,12 @@ import { GROWTH_STAGES } from '../src/storeArt/growthStages.ts';
 import {
   ARRIVALS,
   BEATS,
+  FACE_S,
   LOOP_S,
   RETURN_AT,
   SAMPLE_RATE,
   SETTLED_S,
   SINK_S,
-  SOIL_S,
   START_AT,
 } from '../src/storeArt/motion.ts';
 import { PLACEMENTS, type PlacementId } from '../src/storeArt/storeArtSpec.ts';
@@ -576,7 +576,7 @@ try {
     `The way back to the soil at a quarter speed: ${SEAM_FROM.toFixed(2)} s to the next loop's ` +
       `${(SEAM_TO - LOOP_S).toFixed(2)} s, ${steps + 1} frames. Into the clip: ` +
       `the file joins at ${into(START_AT)}; the crown sinks from ${into(RETURN_AT)}; ` +
-      `the soil fades in from ${into(RETURN_AT + SINK_S)}, whole at ${into(RETURN_AT + SINK_S + SOIL_S)}; ` +
+      `the crown has gone into the mound and the soil's face fades in from ${into(RETURN_AT + SINK_S)}, whole at ${into(RETURN_AT + SINK_S + FACE_S)}; ` +
       `the loop's own join, on the soil, at ${into(LOOP_S)}; the sprout at ${into(LOOP_S + ARRIVALS[0]!)}.`,
   );
 
@@ -591,9 +591,9 @@ try {
         `${GROWTH_STAGES.find((s) => s.id === b.stage)!.spoken}, ` +
         (b.call === 'edition' ? 'edition' : `found-${b.length}-set`),
     ),
-    `${RETURN_AT.toFixed(2)} s, frame ${Math.round(RETURN_AT * FPS)}: the crown sinks into the soil, silent`,
-    `${(RETURN_AT + SINK_S).toFixed(2)} s, frame ${Math.round((RETURN_AT + SINK_S) * FPS)}: the crown has gone; the soil fades in`,
-    `${(RETURN_AT + SINK_S + SOIL_S).toFixed(2)} s, frame ${Math.round((RETURN_AT + SINK_S + SOIL_S) * FPS)}: the soil, whole`,
+    `${RETURN_AT.toFixed(2)} s, frame ${Math.round(RETURN_AT * FPS)}: the crown sinks into the soil as its mound comes back under it, silent`,
+    `${(RETURN_AT + SINK_S).toFixed(2)} s, frame ${Math.round((RETURN_AT + SINK_S) * FPS)}: the crown has gone; the soil's face fades in`,
+    `${(RETURN_AT + SINK_S + FACE_S).toFixed(2)} s, frame ${Math.round((RETURN_AT + SINK_S + FACE_S) * FPS)}: the soil, whole`,
   );
   writeFileSync(join(OUT, 'numbers.txt'), `${notes.join('\n')}\n`);
   console.log(notes.join('\n'));

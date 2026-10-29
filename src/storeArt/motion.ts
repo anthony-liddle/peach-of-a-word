@@ -19,10 +19,10 @@ import type { Rect } from './storeArtSpec.ts';
  */
 
 /**
- * The loop, in seconds: 304 frames at 30 fps, 10.13 s. The video frames and
- * the AAC frames line up every 8/15 s, and this is 19 of those.
+ * The loop, in seconds: 320 frames at 30 fps, 10.67 s. The video frames and
+ * the AAC frames line up every 8/15 s, and this is 20 of those.
  */
-export const LOOP_S = 304 / 30;
+export const LOOP_S = 320 / 30;
 
 /**
  * When each stage arrives, in seconds into the loop, in the order of
@@ -31,13 +31,15 @@ export const LOOP_S = 304 / 30;
 export const ARRIVALS: readonly number[] = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.6];
 
 /**
- * When the crown starts back to the soil, at 8.83 s. It sinks, shrinking into
- * the middle of where the soil will be, as it fades; only once it has gone
- * does the soil fade in, so the two faces never overlap.
+ * When the crown starts back to the soil, at 9.37 s. It sinks, shrinking into
+ * the middle of the soil's mound as it fades, and the bare mound fades in
+ * under it, so the peach sinks into the soil and the frame is never empty.
+ * Only once the crown has gone does the soil's face fade in, so the two faces
+ * never show at once.
  */
-export const RETURN_AT = 265 / 30;
+export const RETURN_AT = 281 / 30;
 export const SINK_S = 0.5;
-export const SOIL_S = 0.4;
+export const FACE_S = 0.4;
 /** The share of its size the crown has sunk to as it goes. */
 export const SUNK = 0.3;
 
@@ -108,8 +110,10 @@ export interface Layer {
 }
 
 const [SPROUT, ...LATER] = GROWTH_STAGES;
-/** The first sprout's soil: its mound, the mound's furrow, and its face. */
-const SOIL = SPROUT!.parts.slice(3);
+/** The first sprout's soil: its mound and the mound's furrow. */
+const MOUND = SPROUT!.parts.slice(3, 5);
+/** The soil's face: its eyes and its smile. */
+const FACE = SPROUT!.parts.slice(5);
 /** The first sprout's shoot: its stem and its two leaves. */
 const SHOOT = SPROUT!.parts.slice(0, 3);
 
@@ -152,20 +156,31 @@ const since = (t: number, at: number) => t - at;
  * any number; it's taken within the loop.
  */
 export function peachAt(t: number): Layer[] {
-  const u = ((t % LOOP_S) + LOOP_S) % LOOP_S;
+  // `t % LOOP_S` is exact; adding the loop and taking it again isn't, and
+  // would leave a settled stage a hair short of settled.
+  const within = t % LOOP_S;
+  const u = within < 0 ? within + LOOP_S : within;
   const [sprout, ...rest] = ARRIVALS as [number, ...number[]];
   const sinks = ease(since(u, RETURN_AT), SINK_S);
   const growsOut = (i: number) =>
     i + 1 < ARRIVALS.length ? spring(since(u, ARRIVALS[i + 1]!)) : sinks;
 
   // The soil is there from the end of one loop until the sprout gives way to
-  // the little bud, and fades back in once the crown has sunk.
-  const soil =
+  // the little bud. Its mound comes back under the sinking crown, and its
+  // face once the crown has gone.
+  const soilGoes = 1 - spring(since(u, ARRIVALS[1]!));
+  const mound =
     u < ARRIVALS[1]!
       ? 1
       : u < RETURN_AT
-        ? 1 - spring(since(u, ARRIVALS[1]!))
-        : ease(since(u, RETURN_AT + SINK_S), SOIL_S);
+        ? soilGoes
+        : ease(since(u, RETURN_AT), SINK_S);
+  const face =
+    u < ARRIVALS[1]!
+      ? 1
+      : u < RETURN_AT
+        ? soilGoes
+        : ease(since(u, RETURN_AT + SINK_S), FACE_S);
   const shootIn = spring(since(u, sprout));
 
   const layers: Layer[] = [
@@ -177,7 +192,14 @@ export function peachAt(t: number): Layer[] {
       anchor: STEM_FOOT,
     },
     // Over the shoot, as the sprout draws its mound over the foot of its stem.
-    { key: 'soil', parts: SOIL, opacity: soil, scale: 1, anchor: STEM_FOOT },
+    { key: 'soil', parts: MOUND, opacity: mound, scale: 1, anchor: STEM_FOOT },
+    {
+      key: 'soil-face',
+      parts: FACE,
+      opacity: face,
+      scale: 1,
+      anchor: STEM_FOOT,
+    },
     ...LATER.map((stage, j) => {
       const grownIn = spring(since(u, rest[j]!));
       const opacity = grownIn * (1 - growsOut(j + 1));

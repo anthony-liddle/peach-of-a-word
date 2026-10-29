@@ -59,7 +59,7 @@ describe('the store art page', () => {
       const shown = [...art.querySelectorAll('[data-stage]')].map((e) =>
         e.getAttribute('data-stage'),
       );
-      expect(shown).toEqual(['soil']);
+      expect(shown).toEqual(['soil', 'soil-face']);
       expect(container.textContent!.replace(/✿/g, '')).toBe('');
     },
   );
@@ -72,7 +72,7 @@ describe('the store art page', () => {
       const settled = at(ARRIVALS[i]! + SETTLED_S);
       const layers = [...settled.querySelectorAll<SVGGElement>('[data-stage]')];
       expect(layers.map((l) => l.getAttribute('data-stage'))).toEqual(
-        id === 'first-sprout' ? [id, 'soil'] : [id],
+        id === 'first-sprout' ? [id, 'soil', 'soil-face'] : [id],
       );
       for (const l of layers) expect(l.getAttribute('opacity')).toBe('1');
       const box = (c: HTMLElement) =>

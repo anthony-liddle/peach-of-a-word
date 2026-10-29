@@ -5,12 +5,12 @@ import { GROWTH_STAGES, bounds, type GrowthStage } from './growthStages.ts';
 import cues from '@/audio/peach.cues.json';
 import {
   BEATS,
+  FACE_S,
   LOOP_S,
   PEACH_BOX,
   RETURN_AT,
   SETTLED_S,
   SINK_S,
-  SOIL_S,
   START_AT,
   peachAt,
   type Beat,
@@ -610,8 +610,8 @@ const AFTER = [0, 0.1, 0.2, 0.4, SETTLED_S];
 
 /**
  * For each stage, the frame where it arrives and the frames after, until it
- * has settled, with the cue it plays; then the crown sinking into the soil,
- * and the soil coming back once it has gone. Each frame is cropped to 4:3
+ * has settled, with the cue it plays; then the crown sinking into the soil's
+ * mound as it comes back, and the soil's face once the crown has gone. Each frame is cropped to 4:3
  * about the peach.
  */
 function Arrivals({ placement }: { placement: PlacementId }) {
@@ -624,17 +624,17 @@ function Arrivals({ placement }: { placement: PlacementId }) {
       first: 'arrives',
     })),
     {
-      title: 'sinking into the soil',
+      title: 'sinking into the soil, as the mound comes back under it',
       at: RETURN_AT,
       sound: 'silent',
       after: [0, 0.1, 0.2, 0.3, 0.4],
       first: 'starts',
     },
     {
-      title: 'the soil again',
+      title: "the soil's face, once the crown has gone",
       at: RETURN_AT + SINK_S,
       sound: 'silent',
-      after: [0, 0.1, 0.2, 0.3, SOIL_S],
+      after: [0, 0.1, 0.2, 0.3, FACE_S],
       first: 'starts',
     },
   ];
