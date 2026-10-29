@@ -1,6 +1,20 @@
+import { type ReactNode, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { CostumePart } from '@/ui/costumes.ts';
 import { GROWTH_STAGES, bounds, type GrowthStage } from './growthStages.ts';
+import cues from '@/audio/peach.cues.json';
 import {
+  BEATS,
+  FADE_AT,
+  FADE_S,
+  LOOP_S,
+  PEACH_BOX,
+  SETTLED_S,
+  peachAt,
+  type Beat,
+} from './motion.ts';
+import {
+  BACKDROP,
   PLACEMENTS,
   SEARCH_POINTS_ON_A_PHONE,
   type PlacementId,
@@ -20,6 +34,14 @@ import {
  * by side, and `?sheet=light` and `?sheet=dark` show the art on a phone's
  * product page and in its search results. With no query, it links to them.
  *
+ * **In motion,** `?motion=<placement>&t=<seconds>` is the growing peach of
+ * `motion.ts` at that moment, and `window.storeArtSeek(t)` moves it to
+ * another without a reload, for `scripts/capture-store-motion.ts` to step
+ * through frame by frame; `&bare=1` draws it on transparency, for the script
+ * to lay over the background itself. `?sheet=arrivals&placement=<placement>` shows the
+ * frames where each stage arrives, and `?sheet=moment&placement=<placement>`
+ * one moment small, with its time under it, for the slowed loop point.
+ *
  * **The row fills the safe area's width** and is centred in it, marked
  * `data-focal`; the capture script fails if any of it strays. The rest of
  * the canvas is background and florettes, which a device may crop.
@@ -29,9 +51,23 @@ export function StoreArtPage() {
   const guides = params.get('guides') === '1';
   const art = params.get('art') as PlacementId | null;
   if (art && PLACEMENTS[art]) return <Art placement={art} guides={guides} />;
+  const motion = params.get('motion') as PlacementId | null;
+  if (motion && PLACEMENTS[motion])
+    return (
+      <Motion
+        placement={motion}
+        from={Number(params.get('t') ?? 0)}
+        guides={guides}
+        bare={params.get('bare') === '1'}
+      />
+    );
   const sheet = params.get('sheet');
   if (sheet === 'side') return <SideBySide guides={guides} />;
   if (sheet === 'light' || sheet === 'dark') return <OnAPhone kind={sheet} />;
+  const placement = (params.get('placement') ?? 'header') as PlacementId;
+  if (sheet === 'arrivals') return <Arrivals placement={placement} />;
+  if (sheet === 'moment')
+    return <Moment placement={placement} from={Number(params.get('t') ?? 0)} />;
   return <Index />;
 }
 
@@ -189,16 +225,45 @@ export function Art({
   placement: PlacementId;
   guides?: boolean;
 }) {
+  return (
+    <Canvas placement={placement} guides={guides}>
+      <Growth safe={PLACEMENTS[placement].safe} />
+    </Canvas>
+  );
+}
+
+/**
+ * The page an artwork is drawn on, at Apple's pixel size: cute's background
+ * and florettes, what's drawn, and the safe area over it if asked. `bare`
+ * leaves the background out, on transparency.
+ */
+function Canvas({
+  placement,
+  guides,
+  bare = false,
+  children,
+}: {
+  placement: PlacementId;
+  guides: boolean;
+  bare?: boolean;
+  children: ReactNode;
+}) {
   const { width, height, safe } = PLACEMENTS[placement];
   return (
     <div
-      className="store-art"
+      className={bare ? 'store-art store-art--bare' : 'store-art'}
       data-art={placement}
       data-safe={JSON.stringify(safe)}
-      style={{ width, height }}
+      style={{
+        width,
+        height,
+        background: bare
+          ? 'transparent'
+          : `linear-gradient(180deg, ${BACKDROP[0]}, ${BACKDROP[1]})`,
+      }}
     >
       <Scatter width={width} height={height} />
-      <Growth safe={safe} />
+      {children}
       {guides && (
         <div
           className="store-art__safe"
@@ -215,20 +280,140 @@ export function Art({
   );
 }
 
+// ---- In motion ----------------------------------------------------------------
+
+/**
+ * How much of the safe area's height the peach's box fills. The rest is room
+ * for a stage's grow-in, which overshoots its size by about a tenth of a
+ * percent (`LARGEST_SCALE`).
+ */
+const PEACH_FILL = 0.99;
+
+/**
+ * The growing peach at `t` seconds, centred in the safe area, as big as its
+ * box allows. Every stage is drawn in the same box, so the peach never moves;
+ * only the drawing changes.
+ */
+function GrowingPeach({ safe, t }: { safe: Rect; t: number }) {
+  const box = PEACH_BOX;
+  const unit = Math.min(safe.w / box.w, safe.h / box.h) * PEACH_FILL;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: safe.x,
+        top: safe.y,
+        width: safe.w,
+        height: safe.h,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <svg
+        data-focal
+        viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`}
+        width={box.w * unit}
+        height={box.h * unit}
+        style={{ display: 'block', overflow: 'visible' }}
+        role="img"
+        aria-label="The peach, growing"
+      >
+        {peachAt(t)
+          .filter((l) => l.opacity > 0)
+          .map(({ key, parts, opacity, scale, anchor: [x, y] }) => (
+            <g
+              key={key}
+              data-stage={key}
+              opacity={opacity}
+              transform={`translate(${x} ${y}) scale(${scale}) translate(${-x} ${-y})`}
+            >
+              <Parts parts={parts} />
+            </g>
+          ))}
+      </svg>
+    </div>
+  );
+}
+
+declare global {
+  interface Window {
+    /** Move the growing peach to `t` seconds, and resolve once it's painted. */
+    storeArtSeek?: (t: number) => Promise<void>;
+  }
+}
+
+/** A time that starts at `from` and moves when `window.storeArtSeek` asks. */
+function useSeek(from: number): number {
+  const [t, setT] = useState(from);
+  useEffect(() => {
+    window.storeArtSeek = (to) =>
+      new Promise((done) => {
+        flushSync(() => setT(to));
+        requestAnimationFrame(() => requestAnimationFrame(() => done()));
+      });
+    return () => {
+      delete window.storeArtSeek;
+    };
+  }, []);
+  return t;
+}
+
+/** One artwork in motion, at `t` seconds. */
+export function MotionFrame({
+  placement,
+  t,
+  guides = false,
+  bare = false,
+}: {
+  placement: PlacementId;
+  t: number;
+  guides?: boolean;
+  bare?: boolean;
+}) {
+  return (
+    <Canvas placement={placement} guides={guides} bare={bare}>
+      <GrowingPeach safe={PLACEMENTS[placement].safe} t={t} />
+    </Canvas>
+  );
+}
+
+/** One artwork in motion, held at `from` seconds until it's moved. */
+function Motion({
+  placement,
+  from,
+  guides,
+  bare,
+}: {
+  placement: PlacementId;
+  from: number;
+  guides: boolean;
+  bare: boolean;
+}) {
+  const t = useSeek(from);
+  return (
+    <MotionFrame placement={placement} t={t} guides={guides} bare={bare} />
+  );
+}
+
 /**
  * The art scaled to `width`, or cropped to `crop` (a width over height) about
- * its centre and then scaled, as a 16:9 asset shows in a 3:2 search card.
+ * its centre and then scaled, as a 16:9 asset shows in a 3:2 search card. The
+ * still, or the art in motion at `t` seconds.
  */
 function Fit({
   placement,
   width,
   crop,
   guides = false,
+  t,
 }: {
   placement: PlacementId;
   width: number;
   crop?: number;
   guides?: boolean;
+  /** The moment in motion to show, rather than the still. */
+  t?: number;
 }) {
   const p = PLACEMENTS[placement];
   const shown = crop ? p.height * crop : p.width;
@@ -248,7 +433,11 @@ function Fit({
           transformOrigin: '0 0',
         }}
       >
-        <Art placement={placement} guides={guides} />
+        {t === undefined ? (
+          <Art placement={placement} guides={guides} />
+        ) : (
+          <MotionFrame placement={placement} t={t} guides={guides} />
+        )}
       </div>
     </div>
   );
@@ -277,7 +466,8 @@ function Index() {
         </li>
         {PLACES.map((p) => (
           <li key={p}>
-            <a href={`?art=${p}`}>{PLACEMENTS[p].label}</a>
+            <a href={`?art=${p}`}>{PLACEMENTS[p].label}</a>, and{' '}
+            <a href={`?motion=${p}`}>in motion</a>
           </li>
         ))}
       </ul>
@@ -369,6 +559,120 @@ function OnAPhone({ kind }: { kind: 'light' | 'dark' }) {
           For comparison: the 16:9 asset in search results
         </figcaption>
       </figure>
+    </main>
+  );
+}
+
+// ---- The sheets in motion -------------------------------------------------------
+
+const NOTE_NAMES = [
+  'C',
+  'C♯',
+  'D',
+  'D♯',
+  'E',
+  'F',
+  'F♯',
+  'G',
+  'G♯',
+  'A',
+  'A♯',
+  'B',
+];
+
+/** A MIDI pitch's name, to the nearest semitone: 67 is G4. */
+const noteName = (pitch: number) => {
+  const n = Math.round(pitch);
+  return `${NOTE_NAMES[n % 12]}${Math.floor(n / 12) - 1}`;
+};
+
+/** The cue a beat plays, by its name in the cue file. */
+const cueOf = (beat: Beat) =>
+  beat.call === 'edition' ? 'edition' : `found-${beat.length}-set`;
+
+/**
+ * The notes a cue starts on, by name: a find's own note (its octave above, a
+ * fifth as loud, is left out), or every note of Edition Complete.
+ */
+function notesOf(beat: Beat): string {
+  const notes = (cues.cues as Record<string, { notes: { pitch: number }[] }>)[
+    cueOf(beat)
+  ]!.notes;
+  return (beat.call === 'edition' ? notes : notes.slice(0, 1))
+    .map((n) => noteName(n.pitch))
+    .join(' ');
+}
+
+/** The moments after an arrival that the arrivals sheet shows. */
+const AFTER = [0, 0.1, 0.2, 0.4, SETTLED_S];
+
+/**
+ * For each stage, the frame where it arrives and the frames after, until it
+ * has settled, with the cue it plays; then the fade back to the soil. Each
+ * frame is cropped to 4:3 about the peach.
+ */
+function Arrivals({ placement }: { placement: PlacementId }) {
+  const rows = [
+    ...BEATS.map((beat) => ({
+      title: GROWTH_STAGES.find((s) => s.id === beat.stage)!.spoken,
+      at: beat.at,
+      sound: `${cueOf(beat)}: ${notesOf(beat)}`,
+      after: AFTER,
+    })),
+    {
+      title: 'back to the soil',
+      at: FADE_AT,
+      sound: 'silent',
+      after: [0, 0.2, 0.4, 0.6, FADE_S],
+    },
+  ];
+  return (
+    <main className="store-art-sheet" data-sheet="arrivals">
+      <h1>
+        {PLACEMENTS[placement].label}: a {LOOP_S} s loop
+      </h1>
+      {rows.map((row) => (
+        <section key={row.title}>
+          <h2>
+            {row.title}, at {row.at.toFixed(2)} s <span>{row.sound}</span>
+          </h2>
+          <div className="store-art-sheet__row">
+            {row.after.map((d) => (
+              <figure key={d}>
+                <Fit
+                  placement={placement}
+                  crop={4 / 3}
+                  width={220}
+                  t={row.at + d}
+                />
+                <figcaption>
+                  {d === 0 ? 'arrives' : `+${d.toFixed(1)} s`}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      ))}
+    </main>
+  );
+}
+
+/**
+ * One moment, small, with its time in the loop under it, for the loop point
+ * slowed down. A time past the loop's end is the next loop's start.
+ */
+function Moment({ placement, from }: { placement: PlacementId; from: number }) {
+  const t = useSeek(from);
+  const u = ((t % LOOP_S) + LOOP_S) % LOOP_S;
+  return (
+    <main
+      className="store-art-sheet store-art-sheet--moment"
+      data-sheet="moment"
+    >
+      <Fit placement={placement} width={960} t={t} />
+      <p>
+        {u.toFixed(2)} s{t >= LOOP_S ? ', the loop again' : ''}
+      </p>
     </main>
   );
 }
