@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Store Art · Peach of a Word</title>
+    <!-- A workbench for development only: it is not a build entry, so it never
+         reaches the site (storeArt.test.tsx holds it out). It draws the App
+         Store's header and search results art from the game's own pieces, at
+         Apple's sizes, for scripts/capture-store-art.ts to save. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#fff4ee" />
+    <link rel="icon" href="/favicon-cute.svg" type="image/svg+xml" />
+    <script>
+      // Cute only: the art is drawn in the theme the iOS app wears.
+      document.documentElement.dataset.theme = 'cute';
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/storeArt/main.tsx"></script>
+  </body>
+</html>
