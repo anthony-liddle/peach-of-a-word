@@ -1,42 +1,34 @@
-import { Children, type ReactNode } from 'react';
 import type { CostumePart } from '@/ui/costumes.ts';
 import { GROWTH_STAGES, bounds, type GrowthStage } from './growthStages.ts';
 import {
-  DIRECTIONS,
   PLACEMENTS,
   SEARCH_POINTS_ON_A_PHONE,
-  type DirectionId,
   type PlacementId,
   type Rect,
 } from './storeArtSpec.ts';
 
 /**
- * The App Store's header and search results art, drawn from the game's own
- * pieces: the growing peach's stages, the tiles, Fredoka and Nunito, and
- * cute's palette. Nothing here is drawn that the game doesn't already draw.
+ * The App Store's header and search results art: the growing peach's seven
+ * stages in a row, from the first sprout to the crown, each a little bigger
+ * than the last, on cute's page with the app's florettes. No words, since
+ * the app's icon and name sit beside the art in both places. Nothing here is
+ * drawn that the game doesn't already draw.
  *
- * With `?art=<direction>-<placement>` the page is that one artwork alone, at
- * Apple's pixel size, for `scripts/capture-store-art.ts`; `&guides=1` draws
- * the safe area over it, for checking only. `?sheet=side` puts the directions
- * side by side, and `?sheet=light` and `?sheet=dark` show each on a phone's
+ * With `?art=<placement>` the page is that one artwork alone, at Apple's pixel
+ * size, for `scripts/capture-store-art.ts`; `&guides=1` draws the safe area
+ * over it, for checking only. `?sheet=side` shows the three placements side
+ * by side, and `?sheet=light` and `?sheet=dark` show the art on a phone's
  * product page and in its search results. With no query, it links to them.
  *
- * **Everything that matters sits in the safe area,** laid out in hundredths of
- * its height, and is marked `data-focal`; the capture script fails if any of
- * it strays. The rest of the canvas is background and florettes, which a
- * device may crop.
+ * **The row fills the safe area's width** and is centred in it, marked
+ * `data-focal`; the capture script fails if any of it strays. The rest of
+ * the canvas is background and florettes, which a device may crop.
  */
 export function StoreArtPage() {
   const params = new URLSearchParams(window.location.search);
   const guides = params.get('guides') === '1';
-  const art = params.get('art');
-  if (art) {
-    const [direction, placement] = art.split('-') as [DirectionId, PlacementId];
-    if (DIRECTIONS[direction] && PLACEMENTS[placement])
-      return (
-        <Art direction={direction} placement={placement} guides={guides} />
-      );
-  }
+  const art = params.get('art') as PlacementId | null;
+  if (art && PLACEMENTS[art]) return <Art placement={art} guides={guides} />;
   const sheet = params.get('sheet');
   if (sheet === 'side') return <SideBySide guides={guides} />;
   if (sheet === 'light' || sheet === 'dark') return <OnAPhone kind={sheet} />;
@@ -45,16 +37,7 @@ export function StoreArtPage() {
 
 // ---- The pieces --------------------------------------------------------------
 
-const INK = '#6b4636';
-const INK_SOFT = '#6f5142';
-const ACCENT = '#c42e60';
-const ACCENT_DEEP = '#a8264f';
 const LEAF = '#8fd3b6';
-/** The iOS wordmark's hand shear, `CuteFont.displayOblique`: c = 0.18. */
-const OBLIQUE = `skewX(${(-Math.atan(0.18) * 180) / Math.PI}deg)`;
-
-const stage = (id: string): GrowthStage =>
-  GROWTH_STAGES.find((s) => s.id === id)!;
 
 function Parts({ parts }: { parts: readonly CostumePart[] }) {
   return parts.map((p, i) => (
@@ -82,107 +65,10 @@ function Stage({ of, height }: { of: GrowthStage; height: number }) {
       style={{ display: 'block' }}
       role="img"
       aria-label={`The peach ${of.spoken}`}
+      data-stage={of.id}
     >
       <Parts parts={of.parts} />
     </svg>
-  );
-}
-
-/** "Peach of a Word", as the iOS title sets it. */
-function Wordmark({ size }: { size: number }) {
-  return (
-    <div
-      style={{
-        fontFamily: 'Fredoka',
-        fontWeight: 600,
-        fontSize: size,
-        lineHeight: 1,
-        letterSpacing: '-0.01em',
-        color: INK,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <span
-        style={{ display: 'inline-block', color: ACCENT, transform: OBLIQUE }}
-      >
-        Peach
-      </span>{' '}
-      of a Word
-    </div>
-  );
-}
-
-/** "Pick the peaches", the title's line under the name. */
-function Subline({ size }: { size: number }) {
-  return (
-    <div
-      style={{
-        fontFamily: 'Nunito',
-        fontWeight: 600,
-        fontSize: size,
-        lineHeight: 1,
-        letterSpacing: '0.367em',
-        paddingLeft: '0.367em',
-        textTransform: 'uppercase',
-        color: ACCENT_DEEP,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      Pick the peaches
-    </div>
-  );
-}
-
-/** The rack's tiles, spelling `word`, each `width` pixels wide. */
-function Tiles({ word, width }: { word: string; width: number }) {
-  return (
-    <div style={{ display: 'flex', gap: width * 0.16 }}>
-      {[...word].map((letter, i) => (
-        <div
-          key={i}
-          data-tile
-          style={{
-            width,
-            height: width * (4 / 3),
-            boxSizing: 'border-box',
-            border: `${Math.max(1, width * 0.012)}px solid #ffd9c8`,
-            borderRadius: width * 0.22,
-            background: '#ffffff',
-            boxShadow: `0 ${width * 0.07}px 0 #ffc9b4`,
-            marginBottom: width * 0.07,
-            display: 'grid',
-            placeContent: 'center',
-            fontFamily: 'Fredoka',
-            fontWeight: 600,
-            fontSize: width * 0.66,
-            lineHeight: 1,
-            color: INK,
-            paddingBottom: width * 0.06,
-          }}
-        >
-          {letter}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Where `industry` came from, in a few words. */
-function Etymology({ size }: { size: number }) {
-  return (
-    <div
-      style={{
-        fontFamily: 'Nunito',
-        fontStyle: 'italic',
-        fontWeight: 600,
-        fontSize: size,
-        lineHeight: 1.2,
-        color: INK_SOFT,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      From Latin <span style={{ color: INK }}>industria</span>, “diligence”
-    </div>
   );
 }
 
@@ -216,76 +102,9 @@ function Florette({
   );
 }
 
-// ---- The layout ----------------------------------------------------------------
-
-interface Frame {
-  width: number;
-  height: number;
-  safe: Rect;
-  /** A hundredth of the safe area's height, the unit the focal sizes are in. */
-  s: number;
-  /** A hundredth of the canvas's height, the unit the florettes are in. */
-  u: number;
-}
-
-/**
- * The focal point: laid out in the safe area, centred in it, each child marked
- * `data-focal` for the capture script's check.
- */
-function Focal({
-  frame,
-  row = false,
-  gap,
-  children,
-}: {
-  frame: Frame;
-  row?: boolean;
-  gap: number;
-  children: ReactNode;
-}) {
-  const { safe } = frame;
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: safe.x,
-        top: safe.y,
-        width: safe.w,
-        height: safe.h,
-        display: 'flex',
-        flexDirection: row ? 'row' : 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap,
-      }}
-    >
-      {Children.map(children, (c) => (
-        <div data-focal style={{ display: 'flex', justifyContent: 'center' }}>
-          {c}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** A column inside a focal row: its children centred under each other. */
-function Column({ gap, children }: { gap: number; children: ReactNode }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 /** Faint florettes at the canvas's edges, well clear of the safe area. */
-function Scatter({ width, height, u }: Frame) {
+function Scatter({ width, height }: { width: number; height: number }) {
+  const u = height / 100;
   const at = (fx: number, fy: number, size: number, opacity: number) => (
     <Florette
       key={`${fx}-${fy}`}
@@ -307,129 +126,79 @@ function Scatter({ width, height, u }: Frame) {
   );
 }
 
-// ---- The directions ------------------------------------------------------------
+// ---- The growth ----------------------------------------------------------------
+
+/** Each stage's share of the crown's scale: the first sprout at 0.6. */
+const scale = (i: number) => 0.6 + (0.4 * i) / (GROWTH_STAGES.length - 1);
+
+/** The gap between two stages, in the peach box's units at full scale. */
+const GAP = 6;
+
+/** How much of the safe area's width the row fills, short of rounding. */
+const FILL = 0.99;
 
 /**
- * A: the peach large, with the name and "Pick the peaches". Side by side in
- * the header's and the search asset's wide safe areas; stacked, as on the
- * title, in the universal asset's narrower one.
+ * The seven stages in a row, standing on one line, as wide as the safe area
+ * allows and as tall as that makes them, centred in it.
  */
-function ThePeach(f: Frame, placement: PlacementId) {
-  const { s } = f;
-  const peach = stage('perfectly-peachy');
-  if (placement === 'universal')
-    return (
-      <>
-        <Scatter {...f} />
-        <Focal frame={f} gap={4.5 * s}>
-          <Stage of={peach} height={58 * s} />
-          <Column gap={4 * s}>
-            <Wordmark size={17 * s} />
-            <Subline size={5 * s} />
-          </Column>
-        </Focal>
-      </>
-    );
-  const wide = placement === 'header';
-  return (
-    <>
-      <Scatter {...f} />
-      <Focal frame={f} row gap={(wide ? 10 : 8) * s}>
-        <Stage of={peach} height={(wide ? 88 : 90) * s} />
-        <Column gap={(wide ? 5.5 : 4.4) * s}>
-          <Wordmark size={(wide ? 21 : 16.5) * s} />
-          <Subline size={(wide ? 6.2 : 5) * s} />
-        </Column>
-      </Focal>
-    </>
-  );
-}
-
-/** B: the stages in a row, sprout to crown, each a little bigger. */
-function TheGrowth(f: Frame, placement: PlacementId) {
-  const { s } = f;
-  const fit = {
-    header: { width: 238, gap: 4.5, tallest: 62, name: 15, under: 8 },
-    search: { width: 200, gap: 3.5, tallest: 62, name: 15, under: 7 },
-    universal: { width: 140, gap: 2.2, tallest: 50, name: 13, under: 6 },
-  }[placement];
-  const n = GROWTH_STAGES.length;
+function Growth({ safe }: { safe: Rect }) {
   const sized = GROWTH_STAGES.map((st, i) => ({
     st,
     b: bounds(st.parts),
-    k: 0.6 + (0.4 * i) / (n - 1),
+    k: scale(i),
   }));
-  // Drawing units to safe-area hundredths: as large as the row's width and
-  // its tallest stage allow.
-  const across = sized.reduce((sum, { b, k }) => sum + b.w * k, 0);
-  const unit = Math.min(
-    (fit.width - fit.gap * (n - 1)) / across,
-    fit.tallest / Math.max(...sized.map(({ b, k }) => b.h * k)),
-  );
+  // Pixels per unit of the peach's box: the row's drawings and its gaps
+  // across the safe area's width, or its tallest stage down its height.
+  const across =
+    sized.reduce((sum, { b, k }) => sum + b.w * k, 0) +
+    GAP * (sized.length - 1);
+  const tallest = Math.max(...sized.map(({ b, k }) => b.h * k));
+  const unit = Math.min((safe.w * FILL) / across, safe.h / tallest);
   return (
-    <>
-      <Scatter {...f} />
-      <Focal frame={f} gap={fit.under * s}>
-        <div
-          style={{ display: 'flex', alignItems: 'flex-end', gap: fit.gap * s }}
-        >
-          {sized.map(({ st, b, k }) => (
-            <Stage key={st.id} of={st} height={b.h * k * unit * s} />
-          ))}
-        </div>
-        <Wordmark size={fit.name * s} />
-      </Focal>
-    </>
+    <div
+      style={{
+        position: 'absolute',
+        left: safe.x,
+        top: safe.y,
+        width: safe.w,
+        height: safe.h,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div
+        data-focal
+        style={{ display: 'flex', alignItems: 'flex-end', gap: GAP * unit }}
+      >
+        {sized.map(({ st, b, k }) => (
+          <Stage key={st.id} of={st} height={b.h * k * unit} />
+        ))}
+      </div>
+    </div>
   );
 }
-
-/** C: the eight tiles of `industry`, its crowned peach, and where it came from. */
-function TheWord(f: Frame, placement: PlacementId) {
-  const { s } = f;
-  const fit = {
-    header: { peach: 34, tile: 21.5, line: 7.5, gap: 5 },
-    search: { peach: 40, tile: 20, line: 7, gap: 5 },
-    universal: { peach: 36, tile: 15, line: 7, gap: 4.5 },
-  }[placement];
-  return (
-    <>
-      <Scatter {...f} />
-      <Focal frame={f} gap={fit.gap * s}>
-        <Stage of={stage('crown')} height={fit.peach * s} />
-        <Tiles word="industry" width={fit.tile * s} />
-        <Etymology size={fit.line * s} />
-      </Focal>
-    </>
-  );
-}
-
-const DRAW: Record<
-  DirectionId,
-  (f: Frame, placement: PlacementId) => ReactNode
-> = { a: ThePeach, b: TheGrowth, c: TheWord };
 
 // ---- The canvas ----------------------------------------------------------------
 
 /** One artwork at Apple's pixel size, with its safe area over it if asked. */
 export function Art({
-  direction,
   placement,
   guides = false,
 }: {
-  direction: DirectionId;
   placement: PlacementId;
   guides?: boolean;
 }) {
   const { width, height, safe } = PLACEMENTS[placement];
-  const f: Frame = { width, height, safe, s: safe.h / 100, u: height / 100 };
   return (
     <div
       className="store-art"
-      data-art={`${direction}-${placement}`}
+      data-art={placement}
       data-safe={JSON.stringify(safe)}
       style={{ width, height }}
     >
-      {DRAW[direction](f, placement)}
+      <Scatter width={width} height={height} />
+      <Growth safe={safe} />
       {guides && (
         <div
           className="store-art__safe"
@@ -446,31 +215,40 @@ export function Art({
   );
 }
 
-/** The art drawn `width` pixels wide, in a box of that size. */
+/**
+ * The art scaled to `width`, or cropped to `crop` (a width over height) about
+ * its centre and then scaled, as a 16:9 asset shows in a 3:2 search card.
+ */
 function Fit({
-  direction,
   placement,
   width,
+  crop,
   guides = false,
 }: {
-  direction: DirectionId;
   placement: PlacementId;
   width: number;
+  crop?: number;
   guides?: boolean;
 }) {
   const p = PLACEMENTS[placement];
-  const scale = width / p.width;
+  const shown = crop ? p.height * crop : p.width;
+  const s = width / shown;
   return (
     <div
       style={{
         width,
-        height: p.height * scale,
+        height: p.height * s,
         overflow: 'hidden',
         flex: 'none',
       }}
     >
-      <div style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
-        <Art direction={direction} placement={placement} guides={guides} />
+      <div
+        style={{
+          transform: `translateX(${(-(p.width - shown) / 2) * s}px) scale(${s})`,
+          transformOrigin: '0 0',
+        }}
+      >
+        <Art placement={placement} guides={guides} />
       </div>
     </div>
   );
@@ -478,7 +256,6 @@ function Fit({
 
 // ---- The sheets -----------------------------------------------------------------
 
-const IDS = Object.keys(DIRECTIONS) as DirectionId[];
 const PLACES = Object.keys(PLACEMENTS) as PlacementId[];
 
 function Index() {
@@ -486,8 +263,8 @@ function Index() {
     <main className="store-art-index">
       <h1>Store Art</h1>
       <p>
-        The App Store&apos;s header and search results art, in {IDS.length}{' '}
-        directions. A development page only.
+        The App Store&apos;s header and search results art: the growing peach. A
+        development page only.
       </p>
       <ul>
         <li>
@@ -498,21 +275,17 @@ function Index() {
           <a href="?sheet=light">On a phone</a> and{' '}
           <a href="?sheet=dark">on a dark page</a>
         </li>
-        {IDS.flatMap((d) =>
-          PLACES.map((p) => (
-            <li key={`${d}-${p}`}>
-              <a href={`?art=${d}-${p}`}>
-                {DIRECTIONS[d].name}: {PLACEMENTS[p].label}
-              </a>
-            </li>
-          )),
-        )}
+        {PLACES.map((p) => (
+          <li key={p}>
+            <a href={`?art=${p}`}>{PLACEMENTS[p].label}</a>
+          </li>
+        ))}
       </ul>
     </main>
   );
 }
 
-/** Each direction's three artworks at one height, a direction to a row. */
+/** The three placements at one height. */
 function SideBySide({ guides }: { guides: boolean }) {
   const tall = 400;
   const wide = (p: PlacementId) =>
@@ -521,31 +294,15 @@ function SideBySide({ guides }: { guides: boolean }) {
     <main className="store-art-side" data-sheet="side">
       <div className="store-art-side__row">
         {PLACES.map((p) => (
-          <span
-            key={p}
-            className="store-art-side__head"
-            style={{ width: wide(p) }}
-          >
-            {PLACEMENTS[p].label}
-          </span>
+          <figure key={p} style={{ width: wide(p) }}>
+            <figcaption>
+              {PLACEMENTS[p].label}
+              {PLACEMENTS[p].upload ? '' : ', not uploaded'}
+            </figcaption>
+            <Fit placement={p} guides={guides} width={wide(p)} />
+          </figure>
         ))}
       </div>
-      {IDS.map((id) => (
-        <section key={id}>
-          <h2>{DIRECTIONS[id].name}</h2>
-          <div className="store-art-side__row">
-            {PLACES.map((p) => (
-              <Fit
-                key={p}
-                direction={id}
-                placement={p}
-                guides={guides}
-                width={wide(p)}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
     </main>
   );
 }
@@ -565,42 +322,53 @@ function AppRow() {
 }
 
 /**
- * Each direction on a phone, placed as Apple's own illustrations place them:
- * the header across the top of the product page, under the status bar with
- * the back and share buttons over its corners and the app's row below; and
- * the search asset as a rounded card under the app's row in search results,
- * at its width on a phone. How a device crops the header is the Preview's to
- * show; here it is whole.
+ * The art on a phone, placed as Apple's own illustrations place it: the
+ * header across the top of the product page, under the status bar with the
+ * back and share buttons over its corners and the app's row below; and the
+ * search asset as a rounded card under the app's row in search results, at
+ * its width on a phone. Beside it, the 16:9 universal asset in the same card,
+ * cropped to 3:2 about its centre, for comparison. How a device crops the
+ * header is the Preview's to show; here it is whole.
  */
 function OnAPhone({ kind }: { kind: 'light' | 'dark' }) {
   const width = 402;
   return (
     <main className={`phones phones--${kind}`} data-sheet={kind}>
-      {IDS.map((id) => (
-        <figure key={id} className="phone" style={{ width }}>
-          <div className="phone__header">
-            <Fit direction={id} placement="header" width={width} />
-            <span className="phone__clock">9:41</span>
-            <span className="phone__button phone__button--back">‹</span>
-            <span className="phone__button phone__button--share">↑</span>
+      <figure className="phone" style={{ width }}>
+        <div className="phone__header">
+          <Fit placement="header" width={width} />
+          <span className="phone__clock">9:41</span>
+          <span className="phone__button phone__button--back">‹</span>
+          <span className="phone__button phone__button--share">↑</span>
+        </div>
+        <div className="phone__inset">
+          <AppRow />
+        </div>
+        <div className="phone__search">
+          <div className="phone__field">word game</div>
+          <AppRow />
+          <div className="phone__card">
+            <Fit placement="search" width={SEARCH_POINTS_ON_A_PHONE} />
           </div>
-          <div className="phone__inset">
-            <AppRow />
+        </div>
+        <figcaption>The header and the 3:2 search asset</figcaption>
+      </figure>
+      <figure className="phone" style={{ width }}>
+        <div className="phone__search phone__search--alone">
+          <div className="phone__field">word game</div>
+          <AppRow />
+          <div className="phone__card">
+            <Fit
+              placement="universal"
+              crop={3 / 2}
+              width={SEARCH_POINTS_ON_A_PHONE}
+            />
           </div>
-          <div className="phone__search">
-            <div className="phone__field">word game</div>
-            <AppRow />
-            <div className="phone__card">
-              <Fit
-                direction={id}
-                placement="search"
-                width={SEARCH_POINTS_ON_A_PHONE}
-              />
-            </div>
-          </div>
-          <figcaption>{DIRECTIONS[id].name}</figcaption>
-        </figure>
-      ))}
+        </div>
+        <figcaption>
+          For comparison: the 16:9 asset in search results
+        </figcaption>
+      </figure>
     </main>
   );
 }
