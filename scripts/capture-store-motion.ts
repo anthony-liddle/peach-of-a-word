@@ -5,6 +5,7 @@
  * offline through the game's own audio engine from the game's own cue file.
  *
  *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir>
+ *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir> --sound-from <header.mp4>
  *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir> --preview
  *
  * At full size, the files for App Store Connect, into `<dir>`, named as the
@@ -18,6 +19,11 @@
  * - each poster frame with Apple's safe area drawn;
  * - the way back to the soil at a quarter of its speed, the arrivals sheets,
  *   and the header's sound as WAVs.
+ *
+ * With `--sound-from`, the header's sound is that file's AAC, as it is,
+ * rather than a fresh encode, so a picture can be encoded again without
+ * touching a sound already handed off. Chrome's offline render of the same
+ * sound differs from run to run by up to 6e-8, which changes the AAC.
  *
  * With `--preview`, what the timing and the mix are judged by, at half of
  * Apple's size, into `<dir>`:
@@ -60,7 +66,7 @@ import {
   writeSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { launchChrome, type Chrome } from './lib/cdp.ts';
 import { decodeRgbaPng, type Rgba } from './lib/png.ts';
@@ -98,10 +104,14 @@ const { values } = parseArgs({
   options: {
     out: { type: 'string' },
     preview: { type: 'boolean', default: false },
+    'sound-from': { type: 'string' },
   },
 });
 if (!values.out) throw new Error('Pass --out <dir>.');
 const PREVIEW = values.preview;
+const SOUND_FROM = values['sound-from'] && resolve(values['sound-from']);
+if (PREVIEW && SOUND_FROM)
+  throw new Error('--sound-from is for the full size, not --preview.');
 const OUT = resolve(values.out);
 /** Where everything that isn't an upload goes. */
 const SIDE = PREVIEW ? OUT : join(OUT, 'check');
@@ -552,8 +562,15 @@ const fileName = (placement: Moving) => {
  * of a level off the ramp, against 0.06 at the first.
  */
 const QUANTISER = 4;
-/** A key frame every 2 s, never placed by a scene cut: there are none. */
-const GOP = 60;
+/**
+ * How often each file has a key frame, never placed by a scene cut, since
+ * there are none. Search's every 2 s. The header's every 32 frames, 10 a
+ * loop, so both loops are encoded alike: that brings its average to about
+ * 10 Mbps, as search's is, inside the 7.5 to 45.5 Mbps Headloop saw App Store
+ * Connect process. Every 60 frames it was 6.6, and a lower quantiser barely
+ * moved it: 7.3 at quantiser 2.
+ */
+const GOPS = { header: 32, search: 60 } as const;
 /**
  * H.264 levels. The header's frame fits 5.1. Search's 3840 x 2560 is 38,400
  * macroblocks, past the 36,864 that 5.1 and 5.2 allow, so 6.0, as Apple's
@@ -573,14 +590,14 @@ const MOST_OFF = 0.1;
  * The frames measured: every key frame, the poster first; one midway between
  * two; and the second loop's first.
  */
-const MEASURED = [
-  ...Array.from(
-    { length: (FILE_LOOPS * LOOP_FRAMES) / GOP + 1 },
-    (_, k) => k * GOP,
-  ).filter((n) => n < FILE_LOOPS * LOOP_FRAMES),
-  GOP / 2,
-  LOOP_FRAMES,
-].sort((a, b) => a - b);
+const measured = (placement: Moving) => {
+  const gop = GOPS[placement];
+  const keys = Array.from(
+    { length: Math.ceil((FILE_LOOPS * LOOP_FRAMES) / gop) },
+    (_, k) => k * gop,
+  );
+  return [...new Set([...keys, gop / 2, LOOP_FRAMES])].sort((a, b) => a - b);
+};
 const PLANES = ['y', 'cb', 'cr'] as const;
 
 const meanOf = (data: Uint8Array) => {
@@ -649,7 +666,7 @@ function encodeFile(
     '-qp',
     QUANTISER,
     '-x264-params',
-    `keyint=${GOP}:min-keyint=${GOP}:scenecut=0`,
+    `keyint=${GOPS[placement]}:min-keyint=${GOPS[placement]}:scenecut=0`,
     '-pix_fmt',
     'yuv420p',
     '-color_range',
@@ -943,11 +960,20 @@ type Probe = {
   format: Record<string, unknown>;
 };
 
+/** A file's ffprobe, read from its own folder, so it records only its name. */
 function probeFile(path: string): Probe {
   const run = spawnSync(
     'ffprobe',
-    ['-v', 'error', '-show_format', '-show_streams', '-of', 'json', path],
-    { encoding: 'utf8' },
+    [
+      '-v',
+      'error',
+      '-show_format',
+      '-show_streams',
+      '-of',
+      'json',
+      basename(path),
+    ],
+    { encoding: 'utf8', cwd: dirname(path) },
   );
   if (run.status !== 0) throw new Error(`ffprobe couldn't read ${path}`);
   return JSON.parse(run.stdout) as Probe;
@@ -1044,8 +1070,9 @@ function fullSize(
     console.log(`${placement}: encoded, ${dither ? 'dithered' : 'rounded'}`);
   }
   const [x0, x1] = artFreeStrip(drawn);
-  const rounded = decodedFrames(paths.rounded, width, height, MEASURED);
-  const dithered = decodedFrames(paths.dithered, width, height, MEASURED);
+  const frames = measured(placement);
+  const rounded = decodedFrames(paths.rounded, width, height, frames);
+  const dithered = decodedFrames(paths.dithered, width, height, frames);
   const before = measureBanding(rounded, x0, x1);
   const after = measureBanding(dithered, x0, x1);
   const describe = (b: Bands) =>
@@ -1055,7 +1082,7 @@ function fullSize(
         `flat for ${b[p].flatRows} rows at most, 8-row means within ${b[p].off.toFixed(3)} of the ramp`,
     ).join('; ');
   lines.push(
-    `${placement}, banding in columns ${x0} to ${x1}, decoded frames ${MEASURED.join(', ')}, the worst of each:`,
+    `${placement}, banding in columns ${x0} to ${x1}, decoded frames ${frames.join(', ')}, the worst of each:`,
     `  rounded: ${describe(before)}`,
     `  dithered: ${describe(after)}`,
   );
@@ -1159,10 +1186,27 @@ try {
     `  The first and last ${EDGE_S * 1000} ms: RMS ${first.toFixed(1)} and ${last.toFixed(1)} dBFS.`,
   );
 
-  // At full size the sound is encoded once, held to the ceiling as encoded,
-  // and put in the file as it is.
+  // At full size the sound is encoded once, or taken as it is from a file
+  // already handed off, held to the ceiling as encoded, and put in the file
+  // as it is.
   let aac: string | undefined;
-  if (!PREVIEW) {
+  if (SOUND_FROM) {
+    aac = join(work, 'header-sound.m4a');
+    ffmpeg([
+      '-loglevel',
+      'error',
+      '-i',
+      SOUND_FROM,
+      '-map',
+      '0:a',
+      '-c:a',
+      'copy',
+      aac,
+    ]);
+    notes.push(
+      `The header's AAC is ${basename(SOUND_FROM)}'s, as it is, not a fresh encode of the sound above.`,
+    );
+  } else if (!PREVIEW) {
     aac = join(work, 'header-sound.m4a');
     ffmpeg([
       '-loglevel',
@@ -1179,6 +1223,8 @@ try {
       SAMPLE_RATE,
       aac,
     ]);
+  }
+  if (aac) {
     const encodedPeak = truePeak(aac);
     if (encodedPeak > CEILING_DBTP)
       throw new Error(
@@ -1278,7 +1324,14 @@ try {
   const seam = await bareFrames(chrome, 'header', SCALE, times);
   if (PREVIEW)
     await encodePreview(seam, join(OUT, 'loop-point-quarter-speed.mp4'), 1);
-  else await encodeCheck(seam, join(SIDE, 'way-back-quarter-speed.mp4'));
+  else {
+    const clip = join(SIDE, 'way-back-quarter-speed.mp4');
+    await encodeCheck(seam, clip);
+    writeFileSync(
+      join(SIDE, 'ffprobe', `${basename(clip)}.json`),
+      `${JSON.stringify(probeFile(clip), null, 2)}\n`,
+    );
+  }
   const into = (t: number) => `${((t - SEAM_FROM) * SLOWED).toFixed(2)} s`;
   notes.push(
     `The way back to the soil at a quarter speed: ${SEAM_FROM.toFixed(2)} s to the next loop's ` +
