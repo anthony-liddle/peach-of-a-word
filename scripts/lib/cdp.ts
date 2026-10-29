@@ -124,8 +124,15 @@ export async function launchChrome(
     close() {
       socket.close();
       proc.kill();
+      // Chrome's helpers can still be writing to the profile as its main
+      // process exits, so the first try can meet a folder not yet empty.
       proc.once('exit', () =>
-        rmSync(profile, { recursive: true, force: true }),
+        rmSync(profile, {
+          recursive: true,
+          force: true,
+          maxRetries: 10,
+          retryDelay: 100,
+        }),
       );
     },
   };
