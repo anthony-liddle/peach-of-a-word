@@ -370,9 +370,13 @@ export const COSTUME_ORDER: readonly CostumeId[] = [
 ];
 
 /**
- * The table as one canonical text, which both apps hash. One line per part:
- * id, d, fill, opacity, stroke, strokeWidth, faceOnly, empty where unset, and
- * the costume's own line before its parts.
+ * The table as one canonical text, which both apps hash, the days included, so
+ * a day changed in one app fails the other's suite as a drawing does.
+ *
+ * - One line per part: id, d, fill, opacity, stroke, strokeWidth, faceOnly,
+ *   empty where unset, and the costume's own line before its parts.
+ * - Then one line per day, in COSTUME_DAYS' order: month, day, weekday, nth,
+ *   costume and occasion, empty where unset.
  */
 export function canonicalCostumeTable(): string {
   const lines: string[] = [];
@@ -393,6 +397,11 @@ export function canonicalCostumeTable(): string {
       );
     }
   }
+  for (const d of COSTUME_DAYS) {
+    const [day, weekday, nth] =
+      'day' in d ? [d.day, '', ''] : ['', d.weekday, d.nth];
+    lines.push([d.month, day, weekday, nth, d.costume, d.occasion].join('|'));
+  }
   return lines.join('\n');
 }
 
@@ -405,14 +414,26 @@ export function canonicalCostumeTable(): string {
  */
 export const SOURCE_MARK_TRANSFORM = 'matrix(0.9412 0 0 0.9189 2.941 4.297)';
 
-/** A day the peach dresses up, and what it wears. */
-export interface CostumeDay {
+/**
+ * A day the peach dresses up, and what it wears: a fixed date, or a day that
+ * moves, named by its weekday and which of the month's it is.
+ */
+export type CostumeDay = {
   month: number; // 1-12
-  day: number;
   costume: CostumeId;
   /** What the day is, for whoever reads this table. Never shown. */
   occasion: string;
-}
+} & (
+  | { day: number }
+  | {
+      /** 0 for Sunday to 6 for Saturday, as getUTCDay counts. */
+      weekday: number;
+      /** Which of the month's: 1 for the first. */
+      nth: number;
+    }
+);
+
+const THURSDAY = 4;
 
 /**
  * The days the peach dresses up. Other occasions may follow; each is a row.
@@ -423,17 +444,34 @@ export interface CostumeDay {
  */
 export const COSTUME_DAYS: readonly CostumeDay[] = [
   { month: 10, day: 31, costume: 'ghost', occasion: 'Halloween' },
-  { month: 11, day: 26, costume: 'pie-crust', occasion: 'Thanksgiving' },
+  {
+    month: 11,
+    weekday: THURSDAY,
+    nth: 4,
+    costume: 'pie-crust',
+    occasion: 'Thanksgiving',
+  },
   { month: 12, day: 24, costume: 'antlers', occasion: 'Christmas Eve' },
   { month: 12, day: 31, costume: 'top-hat', occasion: "New Year's Eve" },
   { month: 1, day: 1, costume: 'top-hat', occasion: "New Year's Day" },
 ];
 
+/** Whether `d` falls on `day` of its month in `year`. */
+function fallsOn(d: CostumeDay, year: number, day: number): boolean {
+  if ('day' in d) return d.day === day;
+  const weekday = new Date(Date.UTC(year, d.month - 1, day)).getUTCDay();
+  return weekday === d.weekday && Math.ceil(day / 7) === d.nth;
+}
+
 /** The costume for a calendar date, or null. */
-export function costumeForDate(month: number, day: number): CostumeId | null {
+export function costumeForDate(
+  year: number,
+  month: number,
+  day: number,
+): CostumeId | null {
   return (
-    COSTUME_DAYS.find((d) => d.month === month && d.day === day)?.costume ??
-    null
+    COSTUME_DAYS.find((d) => d.month === month && fallsOn(d, year, day))
+      ?.costume ?? null
   );
 }
 
@@ -456,7 +494,12 @@ export function boardCostume(
   const preview = search?.match(
     /[?&]costumeDate=(\d{4})-(\d{2})-(\d{2})(?:&|$)/,
   );
-  if (preview) return costumeForDate(Number(preview[2]), Number(preview[3]));
+  if (preview)
+    return costumeForDate(
+      Number(preview[1]),
+      Number(preview[2]),
+      Number(preview[3]),
+    );
   if (dayIndex === null) return null;
   const date = new Date(
     Date.UTC(
@@ -465,5 +508,9 @@ export function boardCostume(
       STORAGE_EPOCH.day + dayIndex,
     ),
   );
-  return costumeForDate(date.getUTCMonth() + 1, date.getUTCDate());
+  return costumeForDate(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+  );
 }

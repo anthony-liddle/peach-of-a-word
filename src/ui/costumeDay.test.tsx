@@ -31,14 +31,18 @@ afterEach(() => {
 
 describe('the dates the peach dresses up', () => {
   it('has a row for each day, Halloween and the winter', () => {
-    expect(
-      COSTUME_DAYS.map(({ month, day, costume }) => [month, day, costume]),
-    ).toEqual([
-      [10, 31, 'ghost'],
-      [11, 26, 'pie-crust'],
-      [12, 24, 'antlers'],
-      [12, 31, 'top-hat'],
-      [1, 1, 'top-hat'],
+    expect(COSTUME_DAYS).toEqual([
+      { month: 10, day: 31, costume: 'ghost', occasion: 'Halloween' },
+      {
+        month: 11,
+        weekday: 4,
+        nth: 4,
+        costume: 'pie-crust',
+        occasion: 'Thanksgiving',
+      },
+      { month: 12, day: 24, costume: 'antlers', occasion: 'Christmas Eve' },
+      { month: 12, day: 31, costume: 'top-hat', occasion: "New Year's Eve" },
+      { month: 1, day: 1, costume: 'top-hat', occasion: "New Year's Day" },
     ]);
   });
 });
@@ -91,8 +95,32 @@ describe("the costume goes by the board's date", () => {
   });
 });
 
-/** A month and day, and how many years after the first day it falls. */
-type Day = readonly [month: number, day: number, yearsOn?: number];
+/** A board's date: year, month and day. */
+type Ymd = readonly [year: number, month: number, day: number];
+
+const YEARS = [2026, 2027, 2028] as const;
+
+/** A fixed date in each of the years the suite tries. */
+const every = (m: number, d: number): Ymd[] => YEARS.map((y) => [y, m, d]);
+
+/**
+ * Thanksgiving, the fourth Thursday of November, in years that reach both
+ * ends of its week: the 22nd in 2029 and the 28th in 2030.
+ */
+const THANKSGIVINGS: readonly Ymd[] = [
+  [2026, 11, 26],
+  [2027, 11, 25],
+  [2028, 11, 23],
+  [2029, 11, 22],
+  [2030, 11, 28],
+];
+
+/** The days either side of each date. */
+const either = (days: readonly Ymd[]): Ymd[] =>
+  days.flatMap(([y, m, d]) => [
+    [y, m, d - 1],
+    [y, m, d + 1],
+  ]);
 
 /**
  * The winter's costume days, held to the same rules as Halloween's.
@@ -107,69 +135,68 @@ const WINTER: readonly {
   name: string;
   costume: CostumeId;
   spoken: string;
-  days: readonly Day[];
-  before: Day;
-  after: Day;
+  days: readonly Ymd[];
+  neighbours: readonly Ymd[];
 }[] = [
   {
     name: 'Thanksgiving',
     costume: 'pie-crust',
     spoken: 'wearing a pie crust hat',
-    days: [[11, 26]],
-    before: [11, 25],
-    after: [11, 27],
+    days: THANKSGIVINGS,
+    neighbours: either(THANKSGIVINGS),
   },
   {
     name: 'Christmas Eve',
     costume: 'antlers',
     spoken: 'wearing antlers and a red nose',
-    days: [[12, 24]],
-    before: [12, 23],
-    after: [12, 25],
+    days: every(12, 24),
+    neighbours: either(every(12, 24)),
   },
   {
     name: "New Year's Eve and Day",
     costume: 'top-hat',
     spoken: 'wearing a top hat',
-    days: [
-      [12, 31],
-      [1, 1, 1],
-    ],
-    before: [12, 30],
-    after: [1, 2, 1],
+    days: YEARS.flatMap((y): Ymd[] => [
+      [y, 12, 31],
+      [y + 1, 1, 1],
+    ]),
+    neighbours: YEARS.flatMap((y): Ymd[] => [
+      [y, 12, 30],
+      [y + 1, 1, 2],
+    ]),
   },
 ];
 
-/** A board on `day`, counting from `year`. */
-const boardOn = (year: number, [m, d, yearsOn = 0]: Day) =>
-  board(year + yearsOn, m, d);
+const boardOn = ([y, m, d]: Ymd) => board(y, m, d);
 
-describe.each(WINTER)('$name', ({ costume, spoken, days, before, after }) => {
+const preview = ([y, m, d]: Ymd) =>
+  `?costumeDate=${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+describe.each(WINTER)('$name', ({ costume, spoken, days, neighbours }) => {
   it("dresses the day's board, in any year", () => {
-    for (const year of [2026, 2027, 2028])
-      for (const day of days)
-        expect(boardCostume(boardOn(year, day), 'cute', null)).toBe(costume);
+    for (const day of days)
+      expect(boardCostume(boardOn(day), 'cute', null)).toBe(costume);
   });
 
   it("dresses the day's board when it is played later", () => {
     for (const day of days) {
-      const [m, d, yearsOn = 0] = day;
+      const [y, m, d] = day;
       vi.useFakeTimers();
-      vi.setSystemTime(new Date(2026 + yearsOn, m - 1, d + 5, 9));
-      expect(boardCostume(boardOn(2026, day), 'cute', null)).toBe(costume);
+      vi.setSystemTime(new Date(y, m - 1, d + 5, 9));
+      expect(boardCostume(boardOn(day), 'cute', null)).toBe(costume);
       vi.useRealTimers();
     }
   });
 
   it('does not dress the day before or the day after', () => {
-    expect(boardCostume(boardOn(2026, before), 'cute', null)).not.toBe(costume);
-    expect(boardCostume(boardOn(2026, after), 'cute', null)).not.toBe(costume);
+    for (const day of neighbours)
+      expect(boardCostume(boardOn(day), 'cute', null)).not.toBe(costume);
   });
 
   it("does not dress another day's board played on the day", () => {
-    for (const [m, d, yearsOn = 0] of days) {
+    for (const [y, m, d] of days) {
       vi.useFakeTimers();
-      vi.setSystemTime(new Date(2026 + yearsOn, m - 1, d, 9));
+      vi.setSystemTime(new Date(y, m - 1, d, 9));
       // 20 November dresses for nothing.
       expect(boardCostume(board(2026, 11, 20), 'cute', null)).toBeNull();
       vi.useRealTimers();
@@ -179,21 +206,44 @@ describe.each(WINTER)('$name', ({ costume, spoken, days, before, after }) => {
   it('never dresses Endless or letterpress', () => {
     expect(boardCostume(null, 'cute', null)).toBeNull();
     for (const day of days)
-      expect(boardCostume(boardOn(2026, day), 'letterpress', null)).toBeNull();
+      expect(boardCostume(boardOn(day), 'letterpress', null)).toBeNull();
   });
 
   it('can be previewed from the address', () => {
-    const [m, d, yearsOn = 0] = days[0]!;
-    const date = `${2026 + yearsOn}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    expect(
-      boardCostume(board(2026, 11, 20), 'cute', `?costumeDate=${date}`),
-    ).toBe(costume);
+    expect(boardCostume(board(2026, 11, 20), 'cute', preview(days[0]!))).toBe(
+      costume,
+    );
   });
 
   it('tells a screen reader what the peach is wearing', () => {
     expect(COSTUMES[costume]?.spoken).toBe(spoken);
     render(<EditionCard theme="cute" costume={costume} onClose={() => {}} />);
     expect(screen.getByText(`The peach is ${spoken}.`)).toBeInTheDocument();
+  });
+});
+
+describe('Thanksgiving goes by the fourth Thursday of November', () => {
+  it('dresses 26 Nov 2026, 25 Nov 2027 and 23 Nov 2028', () => {
+    expect(boardCostume(board(2026, 11, 26), 'cute', null)).toBe('pie-crust');
+    expect(boardCostume(board(2027, 11, 25), 'cute', null)).toBe('pie-crust');
+    expect(boardCostume(board(2028, 11, 23), 'cute', null)).toBe('pie-crust');
+  });
+
+  it('does not dress 26 Nov 2027, the Friday after', () => {
+    expect(boardCostume(board(2027, 11, 26), 'cute', null)).toBeNull();
+  });
+
+  it('does not dress the day before or the day after, in any year', () => {
+    for (const day of either(THANKSGIVINGS))
+      expect(boardCostume(boardOn(day), 'cute', null)).toBeNull();
+  });
+
+  it("previews by the year's own Thursday", () => {
+    const plain = board(2026, 11, 20);
+    expect(boardCostume(plain, 'cute', '?costumeDate=2027-11-25')).toBe(
+      'pie-crust',
+    );
+    expect(boardCostume(plain, 'cute', '?costumeDate=2027-11-26')).toBeNull();
   });
 });
 
