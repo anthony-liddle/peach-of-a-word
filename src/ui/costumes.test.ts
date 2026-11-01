@@ -11,11 +11,11 @@ import {
 
 /**
  * The table's SHA-256. The iOS app pins the same value in
- * `CostumeTests.swift`, so a costume changed in one app and not the other
- * fails in the one that was not changed.
+ * `CostumeTests.swift`, so a costume or a day changed in one app and not the
+ * other fails in the one that was not changed.
  */
 const COSTUME_TABLE_SHA256 =
-  '86fb74a3168949f186ff187839540a19b8c65525547fe3b86cc4968ae9bf6040';
+  '8ca85d325a075be36611aecb411f081b5537a8db053fff8e13ec22a45e5a74d3';
 
 /** Each command and its numbers, for absolute M, L, C and Z only. */
 function commands(d: string): { op: string; points: [number, number][] }[] {

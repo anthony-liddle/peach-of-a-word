@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { CostumesPage } from './CostumesPage.tsx';
+import { COSTUME_ORDER } from '@/ui/costumes.ts';
 
 /** The ghost sheet's lilac edge, which no other part of any peach draws. */
 const GHOST_EDGE = 'path[stroke="#D6C9EE"]';
@@ -37,7 +38,8 @@ describe('the costume page, on the two cards', () => {
 
   it('shows both plain and in each costume', () => {
     const all = rows();
-    expect(all).toHaveLength(4);
+    // The plain peach, then one row per costume.
+    expect(all).toHaveLength(1 + COSTUME_ORDER.length);
     const ghost = all.find((r) => /ghost sheet/.test(r.textContent ?? ''))!;
     expect(
       cell(ghost, /^Reveal card, this pass/)?.querySelector(GHOST_EDGE),

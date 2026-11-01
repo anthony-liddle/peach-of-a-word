@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { Game } from './Game.tsx';
 import {
   createListDictionary,
@@ -78,6 +78,16 @@ const revealPeach = () =>
 const wearsGhost = (el: Element | null) =>
   Boolean(el?.querySelector('path[stroke="#D6C9EE"]'));
 
+/** Each winter costume's day, and what its peach says on it. */
+const WINTER_DAYS: readonly (readonly [number, number, number, string])[] = [
+  [2026, 11, 26, 'The peach is wearing a pie crust hat.'],
+  [2026, 12, 21, 'The peach is wearing a knit beanie and scarf.'],
+  [2026, 12, 24, 'The peach is wearing antlers and a red nose.'],
+  [2026, 12, 25, 'The peach is wearing a Santa hat.'],
+  [2026, 12, 31, 'The peach is wearing a top hat.'],
+  [2027, 1, 1, 'The peach is wearing a top hat.'],
+];
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   (useDefinitions as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -122,6 +132,16 @@ describe('the peach on the reveal card', () => {
     }
   });
 
+  it.each(WINTER_DAYS)(
+    "wears the winter's costume on %i-%i-%i's board, and says so",
+    (y, m, d, spoken) => {
+      playOn(y, m, d);
+      find('serenade');
+      expect(revealPeach()).toBeTruthy();
+      expect(screen.getByText(spoken)).toBeInTheDocument();
+    },
+  );
+
   it('is the plain peach, and says nothing, on another day', () => {
     playOn(2026, 10, 30);
     find('serenade');
@@ -153,7 +173,7 @@ function fillTheBasket(theme: Theme) {
 }
 
 describe("the crown on the completion card's peach", () => {
-  const card = () => document.querySelector('.edition')!;
+  const card = () => document.querySelector<HTMLElement>('.edition')!;
 
   it("sits on the ghost on 31 October's board", () => {
     playOn(2026, 10, 31);
@@ -163,6 +183,16 @@ describe("the crown on the completion card's peach", () => {
     );
     expect(card().querySelector('svg.crowned__crown')).toBeTruthy();
   });
+
+  it.each(WINTER_DAYS)(
+    "sits on the winter's costume on %i-%i-%i's board",
+    (y, m, d, spoken) => {
+      playOn(y, m, d);
+      fillTheBasket('cute');
+      expect(within(card()).getByText(spoken)).toBeInTheDocument();
+      expect(card().querySelector('svg.crowned__crown')).toBeTruthy();
+    },
+  );
 
   it('is worn by the plain peach on another day', () => {
     playOn(2026, 10, 30);
