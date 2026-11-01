@@ -65,6 +65,12 @@ export const PLACEMENTS: Record<PlacementId, Placement> = {
 };
 
 /**
+ * The art's background, cute's page, top to bottom: a CSS gradient in the
+ * stills, and worked out by the capture script for the frames in motion.
+ */
+export const BACKDROP = ['#fff4ee', '#ffe6dc'] as const;
+
+/**
  * The search asset's width in an iPhone's search results, in points. Apple
  * gives only the 3:2 aspect; this is objectgraph.com's "about 365 points".
  */

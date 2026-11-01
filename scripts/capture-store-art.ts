@@ -18,80 +18,29 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { createServer } from 'vite';
 import { launchChrome, type Chrome } from './lib/cdp.ts';
+import {
+  mainBox,
+  openStoreArt,
+  serveStoreArt,
+  shoot as shootTo,
+  strays,
+} from './lib/storeArtCapture.ts';
 import {
   PLACEMENTS,
   SEARCH_POINTS_ON_A_PHONE,
   type PlacementId,
 } from '../src/storeArt/storeArtSpec.ts';
 
-const ROOT = resolve(import.meta.dirname, '..');
 const { values } = parseArgs({ options: { out: { type: 'string' } } });
 if (!values.out) throw new Error('Pass --out <dir>.');
 const OUT = resolve(values.out);
 const CHECK = resolve(OUT, 'check');
 mkdirSync(CHECK, { recursive: true });
 
-const server = await createServer({
-  root: ROOT,
-  configFile: resolve(ROOT, 'vite.config.ts'),
-  server: { host: 'localhost', port: 5198 },
-  logLevel: 'error',
-});
-await server.listen();
-const base = server.resolvedUrls?.local[0];
-if (!base) throw new Error('Vite did not report a URL.');
-
-/** Load `query`, and wait until the page's faces have arrived and painted. */
-async function open(chrome: Chrome, query: string): Promise<void> {
-  const loaded = new Promise<void>((done) => {
-    const off = chrome.on((event) => {
-      if (event.method === 'Page.loadEventFired') {
-        off();
-        done();
-      }
-    });
-  });
-  await chrome.send('Page.navigate', { url: `${base}storeart.html${query}` });
-  await loaded;
-  await chrome.evaluate(`(async () => {
-    await document.fonts.ready;
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  })()`);
-}
-
-/**
- * Every focal element, with everything inside it, must sit in the safe area:
- * the part of the art Apple's template says every device keeps. Returns what
- * strays, so a layout that leaves it fails the capture rather than the store.
- */
-async function strays(chrome: Chrome): Promise<string[]> {
-  return chrome.evaluate<string[]>(`(() => {
-    const art = document.querySelector('.store-art');
-    const o = art.getBoundingClientRect();
-    const safe = JSON.parse(art.dataset.safe);
-    const out = [];
-    const focal = [...art.querySelectorAll('[data-focal]')];
-    if (!focal.length) return ['no focal elements'];
-    focal.forEach((el, i) => {
-      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
-      for (const e of [el, ...el.querySelectorAll('*')]) {
-        const q = e.getBoundingClientRect();
-        if (!q.width && !q.height) continue;
-        l = Math.min(l, q.left - o.left); t = Math.min(t, q.top - o.top);
-        r = Math.max(r, q.right - o.left); b = Math.max(b, q.bottom - o.top);
-      }
-      const slack = 1;
-      if (l < safe.x - slack || t < safe.y - slack ||
-          r > safe.x + safe.w + slack || b > safe.y + safe.h + slack)
-        out.push('focal ' + i + ' spans x ' + Math.round(l) + '-' + Math.round(r) +
-          ', y ' + Math.round(t) + '-' + Math.round(b) + '; safe x ' + safe.x + '-' +
-          (safe.x + safe.w) + ', y ' + safe.y + '-' + (safe.y + safe.h));
-    });
-    return out;
-  })()`);
-}
+const server = await serveStoreArt(5198);
+const open = (chrome: Chrome, query: string) =>
+  openStoreArt(chrome, server.base, query);
 
 /** Each stage's drawn width and height in the art's pixels. */
 async function stages(
@@ -103,25 +52,6 @@ async function stages(
   })`);
 }
 
-/** Apple's size, 8-bit RGB, and nothing that could carry transparency. */
-function readBack(path: string, width: number, height: number): void {
-  const b = readFileSync(path);
-  const at = (i: number) => b.readUInt32BE(i);
-  if (b.toString('latin1', 1, 4) !== 'PNG')
-    throw new Error(`${path}: not a PNG`);
-  const [w, h, depth, colour] = [at(16), at(20), b[24], b[25]];
-  const chunks: string[] = [];
-  for (let i = 8; i < b.length; i += 12 + at(i))
-    chunks.push(b.toString('latin1', i + 4, i + 8));
-  const wrong = [
-    w !== width || h !== height ? `${w}x${h}, not ${width}x${height}` : '',
-    depth !== 8 ? `${depth}-bit` : '',
-    colour !== 2 ? `colour type ${colour}, not RGB` : '',
-    chunks.includes('tRNS') ? 'a tRNS chunk' : '',
-  ].filter(Boolean);
-  if (wrong.length) throw new Error(`${path}: ${wrong.join(', ')}`);
-}
-
 async function shoot(
   chrome: Chrome,
   path: string,
@@ -129,16 +59,7 @@ async function shoot(
   height: number,
   scale = 1,
 ): Promise<void> {
-  const { data } = await chrome.send<{ data: string }>(
-    'Page.captureScreenshot',
-    {
-      format: 'png',
-      clip: { x: 0, y: 0, width, height, scale },
-      captureBeyondViewport: true,
-    },
-  );
-  writeFileSync(path, Buffer.from(data, 'base64'));
-  readBack(path, Math.round(width * scale), Math.round(height * scale));
+  await shootTo(chrome, path, width, height, scale);
   console.log(`wrote ${path.slice(OUT.length + 1)}`);
 }
 
@@ -201,10 +122,7 @@ try {
       mobile: false,
     });
     await open(chrome, `?sheet=${query}`);
-    const box = await chrome.evaluate<{ width: number; height: number }>(
-      `(() => { const r = document.querySelector('main').getBoundingClientRect();
-        return { width: Math.ceil(r.width), height: Math.ceil(r.height) }; })()`,
-    );
+    const box = await mainBox(chrome);
     await shoot(
       chrome,
       resolve(CHECK, `${name}.png`),
