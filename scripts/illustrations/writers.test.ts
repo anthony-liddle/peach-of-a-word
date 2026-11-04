@@ -159,6 +159,30 @@ describe('writing the tables back', () => {
     );
   });
 
+  it('keeps a part on the peach’s own outline named, when only its paint changes', () => {
+    const ts =
+      'export const COSTUMES = {\n  ghost: {\n    parts: [\n      // The leaf.\n' +
+      '      { d: PEACH_OUTLINE.leaf, fill: LEAF },\n    ],\n  },\n};\n';
+    const swift =
+      '    static let ghostTable = CostumeTable(\n        parts: [\n' +
+      '            CostumePart(PeachOutline.leaf, fill: leaf),\n        ]\n    )\n';
+    const leaf = 'M50 12 C54 4 64 3 68 8 C66 14 59 17 54 16 Z';
+    const p: Plan = {
+      ...same(),
+      id: 'ghost',
+      from: [0],
+      parts: [{ d: leaf, fill: '#123456' }],
+      labels: ['leaf'],
+    };
+    const was = () => [{ d: leaf, fill: '#8FD3B6' }];
+    expect(writeCostumesTs(ts, [p], was)).toContain(
+      "d: PEACH_OUTLINE.leaf,\n        fill: '#123456',",
+    );
+    expect(writeCostumesSwift(swift, [p], was)).toContain(
+      'CostumePart(PeachOutline.leaf, fill: "#123456")',
+    );
+  });
+
   it('breaks a long new path as the Swift table breaks one', () => {
     const p = same();
     const long = Array.from(

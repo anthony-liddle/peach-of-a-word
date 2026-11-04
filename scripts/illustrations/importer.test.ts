@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { COSTUME_ORDER, COSTUMES, type CostumeId } from '@/ui/costumes.ts';
+import {
+  COSTUME_ORDER,
+  COSTUMES,
+  PEACH_OUTLINE,
+  type CostumeId,
+} from '@/ui/costumes.ts';
 import { costumeFile } from './export.ts';
 import { plan, readFile, type Flags } from './importer.ts';
 import { formatPath, parsePath, transformPath } from './pathData.ts';
@@ -134,6 +139,30 @@ describe('the way back, for the costumes', () => {
       'fill:#8FD3B6;fill-opacity:0.5',
     );
     expect(run('witch-hat', svg).parts[2]!.opacity).toBe(0.5);
+  });
+
+  it('refuses to reshape a part that follows the peach, but takes its paint', () => {
+    // The ghost's leaf is drawn on the peach's own leaf.
+    const leaf = COSTUME_LABELS.ghost.indexOf('leaf');
+    expect(COSTUMES.ghost.parts[leaf]!.d).toBe(PEACH_OUTLINE.leaf);
+    const moved = set(
+      file('ghost'),
+      'ghost-leaf',
+      'd',
+      'M51 12 C55 4 65 3 69 8 C67 14 60 17 55 16 Z',
+    );
+    expect(run('ghost', moved).problems.join()).toContain(
+      '"leaf" is drawn on the peach\'s own leaf, so it follows the peach',
+    );
+    const recoloured = set(
+      file('ghost'),
+      'ghost-leaf',
+      'style',
+      'fill:#123456',
+    );
+    const p = run('ghost', recoloured);
+    expect(p.problems).toEqual([]);
+    expect(p.parts[leaf]).toEqual({ d: PEACH_OUTLINE.leaf, fill: '#123456' });
   });
 
   describe('stops, writing nothing, and says what to do', () => {

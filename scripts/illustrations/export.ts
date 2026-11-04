@@ -25,6 +25,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   COSTUMES,
   COSTUME_ORDER,
+  PEACH_OUTLINE,
   type CostumeId,
   type CostumePart,
 } from '@/ui/costumes.ts';
@@ -217,6 +218,25 @@ function entry(
 const band = crownBox();
 
 /**
+ * A costume's part drawn on one of the peach's own outlines says so, in
+ * Inkscape's Object Properties: its outline follows the peach, so the import
+ * refuses an edit to it here.
+ */
+function followed(obj: Obj, p: CostumePart): Obj {
+  const outline = (
+    Object.keys(PEACH_OUTLINE) as (keyof typeof PEACH_OUTLINE)[]
+  ).find((k) => PEACH_OUTLINE[k] === p.d);
+  return outline
+    ? {
+        ...obj,
+        title:
+          `Drawn on the peach's own ${outline}, so its outline follows the peach and ` +
+          "changes with it, not here. Its colour and opacity are the costume's.",
+      }
+    : obj;
+}
+
+/**
  * The crown's outline in the peach's own units: its own 100 by 100 drawing
  * placed and stretched as the phone does, so the file shows it as it looks.
  */
@@ -261,7 +281,10 @@ function costumeEntry(
   const art: Layer = {
     id: 'art',
     label: title,
-    objs: labelled(id, parts, labels).map(([p, l]) => partObj(id, l, p)),
+    objs: labelled(id, parts, labels).map(([p, l]) =>
+      // Alternates have no table, so nothing of theirs follows the peach.
+      'costume' in source ? followed(partObj(id, l, p), p) : partObj(id, l, p),
+    ),
   };
   return entry(
     folder,

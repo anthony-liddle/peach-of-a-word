@@ -11,6 +11,7 @@
  */
 import { STORAGE_EPOCH } from '@/engine/config.ts';
 import type { Theme } from './useTheme.ts';
+import { PERFECTLY_PEACHY } from '@/storeArt/growthStages.ts';
 
 export type CostumeId =
   | 'witch-hat'
@@ -48,8 +49,17 @@ export interface Costume {
 const COCOA = '#7A4A33';
 const LEAF = '#8FD3B6';
 
-/** The peach's own leaf, `M50 12c4-8 14-9 18-4-2 6-9 9-14 8z`, made absolute. */
-const LEAF_PATH = 'M50 12 C54 4 64 3 68 8 C66 14 59 17 54 16 Z';
+/**
+ * The peach's own outlines, from the growing peach's Perfectly Peachy stage,
+ * the table both apps pin. A part drawn on one names it rather than copying
+ * it, so it follows the peach: an edit to the peach's leaf moves the ghost's
+ * leaf with it. costumes.test.ts holds that no outline is copied here.
+ */
+export const PEACH_OUTLINE = {
+  leaf: PERFECTLY_PEACHY[0]!.d,
+  body: PERFECTLY_PEACHY[1]!.d,
+  highlight: PERFECTLY_PEACHY[2]!.d,
+} as const;
 
 export const COSTUMES: Record<CostumeId, Costume> = {
   'witch-hat': {
@@ -97,10 +107,9 @@ export const COSTUMES: Record<CostumeId, Costume> = {
     spoken: "carved as a jack-o'-lantern",
     replacesFace: true,
     parts: [
-      // A deeper orange over the peach's body, `M50 16c20 0 34 16 34 36 0 22-16
-      // 38-34 38S16 74 16 52c0-20 14-36 34-36z` made absolute.
+      // A deeper orange over the peach's body, on the body's own outline.
       {
-        d: 'M50 16 C70 16 84 32 84 52 C84 74 68 90 50 90 C32 90 16 74 16 52 C16 32 30 16 50 16 Z',
+        d: PEACH_OUTLINE.body,
         fill: '#FF9A3D',
         opacity: 0.55,
       },
@@ -152,7 +161,7 @@ export const COSTUMES: Record<CostumeId, Costume> = {
         strokeWidth: 2.5,
       },
       // The leaf, through a hole in the top.
-      { d: LEAF_PATH, fill: LEAF },
+      { d: PEACH_OUTLINE.leaf, fill: LEAF },
       // The eye holes, which stay at every size: they are what make it a ghost.
       { d: 'M35 46 C35 38 45 38 45 46 C45 54 35 54 35 46 Z', fill: COCOA },
       { d: 'M55 46 C55 38 65 38 65 46 C65 54 55 54 55 46 Z', fill: COCOA },

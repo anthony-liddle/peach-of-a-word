@@ -8,6 +8,7 @@ import {
   SOURCE_MARK_TRANSFORM,
   canonicalCostumeTable,
 } from './costumes.ts';
+import { GROWTH_STAGES } from '@/storeArt/growthStages.ts';
 
 /**
  * The table's SHA-256. The iOS app pins the same value in
@@ -93,6 +94,19 @@ describe('the costumes', () => {
     const spoken = COSTUME_ORDER.map((id) => COSTUMES[id].spoken);
     expect(new Set(spoken).size).toBe(COSTUME_ORDER.length);
     for (const s of spoken) expect(s.trim().length).toBeGreaterThan(4);
+  });
+
+  // A part drawn on the peach's own outline names it, from the shared table,
+  // so the ghost's leaf and the lantern's body follow the peach. A copy of
+  // the outline written out here would silently stop following it.
+  it("draw the peach's own outlines by name, never as copies", () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, 'costumes.ts'),
+      'utf8',
+    );
+    const peach = GROWTH_STAGES.find((s) => s.id === 'perfectly-peachy')!.parts;
+    for (const outline of peach.slice(0, 3).map((p) => p.d))
+      expect(source, `costumes.ts copies ${outline}`).not.toContain(outline);
   });
 
   it('are the table the iOS app pins', () => {

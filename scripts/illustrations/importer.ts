@@ -9,7 +9,11 @@
  * Pure: text in, a plan out. import.ts reads the files, writes the tables, and
  * runs the guards.
  */
-import type { CostumeId, CostumePart } from '@/ui/costumes.ts';
+import {
+  PEACH_OUTLINE,
+  type CostumeId,
+  type CostumePart,
+} from '@/ui/costumes.ts';
 import {
   circlePath,
   ellipsePath,
@@ -488,6 +492,19 @@ export function plan(
       continue;
     }
     const old = table[i]!;
+    // A part on one of the peach's own outlines follows the peach, so its
+    // outline is the peach's to change, not the costume's.
+    const follows = (
+      Object.keys(PEACH_OUTLINE) as (keyof typeof PEACH_OUTLINE)[]
+    ).find((k) => PEACH_OUTLINE[k] === old.d);
+    if (follows && !sameOutline(old.d, fp.part.d)) {
+      out.problems.push(
+        `${name} is drawn on the peach's own ${follows}, so it follows the peach: ` +
+          "its outline changes with the peach's, not here. To give the costume an outline " +
+          'of its own, draw it as a new part',
+      );
+      continue;
+    }
     const keep: CostumePart = sameOutline(old.d, fp.part.d)
       ? { ...fp.part, d: old.d }
       : fp.part;
