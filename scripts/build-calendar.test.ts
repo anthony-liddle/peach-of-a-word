@@ -19,6 +19,8 @@ import {
   undoTrades,
   type CalendarTrade,
 } from './lib/calendar-trades.ts';
+import { DAILY_EPOCH } from '@/engine/config.ts';
+import { crownCardProblems } from './lib/crown-cards.ts';
 import { parseExclusions } from './lib/exclusions.ts';
 import { FLOOR_EXCEPTIONS, floorProblems } from './lib/floor.ts';
 import { parseReasonedWords } from './lib/denylist.ts';
@@ -498,5 +500,46 @@ describe('the recorded trades of future days', () => {
     }
     // The 81 days of the year of words and Halloween's two.
     expect(firstCycle).toBe(83);
+  });
+});
+
+describe("every crown's card", () => {
+  it('carries a meaning and an origin, on every day of the committed calendar', () => {
+    // The served files, which are what a player's card reads. The build
+    // refuses the same, beside the floor. See lib/crown-cards.ts.
+    const committed = JSON.parse(
+      readFileSync(join(DATA, 'daily-calendar.json'), 'utf8'),
+    ) as { words: string[] };
+    const pool = JSON.parse(
+      readFileSync(join(DATA, 'source-pool.json'), 'utf8'),
+    ) as SourceEntry[];
+    expect(crownCardProblems(committed.words, pool, DAILY_EPOCH)).toEqual([]);
+  });
+
+  it('names a crown with no origin, no meaning or no entry, and its day', () => {
+    const pool: SourceEntry[] = [
+      {
+        word: 'basement',
+        definition: 'noun. A floor below the ground.',
+        etymology: 'From base + -ment.',
+      },
+      {
+        word: 'favorite',
+        definition: 'adjective. Preferred.',
+        etymology: null,
+      },
+      { word: 'training', definition: ' ', etymology: 'From train + -ing.' },
+    ];
+    expect(
+      crownCardProblems(
+        ['basement', 'favorite', 'training', 'projects'],
+        pool,
+        DAILY_EPOCH,
+      ),
+    ).toEqual([
+      'favorite, 2026-06-24: no origin',
+      'training, 2026-06-25: no meaning',
+      'projects, 2026-06-26: no entry in source-pool.json',
+    ]);
   });
 });

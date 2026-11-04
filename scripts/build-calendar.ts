@@ -42,6 +42,7 @@ import { generateCalendar } from '../src/engine/calendar.ts';
 import { DAILY_EPOCH } from '../src/engine/config.ts';
 import type { SourceEntry } from '../src/data/types.ts';
 import { loadTrades, tradeProblems } from './lib/calendar-trades.ts';
+import { crownCardProblems } from './lib/crown-cards.ts';
 import { loadExclusions } from './lib/exclusions.ts';
 import { floorProblems } from './lib/floor.ts';
 import { loadPatchedPools } from './lib/pools.ts';
@@ -148,6 +149,20 @@ async function main(): Promise<void> {
   if (underFloor.length > 0) {
     throw new Error(
       `A crown breaks the set-size floor:\n  ${underFloor.join('\n  ')}`,
+    );
+  }
+
+  // Every crown's card carries a meaning and an origin. A trade can move a
+  // word with no reveal onto a day, so this is where that is caught. See
+  // lib/crown-cards.ts.
+  const bareCards = crownCardProblems(
+    words,
+    JSON.parse(sourceJson) as SourceEntry[],
+    DAILY_EPOCH,
+  );
+  if (bareCards.length > 0) {
+    throw new Error(
+      `A crown's card has no meaning or no origin:\n  ${bareCards.join('\n  ')}`,
     );
   }
 
