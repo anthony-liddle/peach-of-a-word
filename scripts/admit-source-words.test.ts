@@ -161,8 +161,15 @@ describe('the committed admissions', () => {
    * consumers already handle. Two crowns out of 626 showing a definition and
    * no etymology is a smaller cost than removing two words that pass every
    * other gate.
+   *
+   * **Superseded 2026-11-04, by orchard v1.11.0.** A quiet card turned out not
+   * to be an acceptable answer for a crown: on 4 November the crown was
+   * `favorite`, one of eleven with no origin, and its card showed the word and
+   * nothing else. Orchard wrote all eleven rows by hand, `dripping`'s and
+   * `projects`' among them, and the calendar build now refuses a crown without
+   * both fields (`lib/crown-cards.ts`). So every admission carries an
+   * etymology, with no exceptions.
    */
-  const REVEAL_REFUSED = ['dripping', 'projects'];
 
   it('carries a definition, which no admission has ever lacked', () => {
     for (const { word } of admissions) {
@@ -172,16 +179,12 @@ describe('the committed admissions', () => {
     }
   });
 
-  it('carries an etymology, except the two orchard has refused', () => {
+  it('carries an etymology, every one of them', () => {
     // REQUIRE_ETYMOLOGY is the gate that kept these out of the pool in the
     // first place, via a cached null. Each had to really have one to be
-    // admitted, and all but two still do.
+    // admitted, and from orchard v1.11.0 every one still does.
     for (const { word } of admissions) {
       const entry = byWord.get(word);
-      if (REVEAL_REFUSED.includes(word)) {
-        expect(entry?.etymology).toBeNull();
-        continue;
-      }
       expect(entry?.etymology).toBeTruthy();
       // Short is fine and well precedented: 118 of the shipped crowns carry a
       // pure surface analysis (chairman, "From chair + -man."). Empty is not.
