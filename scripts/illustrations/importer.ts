@@ -1,5 +1,6 @@
 /**
- * The way back: an edited costume file, read into the costume table's parts.
+ * The way back: an edited file, a costume's, the peach's or a stage's, read
+ * into its table's parts.
  *
  * Each part is found by its label, the name the export gave it. The page, the
  * reference layers and the guides are the export's own, and never come back;
@@ -9,7 +10,9 @@
  * Pure: text in, a plan out. import.ts reads the files, writes the tables, and
  * runs the guards.
  */
-import type { CostumeId, CostumePart } from '@/ui/costumes.ts';
+import { PEACH_OUTLINE, type CostumePart } from '@/ui/costumes.ts';
+import { PEACH_BODY, PEACH_FACE } from '@/ui/peachArt.ts';
+import { PEACH_LABELS } from './labels.ts';
 import {
   circlePath,
   ellipsePath,
@@ -63,9 +66,10 @@ export interface Flags {
   allowReferenceChanges?: boolean;
 }
 
-/** One costume's way back: its new parts and labels, and what changed. */
+/** One drawing's way back: its new parts and labels, and what changed. */
 export interface Plan {
-  id: CostumeId;
+  /** The costume's or the stage's id, or "peach". */
+  id: string;
   /** For each new part, the old part's index, or null for an added one. */
   from: (number | null)[];
   parts: CostumePart[];
@@ -287,7 +291,7 @@ function referenceLines(layer: XmlEl, m: Matrix): string[] {
     });
 }
 
-/** An Inkscape file, read: the costume's own layer as parts, the rest checked. */
+/** An Inkscape file, read: the drawing's own layer as parts, the rest checked. */
 export function readFile(svg: string): FileRead {
   const out: FileRead = {
     parts: [],
@@ -343,7 +347,7 @@ export function readFile(svg: string): FileRead {
     const label = el.getAttribute('inkscape:label') ?? el.id;
     if (!isLayer) {
       out.problems.push(
-        `"${label}" is outside every layer: move it to the costume's own layer (Layer > Move Selection to Layer)`,
+        `"${label}" is outside every layer: move it to the drawing's own layer (Layer > Move Selection to Layer)`,
       );
       continue;
     }
@@ -355,13 +359,13 @@ export function readFile(svg: string): FileRead {
     if (el.id === 'guides') continue;
     if (el.id !== 'art') {
       out.problems.push(
-        `a layer the export didn't write, "${label}": move what's on it to the costume's own layer, and delete it`,
+        `a layer the export didn't write, "${label}": move what's on it to the drawing's own layer, and delete it`,
       );
       continue;
     }
     art++;
     if (styleOf(el).get('display') === 'none')
-      out.problems.push("the costume's own layer is hidden: show it again");
+      out.problems.push("the drawing's own layer is hidden: show it again");
     for (const child of [...el.children]) {
       if (child.localName === 'title' || child.localName === 'desc') continue;
       const childLabel = child.getAttribute('inkscape:label') ?? child.id;
@@ -390,7 +394,7 @@ export function readFile(svg: string): FileRead {
     }
   }
   if (art !== 1)
-    out.problems.push(`the file has ${art} costume layers, not one`);
+    out.problems.push(`the file has ${art} layers of its own drawing, not one`);
   return out;
 }
 
@@ -411,18 +415,32 @@ export const sameOutline = (a: string, b: string) =>
   formatPath(parsePath(a)) === formatPath(parsePath(b));
 
 /**
- * A costume's way back: the file's parts matched to the table's by label, in
+ * The peach's own outlines, by their text, to the part of the peach each is:
+ * a costume's part drawn on one follows the peach (answer 5).
+ */
+export const PEACH_FOLLOWED: ReadonlyMap<string, string> = new Map(
+  (Object.keys(PEACH_OUTLINE) as (keyof typeof PEACH_OUTLINE)[]).map((k) => [
+    PEACH_OUTLINE[k],
+    k,
+  ]),
+);
+
+/**
+ * A drawing's way back: the file's parts matched to the table's by label, in
  * the file's order (answer 2), one decimal (answer 7). A part whose outline
  * reads the same keeps the table's own text, so an untouched file changes
- * nothing, byte for byte.
+ * nothing, byte for byte. `followed` names the outlines that are the peach's
+ * to change, not this drawing's: the costumes'. The peach and its stages pass
+ * none.
  */
 export function plan(
-  id: CostumeId,
+  id: string,
   file: FileRead,
   expected: FileRead,
   table: readonly CostumePart[],
   labels: readonly string[],
   flags: Flags = {},
+  followed: ReadonlyMap<string, string> = PEACH_FOLLOWED,
 ): Plan {
   const out: Plan = {
     id,
@@ -474,7 +492,7 @@ export function plan(
     if (i === undefined) {
       if (!flags.allowNewParts) {
         out.problems.push(
-          `${name} (${fp.id}) is not a part of the costume. Label it with the name it should have, ` +
+          `${name} (${fp.id}) is not a part of this drawing. Label it with the name it should have, ` +
             'and pass --allow-new-parts to add it',
         );
         continue;
@@ -488,6 +506,17 @@ export function plan(
       continue;
     }
     const old = table[i]!;
+    // A part on one of the peach's own outlines follows the peach, so its
+    // outline is the peach's to change, not the costume's.
+    const follows = followed.get(old.d);
+    if (follows && !sameOutline(old.d, fp.part.d)) {
+      out.problems.push(
+        `${name} is drawn on the peach's own ${follows}, so it follows the peach: ` +
+          "its outline changes with the peach's, not here. To give the costume an outline " +
+          'of its own, draw it as a new part',
+      );
+      continue;
+    }
     const keep: CostumePart = sameOutline(old.d, fp.part.d)
       ? { ...fp.part, d: old.d }
       : fp.part;
@@ -533,4 +562,103 @@ export function plan(
 
   if (out.problems.length) out.changes = [];
   return out;
+}
+
+// MARK: - The peach
+
+/** The peach's labels, part for part: the leaf, the body, the highlight, then the face. */
+export const PEACH_PART_LABELS: readonly string[] = [
+  ...PEACH_LABELS.body,
+  ...PEACH_LABELS.face,
+];
+
+/**
+ * The peach as a table of parts, from peachArt.ts: a circle as the path the
+ * growth table draws it with, the face's parts marked as the face's. The
+ * peach's file and Perfectly Peachy's are both read against it.
+ */
+export function peachTable(): CostumePart[] {
+  const part = (
+    p: (typeof PEACH_BODY)[number],
+    face: boolean,
+  ): CostumePart => ({
+    d: p.circle
+      ? formatPath(circlePath(p.circle[0], p.circle[1], p.circle[2]))
+      : p.d!,
+    ...(p.fill ? { fill: p.fill } : {}),
+    ...(p.opacity !== undefined ? { opacity: p.opacity } : {}),
+    ...(p.stroke ? { stroke: p.stroke, strokeWidth: p.strokeWidth ?? 1 } : {}),
+    ...(face ? { faceOnly: true } : {}),
+  });
+  return [
+    ...PEACH_BODY.map((p) => part(p, false)),
+    ...PEACH_FACE.map((p) => part(p, true)),
+  ];
+}
+
+/**
+ * What the peach's plan can't hold. Both apps find the peach's parts by
+ * place: the stages recolour its body and highlight and the crown drops its
+ * leaf, the costumes follow its first three outlines, and the face is what a
+ * small peach and a costume with its own face leave out. So the peach keeps
+ * its eight parts, in their order, the face last.
+ */
+export function peachProblems(p: Plan): string[] {
+  if (p.problems.length) return [];
+  const out: string[] = [];
+  const n = PEACH_PART_LABELS.length;
+  if (p.parts.length !== n || p.from.some((i, k) => i !== k))
+    out.push(
+      'the peach keeps its eight parts in their order (the leaf, the body, the highlight, ' +
+        'then the face), since both apps and the stages find them by place. Reshape and ' +
+        'recolour them freely; a new part belongs to a costume or a stage',
+    );
+  else
+    p.parts.forEach((part, k) => {
+      const face = k >= PEACH_LABELS.body.length;
+      if (!!part.faceOnly !== face)
+        out.push(
+          `"${PEACH_PART_LABELS[k]}" ${face ? 'is part of the face, so it keeps its "(face only)"' : 'is drawn at every size, so it takes no "(face only)"'}`,
+        );
+    });
+  return out;
+}
+
+// MARK: - Whether a file has edits of its own
+
+/**
+ * Every layer's objects but the guides', as lines of text that change when
+ * they do: what a file draws, whatever its kind, for telling whether a file
+ * in the vault has edits the code doesn't have.
+ */
+export function drawingOf(svg: string): Map<string, string[]> | null {
+  let root: XmlEl;
+  try {
+    root = parseXml(svg);
+  } catch (e) {
+    if (e instanceof XmlError) return null;
+    throw e;
+  }
+  const out = new Map<string, string[]>();
+  for (const el of root.children)
+    if (
+      el.localName === 'g' &&
+      el.getAttribute('inkscape:groupmode') === 'layer' &&
+      el.id !== 'guides'
+    )
+      out.set(
+        el.id,
+        referenceLines(el, parseTransform(el.getAttribute('transform'))),
+      );
+  return out;
+}
+
+/** Whether two files draw the same, layer for layer, at one decimal. */
+export function sameDrawing(a: string, b: string): boolean {
+  const x = drawingOf(a);
+  const y = drawingOf(b);
+  if (!x || !y || x.size !== y.size) return false;
+  for (const [id, lines] of x)
+    if (lines.join('\n') !== (y.get(id) ?? []).join('\n')) return false;
+  return true;
 }

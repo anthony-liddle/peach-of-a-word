@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { ICON_SAFE_PADDING, pwaIconSvg } from './icons.ts';
+import { peachParts } from '@/ui/peachArt.ts';
+import {
+  faviconCuteSvg,
+  ICON_SAFE_PADDING,
+  PEACH_MARK_PATHS,
+  pwaIconSvg,
+} from './icons.ts';
 
 const CUTE_CREAM = '#FFF4EE';
 
@@ -11,9 +17,8 @@ describe('pwaIconSvg', () => {
       const svg = pwaIconSvg({ maskable, background: CUTE_CREAM });
       // The full-bleed background fill.
       expect(svg).toContain(`fill="${CUTE_CREAM}"`);
-      // The shared peach mark: its leaf green and the smile stroke identify it.
-      expect(svg).toContain('#8FD3B6');
-      expect(svg).toContain('M45 67c3 3 7 3 10 0');
+      // The peach the raster icons are drawn from, whole.
+      expect(svg).toContain(PEACH_MARK_PATHS);
     }
   });
 
@@ -52,5 +57,18 @@ describe('the retired 8 tile', () => {
     );
     expect(src).not.toMatch(/squareSvg/);
     expect(src).not.toMatch(/centeredGlyphPath/);
+  });
+});
+
+describe('the cute tab icon', () => {
+  test("is the game's peach, every part of it, as the file is written", () => {
+    // build-icons.ts writes it, and so does the illustrations' import when the
+    // peach is edited. Either way it is exactly the game's peach: a hand edit
+    // to the file, or a peach that moved without it, fails here.
+    const file = readFileSync(
+      resolve(process.cwd(), 'public/favicon-cute.svg'),
+      'utf8',
+    );
+    expect(file).toBe(faviconCuteSvg(peachParts({ face: true })));
   });
 });

@@ -9,10 +9,9 @@ import { peachParts, sourceMarkParts, type PeachPart } from '../peachArt.ts';
  * peach everywhere else. PeachMark.test.tsx reads the favicon file and pins the
  * two together, because an SVG asset cannot import a component.
  *
- * Always decorative: every place it renders has its own accessible name.
- * Decorations.tsx still carries its own inline copy of the same paths, which
- * could adopt this component later; that file holds the dino and is out of
- * scope here.
+ * Always decorative: every place it renders has its own accessible name. The
+ * cute theme's floating peach in Decorations.tsx is this component too, so it
+ * follows the peach.
  *
  * A costume, if one is given, is drawn over the peach in the same box, so it
  * never changes the peach's footprint. See costumes.ts.

@@ -4,8 +4,8 @@ import type { Rect } from './storeArtSpec.ts';
 /**
  * The iOS title's growing peach: one drawing for each of the six ranks, then
  * the crown once the basket is full, as SVG path data in the peach's 100 by
- * 100 box. The web game doesn't draw these. They are here for the store art
- * page only.
+ * 100 box. The web game doesn't draw these, but for `PERFECTLY_PEACHY`'s
+ * outlines. They are here for the store art page.
  *
  * Copied from the iOS app's `Sources/PeachEngine/GrowthStages.swift`, which
  * `tools/growth-stages.py` generates from the drawings Antoine approved on 24
@@ -19,6 +19,53 @@ export interface GrowthStage {
   spoken: string;
   parts: readonly CostumePart[];
 }
+
+/**
+ * The peach at full size: the Perfectly Peachy stage's parts. The web game
+ * draws these where a costume follows the peach (`PEACH_OUTLINE` in
+ * costumes.ts), so they are their own export, and the game's bundle takes
+ * them without the other stages.
+ */
+export const PERFECTLY_PEACHY: readonly CostumePart[] = [
+  { d: 'M50 12 C54 4 64 3 68 8 C66 14 59 17 54 16 Z', fill: '#8FD3B6' },
+  {
+    d: 'M50 16 C70 16 84 32 84 52 C84 74 68 90 50 90 C32 90 16 74 16 52 C16 32 30 16 50 16 Z',
+    fill: '#FFC27A',
+  },
+  {
+    d: 'M50 16 C41 16 33 20 27 27 C34 31 42 32 50 32 C58 32 66 31 73 27 C67 20 59 16 50 16 Z',
+    fill: '#FFD79B',
+    opacity: 0.7,
+  },
+  {
+    d: 'M36.6 58 C36.6 56.1 38.1 54.6 40 54.6 C41.9 54.6 43.4 56.1 43.4 58 C43.4 59.9 41.9 61.4 40 61.4 C38.1 61.4 36.6 59.9 36.6 58 Z',
+    fill: '#7A4A33',
+    faceOnly: true,
+  },
+  {
+    d: 'M56.6 58 C56.6 56.1 58.1 54.6 60 54.6 C61.9 54.6 63.4 56.1 63.4 58 C63.4 59.9 61.9 61.4 60 61.4 C58.1 61.4 56.6 59.9 56.6 58 Z',
+    fill: '#7A4A33',
+    faceOnly: true,
+  },
+  {
+    d: 'M29.5 66 C29.5 63.5 31.5 61.5 34 61.5 C36.5 61.5 38.5 63.5 38.5 66 C38.5 68.5 36.5 70.5 34 70.5 C31.5 70.5 29.5 68.5 29.5 66 Z',
+    fill: '#FF9DAE',
+    opacity: 0.7,
+    faceOnly: true,
+  },
+  {
+    d: 'M61.5 66 C61.5 63.5 63.5 61.5 66 61.5 C68.5 61.5 70.5 63.5 70.5 66 C70.5 68.5 68.5 70.5 66 70.5 C63.5 70.5 61.5 68.5 61.5 66 Z',
+    fill: '#FF9DAE',
+    opacity: 0.7,
+    faceOnly: true,
+  },
+  {
+    d: 'M45 67 C48 70 52 70 55 67',
+    stroke: '#7A4A33',
+    strokeWidth: 2.2,
+    faceOnly: true,
+  },
+];
 
 export const GROWTH_STAGES: readonly GrowthStage[] = [
   {
@@ -264,46 +311,7 @@ export const GROWTH_STAGES: readonly GrowthStage[] = [
   {
     id: 'perfectly-peachy',
     spoken: 'perfectly peachy',
-    parts: [
-      { d: 'M50 12 C54 4 64 3 68 8 C66 14 59 17 54 16 Z', fill: '#8FD3B6' },
-      {
-        d: 'M50 16 C70 16 84 32 84 52 C84 74 68 90 50 90 C32 90 16 74 16 52 C16 32 30 16 50 16 Z',
-        fill: '#FFC27A',
-      },
-      {
-        d: 'M50 16 C41 16 33 20 27 27 C34 31 42 32 50 32 C58 32 66 31 73 27 C67 20 59 16 50 16 Z',
-        fill: '#FFD79B',
-        opacity: 0.7,
-      },
-      {
-        d: 'M36.6 58 C36.6 56.1 38.1 54.6 40 54.6 C41.9 54.6 43.4 56.1 43.4 58 C43.4 59.9 41.9 61.4 40 61.4 C38.1 61.4 36.6 59.9 36.6 58 Z',
-        fill: '#7A4A33',
-        faceOnly: true,
-      },
-      {
-        d: 'M56.6 58 C56.6 56.1 58.1 54.6 60 54.6 C61.9 54.6 63.4 56.1 63.4 58 C63.4 59.9 61.9 61.4 60 61.4 C58.1 61.4 56.6 59.9 56.6 58 Z',
-        fill: '#7A4A33',
-        faceOnly: true,
-      },
-      {
-        d: 'M29.5 66 C29.5 63.5 31.5 61.5 34 61.5 C36.5 61.5 38.5 63.5 38.5 66 C38.5 68.5 36.5 70.5 34 70.5 C31.5 70.5 29.5 68.5 29.5 66 Z',
-        fill: '#FF9DAE',
-        opacity: 0.7,
-        faceOnly: true,
-      },
-      {
-        d: 'M61.5 66 C61.5 63.5 63.5 61.5 66 61.5 C68.5 61.5 70.5 63.5 70.5 66 C70.5 68.5 68.5 70.5 66 70.5 C63.5 70.5 61.5 68.5 61.5 66 Z',
-        fill: '#FF9DAE',
-        opacity: 0.7,
-        faceOnly: true,
-      },
-      {
-        d: 'M45 67 C48 70 52 70 55 67',
-        stroke: '#7A4A33',
-        strokeWidth: 2.2,
-        faceOnly: true,
-      },
-    ],
+    parts: PERFECTLY_PEACHY,
   },
   {
     id: 'crown',
@@ -376,11 +384,14 @@ export const GROWTH_STAGES: readonly GrowthStage[] = [
 /**
  * The table as one canonical text, as the iOS app's `canonicalGrowthTable()`
  * writes it: the stage's own line, then one line per part, fields joined by
- * `|`, empty where unset.
+ * `|`, empty where unset. This table's by default; the illustrations' import
+ * reads the generator's output with it, before writing that here.
  */
-export function canonicalGrowthTable(): string {
+export function canonicalGrowthTable(
+  stages: readonly GrowthStage[] = GROWTH_STAGES,
+): string {
   const lines: string[] = [];
-  for (const s of GROWTH_STAGES) {
+  for (const s of stages) {
     lines.push(`${s.id}|${s.spoken}`);
     for (const p of s.parts) {
       lines.push(

@@ -5,7 +5,7 @@
  * and each file says why.
  */
 import { readFileSync } from 'node:fs';
-import { ICON_SAFE_PADDING, ICON_SIZE } from '../lib/icons.ts';
+import { ICON_PEACH, ICON_SAFE_PADDING, ICON_SIZE } from '../lib/icons.ts';
 import { PEACH_BODY, PEACH_FACE, type PeachPart } from '@/ui/peachArt.ts';
 import {
   boxGuide,
@@ -37,8 +37,11 @@ const PEACH_LABELS = [
   'smile',
 ];
 
-function peachObjs(prefix: string): Obj[] {
-  return [...PEACH_BODY, ...PEACH_FACE].map((p: PeachPart, i) => {
+function peachObjs(
+  prefix: string,
+  parts: readonly PeachPart[] = [...PEACH_BODY, ...PEACH_FACE],
+): Obj[] {
+  return parts.map((p: PeachPart, i) => {
     const label = PEACH_LABELS[i]!;
     const id = `${prefix}-${slug(label)}`;
     if (p.circle)
@@ -797,8 +800,10 @@ export function iconEntry(): MarkEntry {
       'The app icon, 1024 square: the peach on the cream, as ' +
       `scripts/lib/icons.ts composes it (here at ${k} times its 512). The iOS ` +
       "icon is exactly this, and the web's home-screen icons are it at 512 " +
-      '(and with more room for Android). The peach is edited in peach.svg; ' +
-      'the background colour here is the one thing of its own.',
+      '(and with more room for Android). The peach is the one the icons were ' +
+      'last drawn from, ICON_PEACH in icons.ts: an edit to peach.svg reaches ' +
+      'the icons only when they are redrawn, on request. The background ' +
+      'colour here is the one thing of its own.',
     layers: [
       {
         id: 'art',
@@ -820,10 +825,10 @@ export function iconEntry(): MarkEntry {
       },
       {
         id: 'art-peach',
-        label: 'The peach, placed (edit it in peach.svg)',
+        label: 'The peach the icons show (edit it in peach.svg, then redraw)',
         locked: true,
         transform: `matrix(${num(box / 100)} 0 0 ${num(box / 100)} ${num(pad)} ${num(pad)})`,
-        objs: peachObjs('icon'),
+        objs: peachObjs('icon', ICON_PEACH),
       },
       guides([
         outline(

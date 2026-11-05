@@ -1,6 +1,6 @@
-import { deflateSync } from 'node:zlib';
+import { crc32, deflateSync, inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { decodeRgbaPng } from './png.ts';
+import { decodeRgbaPng, encodeRgbPng } from './png.ts';
 import { backdropRows, overBackdrop } from './storeArtComposite.ts';
 
 /** An 8-bit RGBA PNG of `pixels`, each row filtered with `filters[y]`. */
@@ -91,5 +91,41 @@ describe('laying a frame over the background', () => {
     expect(px(1)).toEqual([10 * 257, 20 * 257, 30 * 257]);
     // A fifth of black over the background: four fifths of it.
     expect(px(2)).toEqual([...rows].map((v) => Math.round((v * 204) / 255)));
+  });
+});
+
+describe('encodeRgbPng', () => {
+  // Two pixels across, one down: peach, then cream, both opaque.
+  const rgba = Uint8Array.from([255, 158, 88, 255, 255, 244, 238, 255]);
+
+  it('writes 8-bit RGB with no alpha, as the App Store takes an icon', () => {
+    const png = encodeRgbPng(2, 1, rgba);
+    expect(png.toString('latin1', 1, 4)).toBe('PNG');
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([2, 1]);
+    expect([...png.subarray(24, 29)]).toEqual([8, 2, 0, 0, 0]);
+  });
+
+  it('keeps every pixel, unfiltered, and every chunk checks out', () => {
+    const png = encodeRgbPng(2, 1, rgba);
+    const chunks: string[] = [];
+    for (let i = 8; i < png.length; i += 12 + png.readUInt32BE(i)) {
+      const n = png.readUInt32BE(i);
+      const type = png.toString('latin1', i + 4, i + 8);
+      chunks.push(type);
+      expect(png.readUInt32BE(i + 8 + n)).toBe(
+        crc32(png.subarray(i + 4, i + 8 + n)),
+      );
+      if (type === 'IDAT')
+        expect([...inflateSync(png.subarray(i + 8, i + 8 + n))]).toEqual([
+          0, 255, 158, 88, 255, 244, 238,
+        ]);
+    }
+    expect(chunks).toEqual(['IHDR', 'IDAT', 'IEND']);
+  });
+
+  it("refuses a pixel that isn't opaque, rather than dropping what it hid", () => {
+    expect(() =>
+      encodeRgbPng(2, 1, Uint8Array.from([0, 0, 0, 255, 0, 0, 0, 128])),
+    ).toThrow('not opaque');
   });
 });

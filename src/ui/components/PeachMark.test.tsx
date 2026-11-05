@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { COSTUMES, COSTUME_ORDER } from '../costumes.ts';
+import { PEACH_BODY, PEACH_FACE } from '../peachArt.ts';
 import { PeachMark, SourcePeach } from './PeachMark.tsx';
 
 /**
@@ -69,15 +70,15 @@ describe('a peach in costume', () => {
     const plain = render(<PeachMark />).container;
     const worn = render(<PeachMark costume={id} />).container;
     const added = COSTUMES[id].parts.length;
-    // The face's four circles go when the costume brings its own face.
-    const face = COSTUMES[id].replacesFace ? 4 : 0;
+    // The peach's face goes when the costume brings its own. Counted from the
+    // peach, not written in, since an eye redrawn in Inkscape is a path.
+    const face = COSTUMES[id].replacesFace ? PEACH_FACE.length : 0;
     expect(worn.querySelectorAll('path, circle').length).toBe(
-      plain.querySelectorAll('path, circle').length +
-        added -
-        face -
-        (COSTUMES[id].replacesFace ? 1 : 0),
+      plain.querySelectorAll('path, circle').length + added - face,
     );
-    expect(circles(worn)).toBe(COSTUMES[id].replacesFace ? 0 : 4);
+    expect(circles(worn)).toBe(
+      COSTUMES[id].replacesFace ? 0 : PEACH_FACE.filter((p) => p.circle).length,
+    );
   });
 
   it.each(COSTUME_ORDER)(
@@ -87,7 +88,7 @@ describe('a peach in costume', () => {
       const markSize = COSTUMES[id].parts.filter((p) => !p.faceOnly).length;
       // Leaf, body and highlight, then the costume's parts that show at mark size.
       expect(container.querySelectorAll('path, circle').length).toBe(
-        3 + markSize,
+        PEACH_BODY.length + markSize,
       );
     },
   );
