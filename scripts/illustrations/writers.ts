@@ -376,6 +376,18 @@ export function writeLabelsTs(
   return splice(source, edits);
 }
 
+/**
+ * The web's `CROWN` with its new outline. Only the string changes; Prettier
+ * lays the file out after.
+ */
+export function writeCrownTs(source: string, d: string): string {
+  const sf = parse('crown.ts', source);
+  const init = property(objectOf(sf, 'CROWN'), 'd', sf)?.initializer;
+  if (!init || !ts.isStringLiteral(init))
+    throw new WriteError('no CROWN.d string in src/ui/crown.ts');
+  return splice(source, [[init.getStart(sf), init.getEnd(), `'${d}'`]]);
+}
+
 // MARK: - Swift
 
 /** Where each top-level item of a bracketed Swift list starts and ends. */
@@ -776,6 +788,23 @@ export function writeStagePy(
 }
 
 // MARK: - The hashes
+
+/**
+ * iOS's `CompletionCrown.d`, in Sources/PeachEngine/Crown.swift, where the
+ * card has drawn its crown from since iOS #119. An older checkout has no such
+ * file: `source` is empty, and the import stops before writing anything.
+ */
+export function writeCrownSwift(source: string, d: string): string {
+  if (!source)
+    throw new WriteError(
+      "the iOS checkout has no Sources/PeachEngine/Crown.swift, where the card's crown is drawn from " +
+        'since iOS #119: bring that checkout up to date with main',
+    );
+  const m = /(public static let d = )"([^"\\]*)"/.exec(source);
+  if (!m) throw new WriteError('no CompletionCrown.d line in Crown.swift');
+  const start = m.index + m[1]!.length;
+  return `${source.slice(0, start)}"${d}"${source.slice(start + m[2]!.length + 2)}`;
+}
 
 const HEX = /[0-9a-f]{64}/;
 

@@ -6,8 +6,8 @@
  *     [--allow-new-parts] [--allow-deleted-parts] [--allow-reference-changes] \
  *     [--draw-on-its-own]
  *
- * Each file is named as the export names it: a costume's, `peach.svg`, or one
- * of the growing peach's stages. Parts are found by their labels and taken in
+ * Each file is named as the export names it: a costume's, `peach.svg`, one of
+ * the growing peach's stages, or `completion-crown.svg`. Parts are found by their labels and taken in
  * the file's order, at one decimal. Anything the tables can't hold stops the
  * whole import, before anything is written, with each problem named.
  *
@@ -24,6 +24,10 @@
  *   an edit to its peach stops the import, unless `--draw-on-its-own` says to
  *   name it there (Antoine, 4 November 2026). `GrowthStageTests` holds every
  *   other stage drawn from the peach to today's peach.
+ * - **The completion card's crown** goes into the web's `crown.ts` and iOS's
+ *   `Crown.swift` (answer 8). The file draws it in the peach's box, as it
+ *   looks on the card; the stretch to its 46 by 26 points is undone at full
+ *   precision, and only its outline comes back: its colour is the theme's.
  *
  * The generator is run on a copy first, so a stage outside its box stops the
  * import with nothing written. Then it writes, moves every pinned hash that
@@ -64,17 +68,20 @@ import {
   canonicalGrowthTable,
   GROWTH_STAGES,
 } from '@/storeArt/growthStages.ts';
+import { CROWN, canonicalCrown } from '@/ui/crown.ts';
 import { faviconCuteSvg, ICON_PEACH } from '../lib/icons.ts';
 import { circlePath, formatPath } from './pathData.ts';
 import {
   allEntries,
   costumeFile,
+  crownFile,
   peachFile,
   stageFile,
   STAGE_FILES,
   type Candidate,
 } from './export.ts';
 import {
+  crownPlan,
   PEACH_FOLLOWED,
   PEACH_PART_LABELS,
   peachProblems,
@@ -83,6 +90,7 @@ import {
   readFile,
   sameDrawing,
   sameOutline,
+  type CrownPlan,
   type Flags,
   type Plan,
 } from './importer.ts';
@@ -90,6 +98,8 @@ import { COSTUME_LABELS, STAGE_LABELS } from './labels.ts';
 import {
   writeCostumesSwift,
   writeCostumesTs,
+  writeCrownSwift,
+  writeCrownTs,
   writeGrowthStagesTs,
   peachArtParts,
   writeHash,
@@ -160,13 +170,15 @@ function guard(
 type Kind =
   | { kind: 'costume'; id: CostumeId }
   | { kind: 'peach'; via: 'peach' | 'perfectly-peachy' }
-  | { kind: 'stage'; id: string };
+  | { kind: 'stage'; id: string }
+  | { kind: 'crown' };
 
 function kindOf(file: string): Kind | undefined {
   const name = basename(file, '.svg');
   if ((COSTUME_ORDER as readonly string[]).includes(name))
     return { kind: 'costume', id: name as CostumeId };
   if (name === 'peach') return { kind: 'peach', via: 'peach' };
+  if (name === 'completion-crown') return { kind: 'crown' };
   const stage = Object.keys(STAGE_FILES).find((k) => STAGE_FILES[k] === name);
   if (stage === 'perfectly-peachy')
     return { kind: 'peach', via: 'perfectly-peachy' };
@@ -201,8 +213,9 @@ async function main(argv: string[]) {
   const costumePlans: Plan[] = [];
   const peachPlans: { file: string; plan: Plan }[] = [];
   const stagePlans: Plan[] = [];
+  const crownPlans: { file: string; plan: CrownPlan }[] = [];
   let stopped = false;
-  const say = (p: Plan) => {
+  const say = (p: Pick<Plan, 'problems' | 'notes' | 'changes'>) => {
     for (const s of p.problems) console.log(`  STOP: ${s}`);
     for (const s of p.notes) console.log(`  note: ${s}`);
     for (const s of p.changes) console.log(`  ${s}`);
@@ -219,7 +232,7 @@ async function main(argv: string[]) {
         basename(dirname(resolve(file))) === 'Alternates'
           ? '  STOP: alternates have no table, so they stay files (answer 9).'
           : `  STOP: "${basename(file, '.svg')}" is not a drawing the import takes yet: ` +
-              'it takes the costumes, peach.svg and the stages.',
+              'it takes the costumes, peach.svg, the stages and completion-crown.svg.',
       );
       stopped = true;
       continue;
@@ -235,6 +248,15 @@ async function main(argv: string[]) {
       );
       say(p);
       costumePlans.push(p);
+    } else if (k.kind === 'crown') {
+      const p = crownPlan(
+        readFile(svg),
+        readFile(crownFile().svg),
+        CROWN,
+        flags,
+      );
+      say(p);
+      crownPlans.push({ file, plan: p });
     } else if (k.kind === 'peach') {
       const labels =
         k.via === 'peach'
@@ -294,6 +316,14 @@ async function main(argv: string[]) {
     );
     stopped = true;
   }
+  const crownEdits = crownPlans.filter((e) => e.plan.changes.length);
+  if (new Set(crownEdits.map((e) => e.plan.d)).size > 1) {
+    console.log(
+      `\nSTOP: ${crownEdits.map((e) => e.file).join(' and ')} are the same crown, edited two ` +
+        'different ways. Keep one edit, and import that file alone.',
+    );
+    stopped = true;
+  }
   if (stopped) {
     console.log('\nStopped: nothing was written.');
     process.exitCode = 1;
@@ -302,7 +332,8 @@ async function main(argv: string[]) {
   const costumesChanged = costumePlans.filter((p) => p.changes.length);
   const stagesChanged = stagePlans.filter((p) => p.changes.length);
   const peach = peachEdits[0]?.plan;
-  if (!costumesChanged.length && !stagesChanged.length && !peach) {
+  const crown = crownEdits[0]?.plan;
+  if (!costumesChanged.length && !stagesChanged.length && !peach && !crown) {
     console.log('\nNothing changed, so nothing was written.');
     return;
   }
@@ -322,9 +353,19 @@ async function main(argv: string[]) {
     growthPy: join(ios, 'tools/growth-stages.py'),
     growthSwift: join(ios, 'Sources/PeachEngine/GrowthStages.swift'),
     growthTests: join(ios, 'Tests/PeachEngineTests/GrowthStageTests.swift'),
+    crownTs: join(WEB, 'src/ui/crown.ts'),
+    crownTest: join(WEB, 'src/ui/crown.test.ts'),
+    crownSwift: join(ios, 'Sources/PeachEngine/Crown.swift'),
+    crownTests: join(ios, 'Tests/PeachEngineTests/CrownTests.swift'),
   };
+  // iOS has drawn the crown from Crown.swift only since #119. An older
+  // checkout reads as empty here, and stops the import if the crown changed.
+  const optional = new Set<string>([at.crownSwift, at.crownTests]);
   const was = Object.fromEntries(
-    Object.entries(at).map(([k, path]) => [k, readFileSync(path, 'utf8')]),
+    Object.entries(at).map(([k, path]) => [
+      k,
+      optional.has(path) && !existsSync(path) ? '' : readFileSync(path, 'utf8'),
+    ]),
   ) as Record<keyof typeof at, string>;
   const now = { ...was };
 
@@ -358,6 +399,15 @@ async function main(argv: string[]) {
       writePeachArtTs(was.peachArt, peach.parts, peachWas),
     );
     now.favicon = faviconCuteSvg(gamePeach);
+  }
+
+  // The crown, in both apps.
+  if (crown) {
+    now.crownTs = await formatted(
+      at.crownTs,
+      writeCrownTs(was.crownTs, crown.d),
+    );
+    now.crownSwift = writeCrownSwift(was.crownSwift, crown.d);
   }
 
   // The generator: the peach and each edited stage, run on a copy.
@@ -514,6 +564,19 @@ async function main(argv: string[]) {
       `\nCOSTUME_TABLE_SHA256: ${costumeWas}\n                   to ${costumeNow}`,
     );
   }
+  const crownWas = sha(canonicalCrown());
+  const crownNow = sha(
+    canonicalCrown(crown ? { ...CROWN, d: crown.d } : CROWN),
+  );
+  if (crownNow !== crownWas) {
+    now.crownTest = writeHash(now.crownTest, 'CROWN_SHA256', crownNow);
+    now.crownTests = writeHash(now.crownTests, 'crownSHA256', crownNow);
+    console.log(`\nCROWN_SHA256: ${crownWas}\n           to ${crownNow}`);
+    console.log(
+      '\nThe crown changed. It carries to the completion card in both apps, and to the ' +
+        'crown shown over every costume in the vault.',
+    );
+  }
   if (peach) {
     const moved = GROWTH_STAGES.filter(
       (s) =>
@@ -654,16 +717,20 @@ async function main(argv: string[]) {
         'show the peach before this edit. Redraw them when you choose: ' +
         'scripts/illustrations/redraw.ts --out <dir>',
     );
-  if (peach || stagesChanged.length) {
+  if (peach || stagesChanged.length)
     stale.push(
       'The store art, stills and videos, shows the peach and its stages as they were. ' +
         'Redraw it when you choose: scripts/illustrations/redraw.ts --out <dir> --store-art',
     );
+  const shown = [
+    ...(peach || stagesChanged.length ? ['the peach'] : []),
+    ...(crown ? ["the completion card's crown, in shot 6"] : []),
+  ];
+  if (shown.length)
     stale.push(
-      "The App Store screenshots show the peach as it was: they're retaken by hand, " +
-        'as the Submission Kit says.',
+      `The App Store screenshots show ${shown.join(' and ')} as ${shown.length > 1 ? 'they were' : 'it was'}: ` +
+        "they're retaken by hand, as the Submission Kit says.",
     );
-  }
   if (refreshed.length || wrote.length)
     stale.push(
       `The vault's contact-sheet.png shows the files as they were: check/contact.py draws it again.`,

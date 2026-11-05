@@ -1,18 +1,18 @@
 /**
  * The crown the completion card's peach wears: the iPhone's, not a new one.
  *
- * The iPhone draws it as the `Crown` shape in App/CompletionCard.swift, seven
- * points given as fractions of its frame. Here they are the same fractions,
- * times 100, as SVG path data in the crown's own 100 by 100 box, stretched to
- * its frame as the shape is. Absolute M, L and Z only, as the costumes are, so
- * the iOS app can parse this string with the parser it already has.
+ * SVG path data in the crown's own 100 by 100 box, stretched to its frame.
+ * Absolute M, L, C and Z, as the costumes are, so the iOS app parses this same
+ * string: it holds it as `CompletionCrown.d` in its PeachEngine, and draws it
+ * the same way. The illustrations' import writes both, from the crown edited
+ * in Inkscape, where it is drawn in the peach's box as it looks on the card.
  *
  * Placed as the iPhone places it, from the iPhone's own numbers, so it stands
  * above the peach's box rather than inside it: crown.test.ts holds it to the
  * peach's width and to the iPhone's rise, in place of the costumes' box.
  *
- * Both repos are to pin the canonical text to one hash, CROWN_SHA256 in
- * crown.test.ts. The iOS side of that pin is not written yet.
+ * Both repos pin the canonical text to one hash: CROWN_SHA256 in
+ * crown.test.ts here, and `CrownTests.crownSHA256` on iOS.
  */
 
 /** The crown's outline and colour: the cute theme's peach, `--crown`. */
@@ -60,13 +60,17 @@ export function crownTransform(): string {
 
 /**
  * The crown as one canonical text, which both apps hash: the outline and its
- * colour, then the iPhone's placement, fields joined by `|`. Every number is a
- * whole one, so JavaScript and Swift print them alike.
+ * colour, then the iPhone's placement, fields joined by `|`. The outline is
+ * carried as its own text, never printed from parsed numbers, and the
+ * placement's numbers are whole, so JavaScript and Swift print them alike.
+ * `crown` is the one the import is about to write, to hash it first.
  */
-export function canonicalCrown(): string {
+export function canonicalCrown(
+  crown: { d: string; fill: string } = CROWN,
+): string {
   const { peach, paddingTop, width, height, offsetY } = CROWN_ON_PEACH;
   return [
-    `crown|${CROWN.d}|${CROWN.fill}`,
+    `crown|${crown.d}|${crown.fill}`,
     `placement|${peach}|${paddingTop}|${width}|${height}|${offsetY}`,
   ].join('\n');
 }

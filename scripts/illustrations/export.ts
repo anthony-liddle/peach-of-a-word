@@ -239,20 +239,23 @@ function followed(obj: Obj, p: CostumePart): Obj {
 /**
  * The crown's outline in the peach's own units: its own 100 by 100 drawing
  * placed and stretched as the phone does, so the file shows it as it looks.
+ * `d` is the code's outline unless a test draws another. The tables write
+ * every pair as two numbers and a space, C's handles included, so each pair
+ * is one match.
  */
-function crownOnPeach(): string {
-  return CROWN.d.replace(
+function crownOnPeach(d: string = CROWN.d): string {
+  return d.replace(
     /(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,
     (_, x: string, y: string) =>
       `${num(band.x + (Number(x) * band.width) / 100)} ${num(band.y + (Number(y) * band.height) / 100)}`,
   );
 }
 
-const crownObj = (id: string): Obj => ({
+const crownObj = (id: string, d: string = CROWN.d): Obj => ({
   id,
   label: 'crown',
   tag: 'path',
-  attrs: [['d', crownOnPeach()]],
+  attrs: [['d', crownOnPeach(d)]],
   style: [['fill', CROWN.fill]],
 });
 
@@ -310,6 +313,65 @@ function costumeEntry(
 }
 
 const sentence = (s: string) => s[0]!.toUpperCase() + s.slice(1);
+
+/**
+ * The completion card's crown's own file. `d` is the code's outline unless a
+ * test draws another.
+ */
+export function crownFile(d: string = CROWN.d): Entry {
+  // The completion card's crown, where it stands on the peach and as it looks
+  // there, in the peach's box: most of it rises above the page. The code keeps
+  // it in its own 100 by 100 box, stretched to 46 by 26 points on the phone;
+  // the way back will undo that stretch.
+  const crownTop = band.y;
+  const crownFoot = band.y + band.height;
+  return {
+    ...entry(
+      FOLDERS.marks,
+      'completion-crown',
+      'crown',
+      { crown: true },
+      'The crown',
+      "The completion card's crown, where it stands on the peach and as it " +
+        "looks there, in the peach's 100 by 100 box. It rises above the box, so " +
+        'most of it sits above the page. The apps keep it in its own box, ' +
+        'stretched to 46 by 26 points; the way back will do that stretching.',
+      [
+        peachReference(true),
+        { id: 'art', label: 'The crown', objs: [crownObj('crown-crown', d)] },
+        guides([
+          boxGuide(100, 100),
+          {
+            id: 'guide-crown-box',
+            label: `the crown's box on the phone: x ${num(band.x)} to ${num(band.x + band.width)}, y ${num(crownTop)} to ${num(crownFoot)}`,
+            tag: 'rect',
+            attrs: [
+              ['x', num(band.x)],
+              ['y', num(crownTop)],
+              ['width', num(band.width)],
+              ['height', num(band.height)],
+            ],
+            style: [
+              ['fill', 'none'],
+              ['stroke', '#E5007A'],
+              ['stroke-width', 0.25],
+              ['stroke-dasharray', '1,0.5'],
+            ],
+            title:
+              'The frame the phone stretches the crown to, 46 by 26 points over ' +
+              "a 112-point peach. crown.test.ts holds the crown's top to the " +
+              "top of this frame, the iPhone's rise above the peach, and its " +
+              "seven points to the iPhone's Crown shape.",
+          },
+        ]),
+      ],
+    ),
+    compareArea: band,
+    compareSize: [368, 208],
+    block: 8,
+    sheetArea: [0, -18, 100, 100],
+  };
+}
 
 /** A costume's file, from its table and its labels: the code's own by default. */
 export function costumeFile(
@@ -425,58 +487,7 @@ export function shippedEntries(): Entry[] {
   // The costumes.
   for (const id of COSTUME_ORDER) out.push(costumeFile(id));
 
-  // The completion card's crown, where it stands on the peach and as it looks
-  // there, in the peach's box: most of it rises above the page. The code keeps
-  // it in its own 100 by 100 box, stretched to 46 by 26 points on the phone;
-  // the way back will undo that stretch.
-  const crownTop = band.y;
-  const crownFoot = band.y + band.height;
-  out.push({
-    ...entry(
-      FOLDERS.marks,
-      'completion-crown',
-      'crown',
-      { crown: true },
-      'The crown',
-      "The completion card's crown, where it stands on the peach and as it " +
-        "looks there, in the peach's 100 by 100 box. It rises above the box, so " +
-        'most of it sits above the page. The apps keep it in its own box, ' +
-        'stretched to 46 by 26 points; the way back will do that stretching.',
-      [
-        peachReference(true),
-        { id: 'art', label: 'The crown', objs: [crownObj('crown-crown')] },
-        guides([
-          boxGuide(100, 100),
-          {
-            id: 'guide-crown-box',
-            label: `the crown's box on the phone: x ${num(band.x)} to ${num(band.x + band.width)}, y ${num(crownTop)} to ${num(crownFoot)}`,
-            tag: 'rect',
-            attrs: [
-              ['x', num(band.x)],
-              ['y', num(crownTop)],
-              ['width', num(band.width)],
-              ['height', num(band.height)],
-            ],
-            style: [
-              ['fill', 'none'],
-              ['stroke', '#E5007A'],
-              ['stroke-width', 0.25],
-              ['stroke-dasharray', '1,0.5'],
-            ],
-            title:
-              'The frame the phone stretches the crown to, 46 by 26 points over ' +
-              "a 112-point peach. crown.test.ts holds the crown's top to the " +
-              "top of this frame, the iPhone's rise above the peach, and its " +
-              "seven points to the iPhone's Crown shape.",
-          },
-        ]),
-      ],
-    ),
-    compareArea: band,
-    compareSize: [368, 208],
-    block: 8,
-    sheetArea: [0, -18, 100, 100],
-  });
+  out.push(crownFile());
 
   // The web's decorations: the second peach and the dinosaur, read from the
   // component's own markup.
