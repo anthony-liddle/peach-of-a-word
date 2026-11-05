@@ -135,9 +135,13 @@ try {
   }>(`(async () => {
     const { SOUNDS } = await import('/src/sounds/inventory.ts');
     const { MASTER_GAIN } = await import('/src/reference/ReferenceAudioEngine.ts');
+    const { NEW_WITH_SOUNDSCAPE } = await import('/src/audio/departures.ts');
     return {
       masterGain: MASTER_GAIN,
-      sounds: SOUNDS.map(({ id, cue, label, params }) => ({ id, cue, label, params })),
+      // The baseline records the old engine, so not the sounds it never made
+      sounds: SOUNDS.filter(({ id }) => !NEW_WITH_SOUNDSCAPE.includes(id)).map(
+        ({ id, cue, label, params }) => ({ id, cue, label, params }),
+      ),
     };
   })()`);
 

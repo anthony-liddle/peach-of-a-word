@@ -92,8 +92,13 @@ export function distinctSounds(): Map<Signature, Call[]> {
       const engine = new ReferenceAudioEngine();
       if (call.theme !== undefined) engine.setTheme(call.theme as Theme);
       play(engine, call);
-      const signature = describeNotes(contexts[0]!).join('\n');
-      sounds.set(signature, [...(sounds.get(signature) ?? []), call]);
+      // A call that schedules nothing is not a sound: Shuffle, which made
+      // none before Soundscape, and is held to its own numbers instead
+      const signature = contexts[0]
+        ? describeNotes(contexts[0]).join('\n')
+        : '';
+      if (signature !== '')
+        sounds.set(signature, [...(sounds.get(signature) ?? []), call]);
       vi.unstubAllGlobals();
     }
   } finally {

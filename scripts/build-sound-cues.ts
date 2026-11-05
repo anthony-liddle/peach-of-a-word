@@ -1,7 +1,13 @@
 /**
- * Writes src/audio/peach.cues.json: the game's 34 sounds as one Soundscape cue
+ * Wrote src/audio/peach.cues.json: the game's 34 sounds as one Soundscape cue
  * document, every value taken from the reference engine: how the game sounded
  * before Soundscape.
+ *
+ * It no longer runs. Since 5 November 2026 the document has left the old
+ * engine on purpose (src/audio/departures.ts): writing it again from the
+ * engine would put the old square back over the chosen tick, and could not
+ * write Shuffle at all. So it refuses, and stays as the record of how the
+ * document was first written.
  *
  * Each sound on the /sounds page is played through a real ReferenceAudioEngine
  * with its private note() replaced by a recorder, so every call's arguments
@@ -19,8 +25,8 @@
  * misses the engine's frequency in float32, or an attack that does not map
  * back to the engine's 12 ms.
  *
- * Run once. From then on the document is the source, which the cue editor will
- * edit; nothing in it is computed when it loads.
+ * It was run once. From then on the document is the source, which the cue
+ * editor will edit; nothing in it is computed when it loads.
  *
  *   pnpm sounds:cues
  */
@@ -40,6 +46,14 @@ import {
   ReferenceAudioEngine,
 } from '../src/reference/ReferenceAudioEngine.ts';
 import { SOUNDS } from '../src/sounds/inventory.ts';
+import { DEPARTURES } from '../src/audio/departures.ts';
+
+if (Object.keys(DEPARTURES).length > 0) {
+  throw new Error(
+    `peach.cues.json has left the old engine on purpose (${Object.keys(DEPARTURES).join(', ')}): ` +
+      'writing it from the engine would undo that. Edit the document instead.',
+  );
+}
 
 // note() in src/reference/ReferenceAudioEngine.ts, transcribed:
 //   gain.setValueAtTime(0.0001, t0)                       the floor
