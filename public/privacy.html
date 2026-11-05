@@ -17,12 +17,7 @@
       href="/favicon-cute.svg"
       type="image/svg+xml"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Spectral:ital,wght@0,400;0,500;0,600&family=Fredoka:wght@400;500;600&family=Nunito:ital,wght@0,400;0,600;1,400&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
     <style>
       /* The two theme palettes, lifted from src/index.css so this page belongs
          to the site rather than merely sitting on the same domain. Only the
@@ -38,6 +33,7 @@
         --accent: #9d2b25;
         --rule: #cabf9f;
         --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --weight-display: 700;
         --font-body: 'Spectral', Georgia, serif;
         --radius: 3px;
       }
@@ -50,6 +46,10 @@
         --accent: #c42e60;
         --rule: #ffe0d2;
         --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+        /* Google served this page Fredoka up to 600, so its headings drew
+           at 600. The site's own fonts go to 700; this keeps them as
+           they were, and as the game's own headings are. */
+        --weight-display: 600;
         --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
         --radius: 18px;
       }
@@ -71,11 +71,13 @@
       }
       h1 {
         font-family: var(--font-display);
+        font-weight: var(--weight-display);
         font-size: 1.75rem;
         margin: 0 0 0.25rem;
       }
       h2 {
         font-family: var(--font-display);
+        font-weight: var(--weight-display);
         font-size: 1.15rem;
         margin: 2.25rem 0 0.5rem;
       }
