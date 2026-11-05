@@ -10,12 +10,18 @@
  *   favicon-cute.svg, favicon-classic.svg (the theme-aware tab icons),
  *   apple-touch-icon.png, icon-192.png, icon-512.png, icon-maskable-512.png
  *   (the peach home-screen icons), og.png (1200x630), site.webmanifest
+ *
+ * The cute tab icon is the game's peach, from peachArt.ts. The home-screen
+ * icons and og.png draw ICON_PEACH in lib/icons.ts, the peach they were last
+ * drawn from, so running this redraws them only as they already are until
+ * scripts/illustrations/redraw.ts moves ICON_PEACH on.
  */
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
 import { loadCuteFonts } from './lib/fonts.ts';
-import { PEACH_MARK_PATHS, pwaIconSvg } from './lib/icons.ts';
+import { peachParts } from '@/ui/peachArt.ts';
+import { faviconCuteSvg, PEACH_MARK_PATHS, pwaIconSvg } from './lib/icons.ts';
 import { REPO_ROOT, ensureDir } from './lib/util.ts';
 
 const PUBLIC_DIR = join(REPO_ROOT, 'public');
@@ -67,13 +73,6 @@ function peachMark(cx: number, top: number, size: number): string {
 }
 
 // --- Theme-aware favicons ------------------------------------------------
-
-/** The cute tab icon: the peach mark on its own, on a transparent field. */
-function faviconCuteSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    ${PEACH_MARK_PATHS}
-</svg>`;
-}
 
 /**
  * The classic tab icon: the source-word crown, the same silhouette the app draws
@@ -191,7 +190,8 @@ async function main(): Promise<void> {
   // The tab icon follows the theme, so it is two SVGs the runtime swaps between,
   // not a single baked file. Served as-is (SVG favicons need no rasterizing).
   console.log('Favicons:');
-  await write('favicon-cute.svg', faviconCuteSvg());
+  // The game's peach, which the tab icon follows; the rasters keep ICON_PEACH.
+  await write('favicon-cute.svg', faviconCuteSvg(peachParts({ face: true })));
   await write('favicon-classic.svg', faviconClassicSvg());
   console.log('Home-screen icons:');
   await write('apple-touch-icon.png', renderPng(filledSvg, 180));
