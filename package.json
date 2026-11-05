@@ -19,6 +19,7 @@
     "data:calendar": "tsx scripts/build-calendar.ts",
     "data:rebundle": "tsx scripts/refresh-bundles.ts",
     "data:refresh-reveals": "tsx scripts/refresh-reveals.ts",
+    "fonts:fetch": "tsx --tsconfig tsconfig.node.json scripts/fetch-fonts.ts",
     "icons:build": "tsx --tsconfig tsconfig.node.json scripts/build-icons.ts",
     "sounds:baseline": "tsx scripts/capture-sound-baseline.ts",
     "sounds:cues": "tsx --tsconfig tsconfig.node.json scripts/build-sound-cues.ts",

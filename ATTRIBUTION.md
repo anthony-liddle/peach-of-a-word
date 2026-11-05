@@ -100,4 +100,11 @@ generated corpus, and 95,418 is the whole sense cache's total.
 
 ## Fonts
 
-Set in Fraunces and Spectral, both available under the SIL Open Font License.
+Set in Fraunces and Spectral in the letterpress theme, and Fredoka and Nunito in
+the cute theme, all four under the SIL Open Font License, Version 1.1.
+
+**Updated 2026-11-04: the site serves the font files itself.** They were loaded
+from Google Fonts, so every visit also reached Google. `pnpm fonts:fetch`
+copies them into `public/fonts/`, and each family's licence ships beside its
+files there, as `OFL-<Family>.txt`. None of the four declares a Reserved Font
+Name. This entry named only the letterpress pair until then.
