@@ -5,15 +5,15 @@ import { describe, expect, it } from 'vitest';
 import { CROWN, canonicalCrown, crownBox } from './crown.ts';
 
 /**
- * The crown table's SHA-256. The iOS app is to pin the same value, so a crown
- * changed in one app and not the other fails in the one that was not changed.
- * Until iOS pins it, this guards the web alone: the iPhone still draws its own
- * `Crown` shape, and nothing fails here if that shape moves.
+ * The crown table's SHA-256. The iOS app pins the same value,
+ * `CrownTests.crownSHA256`, and draws the same outline, so a crown changed in
+ * one app and not the other fails in the one that was not changed. The
+ * illustrations' import moves both together.
  */
 const CROWN_SHA256 =
   'ce4b0ab3088cfb3039a39bf2c48d15b2358b891659bc15e6ebd8301dd587f75d';
 
-/** Each command and its points, for absolute M, L and Z only. */
+/** Each command and its points, for absolute M, L, C and Z. */
 function commands(d: string): { op: string; points: [number, number][] }[] {
   const out: { op: string; points: [number, number][] }[] = [];
   for (const m of d.matchAll(/([A-Za-z])([^A-Za-z]*)/g)) {
@@ -55,23 +55,14 @@ describe("the completion card's crown", () => {
     expect(hash).toBe(CROWN_SHA256);
   });
 
-  it("is the iPhone's shape: its seven points, as fractions of the frame", () => {
-    // Crown.path(in:) moves to (0, h), then lines to (0.08w, 0.18h),
-    // (0.30w, 0.62h), (0.50w, 0), (0.70w, 0.62h), (0.92w, 0.18h) and (w, h),
-    // and closes. Here the frame is a 100 by 100 box.
-    const fractions = [
-      [0, 1],
-      [0.08, 0.18],
-      [0.3, 0.62],
-      [0.5, 0],
-      [0.7, 0.62],
-      [0.92, 0.18],
-      [1, 1],
-    ];
-    const cmds = commands(CROWN.d);
-    expect(cmds.map((c) => c.op).join('')).toBe('MLLLLLLZ');
-    const points = cmds.flatMap((c) => c.points);
-    expect(points).toEqual(fractions.map(([x, y]) => [x! * 100, y! * 100]));
+  it('is one outline, in absolute M, L, C and Z, as the iPhone reads it', () => {
+    // The iPhone parses this same string with the costumes' parser, which
+    // takes these four and nothing else. One shape: it starts once, and closes.
+    const ops = commands(CROWN.d).map((c) => c.op);
+    expect(ops.every((op) => 'MLCZ'.includes(op))).toBe(true);
+    expect(ops[0]).toBe('M');
+    expect(ops.at(-1)).toBe('Z');
+    expect(ops.filter((op) => op === 'M')).toHaveLength(1);
   });
 
   it("stands where the iPhone stands it, over the peach's head", () => {
