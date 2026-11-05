@@ -14,12 +14,16 @@ import {
 } from '@/reference/ReferenceAudioEngine.ts';
 import { FakeAudioContext } from '@/testing/fakeAudioContext.ts';
 import { SOUNDS } from '@/sounds/inventory.ts';
+import { DEPARTURES, departed } from './departures.ts';
 
 /**
- * peach.cues.json, the game's 34 sounds as Soundscape cues, held to what the
- * game's own engine schedules. scripts/build-sound-cues.ts wrote it from the
+ * peach.cues.json, the game's 35 sounds as Soundscape cues, held to what the
+ * game's old engine schedules. scripts/build-sound-cues.ts wrote it from the
  * engine's note() calls; this reads the engine back independently, through the
  * recording context, so a change on either side fails here.
+ *
+ * All but the departures (departures.ts): sounds chosen by ear since, which
+ * leave the old engine on purpose and are held to their own numbers.
  */
 const TEXT = readFileSync(resolve(__dirname, 'peach.cues.json'), 'utf8');
 const parsed = parseCueDocument(TEXT);
@@ -62,26 +66,34 @@ describe('the cue document', () => {
     expect(serializeCueDocument(document)).toBe(TEXT);
   });
 
-  test('has one instrument per waveform, each fading over its own note', () => {
+  test("has one instrument per waveform the old engine's sounds use, and the click the departures share", () => {
     // Notes of every length share an instrument: its decay lasts until each
     // note's release, so none carries a decay of fixed length
     expect(Object.keys(document.instruments).sort()).toEqual([
+      'click',
       'sine',
-      'square',
       'triangle',
     ]);
     for (const [name, instrument] of Object.entries(document.instruments)) {
-      expect(instrument.waveform).toBe(name);
+      if (name !== 'click') expect(instrument.waveform).toBe(name);
       expect(instrument.decayUntilRelease).toBe(true);
       expect(instrument).not.toHaveProperty('decay');
     }
+    // The click is a sine at the fastest attack, about 1 ms, where the old
+    // engine's notes all rise in 12
+    expect(document.instruments.click).toMatchObject({
+      waveform: 'sine',
+      attack: 0,
+      sustain: 0,
+      release: 0,
+    });
   });
 
   test('has one cue per sound the game makes, named as the page names it', () => {
     expect(Object.keys(document.cues).sort()).toEqual(
       SOUNDS.map((s) => s.id).sort(),
     );
-    expect(SOUNDS).toHaveLength(34);
+    expect(SOUNDS).toHaveLength(35);
   });
 
   test('names each cute mythic cue with its theme, beside a letterpress twin', () => {
@@ -99,7 +111,49 @@ describe('the cue document', () => {
   });
 });
 
-describe.each(SOUNDS.map((s) => [s.id, s] as const))('%s', (id, sound) => {
+describe('each departure', () => {
+  test.each(Object.keys(DEPARTURES))(
+    '%s is a cue of clicks, every partial a quarter tone between two semitones',
+    (id) => {
+      const notes = document.cues[id]!.notes;
+      expect(notes.length).toBeGreaterThan(0);
+      for (const note of notes) {
+        expect(note.instrument).toBe('click');
+        expect(note.pitch % 1).toBe(0.5);
+      }
+    },
+  );
+
+  test.each(Object.keys(DEPARTURES))(
+    '%s really has left the old engine, which plays what the table says it did',
+    (id) => {
+      const sound = SOUNDS.find((s) => s.id === id)!;
+      const old = schedule(sound.play);
+      if (DEPARTURES[id]!.was === null) {
+        expect(old).toEqual([]);
+        return;
+      }
+      // Something else: not the cue's notes, by waveform and frequency
+      const cue = document.cues[id]!.notes.map((n) => [
+        document.instruments[n.instrument]!.waveform,
+        Math.fround(midiToFrequency(n.pitch)),
+      ]);
+      expect(old.length).toBeGreaterThan(0);
+      expect(old.map((o) => [o.type, Math.fround(o.hz)])).not.toEqual(cue);
+    },
+  );
+
+  test('only the departures play the click', () => {
+    const clicking = Object.entries(document.cues)
+      .filter(([, cue]) => cue.notes.some((n) => n.instrument === 'click'))
+      .map(([name]) => name);
+    expect(clicking.sort()).toEqual(Object.keys(DEPARTURES).sort());
+  });
+});
+
+describe.each(
+  SOUNDS.filter((s) => !departed(s.id)).map((s) => [s.id, s] as const),
+)('%s', (id, sound) => {
   test("is the game's own sound, note for note", () => {
     const game = schedule(sound.play);
     const notes = document.cues[id]!.notes;

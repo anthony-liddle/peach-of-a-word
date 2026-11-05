@@ -12,6 +12,8 @@ import {
   type Measurement,
 } from '../../scripts/lib/soundMeasure.ts';
 import { spreadBetween } from '../../scripts/lib/renderSpread.ts';
+import { momentaryLoudness } from '../../scripts/lib/loudness.ts';
+import { DEPARTURES, departed } from './departures.ts';
 
 /**
  * Every sound the game makes, as its Soundscape cue and through the game's
@@ -76,9 +78,12 @@ async function render(make: Make, plays: Play[], seconds: number) {
  * engine's effect chains and worklet take about 68 MB there, which the page
  * does not get back before the next.
  */
+/** Every sound but the departures, which leave the old engine on purpose. */
+const HELD = SOUNDS.filter((s) => !departed(s.id));
+
 const GROUPS: Sound[][] = (() => {
   const groups: { sounds: Sound[]; used: number }[] = [];
-  const longestFirst = [...SOUNDS].sort(
+  const longestFirst = [...HELD].sort(
     (a, b) => lengthOf(b.id) - lengthOf(a.id),
   );
   for (const sound of longestFirst) {
@@ -129,13 +134,18 @@ describe(`every sound's cue against the game's engine, in this browser`, () => {
     );
   });
 
-  test('covers every sound the game makes, each once in a group', () => {
-    expect(SOUNDS).toHaveLength(34);
+  test('covers every sound the game makes but the departures, each once in a group', () => {
+    expect(SOUNDS).toHaveLength(35);
     expect(
       GROUPS.flat()
         .map((s) => s.id)
         .sort(),
-    ).toEqual(SOUNDS.map((s) => s.id).sort());
+    ).toEqual(HELD.map((s) => s.id).sort());
+    expect(
+      SOUNDS.filter((s) => departed(s.id))
+        .map((s) => s.id)
+        .sort(),
+    ).toEqual(Object.keys(DEPARTURES).sort());
   });
 
   for (const [g, group] of GROUPS.entries()) {
@@ -208,7 +218,7 @@ function withinFixture(id: string, m: Measurement): string[] {
 describe.runIf(server.browser === 'chromium')(
   "every sound's cue against the frozen fixture, in Chromium",
   () => {
-    for (const sound of SOUNDS) {
+    for (const sound of HELD) {
       test(`${sound.id}: the old engine, as a control, then the cue`, async () => {
         // If the control misses, this Chromium is not the one the fixture was
         // captured in, and a miss below says nothing about the cue
@@ -224,3 +234,23 @@ describe.runIf(server.browser === 'chromium')(
     }
   },
 );
+
+/**
+ * The departures, which leave the old engine on purpose, held to their own
+ * numbers instead: as each was measured when it was chosen, in Chromium. Every
+ * browser is held to them, to a tenth of a dB and a millisecond.
+ */
+describe(`each departure against its own numbers, in this browser`, () => {
+  for (const sound of SOUNDS.filter((s) => departed(s.id))) {
+    test(`${sound.id}, as it was chosen`, async () => {
+      const full = await render(soundscape, [{ sound, at: 0 }], 2);
+      const m = measure(full, RATE);
+      const { heard } = DEPARTURES[sound.id]!;
+      expect(Math.abs(m.duration * 1000 - heard.durationMs)).toBeLessThan(1);
+      expect(Math.abs(m.peakDbfs - heard.peakDbfs)).toBeLessThan(0.15);
+      expect(Math.abs(momentaryLoudness(full, RATE) - heard.lufs)).toBeLessThan(
+        0.15,
+      );
+    });
+  }
+});
