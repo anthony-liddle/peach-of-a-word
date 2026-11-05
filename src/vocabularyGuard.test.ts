@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import ts from 'typescript';
 import { describe, expect, test } from 'vitest';
+import { isProse, prose } from './testing/prose.ts';
 
 /**
  * The letterpress metaphor belongs in themeCopy.ts and nowhere else. A string
@@ -26,44 +26,6 @@ import { describe, expect, test } from 'vitest';
  *   test files are dropped by name.
  */
 const TERMS = ['the type', 'the case', 'type sorts', 'letterpress', 'off-page'];
-
-/**
- * Only strings holding more than one word are candidates. Every user-facing
- * string is prose; identifiers, class names, module paths, and storage keys are
- * single tokens. Filtering on the shape of the value is what lets the term list
- * stay short and literal instead of carrying an exception for every code site
- * that legitimately says "letterpress" or "case".
- */
-function isProse(value: string): boolean {
-  return /\S\s+\S/.test(value.trim());
-}
-
-/** Every string literal, template chunk, and JSX text node in a source file. */
-function prose(source: string, file: string): string[] {
-  const tree = ts.createSourceFile(
-    file,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-  );
-  const found: string[] = [];
-  const visit = (node: ts.Node): void => {
-    if (
-      ts.isStringLiteral(node) ||
-      ts.isNoSubstitutionTemplateLiteral(node) ||
-      ts.isTemplateHead(node) ||
-      ts.isTemplateMiddle(node) ||
-      ts.isTemplateTail(node) ||
-      ts.isJsxText(node)
-    ) {
-      if (isProse(node.text)) found.push(node.text);
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(tree);
-  return found;
-}
 
 function offenders(strings: string[]): string[] {
   return strings.filter((s) =>
