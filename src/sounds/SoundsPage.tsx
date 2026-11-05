@@ -2,6 +2,9 @@ import { useCallback, useRef, useState } from 'react';
 import { Decorations } from '@/ui/components/Decorations.tsx';
 import { FOUND_ROWS, SECTIONS, SOUNDS, type Sound } from './inventory.ts';
 import { lengthOf, type Pair } from './pair.ts';
+import type { CandidatePlayer } from './candidatePlayer.ts';
+import { ShuffleCandidates, type Reference } from './ShuffleCandidates.tsx';
+import { TEN_GAP_S } from './shuffleCandidates.ts';
 
 /**
  * One button per sound the game makes, each playing that sound twice from the
@@ -32,14 +35,18 @@ interface Played {
 
 export function SoundsPage({
   pair,
+  candidates = () => null,
   random = Math.random,
 }: {
   /** The two engines, made on the first call; null where there is no Web Audio. */
   pair: () => Pair | null;
+  /** The Shuffle candidates' player, made on the first call, on the same context. */
+  candidates?: () => CandidatePlayer | null;
   /** Which comes first in blind mode. */
   random?: () => number;
 }) {
   const engines = useRef<Pair | null>(null);
+  const candidatePlayer = useRef<CandidatePlayer | null>(null);
   const [muted, setMuted] = useState(false);
   const [blind, setBlind] = useState(false);
   const [played, setPlayed] = useState<Played | null>(null);
@@ -48,8 +55,36 @@ export function SoundsPage({
     const next = !muted;
     engines.current?.before.setMuted(next);
     engines.current?.soundscape.setMuted(next);
+    candidatePlayer.current?.setMuted(next);
     setMuted(next);
   }, [muted]);
+
+  // The Shuffle candidates, and the tick and find they are set against: each
+  // plays once, on Soundscape alone, and a muted tap makes nothing at all.
+  const playCandidates = useCallback(
+    (cues: string[]) => {
+      if (muted) return false;
+      candidatePlayer.current ??= candidates();
+      const player = candidatePlayer.current;
+      if (!player) return false;
+      cues.forEach((cue, i) => player.play(cue, i * TEN_GAP_S));
+      return true;
+    },
+    [muted, candidates],
+  );
+
+  const playReference = useCallback(
+    (which: Reference) => {
+      if (muted) return false;
+      engines.current ??= pair();
+      const soundscape = engines.current?.soundscape;
+      if (!soundscape) return false;
+      if (which === 'tick') soundscape.tick();
+      else soundscape.playFound(5, 'set');
+      return true;
+    },
+    [muted, pair],
+  );
 
   const play = useCallback(
     (sound: Sound) => {
@@ -128,6 +163,8 @@ export function SoundsPage({
               : 'Sound on. Mute, then try any button below.'}
         </p>
       </section>
+
+      <ShuffleCandidates play={playCandidates} playReference={playReference} />
 
       {SECTIONS.map((section) => (
         <section

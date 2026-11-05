@@ -13,14 +13,14 @@ export interface Pair {
 }
 
 /**
- * Both engines on one AudioContext, made by the first tap and resumed by every
- * tap that finds it suspended. A tap plays one engine and then the other, a
+ * The page's one AudioContext, made by the first tap and resumed by every tap
+ * that finds it suspended. A tap plays one engine and then the other, a
  * moment later; on iOS Safari a context made after the gesture would stay
- * locked, so the second sound needs the context the gesture unlocked.
+ * locked, so every sound on the page needs the context the gesture unlocked.
+ * Null where there is no Web Audio.
  */
-export function pairOnTap(): () => Pair | null {
+export function contextOnTap(): () => AudioContext | null {
   let context: AudioContext | null = null;
-  let pair: Pair | null = null;
   return () => {
     if (!context) {
       const Ctor =
@@ -29,12 +29,22 @@ export function pairOnTap(): () => Pair | null {
           .webkitAudioContext;
       if (!Ctor) return null;
       context = new Ctor();
-      pair = {
-        before: new ReferenceAudioEngine(context),
-        soundscape: new SoundscapeAudioEngine(context),
-      };
     }
     if (context.state === 'suspended') void context.resume();
+    return context;
+  };
+}
+
+/** Both engines on the page's one AudioContext, made by the first tap. */
+export function pairOnTap(context = contextOnTap()): () => Pair | null {
+  let pair: Pair | null = null;
+  return () => {
+    const made = context();
+    if (!made) return null;
+    pair ??= {
+      before: new ReferenceAudioEngine(made),
+      soundscape: new SoundscapeAudioEngine(made),
+    };
     return pair;
   };
 }
