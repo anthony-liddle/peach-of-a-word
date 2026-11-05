@@ -384,11 +384,14 @@ export const GROWTH_STAGES: readonly GrowthStage[] = [
 /**
  * The table as one canonical text, as the iOS app's `canonicalGrowthTable()`
  * writes it: the stage's own line, then one line per part, fields joined by
- * `|`, empty where unset.
+ * `|`, empty where unset. This table's by default; the illustrations' import
+ * reads the generator's output with it, before writing that here.
  */
-export function canonicalGrowthTable(): string {
+export function canonicalGrowthTable(
+  stages: readonly GrowthStage[] = GROWTH_STAGES,
+): string {
   const lines: string[] = [];
-  for (const s of GROWTH_STAGES) {
+  for (const s of stages) {
     lines.push(`${s.id}|${s.spoken}`);
     for (const p of s.parts) {
       lines.push(

@@ -99,9 +99,13 @@ describe('writing the tables back', () => {
         parts,
         from: parts.map((_, i) => i),
       };
-      expect(writeCostumesTs(live, [unchanged], (c) => COSTUMES[c].parts)).toBe(
-        live,
-      );
+      expect(
+        writeCostumesTs(
+          live,
+          [unchanged],
+          (c) => COSTUMES[c as CostumeId].parts,
+        ),
+      ).toBe(live);
     }
   });
 

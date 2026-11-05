@@ -63,7 +63,7 @@ import { COSTUME_LABELS, PEACH_LABELS, STAGE_LABELS } from './labels.ts';
 
 const FACE = PEACH_LABELS.face;
 
-const STAGE_FILES: Record<string, string> = {
+export const STAGE_FILES: Record<string, string> = {
   'first-sprout': 'stage-1-first-sprout',
   'little-bud': 'stage-2-little-bud',
   blossom: 'stage-3-blossom',
@@ -330,34 +330,67 @@ export function costumeFile(
   );
 }
 
-export function shippedEntries(): Entry[] {
-  const out: Entry[] = [];
-
-  // The plain peach.
+/** The plain peach's file, from peachArt.ts. */
+export function peachFile(): Entry {
   const peachParts: [PeachPart, string][] = [
     ...labelled('peach', PEACH_BODY, PEACH_LABELS.body),
     ...labelled('peach face', PEACH_FACE, FACE).map(
       ([p, l]) => [p, `${l} (face only)`] as [PeachPart, string],
     ),
   ];
-  out.push(
-    entry(
-      FOLDERS.peach,
-      'peach',
-      'peach',
-      { web: 'PeachMark', ios: 'PeachMark' },
-      'The peach',
-      'The plain peach in its 100 by 100 box. The face is dropped at mark size.',
-      [
-        {
-          id: 'art',
-          label: 'The peach',
-          objs: peachParts.map(([p, l]) => partObj('peach', l, p)),
-        },
-        guides([boxGuide(100, 100), crownBandGuide(band)]),
-      ],
-    ),
+  return entry(
+    FOLDERS.peach,
+    'peach',
+    'peach',
+    { web: 'PeachMark', ios: 'PeachMark' },
+    'The peach',
+    'The plain peach in its 100 by 100 box. The face is dropped at mark size.',
+    [
+      {
+        id: 'art',
+        label: 'The peach',
+        objs: peachParts.map(([p, l]) => partObj('peach', l, p)),
+      },
+      guides([boxGuide(100, 100), crownBandGuide(band)]),
+    ],
   );
+}
+
+/** A growing peach's stage's file, from the web's copy of the table. */
+export function stageFile(id: string): Entry {
+  const s = GROWTH_STAGES.find((g) => g.id === id);
+  if (!s) throw new Error(`no stage ${id}`);
+  const labels = STAGE_LABELS[s.id];
+  if (!labels) throw new Error(`no labels for the stage ${s.id}`);
+  const title = `The peach ${s.spoken}`;
+  return entry(
+    FOLDERS.peach,
+    STAGE_FILES[s.id]!,
+    'stage',
+    { stage: s.id },
+    sentence(s.spoken),
+    `${title}: the title's growing peach, in the peach's 100 by 100 box.`,
+    [
+      {
+        id: 'art',
+        label: sentence(s.spoken),
+        objs: labelled(s.id, s.parts, labels).map(([p, l]) =>
+          partObj(slug(s.id), l, p),
+        ),
+      },
+      guides([
+        boxGuide(100, 100),
+        ...strokeWidths(s.parts).map((w) => limitGuide(w)),
+      ]),
+    ],
+  );
+}
+
+export function shippedEntries(): Entry[] {
+  const out: Entry[] = [];
+
+  // The plain peach.
+  out.push(peachFile());
 
   // The web's source-word mark: its own peach, never a face.
   out.push(
@@ -387,34 +420,7 @@ export function shippedEntries(): Entry[] {
   );
 
   // The growing peach.
-  for (const s of GROWTH_STAGES) {
-    const labels = STAGE_LABELS[s.id];
-    if (!labels) throw new Error(`no labels for the stage ${s.id}`);
-    const title = `The peach ${s.spoken}`;
-    out.push(
-      entry(
-        FOLDERS.peach,
-        STAGE_FILES[s.id]!,
-        'stage',
-        { stage: s.id },
-        sentence(s.spoken),
-        `${title}: the title's growing peach, in the peach's 100 by 100 box.`,
-        [
-          {
-            id: 'art',
-            label: sentence(s.spoken),
-            objs: labelled(s.id, s.parts, labels).map(([p, l]) =>
-              partObj(slug(s.id), l, p),
-            ),
-          },
-          guides([
-            boxGuide(100, 100),
-            ...strokeWidths(s.parts).map((w) => limitGuide(w)),
-          ]),
-        ],
-      ),
-    );
-  }
+  for (const s of GROWTH_STAGES) out.push(stageFile(s.id));
 
   // The costumes.
   for (const id of COSTUME_ORDER) out.push(costumeFile(id));
@@ -573,7 +579,7 @@ export function shippedEntries(): Entry[] {
   return out;
 }
 
-interface Candidate {
+export interface Candidate {
   id: string;
   costume: string;
   status: string;
@@ -639,42 +645,55 @@ export function alternateEntries(rows: Candidate[]): {
   return { entries, notes };
 }
 
-function main(argv: string[]) {
-  const [out, ...flags] = argv;
-  if (!out)
-    throw new Error(
-      'usage: export.ts <out dir> [--candidates <file>] [--glyphs <file>]',
-    );
-  const flag = (name: string) => {
-    const i = flags.indexOf(name);
-    return i < 0 ? undefined : flags[i + 1];
-  };
+/** Every file, with the inputs that live outside the repo when given. */
+export function allEntries(
+  inputs: { glyphs?: Glyph[]; cell?: string; candidates?: Candidate[] } = {},
+): { entries: Entry[]; notes: unknown[] } {
+  const glyphs = inputs.glyphs ?? [];
   const all = shippedEntries();
-  let notes: unknown[] = [];
-  const glyphsPath = flag('--glyphs');
-  const glyphs: Glyph[] = glyphsPath
-    ? JSON.parse(readFileSync(glyphsPath, 'utf8'))
-    : [];
   all.push(
     ...[
       ...glyphEntries(glyphs),
       glintEntry(glyphs.find((g) => g.name === 'mark-mythic-gem')),
       ...letterpressEntries(),
       flameEntry(),
-      calendarEntry(
-        flag('--cell')
-          ? readFileSync(flag('--cell')!, 'utf8').trim()
-          : undefined,
-      ),
+      calendarEntry(inputs.cell),
       iconEntry(),
     ].map(fromMark),
   );
-  const candidates = flag('--candidates');
-  if (candidates) {
-    const alt = alternateEntries(JSON.parse(readFileSync(candidates, 'utf8')));
+  let notes: unknown[] = [];
+  if (inputs.candidates) {
+    const alt = alternateEntries(inputs.candidates);
     all.push(...alt.entries);
     notes = alt.notes;
   }
+  return { entries: all, notes };
+}
+
+function main(argv: string[]) {
+  const [out, ...flags] = argv;
+  if (!out)
+    throw new Error(
+      'usage: export.ts <out dir> [--candidates <file>] [--glyphs <file>] [--cell <file>]',
+    );
+  const flag = (name: string) => {
+    const i = flags.indexOf(name);
+    return i < 0 ? undefined : flags[i + 1];
+  };
+  const read = (name: string) => {
+    const path = flag(name);
+    return path ? readFileSync(path, 'utf8') : undefined;
+  };
+  const glyphs = read('--glyphs');
+  const cell = read('--cell');
+  const candidates = read('--candidates');
+  const { entries: all, notes } = allEntries({
+    ...(glyphs ? { glyphs: JSON.parse(glyphs) as Glyph[] } : {}),
+    ...(cell ? { cell: cell.trim() } : {}),
+    ...(candidates
+      ? { candidates: JSON.parse(candidates) as Candidate[] }
+      : {}),
+  });
   for (const e of all) {
     mkdirSync(join(out, e.folder), { recursive: true });
     writeFileSync(join(out, e.folder, `${e.name}.svg`), e.svg);

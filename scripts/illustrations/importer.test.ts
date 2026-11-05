@@ -176,7 +176,7 @@ describe('the way back, for the costumes', () => {
           '\n  </g>\n  <g\n     inkscape:groupmode="layer"\n     id="reference-crown"',
       );
       expect(stops(svg)).toContain(
-        '"path1" (path1) is not a part of the costume',
+        '"path1" (path1) is not a part of this drawing',
       );
       const added = run('witch-hat', svg, { allowNewParts: true });
       expect(added.problems).toEqual([]);
