@@ -44,7 +44,8 @@ const BANNED = [
   'cutting edge',
 ];
 
-const EM_DASH = '—';
+// Built from its code point, so this file holds no em dash of its own.
+const EM_DASH = String.fromCodePoint(0x2014);
 
 /** What's wrong with one string, or nothing. */
 function problems(text: string): string[] {
