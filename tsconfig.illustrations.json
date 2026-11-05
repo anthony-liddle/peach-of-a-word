@@ -1,0 +1,9 @@
+{
+  // The illustration scripts: the Inkscape export, the import, and their
+  // checks. They render the app's own components to draw from, so they are
+  // checked as the app is, rather than with the other scripts under
+  // tsconfig.node.json, which has no JSX and no DOM.
+  "extends": "./tsconfig.app.json",
+  "include": ["scripts/illustrations"],
+  "exclude": []
+}
