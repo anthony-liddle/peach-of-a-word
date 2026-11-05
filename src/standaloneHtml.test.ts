@@ -177,7 +177,7 @@ describe('privacy.html', () => {
   /**
    * The app reaches the web only when tapped, three ways: the explainer's two
    * links, and Settings' privacy row, which opens this page. The policy named
-   * only the first two until 4 November 2026.
+   * only the first two until 5 November 2026.
    */
   test('names every way from the app to the web', () => {
     const text = new DOMParser()
