@@ -20,7 +20,7 @@ import { faviconHref } from './ui/favicon.ts';
  * was written by copying the first and would have inherited the bug just as
  * easily.
  */
-const PAGES = ['public/privacy.html', 'public/support.html'];
+const PAGES = ['public/privacy.html', 'public/support.html', 'public/404.html'];
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -89,6 +89,29 @@ describe('support.html', () => {
 
   test('links the privacy page', () => {
     expect(html).toContain('href="/privacy"');
+  });
+
+  test('uses no em dash', () => {
+    expect(html).not.toContain('—');
+  });
+});
+
+/**
+ * The page Vercel serves, with a 404, for any address the site doesn't have,
+ * in place of Vercel's own, which never said Peach of a Word. One line and the
+ * way back: / always opens today's daily board, since the game starts in Daily
+ * and doesn't keep the mode.
+ */
+describe('404.html', () => {
+  const html = read('public/404.html');
+
+  test('says it in one line, then links back to today’s board', () => {
+    expect(html).toContain("<h1>There's nothing at this address.</h1>");
+    expect(html).toContain('<a href="/">Back to today\'s board</a>');
+  });
+
+  test('is not indexed', () => {
+    expect(html).toContain('name="robots" content="noindex"');
   });
 
   test('uses no em dash', () => {
