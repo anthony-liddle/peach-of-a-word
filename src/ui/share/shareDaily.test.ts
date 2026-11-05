@@ -77,8 +77,6 @@ describe('shareDaily', () => {
   });
 
   test('the copy confirmation is the exact, approved copy', () => {
-    expect(COPY_CONFIRMATION).toBe(
-      'Copied. Paste it wherever your people are.',
-    );
+    expect(COPY_CONFIRMATION).toBe('Copied. Paste it anywhere.');
   });
 });

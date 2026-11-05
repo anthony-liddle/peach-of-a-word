@@ -298,7 +298,7 @@ describe('the source word in costume', () => {
     const chip = container.querySelector('.found__word--source')!;
     expect(chip.querySelector('svg.mark--source-worn')).toBeTruthy();
     expect(chip.getAttribute('aria-label')).toMatch(
-      /the peach in a ghost sheet/,
+      /the peach of a word, in a ghost sheet/,
     );
   });
 

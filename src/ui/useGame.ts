@@ -277,11 +277,11 @@ function messageForRejection(
 ): string {
   switch (result.kind) {
     case 'too-short':
-      return 'Too short. Words need three letters or more.';
+      return 'Three letters or more.';
     case 'not-a-word':
-      return 'Not in the word list. Try another.';
+      return 'Not in the word list.';
     case 'already-found':
-      return 'Already found. Keep going.';
+      return 'Already found.';
   }
 }
 

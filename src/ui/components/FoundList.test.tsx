@@ -239,7 +239,7 @@ describe('FoundList structure', () => {
       within(legend as HTMLElement).getByText(/^key$/i),
     ).toBeInTheDocument();
     expect(
-      within(legend as HTMLElement).getByText('source word'),
+      within(legend as HTMLElement).getByText('the peach of a word'),
     ).toBeInTheDocument();
   });
 });
@@ -412,7 +412,7 @@ describe('FoundList rarity rung panels', () => {
 
     const panel = screen.getByRole('group', { name: /rare words you found/i });
     const chip = within(panel).getByRole('button', {
-      name: /^sneer,.*show definition/i,
+      name: /^sneer,/i,
     });
     fireEvent.click(chip);
     expect(onWordTap).toHaveBeenCalledWith('sneer', chip);
@@ -667,9 +667,21 @@ describe('FoundList best word', () => {
     const chip = within(bestLine()!).getByText('endears').closest('button')!;
 
     expect(chip.querySelector('.mark')).toHaveAttribute('aria-hidden', 'true');
-    expect(chip).toHaveAccessibleName(
-      'endears, Mythic, 15 points, show definition',
-    );
+    expect(chip).toHaveAccessibleName('endears, Mythic, 15 points');
+  });
+
+  /**
+   * What a tap does is the chip's description, not part of its name: the name
+   * says what it is, as the iPhone's chips do. The well's line hints the same
+   * card in the same words. Shown red first, when the chip had no description
+   * and ended its name in ", show definition".
+   */
+  it('hints what a tap does, as the well does', () => {
+    renderRungs(['sea', 'endears'], makeTiePuzzle());
+    const chip = within(bestLine()!).getByText('endears').closest('button')!;
+
+    expect(chip).toHaveAccessibleDescription('Shows the definition');
+    expect(chip).toHaveAccessibleName('endears, Mythic, 15 points');
   });
 
   it('speaks the set category in the theme own vocabulary', () => {
@@ -678,9 +690,7 @@ describe('FoundList best word', () => {
 
     // The legend prints "in the basket" for a cute set word; the spoken name
     // says the same thing rather than inventing a second word for it.
-    expect(chip).toHaveAccessibleName(
-      'sea, in the basket, 1 point, show definition',
-    );
+    expect(chip).toHaveAccessibleName('sea, in the basket, 1 point');
   });
 
   it('renders the same chip the glossary renders, not a parallel one', () => {

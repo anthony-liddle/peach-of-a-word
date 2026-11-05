@@ -171,7 +171,7 @@ describe('ShareButton', () => {
     expect(writeText).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(
-        screen.getByText('Copied. Paste it wherever your people are.'),
+        screen.getByText('Copied. Paste it anywhere.'),
       ).toBeInTheDocument();
     });
   });

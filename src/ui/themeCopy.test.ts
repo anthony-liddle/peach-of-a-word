@@ -36,16 +36,17 @@ describe('theme-skinned tier names', () => {
 
 describe('theme-skinned source-word celebration', () => {
   it('names the peach in cute and leaves the classic wording untouched', () => {
-    // Pinned verbatim: classic must never drift, cute makes the game's own joke.
+    // Pinned verbatim. Classic said "the source word" until Antoine gave the
+    // word one name in every theme (5 November 2026); cute makes the joke.
     expect(sourceFoundMessage('letterpress')).toBe(
-      'You found the source word.',
+      'You found the peach of a word.',
     );
     expect(sourceFoundMessage('cute')).toBe('You found the Peach of a Word!');
   });
 
   it('announces the find in the framing the screen shows, and names the word', () => {
     expect(sourceFoundAnnouncement('letterpress', 'serenade')).toBe(
-      'Source word found: serenade.',
+      'You found the peach of a word: serenade.',
     );
     expect(sourceFoundAnnouncement('cute', 'serenade')).toBe(
       'You found the Peach of a Word: serenade.',
@@ -109,7 +110,7 @@ describe('theme-skinned vocabulary', () => {
     expect(lp.onPageLabel).toBe('Set');
     expect(lp.offPageLabel).toBe('Off-page');
     expect(lp.keyOnPage).toBe('in the set');
-    expect(lp.ladderPeak).toBe('Top rank. The full set is the peak.');
+    expect(lp.ladderPeak).toBe('Top rung');
     expect(lp.typeCredit).toBe('Set in Fraunces and Spectral.');
     expect(lp.completionLine).toBe(
       'Every common word the rack can spell, found.',
@@ -129,8 +130,8 @@ describe('theme-skinned vocabulary', () => {
     expect(cute.onPageLabel).toBe('Basket');
     expect(cute.offPageLabel).toBe('Wild');
     expect(cute.keyOnPage).toBe('in the basket');
-    expect(cute.ladderPeak).toBe('Top rank. The full basket is the peak.');
-    expect(cute.typeCredit).toBe('Written in Fredoka and Nunito.');
+    expect(cute.ladderPeak).toBe('Top rung');
+    expect(cute.typeCredit).toBe('Set in Fredoka and Nunito.');
     expect(cute.completionLine).toBe(
       'Every common word these letters can grow, picked.',
     );
@@ -164,7 +165,7 @@ describe('theme-skinned vocabulary', () => {
       cute.glossaryTitle,
       cute.revealClose,
       cute.keyOnPage,
-      cute.ladderPeak,
+      cute.container,
     ];
     for (const s of carriers) expect(s.toLowerCase()).toContain(noun);
     expect(carriers).toHaveLength(5);
