@@ -72,7 +72,7 @@ export function TierMeter({ tier, theme, streak = 0 }: Props) {
         aria-valuemin={0}
         aria-valuemax={tier.reachable}
         aria-valuenow={Math.min(tier.score, tier.reachable)}
-        aria-valuetext={`${pct} percent of reachable points, ${label}`}
+        aria-valuetext={`${pct} percent, ${label}`}
       >
         {/* Three flex segments fill the track: on-page set points, off-page
             discovery points, then the transparent remainder. Set plus off-page

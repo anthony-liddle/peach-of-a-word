@@ -3,6 +3,7 @@ import { messageText, type Glint, type PlayApi } from '../useGame.ts';
 import { useTheme } from '../useTheme.ts';
 import { copy } from '../themeCopy.ts';
 import { Mark } from './Mark.tsx';
+import { OPENS_CARD_HINT } from '../cardHint.ts';
 
 /**
  * The stick: the letters placed so far, in order, **and the feedback message**.
@@ -128,7 +129,7 @@ export function ComposingStick({
         >
           {line}
           <span id={hintId} hidden>
-            Shows the definition
+            {OPENS_CARD_HINT}
           </span>
         </button>
       ) : (

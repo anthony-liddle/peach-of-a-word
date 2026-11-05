@@ -59,7 +59,7 @@ describe('letterpress vocabulary stays in themeCopy.ts', () => {
     // Proves the parser collects rendered text rather than only quoted
     // literals: this line is JSX text and a template chunk away from either.
     const all = sources.flatMap(({ file, text }) => prose(text, file));
-    expect(all).toContain('The word lists did not load. Reload to try again.');
+    expect(all).toContain("The word lists didn't load. Reload to try again.");
   });
 });
 

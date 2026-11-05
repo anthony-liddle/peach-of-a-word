@@ -1,7 +1,7 @@
 {
   "name": "Peach of a Word",
   "short_name": "Peach",
-  "description": "Make words from eight scrambled letters, then find the source word they all came from. A new puzzle daily.",
+  "description": "Make words from eight scrambled letters, then find the long word they all came from. A new puzzle daily.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFF4EE",

@@ -97,7 +97,7 @@ export function App() {
     return (
       <div className="app">
         <div className="error">
-          <p>The word lists did not load. Reload to try again.</p>
+          <p>The word lists didn't load. Reload to try again.</p>
           <p className="found__empty">
             If it keeps happening, come back in a little while.
           </p>

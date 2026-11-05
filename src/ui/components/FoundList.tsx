@@ -12,6 +12,7 @@ import { copy } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
 import { Mark, type MarkCategory } from './Mark.tsx';
 import { TierMeter } from './TierMeter.tsx';
+import { OPENS_CARD_HINT } from '../cardHint.ts';
 
 interface Props {
   puzzle: Puzzle;
@@ -155,6 +156,12 @@ function isLadder(category: Category): category is LadderRung {
 }
 
 /**
+ * The word's one name in the game, in every theme: the key's last entry, and
+ * what a screen reader calls its chip.
+ */
+const PEACH_OF_A_WORD = 'the peach of a word';
+
+/**
  * The category in words, for a chip's accessible name. The mark carries the
  * category visually and is decorative, so this is the only place a screen reader
  * can learn it. The set reads in the theme's own vocabulary, the same string the
@@ -167,8 +174,8 @@ function categoryName(
 ): string {
   if (category === 'source') {
     return costume
-      ? `source word, the peach ${COSTUMES[costume].spoken}`
-      : 'source word';
+      ? `${PEACH_OF_A_WORD}, ${COSTUMES[costume].spoken}`
+      : PEACH_OF_A_WORD;
   }
   if (category === 'set') return copy(theme).keyOnPage;
   return RUNG_NAMES[category];
@@ -253,6 +260,8 @@ export function FoundList({
   // Stable ids so each trigger can point at the panel it controls.
   const idBase = useId();
   const panelId = (rung: LadderRung) => `${idBase}-rung-${rung}`;
+  // Every chip opens a card, so one hint serves them all.
+  const hintId = `${idBase}-hint`;
 
   const renderChip = (w: Word) => (
     <li key={w.word} className="found__word-item" role="listitem">
@@ -262,9 +271,10 @@ export function FoundList({
         data-opens-card
         aria-label={
           ladder
-            ? `${w.word}, ${categoryName(w.category, theme, costume)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}, show definition`
-            : `${w.word}, ${categoryName(w.category, theme, costume)}, show definition`
+            ? `${w.word}, ${categoryName(w.category, theme, costume)}, ${w.score} ${w.score === 1 ? 'point' : 'points'}`
+            : `${w.word}, ${categoryName(w.category, theme, costume)}`
         }
+        aria-describedby={hintId}
         onClick={(e) => {
           e.currentTarget.focus();
           onWordTap(w.word, e.currentTarget);
@@ -300,6 +310,9 @@ export function FoundList({
 
   return (
     <section className="found" aria-label="Words found">
+      <span id={hintId} hidden>
+        {OPENS_CARD_HINT}
+      </span>
       <h2 className="found__title">{copy(theme).glossaryTitle}</h2>
 
       {/* Nothing to summarise on an empty board; the summary appears with the
@@ -455,7 +468,7 @@ export function FoundList({
             </span>
           ))}
           <span>
-            <Mark category="source" costume={costume} /> source word
+            <Mark category="source" costume={costume} /> {PEACH_OF_A_WORD}
           </span>
         </div>
       )}

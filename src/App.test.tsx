@@ -133,7 +133,7 @@ describe('the error screen', () => {
     await renderFailedLoad(new Error(`Unknown action "${INTERNAL}"`));
 
     expect(
-      screen.getByText('The word lists did not load. Reload to try again.'),
+      screen.getByText("The word lists didn't load. Reload to try again."),
     ).toBeInTheDocument();
     expect(document.body.textContent).not.toContain(INTERNAL);
   });
@@ -148,7 +148,7 @@ describe('the error screen', () => {
     await renderFailedLoad(WORD);
 
     expect(
-      screen.getByText('The word lists did not load. Reload to try again.'),
+      screen.getByText("The word lists didn't load. Reload to try again."),
     ).toBeInTheDocument();
     expect(document.body.textContent).not.toContain(WORD);
   });
@@ -180,7 +180,7 @@ describe('the stale-bundle reload', () => {
 
     expect(reload).toHaveBeenCalledTimes(1);
     // No error painted over a page that is about to be replaced.
-    expect(document.body.textContent).not.toContain('did not load');
+    expect(document.body.textContent).not.toContain("didn't load");
   });
 
   it('shows the error rather than reloading again, so it cannot loop', async () => {
@@ -188,7 +188,7 @@ describe('the stale-bundle reload', () => {
 
     expect(reload).not.toHaveBeenCalled();
     expect(
-      screen.getByText('The word lists did not load. Reload to try again.'),
+      screen.getByText("The word lists didn't load. Reload to try again."),
     ).toBeInTheDocument();
   });
 
@@ -209,7 +209,7 @@ describe('the stale-bundle reload', () => {
 
       expect(reload).not.toHaveBeenCalled();
       expect(
-        screen.getByText('The word lists did not load. Reload to try again.'),
+        screen.getByText("The word lists didn't load. Reload to try again."),
       ).toBeInTheDocument();
     },
   );
@@ -227,7 +227,7 @@ describe('the stale-bundle reload', () => {
 
     expect(reload).not.toHaveBeenCalled();
     expect(
-      screen.getByText('The word lists did not load. Reload to try again.'),
+      screen.getByText("The word lists didn't load. Reload to try again."),
     ).toBeInTheDocument();
   });
 });
