@@ -7,7 +7,7 @@
  *   pnpm exec tsx --tsconfig tsconfig.app.json scripts/illustrations/probe-marks.ts \
  *     <out dir> <px per unit>
  *
- * The page is index.css and the Google Fonts link from index.html, so the
+ * The page is index.css and the site's own public/fonts/fonts.css, so the
  * font stack is the app's. A twin of each, its character in a real span
  * rather than `::before`, gives the measurements; the probe reports how far
  * the twin's ink lies from the real one's.
@@ -21,9 +21,13 @@ if (!out || !scaleArg) throw new Error('usage: probe-marks.ts <out> <scale>');
 const scale = Number(scaleArg);
 const box = 100 * scale;
 const css = readFileSync('src/index.css', 'utf8');
-const fonts = readFileSync('index.html', 'utf8').match(
-  /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/,
-)![1]!;
+// The site's fonts, each file inlined: a page set from a string has no origin
+// for /fonts/ to resolve against.
+const fonts = readFileSync('public/fonts/fonts.css', 'utf8').replace(
+  /url\(\/fonts\/([^)]+)\)/g,
+  (_, file: string) =>
+    `url(data:font/woff2;base64,${readFileSync(join('public/fonts', file)).toString('base64')})`,
+);
 
 interface Item {
   name: string;
@@ -79,7 +83,7 @@ try {
     const parent = box / it.emOfParent;
     await page.setContent(
       `<!doctype html><html data-theme="cute"><head>` +
-        `<link rel="stylesheet" href="${fonts}">` +
+        `<style>${fonts}</style>` +
         `<style>${css}</style><style>` +
         `html,body{margin:0;background:transparent!important;background-image:none!important}` +
         `.row,.twin{position:absolute;top:0;font-size:${parent}px;line-height:1}` +

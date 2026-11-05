@@ -20,11 +20,7 @@ import { faviconHref } from './ui/favicon.ts';
  * was written by copying the first and would have inherited the bug just as
  * easily.
  */
-const PAGES = [
-  'public/privacy.html',
-  'public/support.html',
-  'public/transfer-temporary.html',
-];
+const PAGES = ['public/privacy.html', 'public/support.html', 'public/404.html'];
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -79,63 +75,6 @@ describe.each(PAGES)('%s', (path) => {
 });
 
 /**
- * The streak transfer page, which is a one-time migration rather than a
- * feature and is meant to be deleted once the handoff is done.
- *
- * These assertions are about the two things that make it work at all, both of
- * which are easy to "tidy" into a broken state by someone who does not know
- * why they are there.
- */
-describe('transfer-temporary.html', () => {
-  const html = read('public/transfer-temporary.html');
-
-  test('sends both streak fields, not just the count', () => {
-    // The failure this guards: a count with no record of when it was last
-    // extended reads as broken the next morning, so the app resets a
-    // transferred 53 to 1 overnight. The player gets the number, feels good,
-    // and loses it while asleep.
-    expect(html).toContain('peachofaword://streak?count=');
-    expect(html).toContain('&lastCleared=');
-    expect(html).toContain('&v=1');
-  });
-
-  test('makes no timed guess about whether the app opened', () => {
-    // Measured on a simulator: tapping a custom scheme raises a system
-    // confirmation and leaves this page visible with its timers running while
-    // it waits for a human. A timeout would race a person reading an alert, so
-    // "no app took the link" and "the alert is still up" are indistinguishable
-    // from in here. The page says both possibilities instead of picking one.
-    expect(html).not.toContain('setTimeout');
-    expect(html).toMatch(/not installed/i);
-    expect(html).toMatch(/Open in/i);
-  });
-
-  test('reads the same storage key and epoch the game writes', () => {
-    expect(html).toContain('eight-letters/v1');
-    expect(html).toContain('year: 2026, month: 1, day: 1');
-  });
-
-  test('promises no capability the app does not have', () => {
-    // The app has URL handling and no manual entry, so "type the numbers in by
-    // hand" described a feature that does not exist. The address is shown
-    // instead, which is a thing she can actually do.
-    expect(html).not.toMatch(/by hand/i);
-    expect(html).toContain('link-literal');
-  });
-
-  test('says on the page that it is temporary', () => {
-    // The page states its own disposability, because the filename is the only
-    // other place that can: vercel.json is strict JSON and takes no comments.
-    expect(html).toMatch(/temporary/i);
-    expect(html).toMatch(/deleted/i);
-  });
-
-  test('is not indexed', () => {
-    expect(html).toContain('name="robots" content="noindex"');
-  });
-});
-
-/**
  * The support page, which is the App Store listing's Support URL.
  *
  * Apple requires that URL to "lead to actual contact information", so the
@@ -150,6 +89,29 @@ describe('support.html', () => {
 
   test('links the privacy page', () => {
     expect(html).toContain('href="/privacy"');
+  });
+
+  test('uses no em dash', () => {
+    expect(html).not.toContain('—');
+  });
+});
+
+/**
+ * The page Vercel serves, with a 404, for any address the site doesn't have,
+ * in place of Vercel's own, which never said Peach of a Word. One line and the
+ * way back: / always opens today's daily board, since the game starts in Daily
+ * and doesn't keep the mode.
+ */
+describe('404.html', () => {
+  const html = read('public/404.html');
+
+  test('says it in one line, then links back to today’s board', () => {
+    expect(html).toContain("<h1>There's nothing at this address.</h1>");
+    expect(html).toContain('<a href="/">Back to today\'s board</a>');
+  });
+
+  test('is not indexed', () => {
+    expect(html).toContain('name="robots" content="noindex"');
   });
 
   test('uses no em dash', () => {
@@ -216,7 +178,7 @@ describe('privacy.html', () => {
 /**
  * The rewrite that serves the page, checked here because the pairing is the
  * part that breaks silently: removing one of the two leaves either a dead
- * /transfer or an orphaned file nobody can reach.
+ * /support or an orphaned file nobody can reach.
  */
 describe('vercel.json rewrites', () => {
   const config = JSON.parse(read('vercel.json')) as {
@@ -229,13 +191,6 @@ describe('vercel.json rewrites', () => {
     expect(config.rewrites).toContainEqual({
       source: '/support',
       destination: '/support.html',
-    });
-  });
-
-  test('/transfer serves the temporary page', () => {
-    expect(config.rewrites).toContainEqual({
-      source: '/transfer',
-      destination: '/transfer-temporary.html',
     });
   });
 

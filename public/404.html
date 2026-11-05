@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Not found | Peach of a Word</title>
+    <meta name="robots" content="noindex" />
+    <!-- Vercel serves this for any address the site doesn't have, with a 404.
+         Icons and theme follow the same contract as the other pages. -->
+    <link
+      rel="icon"
+      id="favicon"
+      href="/favicon-cute.svg"
+      type="image/svg+xml"
+    />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      /* The two theme palettes, the support page's tokens. */
+      :root,
+      [data-theme='letterpress'] {
+        --paper: #f1eee6;
+        --ink: #211d17;
+        --accent: #9d2b25;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --weight-display: 700;
+        --font-body: 'Spectral', Georgia, serif;
+      }
+      [data-theme='cute'] {
+        --paper: #fff4ee;
+        --ink: #6b4636;
+        --accent: #c42e60;
+        --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+        --weight-display: 600;
+        --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        font-family: var(--font-body);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 34rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: var(--weight-display);
+        font-size: 1.75rem;
+        margin: 0 0 1rem;
+      }
+      a {
+        color: var(--accent);
+      }
+    </style>
+    <script>
+      // Match the theme the player already chose, read from the same key the
+      // game writes. Wrapped because localStorage throws outright in some
+      // privacy modes. The theme and the tab icon are resolved together, the
+      // same as index.html and the other pages.
+      (function () {
+        var DEFAULT = 'cute';
+        var saved;
+        try {
+          saved = localStorage.getItem('e8-theme');
+        } catch (e) {
+          saved = null; /* storage blocked: fall back to the default */
+        }
+        var theme =
+          saved === 'cute' || saved === 'letterpress' ? saved : DEFAULT;
+        document.documentElement.dataset.theme = theme;
+        var icon = document.getElementById('favicon');
+        if (icon)
+          icon.href =
+            theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>There's nothing at this address.</h1>
+      <p><a href="/">Back to today's board</a></p>
+    </main>
+  </body>
+</html>
