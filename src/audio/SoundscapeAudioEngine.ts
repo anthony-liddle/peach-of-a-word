@@ -7,7 +7,9 @@ import cues from './peach.cues.json';
 /**
  * The game's audio on Soundscape, Antoine's engine: every sound is a cue in
  * peach.cues.json, written from the game's previous engine,
- * ReferenceAudioEngine, which stays as the reference the cues are held to.
+ * ReferenceAudioEngine, which stays as the reference the cues are held to. All
+ * but the departures (departures.ts), chosen by ear since: the tick and
+ * Shuffle.
  *
  * It keeps that engine's lifecycle. Nothing exists until the first cue, which
  * must come from a gesture: that cue creates the AudioContext and resumes it in
@@ -60,6 +62,10 @@ export class SoundscapeAudioEngine implements AudioEngine {
 
   tick(): void {
     this.play('tick');
+  }
+
+  playShuffle(): void {
+    this.play('shuffle');
   }
 
   private play(cue: string): void {

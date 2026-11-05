@@ -32,7 +32,6 @@ interface PersistedState {
 }
 
 const STORAGE_KEY = 'eight-letters/v1';
-const MAX_DAYS_KEPT = 14;
 
 function emptyState(): PersistedState {
   return {
@@ -100,12 +99,13 @@ export class GameStorage {
     return emptyState();
   }
 
+  /**
+   * Every day is kept, so a player moving to the iOS app can bring all of
+   * them. This used to keep only the fourteen newest days, and each write
+   * after the fourteenth dropped the oldest for good. The save grows by one
+   * entry for each day the board is opened.
+   */
   private write(state: PersistedState): void {
-    // Keep only the most recent days so storage never grows without bound.
-    const dayKeys = Object.keys(state.days)
-      .map(Number)
-      .sort((a, b) => b - a);
-    for (const key of dayKeys.slice(MAX_DAYS_KEPT)) delete state.days[key];
     try {
       this.store.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {

@@ -12,7 +12,7 @@ import type { Theme } from '@/ui/useTheme.ts';
  * Every sound the game makes today, built from the engine's own tables so the
  * list cannot fall behind it.
  *
- * Five cues, but not five sounds. A found word's pitch comes from its length and
+ * Six cues, but not six sounds. A found word's pitch comes from its length and
  * its sparkle from its rung, and the mythic sparkle also depends on the theme
  * the engine is given. So the mythic rows are played once per theme, each
  * giving the engine its theme first.
@@ -53,6 +53,7 @@ const CUES: Record<SoundCue, { title: string; call: string }> = {
   playEdition: { title: 'Edition Complete', call: 'playEdition()' },
   playInvalid: { title: 'Rejected guess', call: 'playInvalid()' },
   tick: { title: 'Tile tap', call: 'tick()' },
+  playShuffle: { title: 'Shuffle', call: 'playShuffle()' },
 };
 
 /** Keyed rather than listed, so a new theme fails the typecheck here too. */

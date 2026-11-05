@@ -739,7 +739,12 @@ export function useGame(
     addLetter,
     removeLast: useCallback(() => dispatch({ type: 'REMOVE_LAST' }), []),
     clear: useCallback(() => dispatch({ type: 'CLEAR' }), []),
-    shuffle: useCallback(() => dispatch({ type: 'SHUFFLE' }), []),
+    // Every press makes its sound, even one the guard redraws, so a redraw
+    // sounds like any other shuffle and gives nothing away
+    shuffle: useCallback(() => {
+      dispatch({ type: 'SHUFFLE' });
+      audio.playShuffle();
+    }, [audio]),
     submit,
     setMode,
     newEndless,

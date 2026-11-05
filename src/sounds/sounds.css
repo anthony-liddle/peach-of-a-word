@@ -28,6 +28,12 @@
   margin-top: 1.1rem;
 }
 
+/* A sound that has left the old engine says so above its button, with room
+   between the two. */
+.sounds__departure {
+  margin-bottom: 0.9rem;
+}
+
 .sounds__caption {
   margin: 0 0 0.5rem;
 }

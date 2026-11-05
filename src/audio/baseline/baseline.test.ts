@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { SOUNDS } from '@/sounds/inventory.ts';
 import { distinctSounds } from '@/testing/engineSweep.ts';
+import { NEW_WITH_SOUNDSCAPE } from '@/audio/departures.ts';
 
 /**
  * The sound baseline is whole and is what it says it is.
@@ -30,8 +31,12 @@ const baseline = JSON.parse(
 const entries = Object.entries(baseline.sounds);
 
 describe('the sound baseline', () => {
-  test('has one entry for every sound on the page, in page order', () => {
-    expect(entries.map(([id]) => id)).toEqual(SOUNDS.map((s) => s.id));
+  test('has one entry for every sound on the page the old engine made, in page order', () => {
+    // Not Shuffle, which made no sound before Soundscape. The tick keeps its
+    // entry: the baseline records the old engine, which still plays a square.
+    expect(entries.map(([id]) => id)).toEqual(
+      SOUNDS.map((s) => s.id).filter((id) => !NEW_WITH_SOUNDSCAPE.includes(id)),
+    );
   });
 
   test('has one entry for every sound the engine can make', () => {

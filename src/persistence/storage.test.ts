@@ -26,6 +26,33 @@ describe('GameStorage day progress', () => {
   });
 });
 
+// Every day's words stay, so a player moving to the app can bring them all.
+// The save used to keep only the fourteen newest days, which dropped the
+// fifteenth on every write after it.
+describe('GameStorage keeps every day', () => {
+  it('keeps the fifteenth newest day', () => {
+    const storage = new GameStorage(fakeStore());
+    for (let day = 300; day < 315; day++) {
+      storage.saveDayProgress(day, 'serenade', [`w${day}`]);
+    }
+    expect(storage.loadDayProgress(300, 'serenade')).toEqual(['w300']);
+  });
+
+  it('keeps a year of days, read back after a reload', () => {
+    const store = fakeStore();
+    const playing = new GameStorage(store);
+    // From launch day's storage index, one day at a time, as daily play does.
+    const days = Array.from({ length: 365 }, (_, i) => 173 + i);
+    for (const day of days) {
+      playing.saveDayProgress(day, 'serenade', [`w${day}`]);
+    }
+    const reloaded = new GameStorage(store);
+    for (const day of days) {
+      expect(reloaded.loadDayProgress(day, 'serenade')).toEqual([`w${day}`]);
+    }
+  });
+});
+
 describe('GameStorage endless', () => {
   let storage: GameStorage;
   beforeEach(() => {
