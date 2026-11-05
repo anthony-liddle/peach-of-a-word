@@ -724,7 +724,7 @@ async function main(argv: string[]) {
     );
   const shown = [
     ...(peach || stagesChanged.length ? ['the peach'] : []),
-    ...(crown ? ["the completion card's crown"] : []),
+    ...(crown ? ["the completion card's crown, in shot 6"] : []),
   ];
   if (shown.length)
     stale.push(
