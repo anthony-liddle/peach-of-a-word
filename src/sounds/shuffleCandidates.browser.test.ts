@@ -9,6 +9,7 @@ import {
   CANDIDATES,
   TAKES,
   TEN_GAP_S,
+  TILE_TAP_CUE,
   cueName,
   tenInTurn,
 } from './shuffleCandidates.ts';
@@ -81,7 +82,7 @@ function printedAs(reading: Heard, printed: Heard) {
   expect(Math.abs(reading.lufs - printed.lufs)).toBeLessThan(0.15);
 }
 
-describe(`the Shuffle candidates, in ${server.browser}`, () => {
+describe(`the candidates, in ${server.browser}`, () => {
   test('the tick and the find read as the page says', async () => {
     const tick = await heard(cues, 'tick');
     const find = await heard(cues, 'found-5-set');
@@ -90,7 +91,13 @@ describe(`the Shuffle candidates, in ${server.browser}`, () => {
     printedAs(find, HEARD.find!);
   });
 
-  for (const candidate of CANDIDATES) {
+  test("the tile tap the page plays to compare is the game's tick, exactly", async () => {
+    const game = await render(cues, [{ cue: 'tick', at: AT }]);
+    const copy = await render(CANDIDATE_CUES, [{ cue: TILE_TAP_CUE, at: AT }]);
+    expect(copy).toEqual(game);
+  });
+
+  for (const candidate of CANDIDATES.filter((c) => c.role === 'shuffle')) {
     test(`${candidate.label}: short, under the tick, with no pitch, and as the page says`, async () => {
       const tick = await heard(cues, 'tick');
       const readings: Reading[] = [];
@@ -111,7 +118,28 @@ describe(`the Shuffle candidates, in ${server.browser}`, () => {
       expect(all.periodicity).toBeGreaterThan(0.25);
       printedAs(all, HEARD[candidate.id]!);
     });
+  }
 
+  for (const candidate of CANDIDATES.filter((c) => c.role === 'tap')) {
+    test(`${candidate.label}: no longer than the tick, as loud and no louder, and as the page says`, async () => {
+      const tick = await heard(cues, 'tick');
+      const readings: Reading[] = [];
+      for (let take = 0; take < TAKES; take++)
+        readings.push(await heard(CANDIDATE_CUES, cueName(candidate, take)));
+      const all = most(readings);
+      console.log(candidate.id, JSON.stringify({ tick, readings, most: all }));
+
+      expect(all.stopS).toBeLessThanOrEqual(tick.stopS);
+      expect(all.durationMs).toBeLessThanOrEqual(tick.durationMs);
+      // Matched to the tick's loudness: the loudest take within half a dB
+      // under it, and none over
+      for (const r of readings) expect(r.lufs).toBeLessThan(tick.lufs);
+      expect(all.lufs).toBeGreaterThan(tick.lufs - 0.5);
+      printedAs(all, HEARD[candidate.id]!);
+    });
+  }
+
+  for (const candidate of CANDIDATES) {
     test(`${candidate.label}: ten presses in a row peak no higher than one`, async () => {
       let loudest = 0;
       for (let take = 0; take < TAKES; take++) {

@@ -1,8 +1,10 @@
 import type { CueDocument, CueInstrument, CueNote } from 'soundscape-engine';
+import game from '@/audio/peach.cues.json';
 
 /**
- * Candidates for the Shuffle button's sound: a few letter tiles knocking
- * together. For the preview only, to be chosen between by ear. None of this is
+ * Candidates for the Shuffle button's sound, a few letter tiles knocking
+ * together, and one for the tile tap, a single click in place of tick()'s
+ * square. For the preview only, to be chosen between by ear. None of this is
  * in the game: the candidates are a cue document of their own, never
  * peach.cues.json, and the chosen one is copied into that file once it is
  * chosen.
@@ -116,10 +118,27 @@ const SPREAD: Takes = [
 /** Two clicks: the first two of the tight four. */
 const PAIR: Takes = TIGHT.map((take) => take.slice(0, 2)) as Takes;
 
+/**
+ * One click, for a tile tap: each take a little different in tile and force,
+ * less than a cluster's clicks differ, so a word typed is not one sound
+ * repeated and no letter sounds louder than the next.
+ */
+const SINGLE: Takes = [
+  [{ atS: 0, scale: 1, force: 1 }],
+  [{ atS: 0, scale: 1.06, force: 0.92 }],
+  [{ atS: 0, scale: 0.95, force: 0.97 }],
+];
+
 export interface Candidate {
-  /** Stable, for the cue names and the button's data. */
+  /** Stable, for the button's data. */
   id: string;
-  /** The button's whole name, visible and spoken. */
+  /** Which sound it would be: Shuffle's, or the tile tap's in place of tick(). */
+  role: 'shuffle' | 'tap';
+  /** Its takes are this, then the take's number: `shuffle-b-2` is B's second. */
+  cue: string;
+  /** What its buttons call it: "B, once". */
+  short: string;
+  /** The heading over its buttons. */
   label: string;
   /** What it is, in a line, and how it differs from the one before it. */
   about: string;
@@ -130,12 +149,16 @@ export interface Candidate {
 }
 
 /**
- * Four candidates, each one change from the one before: A to B more clicks, B
- * to C a duller tile, C to D the same clicks spread out.
+ * Five Shuffle candidates, each one change from another: A to B more clicks,
+ * B to C a duller tile, C to D the same clicks spread out, and E, B spread out
+ * as D is. Then one for the tile tap: A's first click alone.
  */
 export const CANDIDATES: Candidate[] = [
   {
     id: 'a',
+    role: 'shuffle',
+    cue: 'shuffle-a',
+    short: 'A',
     label: 'A: two clicks',
     about:
       'Two bright clicks about 10 ms apart, partials from 3 to 8 kHz: one tile set down on another.',
@@ -145,6 +168,9 @@ export const CANDIDATES: Candidate[] = [
   },
   {
     id: 'b',
+    role: 'shuffle',
+    cue: 'shuffle-b',
+    short: 'B',
     label: 'B: four, close',
     about: 'A with four clicks in about 40 ms: a small stack knocked together.',
     tile: BRIGHT,
@@ -153,6 +179,9 @@ export const CANDIDATES: Candidate[] = [
   },
   {
     id: 'c',
+    role: 'shuffle',
+    cue: 'shuffle-c',
+    short: 'C',
     label: 'C: four, close, duller',
     about:
       'B with a wooden tile: partials from 1.7 to 5.4 kHz, damped almost at once.',
@@ -162,24 +191,51 @@ export const CANDIDATES: Candidate[] = [
   },
   {
     id: 'd',
+    role: 'shuffle',
+    cue: 'shuffle-d',
+    short: 'D',
     label: 'D: four, spread, duller',
     about: 'C spread over about 120 ms: tiles settling one by one.',
     tile: DULL,
     takes: SPREAD,
     level: 0.0151,
   },
+  {
+    id: 'e',
+    role: 'shuffle',
+    cue: 'shuffle-e',
+    short: 'E',
+    label: 'E: four, spread',
+    about:
+      'B spread over about 120 ms, as D spreads C: bright tiles settling one by one.',
+    tile: BRIGHT,
+    takes: SPREAD,
+    level: 0.0099,
+  },
+  {
+    id: 'tap',
+    role: 'tap',
+    cue: 'tap',
+    short: 'Tap',
+    label: 'Tap: one bright click',
+    about:
+      "A's first click alone: one bright tile, partials from 3 to 8 kHz, in place of the tile tap's square.",
+    tile: BRIGHT,
+    takes: SINGLE,
+    level: 0.0324,
+  },
 ];
 
 /** The name of a candidate's take in the document: `shuffle-b-2` is B's second. */
 export const cueName = (candidate: Candidate, take: number): string =>
-  `shuffle-${candidate.id}-${take + 1}`;
+  `${candidate.cue}-${take + 1}`;
 
 /** Every candidate has three takes. */
 export const TAKES = 3;
 
 /**
  * The gap between presses when the page plays ten in a row: eight a second,
- * Shuffle pressed about as fast as a thumb can.
+ * Shuffle pressed about as fast as a thumb can, or letters typed quickly.
  */
 export const TEN_GAP_S = 0.125;
 
@@ -215,16 +271,32 @@ function notesOf(candidate: Candidate, take: number): CueNote[] {
 export const CANDIDATE_CUES: CueDocument = {
   format: 'soundscape-cues',
   version: 1,
-  instruments: { click: CLICK },
-  cues: Object.fromEntries(
-    CANDIDATES.flatMap((candidate) =>
-      candidate.takes.map((_, take) => [
-        cueName(candidate, take),
-        { notes: notesOf(candidate, take) },
-      ]),
+  instruments: {
+    click: CLICK,
+    square: game.instruments.square as CueInstrument,
+  },
+  cues: {
+    ...Object.fromEntries(
+      CANDIDATES.flatMap((candidate) =>
+        candidate.takes.map((_, take) => [
+          cueName(candidate, take),
+          { notes: notesOf(candidate, take) },
+        ]),
+      ),
     ),
-  ),
+    // The game's own tick, read from its file, so ten of it can be played on
+    // the audio clock beside ten of the tap candidate
+    'tile-tap': {
+      notes: game.cues.tick.notes.map((note, i) => ({
+        ...note,
+        id: `tile-tap-${i + 1}`,
+      })),
+    },
+  },
 };
+
+/** The game's tick, as the candidates' document holds it. */
+export const TILE_TAP_CUE = 'tile-tap';
 
 /**
  * How long a take lasts, in seconds: its last partial's release, plus the 20

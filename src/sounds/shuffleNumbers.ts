@@ -1,6 +1,6 @@
 /**
- * What the page prints beside each Shuffle candidate, and beside the tick and
- * the find it is compared with. Measured in Chromium at 48 kHz, through
+ * What the page prints beside each candidate, and beside the tick and the
+ * find they are compared with. Measured in Chromium at 48 kHz, through
  * Soundscape, by shuffleCandidates.browser.test.ts, which holds Chromium,
  * Firefox and WebKit to every number here within a tenth of a dB and a
  * millisecond.
@@ -24,4 +24,6 @@ export const HEARD: Record<string, Heard> = {
   b: { durationMs: 44, peakDbfs: -37.61, lufs: -62.77 },
   c: { durationMs: 40, peakDbfs: -34.28, lufs: -62.7 },
   d: { durationMs: 121, peakDbfs: -34.28, lufs: -62.71 },
+  e: { durationMs: 123, peakDbfs: -37.61, lufs: -62.78 },
+  tap: { durationMs: 4.75, peakDbfs: -27.67, lufs: -57.26 },
 };

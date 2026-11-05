@@ -12,6 +12,7 @@ import {
   CANDIDATES,
   TAKES,
   TEN_GAP_S,
+  TILE_TAP_CUE,
   cueName,
 } from './shuffleCandidates.ts';
 
@@ -68,24 +69,33 @@ function recording() {
 
 const section = () =>
   screen.getByRole('region', { name: 'Shuffle candidates' });
+const tapSection = () =>
+  screen.getByRole('region', { name: 'Tile tap candidate' });
+const sectionOf = (role: string) => (role === 'tap' ? tapSection() : section());
 
 describe('the Shuffle candidates on the sounds page', () => {
   test('every candidate has its line, its numbers, and three ways to play it', () => {
     recording();
     for (const candidate of CANDIDATES) {
-      const letter = candidate.id.toUpperCase();
+      const here = sectionOf(candidate.role);
       for (const kind of ['once', 'ten in turn', 'ten of one'])
         expect(
-          within(section()).getByRole('button', { name: `${letter}, ${kind}` }),
+          within(here).getByRole('button', {
+            name: `${candidate.short}, ${kind}`,
+          }),
         ).toBeInTheDocument();
-      expect(within(section()).getByText(candidate.about)).toBeInTheDocument();
+      expect(within(here).getByText(candidate.about)).toBeInTheDocument();
     }
     // Each line sets the candidate's peak and loudness beside the tick's and a find's
     expect(
-      within(section()).getAllByText(
-        /dB under the tick's and .* under a find's/,
+      screen.getAllByText(
+        /dB (under|over) the tick's and .* dB (under|over) a find's/,
       ),
     ).toHaveLength(CANDIDATES.length);
+    // The tap is the one louder in peak than the tick it would replace
+    expect(
+      within(tapSection()).getByText(/dB over the tick's\. Loudness/),
+    ).toBeInTheDocument();
   });
 
   test('once plays the first take, now', () => {
@@ -136,7 +146,10 @@ describe('the Shuffle candidates on the sounds page', () => {
     // Muted first: a tap makes nothing at all
     fireEvent.click(mute);
     log.length = 0;
-    for (const button of within(section()).getAllByRole('button'))
+    for (const button of [
+      ...within(section()).getAllByRole('button'),
+      ...within(tapSection()).getAllByRole('button'),
+    ])
       fireEvent.click(button);
     expect(made()).toBe(0);
     expect(log).toEqual([]);
@@ -156,6 +169,36 @@ describe('the Shuffle candidates on the sounds page', () => {
     expect(log).toContain('candidates setMuted false');
   });
 
+  test('the tap candidate plays its takes in turn, and the tile tap beside it plays once or ten in a row', () => {
+    const { log } = recording();
+    fireEvent.click(screen.getByRole('button', { name: 'Tap, ten in turn' }));
+    expect(log).toEqual(
+      Array.from(
+        { length: 10 },
+        (_, i) =>
+          `play tap-${(i % TAKES) + 1} in ${(i * TEN_GAP_S).toFixed(3)}`,
+      ),
+    );
+    expect(within(tapSection()).getByRole('status')).toHaveTextContent(
+      'Played Tap, ten in turn.',
+    );
+    expect(within(section()).getByRole('status')).toHaveTextContent('');
+
+    log.length = 0;
+    fireEvent.click(screen.getByRole('button', { name: 'The tile tap, once' }));
+    expect(log).toEqual([`play ${TILE_TAP_CUE} in 0.000`]);
+    log.length = 0;
+    fireEvent.click(
+      screen.getByRole('button', { name: 'The tile tap, ten in a row' }),
+    );
+    expect(log).toEqual(
+      Array.from(
+        { length: 10 },
+        (_, i) => `play ${TILE_TAP_CUE} in ${(i * TEN_GAP_S).toFixed(3)}`,
+      ),
+    );
+  });
+
   test('the masthead still counts only the sounds the game makes', () => {
     recording();
     expect(
@@ -167,24 +210,34 @@ describe('the Shuffle candidates on the sounds page', () => {
 });
 
 describe('the candidates cue document', () => {
-  test('is a valid cue document of three takes a candidate, and nothing else', () => {
+  test("is a valid cue document of three takes a candidate, and the game's tick to compare", () => {
     expect(validateCueDocument(CANDIDATE_CUES).ok).toBe(true);
-    expect(Object.keys(CANDIDATE_CUES.cues)).toEqual(
-      CANDIDATES.flatMap((c) =>
+    expect(Object.keys(CANDIDATE_CUES.cues)).toEqual([
+      ...CANDIDATES.flatMap((c) =>
         Array.from({ length: TAKES }, (_, take) => cueName(c, take)),
       ),
-    );
+      TILE_TAP_CUE,
+    ]);
+    // The tick to compare is the game's, note for note and instrument too
+    const { id: _, ...tick } = cues.cues.tick.notes[0]!;
+    const { id: __, ...copy } = CANDIDATE_CUES.cues[TILE_TAP_CUE]!.notes[0]!;
+    expect(copy).toEqual(tick);
+    expect(CANDIDATE_CUES.cues[TILE_TAP_CUE]!.notes).toHaveLength(1);
+    expect(CANDIDATE_CUES.instruments.square).toEqual(cues.instruments.square);
   });
 
   test('is not the game: none of its cues is in peach.cues.json', () => {
-    const game = Object.keys(cues.cues);
-    expect(game.filter((name) => name.startsWith('shuffle'))).toEqual([]);
+    const game = new Set(Object.keys(cues.cues));
+    expect(
+      Object.keys(CANDIDATE_CUES.cues).filter((name) => game.has(name)),
+    ).toEqual([]);
   });
 
   test('pitches every partial a quarter tone between two semitones', () => {
     const pitches = Object.values(CANDIDATE_CUES.cues).flatMap((cue) =>
-      cue.notes.map((n) => n.pitch),
+      cue.notes.filter((n) => n.instrument === 'click').map((n) => n.pitch),
     );
+    expect(pitches.length).toBeGreaterThan(0);
     expect(pitches.filter((p) => p % 1 !== 0.5)).toEqual([]);
   });
 
