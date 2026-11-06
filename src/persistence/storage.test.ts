@@ -81,6 +81,69 @@ describe('GameStorage endless', () => {
     });
     expect(storage.loadDayProgress(10, 'serenade')).toEqual(['sea']);
   });
+
+  it('remembers Endless as the board in play, with its day, until the daily is', () => {
+    expect(storage.endlessOpenOn()).toBeNull();
+    storage.saveEndlessOpen(300);
+    expect(storage.endlessOpenOn()).toBe(300);
+    storage.saveEndlessOpen(null);
+    expect(storage.endlessOpenOn()).toBeNull();
+  });
+
+  it('reads a save from before the board in play was kept as the daily', () => {
+    const store = fakeStore();
+    store.setItem(
+      'eight-letters/v1',
+      JSON.stringify({
+        version: 1,
+        days: {},
+        streak: { count: 0, lastClearedDayIndex: null },
+        endless: { sourceWord: 'absolute', found: ['lob'] },
+      }),
+    );
+    const old = new GameStorage(store);
+    expect(old.endlessOpenOn()).toBeNull();
+    expect(old.loadEndless()).toEqual({
+      sourceWord: 'absolute',
+      found: ['lob'],
+    });
+  });
+
+  it('calls a saved Endless that cannot be read back lost, not none', () => {
+    const store = fakeStore();
+    const save = (endless: unknown) =>
+      store.setItem(
+        'eight-letters/v1',
+        JSON.stringify({
+          version: 1,
+          days: {},
+          streak: { count: 0, lastClearedDayIndex: null },
+          endless,
+        }),
+      );
+    const storage = new GameStorage(store);
+    for (const broken of [
+      { sourceWord: 7, found: [] },
+      { sourceWord: 'absolut', found: [] },
+      { sourceWord: 'Absolute', found: [] },
+      { found: ['lob'] },
+      'absolute',
+    ]) {
+      save(broken);
+      expect(storage.loadEndless(), JSON.stringify(broken)).toBe('lost');
+    }
+    // Its words are kept where they can be read: a stray value drops alone.
+    save({ sourceWord: 'absolute', found: ['lob', 3, 'bolt'] });
+    expect(storage.loadEndless()).toEqual({
+      sourceWord: 'absolute',
+      found: ['lob', 'bolt'],
+    });
+    save({ sourceWord: 'absolute' });
+    expect(storage.loadEndless()).toEqual({
+      sourceWord: 'absolute',
+      found: [],
+    });
+  });
 });
 
 describe('GameStorage streak', () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useGame } from './useGame.ts';
 import { dayIndex, STORAGE_EPOCH } from '@/engine/index.ts';
@@ -108,42 +108,42 @@ describe('useGame daily day-key', () => {
   });
 });
 
+const CALENDAR = [
+  'serenade',
+  'lemonade',
+  'renegade',
+  'colander',
+  'grenades',
+  'reloaded',
+];
+
+function endlessData(epoch: {
+  year: number;
+  month: number;
+  day: number;
+}): GameData {
+  return {
+    dictionary: createListDictionary(['sea', 'near', 'lane']),
+    commonPool: createListWordSource(['sea', 'near', 'lane']),
+    beyond70Pool: createListWordSource([]),
+    beyond95Pool: createListWordSource([]),
+    dailyCalendar: { epoch, words: CALENDAR },
+    // Known to the data, so a stored endless word actually rehydrates.
+    sourceEntry: (word) => ({ word, definition: null, etymology: null }),
+  };
+}
+
+/** Today's calendar epoch, so the daily is the calendar's first word. */
+function todayEpoch(): { year: number; month: number; day: number } {
+  const now = new Date();
+  return {
+    year: now.getFullYear(),
+    month: now.getMonth() + 1,
+    day: now.getDate(),
+  };
+}
+
 describe('endless New Puzzle', () => {
-  const CALENDAR = [
-    'serenade',
-    'lemonade',
-    'renegade',
-    'colander',
-    'grenades',
-    'reloaded',
-  ];
-
-  function endlessData(epoch: {
-    year: number;
-    month: number;
-    day: number;
-  }): GameData {
-    return {
-      dictionary: createListDictionary(['sea', 'near', 'lane']),
-      commonPool: createListWordSource(['sea', 'near', 'lane']),
-      beyond70Pool: createListWordSource([]),
-      beyond95Pool: createListWordSource([]),
-      dailyCalendar: { epoch, words: CALENDAR },
-      // Known to the data, so a stored endless word actually rehydrates.
-      sourceEntry: (word) => ({ word, definition: null, etymology: null }),
-    };
-  }
-
-  /** Today's calendar epoch, so the daily is the calendar's first word. */
-  function todayEpoch(): { year: number; month: number; day: number } {
-    const now = new Date();
-    return {
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-      day: now.getDate(),
-    };
-  }
-
   function pressNewPuzzle(count: number): string[] {
     const data = endlessData(todayEpoch());
     const cap = capturingStore();
@@ -197,6 +197,133 @@ describe('endless New Puzzle', () => {
     expect(result.current.state.puzzle.sourceWord).toBe('colander');
     act(() => result.current.newEndless());
     expect(result.current.state.puzzle.sourceWord).not.toBe('colander');
+  });
+});
+
+/**
+ * A reload reopens the board the player was on, the same day (Antoine, 5
+ * November 2026), as the iOS app does since #123. A reload is a second hook on
+ * the same store.
+ */
+describe('a reload', () => {
+  const LINE =
+    "Your last Endless puzzle couldn't be brought back, so here's a new one.";
+
+  function open(
+    cap: ReturnType<typeof capturingStore>,
+    data = endlessData(todayEpoch()),
+  ) {
+    return renderHook(() =>
+      useGame(data, new NullAudioEngine(), new GameStorage(cap.store)),
+    ).result;
+  }
+
+  /** A save holding `endless`, with Endless the board in play on `openOn`. */
+  function saved(endless: unknown, openOn: number | null) {
+    const cap = capturingStore();
+    cap.store.setItem(
+      'eight-letters/v1',
+      JSON.stringify({
+        version: 1,
+        days: {},
+        streak: { count: 0, lastClearedDayIndex: null },
+        endless,
+        endlessOpenOn: openOn,
+      }),
+    );
+    return cap;
+  }
+
+  const today = () => dayIndex(new Date(), STORAGE_EPOCH);
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('the same day reopens Endless, on the puzzle the player left', () => {
+    const cap = capturingStore();
+    const first = open(cap);
+    act(() => first.current.setMode('endless'));
+    const word = first.current.state.puzzle.sourceWord;
+
+    const again = open(cap);
+    expect(again.current.state.mode).toBe('endless');
+    expect(again.current.state.puzzle.sourceWord).toBe(word);
+    expect(again.current.state.message).toBeNull();
+  });
+
+  it('the same day, after going back to the daily, opens the daily', () => {
+    const cap = capturingStore();
+    const first = open(cap);
+    act(() => first.current.setMode('endless'));
+    act(() => first.current.setMode('daily'));
+    expect(open(cap).current.state.mode).toBe('daily');
+  });
+
+  it('the next day opens the daily', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    const now = new Date();
+    vi.setSystemTime(now);
+    const cap = capturingStore();
+    const data = endlessData(todayEpoch());
+    const first = open(cap, data);
+    act(() => first.current.setMode('endless'));
+
+    vi.setSystemTime(
+      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9),
+    );
+    expect(open(cap, data).current.state.mode).toBe('daily');
+  });
+
+  it('keeps an Endless puzzle whose word has left the lists', () => {
+    // Off the calendar, and with no entry for its card: still its puzzle.
+    const data = {
+      ...endlessData(todayEpoch()),
+      dailyCalendar: {
+        epoch: todayEpoch(),
+        words: ['serenade', 'lemonade', 'renegade'],
+      },
+      sourceEntry: () => undefined,
+    };
+    const reloaded = open(
+      saved({ sourceWord: 'colander', found: [] }, today()),
+      data,
+    );
+    expect(reloaded.current.state.mode).toBe('endless');
+    expect(reloaded.current.state.puzzle.sourceWord).toBe('colander');
+
+    // And entered later, not reloaded into: the same.
+    const later = open(
+      saved({ sourceWord: 'colander', found: [] }, null),
+      data,
+    );
+    expect(later.current.state.mode).toBe('daily');
+    act(() => later.current.setMode('endless'));
+    expect(later.current.state.puzzle.sourceWord).toBe('colander');
+  });
+
+  it("deals a new puzzle for one that can't be rebuilt, says so once, and keeps it", () => {
+    const cap = saved({ sourceWord: 7, found: [] }, today());
+    const reloaded = open(cap);
+    const state = reloaded.current.state;
+    expect(state.mode).toBe('endless');
+    expect(CALENDAR.slice(1)).toContain(state.puzzle.sourceWord);
+    expect(state.message?.body).toEqual({ kind: 'plain', text: LINE });
+    expect(state.announcement.body).toEqual({ kind: 'plain', text: LINE });
+
+    const again = open(cap);
+    expect(again.current.state.puzzle.sourceWord).toBe(state.puzzle.sourceWord);
+    expect(again.current.state.message).toBeNull();
+  });
+
+  it('says so too when Endless is entered later, not reloaded into', () => {
+    const entered = open(saved({ sourceWord: 'absolut', found: [] }, null));
+    expect(entered.current.state.mode).toBe('daily');
+    act(() => entered.current.setMode('endless'));
+    expect(entered.current.state.message?.body).toEqual({
+      kind: 'plain',
+      text: LINE,
+    });
   });
 });
 

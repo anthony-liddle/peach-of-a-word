@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -176,6 +177,11 @@ interface Game {
   daily: Slice;
   /** Null until Endless is first entered, then persists until New Puzzle. */
   endless: Slice | null;
+  /**
+   * A saved Endless puzzle couldn't be rebuilt, and the next one dealt in its
+   * place says so. Cleared by any puzzle dealt.
+   */
+  endlessLost: boolean;
 }
 
 /** The flattened view the UI reads: the active slice plus the current mode. */
@@ -270,6 +276,22 @@ function letterOf(slice: Slice, id: number): string {
 
 function bump(prev: Announcement, body: AnnouncementBody): Announcement {
   return { body, seq: prev.seq + 1 };
+}
+
+/**
+ * Said once, on the puzzle dealt in place of a saved Endless puzzle that
+ * couldn't be rebuilt, so a new one is never passed off as the old.
+ */
+export const LOST_ENDLESS_LINE =
+  "Your last Endless puzzle couldn't be brought back, so here's a new one.";
+
+function withLostEndlessLine(slice: Slice): Slice {
+  const body = { kind: 'plain', text: LOST_ENDLESS_LINE } as const;
+  return {
+    ...slice,
+    message: { body, tone: 'info' },
+    announcement: bump(slice.announcement, body),
+  };
 }
 
 function messageForRejection(
@@ -448,7 +470,7 @@ function reduce(game: Game, action: Action): Game {
 
     // First entry into Endless, and New Puzzle, both replace only this slice.
     case 'SET_ENDLESS':
-      return { ...game, endless: action.slice };
+      return { ...game, endless: action.slice, endlessLost: false };
 
     default: {
       if (game.mode === 'endless') {
@@ -559,13 +581,23 @@ export function useGame(
   );
 
   const [game, dispatch] = useReducer(reduce, undefined, (): Game => {
+    const daily = buildSlice(makeDailyPayload());
+    // A saved puzzle is rebuilt from its word alone, even one that has left
+    // the calendar or has no card entry: the card shows the word without one.
     const stored = storage.loadEndless();
-    // Only rehydrate a stored word the data still knows, so the reveal works.
     const endless =
-      stored && data.sourceEntry(stored.sourceWord)
+      stored && stored !== 'lost'
         ? buildSlice(endlessPayload(stored.sourceWord, stored.found))
         : null;
-    return { mode: 'daily', daily: buildSlice(makeDailyPayload()), endless };
+    // The board the player was on, the same day: Endless reopens if it was
+    // the board in play today. A new day opens on the daily.
+    const reopen = storage.endlessOpenOn() === daily.dayIndex;
+    return {
+      mode: reopen ? 'endless' : 'daily',
+      daily,
+      endless,
+      endlessLost: stored === 'lost',
+    };
   });
 
   const active =
@@ -644,6 +676,15 @@ export function useGame(
     }
   }, [endlessFound, endlessWord, storage]);
 
+  // The board in play, so a reload the same day reopens it: Endless with the
+  // day it was played on, kept current by each find and New Puzzle, or the
+  // daily. Today's day, not the daily's, which stays the day the page opened.
+  useEffect(() => {
+    storage.saveEndlessOpen(
+      game.mode === 'endless' ? dayIndex(new Date(), STORAGE_EPOCH) : null,
+    );
+  }, [game.mode, endlessWord, endlessFound, storage]);
+
   // Record the streak once the daily reaches the streak tier.
   const streakRecorded = useRef(false);
   useEffect(() => {
@@ -692,16 +733,32 @@ export function useGame(
     else audio.playFound(result.word.length, result.rung);
   }, [composedWord, active.puzzle, active.tier, active.foundSet, audio]);
 
+  /**
+   * A first Endless puzzle, saying so when it stands in for a saved one that
+   * couldn't be rebuilt.
+   */
+  const dealEndless = useCallback(() => {
+    const fresh = freshEndlessSlice();
+    dispatch({
+      type: 'SET_ENDLESS',
+      slice: game.endlessLost ? withLostEndlessLine(fresh) : fresh,
+    });
+  }, [freshEndlessSlice, game.endlessLost]);
+
   const setMode = useCallback(
     (mode: Mode) => {
       // Generate Endless on first entry only; never regenerate on a switch.
-      if (mode === 'endless' && game.endless === null) {
-        dispatch({ type: 'SET_ENDLESS', slice: freshEndlessSlice() });
-      }
+      if (mode === 'endless' && game.endless === null) dealEndless();
       dispatch({ type: 'SET_MODE', mode });
     },
-    [game.endless, freshEndlessSlice],
+    [game.endless, dealEndless],
   );
+
+  // A reload into Endless with no puzzle to rebuild deals one, before the
+  // first paint, so the daily never shows in between.
+  useLayoutEffect(() => {
+    if (game.mode === 'endless' && game.endless === null) dealEndless();
+  }, [game.mode, game.endless, dealEndless]);
 
   const newEndless = useCallback(() => {
     dispatch({ type: 'SET_ENDLESS', slice: freshEndlessSlice() });

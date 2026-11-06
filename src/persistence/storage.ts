@@ -3,6 +3,8 @@
  * Behind a minimal storage interface so it is testable and swappable.
  */
 
+import { SOURCE_WORD_LENGTH } from '@/engine/config.ts';
+
 export interface KeyValueStore {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -29,9 +31,18 @@ interface PersistedState {
   days: Record<number, DayProgress>;
   streak: StreakState;
   endless: EndlessState | null;
+  /**
+   * The day Endless was the board in play, or null when the daily was. Absent
+   * from saves made before it was kept, which read as the daily, so it needs
+   * no new version.
+   */
+  endlessOpenOn?: number | null;
 }
 
 const STORAGE_KEY = 'eight-letters/v1';
+
+/** A source word as the calendar holds one: eight lowercase letters. */
+const SOURCE_WORD = new RegExp(`^[a-z]{${SOURCE_WORD_LENGTH}}$`);
 
 function emptyState(): PersistedState {
   return {
@@ -152,9 +163,56 @@ export class GameStorage {
     return lastClearedDayIndex >= todayIndex - 1 ? count : 0;
   }
 
-  /** The in-progress Endless game, or null if none has been started. */
-  loadEndless(): EndlessState | null {
-    return this.read().endless;
+  /**
+   * The in-progress Endless game, null if none has been started, or `'lost'`
+   * when one was saved but can't be rebuilt.
+   *
+   * **Its word is all it needs.** The puzzle is rebuilt from the word and the
+   * dictionary, so a word that has since left the calendar, or lost its card's
+   * entry, still rebuilds its own puzzle, the way a played day keeps its word
+   * (Antoine, 5 November 2026). Only a saved entry with no word of eight
+   * lowercase letters can't, and `'lost'` lets the game say so rather than
+   * deal a new puzzle as if none had been saved. A found list that isn't a
+   * list is read as none found, and a stray value in one drops alone.
+   */
+  loadEndless(): EndlessState | 'lost' | null {
+    const saved: unknown = this.read().endless;
+    if (saved === null || saved === undefined) return null;
+    if (typeof saved !== 'object') return 'lost';
+    const { sourceWord, found } = saved as {
+      sourceWord?: unknown;
+      found?: unknown;
+    };
+    if (typeof sourceWord !== 'string' || !SOURCE_WORD.test(sourceWord)) {
+      return 'lost';
+    }
+    return {
+      sourceWord,
+      found: Array.isArray(found)
+        ? found.filter((w): w is string => typeof w === 'string')
+        : [],
+    };
+  }
+
+  /**
+   * The day Endless was last the board in play, or null when the daily was.
+   * A save from before this was kept has none, and reads as the daily.
+   */
+  endlessOpenOn(): number | null {
+    const day = this.read().endlessOpenOn;
+    return typeof day === 'number' ? day : null;
+  }
+
+  /**
+   * Remember the board in play: Endless on `dayIndex`, or the daily (null).
+   * A reload on the same day reopens Endless; a new day opens on the daily.
+   * Writes only a change.
+   */
+  saveEndlessOpen(dayIndex: number | null): void {
+    const state = this.read();
+    if ((state.endlessOpenOn ?? null) === dayIndex) return;
+    state.endlessOpenOn = dayIndex;
+    this.write(state);
   }
 
   /**
