@@ -277,11 +277,11 @@ function messageForRejection(
 ): string {
   switch (result.kind) {
     case 'too-short':
-      return 'Too short. Words need three letters or more.';
+      return 'Three letters or more.';
     case 'not-a-word':
-      return 'Not in the word list. Try another.';
+      return 'Not in the word list.';
     case 'already-found':
-      return 'Already found. Keep going.';
+      return 'Already found.';
   }
 }
 
@@ -739,7 +739,12 @@ export function useGame(
     addLetter,
     removeLast: useCallback(() => dispatch({ type: 'REMOVE_LAST' }), []),
     clear: useCallback(() => dispatch({ type: 'CLEAR' }), []),
-    shuffle: useCallback(() => dispatch({ type: 'SHUFFLE' }), []),
+    // Every press makes its sound, even one the guard redraws, so a redraw
+    // sounds like any other shuffle and gives nothing away
+    shuffle: useCallback(() => {
+      dispatch({ type: 'SHUFFLE' });
+      audio.playShuffle();
+    }, [audio]),
     submit,
     setMode,
     newEndless,

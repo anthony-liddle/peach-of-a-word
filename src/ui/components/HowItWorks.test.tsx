@@ -285,16 +285,36 @@ describe('How the Words Work explains the current model', () => {
   it('keeps the paragraph on a common-feeling word landing outside the set', () => {
     renderGame();
     openPopup();
-    expect(body()).toMatch(/common here is a statistical line/i);
-    expect(body()).toMatch(/It simply was not on today's short list\./);
+    // A word a player uses can miss the basket, and it still counted.
+    expect(body()).toMatch(/can still land outside the (basket|set)/i);
+    expect(body()).toMatch(/You still found a real word\./);
   });
 
-  it('still grades the off-page finds and calls them extra, not lesser', () => {
+  it('still grades the off-page finds, and says every one of them scores', () => {
     renderGame();
     openPopup();
     expect(body()).toMatch(/Uncommon/);
     expect(body()).toMatch(/Rare/);
     expect(body()).toMatch(/Mythic/);
-    expect(body()).toMatch(/not lesser, they are\s+extra/i);
+    // "They are not lesser, they are extra" until November 2026, when
+    // Antoine's pass kept the claim in three words.
+    expect(body()).toMatch(/They all score\./);
+  });
+
+  // The theme's own noun, as everything else says it. The panel said "set" in
+  // both themes until November 2026.
+  it('says basket in cute', () => {
+    renderGame();
+    openPopup();
+    expect(body()).toMatch(/full basket/);
+    expect(body()).not.toMatch(/\bset\b/);
+  });
+
+  it('says set in letterpress', () => {
+    document.documentElement.dataset.theme = 'letterpress';
+    renderGame();
+    openPopup();
+    expect(body()).toMatch(/full set/);
+    expect(body()).not.toMatch(/basket/);
   });
 });

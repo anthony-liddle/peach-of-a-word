@@ -165,7 +165,7 @@ describe('Game', () => {
     // sentence can be reworded without the claim going unchecked.
     expect(footer.textContent).toMatch(/ENABLE/);
     expect(footer.textContent).toMatch(/SCOWL/);
-    expect(footer.textContent).toMatch(/patch layer/i);
+    expect(footer.textContent).toMatch(/patch list/i);
     expect(footer.textContent).toMatch(/Wiktionary, CC BY-SA 4\.0/i);
   });
 
@@ -181,7 +181,7 @@ describe('Game', () => {
     expect(text).not.toMatch(/ENABLE and SCOWL,\s*public domain/i);
     expect(text).toMatch(/SCOWL[^.]*Atkinson/i);
     // ENABLE keeps the licence it actually has.
-    expect(text).toMatch(/ENABLE,\s*public domain/i);
+    expect(text).toMatch(/ENABLE,\s*in the public domain/i);
   });
 
   it('says the Wiktionary text was adapted, and that some is ours', () => {
@@ -516,11 +516,12 @@ describe('Game', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
     expect(document.documentElement.dataset.theme).toBe('cute');
     expect(localStorage.getItem('e8-theme')).toBe('cute');
-    // Cute credits the typefaces in its own verb: it writes, it does not set.
+    // Each theme names its own typefaces, in one verb since November 2026.
     const colophon = () =>
       (document.querySelector('.colophon') as HTMLElement).textContent ?? '';
     expect(colophon()).toContain(copy('cute').typeCredit);
-    expect(colophon()).not.toMatch(/Set in Fredoka/i);
+    expect(colophon()).toMatch(/Fredoka and Nunito/);
+    expect(colophon()).not.toMatch(/Fraunces/);
 
     fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
     expect(document.documentElement.dataset.theme).toBe('letterpress');
@@ -566,7 +567,9 @@ describe('Game', () => {
   it('lists the source word in the glossary legend', () => {
     renderGame();
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).getByText('source word')).toBeInTheDocument();
+    expect(
+      within(glossary).getByText('the peach of a word'),
+    ).toBeInTheDocument();
   });
 
   it('shows no storage warning when persistence works', () => {
@@ -699,7 +702,7 @@ describe('Game edition complete', () => {
     expect(within(glossary).getByText('sane', GRID)).toBeInTheDocument();
 
     // Dismiss, and it does not return (fires once).
-    fireEvent.click(screen.getByRole('button', { name: /keep going/i }));
+    fireEvent.click(screen.getByRole('button', { name: /keep playing/i }));
     expect(editionCard()).not.toBeInTheDocument();
     findWord('sneer'); // another non-set find
     expect(editionCard()).not.toBeInTheDocument();
@@ -761,7 +764,7 @@ describe('Game edition complete', () => {
     completeTheSet();
 
     // Dismiss the in-the-moment celebration card.
-    fireEvent.click(screen.getByRole('button', { name: /keep going/i }));
+    fireEvent.click(screen.getByRole('button', { name: /keep playing/i }));
     expect(editionCard()).not.toBeInTheDocument();
 
     // The persistent Share is still in the glossary, the durable path home.
@@ -794,7 +797,7 @@ describe('Game edition complete', () => {
 
     // Dismissing the in-the-moment card hands her to the durable Share: it is
     // scrolled into view and focused, so it never feels gone with the popup.
-    fireEvent.click(screen.getByRole('button', { name: /keep going/i }));
+    fireEvent.click(screen.getByRole('button', { name: /keep playing/i }));
 
     const glossary = screen.getByRole('region', { name: /words found/i });
     const share = within(glossary).getByRole('button', { name: /share/i });
@@ -1199,7 +1202,7 @@ describe('Game source-word celebration', () => {
     document.documentElement.dataset.theme = 'letterpress';
     renderGame();
     findSource();
-    expect(message().textContent).toBe('You found the source word.');
+    expect(message().textContent).toBe('You found the peach of a word.');
   });
 
   it('re-skins on a live theme switch, like the rank label', () => {
@@ -1207,13 +1210,13 @@ describe('Game source-word celebration', () => {
     renderGame();
     findSource();
     dismissReveal();
-    expect(message().textContent).toBe('You found the source word.');
+    expect(message().textContent).toBe('You found the peach of a word.');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
     expect(message().textContent).toBe('You found the Peach of a Word!');
 
     fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
-    expect(message().textContent).toBe('You found the source word.');
+    expect(message().textContent).toBe('You found the peach of a word.');
   });
 
   it('re-skins the whole board live, with nothing frozen from before the switch', () => {
@@ -1261,7 +1264,7 @@ describe('Game source-word celebration', () => {
     renderGame();
     findSource();
     expect(screen.getByRole('status').textContent).toMatch(
-      /source word found: serenade\./i,
+      /You found the peach of a word: serenade\./,
     );
   });
 
@@ -1279,7 +1282,7 @@ describe('Game source-word celebration', () => {
     expect(screen.getByRole('status').textContent).toBe(spoken);
     // The visible line is a label, not an event, so it re-skins in that same
     // beat. The two live regions of this change move independently on purpose.
-    expect(message().textContent).toBe('You found the source word.');
+    expect(message().textContent).toBe('You found the peach of a word.');
   });
 
   it('speaks the next real find, so the region is held still and not stuck', () => {
@@ -1681,13 +1684,13 @@ describe('Game word tap routing', () => {
     });
     fireEvent.click(
       within(panel).getByRole('button', {
-        name: /^sane,.*show definition/i,
+        name: /^sane,/i,
       }),
     );
 
     expect(
       await screen.findByText(
-        'No definition on hand for this one. It is still a real word you found.',
+        'No definition on hand for this one. It still counts.',
       ),
     ).toBeInTheDocument();
     expect(document.querySelector('.reveal--quiet')).not.toBeNull();
@@ -1705,7 +1708,7 @@ describe('Game word tap routing', () => {
     fireEvent.click(findWordButton('near'));
     expect(
       await screen.findByText(
-        'No definition on hand for this one. It is still a real word you found.',
+        'No definition on hand for this one. It still counts.',
       ),
     ).toBeInTheDocument();
   });

@@ -7,7 +7,7 @@
  */
 
 /** Shown after a successful copy. Approved copy, used as written. */
-export const COPY_CONFIRMATION = 'Copied. Paste it wherever your people are.';
+export const COPY_CONFIRMATION = 'Copied. Paste it anywhere.';
 
 /** How the block reached the player, so the caller can confirm a copy. */
 export type ShareOutcome =

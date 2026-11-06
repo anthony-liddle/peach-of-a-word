@@ -19,8 +19,10 @@ export interface AudioEngine {
   playEdition(): void;
   /** A rejected guess. Gentle, never harsh. */
   playInvalid(): void;
-  /** A small click for setting a tile. */
+  /** A tile set down: a small click as a letter is placed. */
   tick(): void;
+  /** Shuffle pressed: a few tiles knocking together, softly. */
+  playShuffle(): void;
   /** Mute or unmute all cues. */
   setMuted(muted: boolean): void;
   readonly muted: boolean;
@@ -40,6 +42,7 @@ export class NullAudioEngine implements AudioEngine {
   playEdition(): void {}
   playInvalid(): void {}
   tick(): void {}
+  playShuffle(): void {}
   setMuted(muted: boolean): void {
     this.muted = muted;
   }

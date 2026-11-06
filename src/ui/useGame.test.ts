@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useGame } from './useGame.ts';
 import { dayIndex, STORAGE_EPOCH } from '@/engine/index.ts';
@@ -39,6 +39,46 @@ function dataAnchoredAt(epoch: {
     sourceEntry: () => undefined,
   };
 }
+
+describe('the sound a press makes', () => {
+  it('Shuffle plays its cue, once a press, and sets no tile', () => {
+    const audio = new NullAudioEngine();
+    const shuffle = vi.spyOn(audio, 'playShuffle');
+    const tick = vi.spyOn(audio, 'tick');
+    const { result } = renderHook(() =>
+      useGame(
+        dataAnchoredAt({ year: 2026, month: 6, day: 23 }),
+        audio,
+        new GameStorage(capturingStore().store),
+      ),
+    );
+    act(() => result.current.shuffle());
+    expect(shuffle).toHaveBeenCalledTimes(1);
+    act(() => {
+      result.current.shuffle();
+      result.current.shuffle();
+    });
+    expect(shuffle).toHaveBeenCalledTimes(3);
+    expect(tick).not.toHaveBeenCalled();
+  });
+
+  it('a tile set plays the tick, and no Shuffle', () => {
+    const audio = new NullAudioEngine();
+    const shuffle = vi.spyOn(audio, 'playShuffle');
+    const tick = vi.spyOn(audio, 'tick');
+    const { result } = renderHook(() =>
+      useGame(
+        dataAnchoredAt({ year: 2026, month: 6, day: 23 }),
+        audio,
+        new GameStorage(capturingStore().store),
+      ),
+    );
+    act(() => result.current.addTile(0));
+    act(() => result.current.addLetter('e'));
+    expect(tick).toHaveBeenCalledTimes(2);
+    expect(shuffle).not.toHaveBeenCalled();
+  });
+});
 
 describe('useGame daily day-key', () => {
   it('persists day progress under the fixed STORAGE_EPOCH, not the calendar epoch', () => {

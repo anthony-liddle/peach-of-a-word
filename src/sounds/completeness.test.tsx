@@ -12,6 +12,7 @@ import {
   type Call,
 } from '@/testing/engineSweep.ts';
 import { SoundsPage } from './SoundsPage.tsx';
+import { NEW_WITH_SOUNDSCAPE } from '@/audio/departures.ts';
 
 /**
  * The page is complete: every sound the engine can make has a button, and so
@@ -162,14 +163,27 @@ describe('the sounds page is complete', () => {
   test('every sound has a Soundscape cue, which its button plays, and every cue is reachable', () => {
     const { presses } = pressEverything();
     const sounding = presses.filter((p) => p.sound !== undefined);
-    expect(sounding).toHaveLength(ENGINE.size);
+    // The old engine's sounds, and those new with Soundscape
+    const all = ENGINE.size + NEW_WITH_SOUNDSCAPE.length;
+    expect(sounding).toHaveLength(all);
     for (const press of sounding) {
       expect(press.cues, press.label).toEqual([press.sound]);
     }
     expect(new Set(sounding.flatMap((p) => p.cues))).toEqual(
       new Set(CUE_NAMES),
     );
-    expect(CUE_NAMES).toHaveLength(ENGINE.size);
+    expect(CUE_NAMES).toHaveLength(all);
+  });
+
+  test('Shuffle, new with Soundscape, has its button, which plays its cue and nothing on the old engine', () => {
+    expect(NEW_WITH_SOUNDSCAPE).toEqual(['shuffle']);
+    const { presses } = pressEverything();
+    const shuffle = presses.filter((p) => p.sound === 'shuffle');
+    expect(shuffle).toHaveLength(1);
+    expect(shuffle[0]!.label).toBe('Shuffle');
+    expect(shuffle[0]!.cues).toEqual(['shuffle']);
+    expect(shuffle[0]!.calls.map((c) => c.method)).toEqual(['playShuffle']);
+    expect(shuffle[0]!.signature, 'the old engine played a note').toBe('');
   });
 
   test('each found button names the length and rung it plays, and the theme where the engine hears it', () => {

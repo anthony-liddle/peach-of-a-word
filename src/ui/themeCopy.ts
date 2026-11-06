@@ -45,7 +45,7 @@ export const CROWN_NAMES: Record<Theme, string> = {
  * ladder and the crown, so a theme switch re-skins the line live.
  */
 export const SOURCE_FOUND_MESSAGES: Record<Theme, string> = {
-  letterpress: 'You found the source word.',
+  letterpress: 'You found the peach of a word.',
   cute: 'You found the Peach of a Word!',
 };
 
@@ -55,7 +55,7 @@ export const SOURCE_FOUND_MESSAGES: Record<Theme, string> = {
  * full stop because the live region appends the rank and completion cues to it.
  */
 const SOURCE_FOUND_ANNOUNCEMENTS: Record<Theme, (word: string) => string> = {
-  letterpress: (word) => `Source word found: ${word}.`,
+  letterpress: (word) => `You found the peach of a word: ${word}.`,
   cute: (word) => `You found the Peach of a Word: ${word}.`,
 };
 
@@ -148,6 +148,8 @@ export interface ThemeCopy {
   readonly offPageLabel: string;
   /** Key entry for the on-page mark. */
   readonly keyOnPage: string;
+  /** The day's set, named: the explainer's word for it. */
+  readonly container: string;
   /** Shown in place of the next rank once the ladder is topped out. */
   readonly ladderPeak: string;
   /** Footer type credit. The typefaces differ per theme as well as the verb. */
@@ -170,7 +172,8 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     onPageLabel: 'Set',
     offPageLabel: 'Off-page',
     keyOnPage: 'in the set',
-    ladderPeak: 'Top rank. The full set is the peak.',
+    container: 'set',
+    ladderPeak: 'Top rung',
     typeCredit: 'Set in Fraunces and Spectral.',
     completionLine: 'Every common word the rack can spell, found.',
   },
@@ -189,8 +192,9 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     // in the pass, and the one most worth a second opinion.
     offPageLabel: 'Wild',
     keyOnPage: `in the ${BASKET}`,
-    ladderPeak: `Top rank. The full ${BASKET} is the peak.`,
-    typeCredit: 'Written in Fredoka and Nunito.',
+    container: BASKET,
+    ladderPeak: 'Top rung',
+    typeCredit: 'Set in Fredoka and Nunito.',
     completionLine: 'Every common word these letters can grow, picked.',
   },
 };

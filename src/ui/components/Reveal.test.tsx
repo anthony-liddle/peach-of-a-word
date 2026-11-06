@@ -160,9 +160,7 @@ describe('Reveal quiet register', () => {
       />,
     );
     expect(
-      screen.getByText(
-        'No definition on hand for this one. It is still a real word you found.',
-      ),
+      screen.getByText('No definition on hand for this one. It still counts.'),
     ).toBeInTheDocument();
   });
 
@@ -295,6 +293,34 @@ describe('a card credits its own definition, not every definition', () => {
     );
     expect(screen.queryByText(/Wiktionary/)).toBeNull();
     expect(screen.getByText('Written for this game.')).toBeTruthy();
+  });
+
+  /**
+   * The credit sits under what it credits, as the iPhone's does. "Looking it
+   * up." and "No definition on hand" have nothing to credit, and both carried
+   * "Definition from Wiktionary" until November 2026. Shown red first.
+   */
+  it('credits nothing while it looks the word up, or when it has no definition', () => {
+    const card = (status: 'loading' | 'ready') => (
+      <Reveal
+        register="quiet"
+        theme="letterpress"
+        word="denote"
+        category="set"
+        status={status}
+        definition={null}
+        onClose={() => {}}
+      />
+    );
+    const { rerender } = render(card('loading'));
+    expect(screen.getByText('Looking it up.')).toBeTruthy();
+    expect(screen.queryByText(/Wiktionary|Written for this game/)).toBeNull();
+
+    rerender(card('ready'));
+    expect(
+      screen.getByText('No definition on hand for this one. It still counts.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Wiktionary|Written for this game/)).toBeNull();
   });
 
   it("a Wiktionary word's card still does", () => {

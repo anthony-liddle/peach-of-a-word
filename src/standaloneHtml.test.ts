@@ -173,6 +173,20 @@ describe('privacy.html', () => {
     expect(visit('/privacy?from=elsewhere')).toBeVisible();
     expect(visit('/privacy#from=app')).toBeVisible();
   });
+
+  /**
+   * The app reaches the web only when tapped, three ways: the explainer's two
+   * links, and Settings' privacy row, which opens this page. The policy named
+   * only the first two until 5 November 2026.
+   */
+  test('names every way from the app to the web', () => {
+    const text = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.textContent!.replace(/\s+/g, ' ');
+    expect(text).toContain('"How the words work" has two links');
+    expect(text).toContain('"Privacy policy", in the app\'s Settings');
+    expect(text).toContain('?from=app');
+  });
 });
 
 /**

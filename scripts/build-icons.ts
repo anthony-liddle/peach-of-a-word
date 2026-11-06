@@ -57,7 +57,7 @@ const CUTE = {
 const SITE_NAME = 'Peach of a Word';
 const SHORT_NAME = 'Peach';
 const DESCRIPTION =
-  'Make words from eight scrambled letters, then find the source word they all came from. A new puzzle daily.';
+  'Make words from eight scrambled letters, then find the long word they all came from. A new puzzle daily.';
 const OG_ALT =
   'The wordmark Peach of a Word in the cute theme: a smiling cartoon peach above the name in rounded type, over a row of soft letter tiles, one in peach.';
 

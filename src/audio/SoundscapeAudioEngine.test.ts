@@ -156,6 +156,16 @@ describe('the cue each call plays', () => {
     }
   });
 
+  test('Shuffle plays the shuffle cue, and nothing while muted', () => {
+    installFakeAudio();
+    const engine = new SoundscapeAudioEngine();
+    engine.playShuffle();
+    expect(played()).toEqual(['playCue shuffle']);
+    engine.setMuted(true);
+    engine.playShuffle();
+    expect(played()).toEqual(['playCue shuffle']);
+  });
+
   test('a length outside 3 to 8 plays the nearest found note, as before', () => {
     installFakeAudio();
     const engine = new SoundscapeAudioEngine();

@@ -384,8 +384,8 @@ function Toolbar({ game }: { game: GameApi }) {
           <button
             className="iconbtn iconbtn--crown"
             onClick={game.openReveal}
-            aria-label="Show the source word reveal"
-            title="The source word"
+            aria-label="Open the peach of a word's card"
+            title="The peach of a word"
           >
             ✦
           </button>
@@ -489,10 +489,9 @@ function Colophon({
   const [theme] = useTheme();
   return (
     <footer className="colophon">
-      Validation by ENABLE, public domain, and SCOWL, under Kevin Atkinson's
-      permissive notice, with a curated patch layer. Common words from SCOWL.
-      Etymologies, and most definitions, adapted from Wiktionary, CC BY-SA 4.0.
-      A few definitions were written for this game.
+      Words from ENABLE, in the public domain, and SCOWL, by Kevin Atkinson,
+      with my own patch list. Etymologies and most definitions adapted from
+      Wiktionary, CC BY-SA 4.0. A few definitions were written for this game.
       <br />
       {copy(theme).typeCredit}
       <br />

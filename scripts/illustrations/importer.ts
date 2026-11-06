@@ -11,6 +11,7 @@
  * runs the guards.
  */
 import { PEACH_OUTLINE, type CostumePart } from '@/ui/costumes.ts';
+import { CROWN, crownBox } from '@/ui/crown.ts';
 import { PEACH_BODY, PEACH_FACE } from '@/ui/peachArt.ts';
 import { PEACH_LABELS } from './labels.ts';
 import {
@@ -24,6 +25,7 @@ import {
   parsePath,
   parseTransform,
   PathError,
+  pointsOf,
   polyPath,
   rectPath,
   strokeScale,
@@ -42,6 +44,11 @@ export interface FilePart {
   /** The object's id, to name it when it has no label. */
   id: string;
   part: CostumePart;
+  /**
+   * Its outline in the page's units, at full precision. `part.d` is rounded
+   * to one decimal; the crown's stretch is undone from this before it is.
+   */
+  segs: Seg[];
 }
 
 /** What a file holds, before it is compared with any table. */
@@ -201,7 +208,7 @@ function readPart(
   m: Matrix,
   problems: string[],
   notes: string[],
-): CostumePart | null {
+): { part: CostumePart; segs: Seg[] } | null {
   const label = el.getAttribute('inkscape:label') ?? el.id;
   const name = `"${label}"`;
   const before = problems.length;
@@ -270,10 +277,15 @@ function readPart(
 
   opacity = Number(opacity.toFixed(2));
   return {
-    d: formatPath(segs),
-    ...(fill ? { fill } : {}),
-    ...(opacity !== 1 ? { opacity } : {}),
-    ...(stroke ? { stroke, strokeWidth: Number(strokeWidth!.toFixed(2)) } : {}),
+    part: {
+      d: formatPath(segs),
+      ...(fill ? { fill } : {}),
+      ...(opacity !== 1 ? { opacity } : {}),
+      ...(stroke
+        ? { stroke, strokeWidth: Number(strokeWidth!.toFixed(2)) }
+        : {}),
+    },
+    segs,
   };
 }
 
@@ -284,7 +296,7 @@ function referenceLines(layer: XmlEl, m: Matrix): string[] {
     .filter((el) => el.localName !== 'title' && el.localName !== 'desc')
     .map((el) => {
       const label = el.getAttribute('inkscape:label') ?? el.id;
-      const p = readPart(el, m, problems, []);
+      const p = readPart(el, m, problems, [])?.part;
       return p
         ? `${label}|${p.d}|${p.fill ?? ''}|${p.opacity ?? ''}|${p.stroke ?? ''}|${p.strokeWidth ?? ''}`
         : `${label}|?`;
@@ -378,18 +390,20 @@ export function readFile(svg: string): FileRead {
         out.problems.push(`"${childLabel}" is ${reason ?? UNREADABLE.g}`);
         continue;
       }
-      const part = readPart(
+      const read = readPart(
         child,
         multiply(IDENTITY, m),
         out.problems,
         out.notes,
       );
-      if (!part) continue;
+      if (!read) continue;
+      const { part, segs } = read;
       const faceOnly = childLabel.endsWith(FACE_ONLY);
       out.parts.push({
         label: faceOnly ? childLabel.slice(0, -FACE_ONLY.length) : childLabel,
         id: child.id,
         part: faceOnly ? { ...part, faceOnly: true } : part,
+        segs,
       });
     }
   }
@@ -426,6 +440,40 @@ export const PEACH_FOLLOWED: ReadonlyMap<string, string> = new Map(
 );
 
 /**
+ * An edit to a locked layer, which never comes back: a problem, or with
+ * `allowReferenceChanges` a note. The costumes', the peach's and the crown's.
+ */
+function lockedLayers(
+  file: FileRead,
+  expected: FileRead,
+  flags: Flags,
+  out: { notes: string[]; problems: string[] },
+): void {
+  for (const [layer, lines] of expected.references) {
+    const now = file.references.get(layer) ?? [];
+    const said: string[] = [];
+    const name = (l: string) => `"${l.split('|')[0]}"`;
+    const was = new Map(lines.map((l) => [l.split('|')[0]!, l]));
+    const is = new Map(now.map((l) => [l.split('|')[0]!, l]));
+    for (const [label, line] of was) {
+      if (!is.has(label)) said.push(`${name(line)} was deleted`);
+      else if (is.get(label) !== line) said.push(`${name(line)} was changed`);
+    }
+    for (const [label, line] of is)
+      if (!was.has(label)) said.push(`${name(line)} was added`);
+    if (!file.references.has(layer)) said.push('the layer was deleted');
+    if (said.length) {
+      const msg = `the locked layer "${layer}" was edited (${said.join('; ')}). It never comes back, so the apps would still draw it as it was`;
+      if (flags.allowReferenceChanges) out.notes.push(msg);
+      else
+        out.problems.push(
+          `${msg}. To go on without it, pass --allow-reference-changes`,
+        );
+    }
+  }
+}
+
+/**
  * A drawing's way back: the file's parts matched to the table's by label, in
  * the file's order (answer 2), one decimal (answer 7). A part whose outline
  * reads the same keeps the table's own text, so an untouched file changes
@@ -452,29 +500,7 @@ export function plan(
     problems: [...file.problems],
   };
   if (file.unreadable) return out;
-
-  for (const [layer, lines] of expected.references) {
-    const now = file.references.get(layer) ?? [];
-    const said: string[] = [];
-    const name = (l: string) => `"${l.split('|')[0]}"`;
-    const was = new Map(lines.map((l) => [l.split('|')[0]!, l]));
-    const is = new Map(now.map((l) => [l.split('|')[0]!, l]));
-    for (const [label, line] of was) {
-      if (!is.has(label)) said.push(`${name(line)} was deleted`);
-      else if (is.get(label) !== line) said.push(`${name(line)} was changed`);
-    }
-    for (const [label, line] of is)
-      if (!was.has(label)) said.push(`${name(line)} was added`);
-    if (!file.references.has(layer)) said.push('the layer was deleted');
-    if (said.length) {
-      const msg = `the locked layer "${layer}" was edited (${said.join('; ')}). It never comes back, so the apps would still draw it as it was`;
-      if (flags.allowReferenceChanges) out.notes.push(msg);
-      else
-        out.problems.push(
-          `${msg}. To go on without it, pass --allow-reference-changes`,
-        );
-    }
-  }
+  lockedLayers(file, expected, flags, out);
 
   const seen = new Map<string, number>();
   for (const fp of file.parts)
@@ -661,4 +687,116 @@ export function sameDrawing(a: string, b: string): boolean {
   for (const [id, lines] of x)
     if (lines.join('\n') !== (y.get(id) ?? []).join('\n')) return false;
   return true;
+}
+
+// MARK: - The crown
+
+/** The completion card's crown's way back: its new outline, and what changed. */
+export interface CrownPlan {
+  /** The outline to write, in the crown's own box: the code's own when unchanged. */
+  d: string;
+  /** In words. Empty when nothing changed. */
+  changes: string[];
+  notes: string[];
+  problems: string[];
+}
+
+/**
+ * The completion card's crown, read back from its file (answer 8). The file
+ * draws it in the peach's box, as it looks on the card. The code keeps it in
+ * its own 100 by 100 box, stretched to the phone's 46 by 26 points over a
+ * 112-point peach: `crownBox()`, which stays where it is.
+ *
+ * **The stretch is undone at full precision, and only then rounded,** at one
+ * decimal in the crown's own box. Rounded in the peach's units first, it is
+ * stretched again by about 2.4 across and 4.3 down, so an untouched crown
+ * would come back moved by up to a fifth of a unit. An outline that reads the
+ * same keeps the code's own text, so an untouched file writes nothing.
+ *
+ * **Its colour stays the theme's.** The card fills the crown with the cute
+ * theme's peach, `--crown` and `Cute.crown`, so a colour, an opacity or a
+ * stroke in the file stops the import rather than coming back. Nor can the
+ * crown gain or lose a part: it is one shape. It may take curves, which both
+ * apps draw.
+ */
+export function crownPlan(
+  file: FileRead,
+  expected: FileRead,
+  crown: { d: string; fill: string } = CROWN,
+  flags: Flags = {},
+): CrownPlan {
+  const out: CrownPlan = {
+    d: crown.d,
+    changes: [],
+    notes: [...file.notes],
+    problems: [...file.problems],
+  };
+  if (file.unreadable) return out;
+  lockedLayers(file, expected, flags, out);
+
+  const parts = file.parts;
+  if (parts.length !== 1 || parts[0]!.label !== 'crown') {
+    out.problems.push(
+      parts.length
+        ? `the crown is one shape, labelled "crown", and the file has ${parts
+            .map((fp) => `"${fp.label}"`)
+            .join(', ')}: ` +
+            'combine them into one path (Path > Combine), and give it that label'
+        : 'the crown has no object in the file: it can be reshaped, not deleted',
+    );
+    out.changes = [];
+    return out;
+  }
+  const { part, segs } = parts[0]!;
+  const was: CostumePart = { d: crown.d, fill: crown.fill };
+  if (paint(part) !== paint(was) || part.faceOnly)
+    out.problems.push(
+      `the crown's paint is now ${paint(part)}${part.faceOnly ? ', face only' : ''}, but only its outline comes back. ` +
+        "Its colour is the cute theme's peach, --crown in src/index.css and Cute.crown on the " +
+        'iPhone, with CROWN.fill: change the colour there, and keep the file at ' +
+        `${paint(was)}`,
+    );
+
+  // From the peach's units back to the crown's own box.
+  const box = crownBox();
+  const own = transformPath(segs, [
+    100 / box.width,
+    0,
+    0,
+    100 / box.height,
+    (-box.x * 100) / box.width,
+    (-box.y * 100) / box.height,
+  ]);
+  const d = formatPath(own);
+
+  // The card's room: inside the peach's width, and no higher above the
+  // peach's box than the top of the crown's frame. crown.test.ts holds the
+  // written outline to the same, at the same rounding.
+  for (const [x, y] of pointsOf(parsePath(d))) {
+    const px = box.x + (x * box.width) / 100;
+    const py = box.y + (y * box.height) / 100;
+    if (px < 0 || px > 100)
+      out.problems.push(
+        `the crown reaches x ${fmt(px, 2)}, outside the peach's width, 0 to 100`,
+      );
+    if (py < box.y - 1e-9)
+      out.problems.push(
+        `the crown rises to y ${fmt(py, 2)}, above the top of its frame at ${fmt(box.y, 2)}: ` +
+          'the card has room for it 18 points above a 112-point peach, and no more',
+      );
+    if (py > 100)
+      out.problems.push(
+        `the crown reaches down to y ${fmt(py, 2)}, below the peach's box`,
+      );
+  }
+
+  if (!sameOutline(crown.d, d)) {
+    out.d = d;
+    out.changes.push(`"crown"'s outline changed: ${d}`);
+  }
+  if (out.problems.length) {
+    out.d = crown.d;
+    out.changes = [];
+  }
+  return out;
 }

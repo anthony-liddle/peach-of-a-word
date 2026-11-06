@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Decorations } from '@/ui/components/Decorations.tsx';
 import { FOUND_ROWS, SECTIONS, SOUNDS, type Sound } from './inventory.ts';
 import { lengthOf, type Pair } from './pair.ts';
+import { DEPARTURES } from '@/audio/departures.ts';
 
 /**
  * One button per sound the game makes, each playing that sound twice from the
@@ -20,6 +21,13 @@ const SAID: Record<Side, string> = {
   before: 'the game before Soundscape',
   soundscape: 'Soundscape',
 };
+/** A day as the page says it: 5 November 2026. */
+const ON = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
 /** The pause between the two, after the first has finished. */
 const GAP_S = 0.4;
 
@@ -87,7 +95,8 @@ export function SoundsPage({
           Every <em>sound</em>
         </h1>
         <p className="masthead__rule">
-          {SOUNDS.length} sounds, each as it was, then on Soundscape
+          {SOUNDS.length} sounds, as the game played them before Soundscape,
+          then as it plays them now
         </p>
       </header>
 
@@ -141,6 +150,19 @@ export function SoundsPage({
           <p className="sounds__call">
             <code>{section.call}</code>
           </p>
+          {section.sounds
+            .filter((sound) => DEPARTURES[sound.id])
+            .map((sound) => {
+              const { is, was } = DEPARTURES[sound.id]!;
+              const chosen = ON.format(new Date(DEPARTURES[sound.id]!.chosen));
+              return (
+                <p key={sound.id} className="sounds__note sounds__departure">
+                  {was === null
+                    ? `New with Soundscape, chosen on ${chosen}. ${is} The game made no sound for it before, so a tap here plays silence, then the cue.`
+                    : `Changed on ${chosen}. ${is} Before, it was ${was} So a tap here plays two different sounds, on purpose.`}
+                </p>
+              );
+            })}
           {section.cue === 'playFound' ? (
             <>
               <p className="sounds__note">

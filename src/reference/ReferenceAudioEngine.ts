@@ -213,4 +213,11 @@ export class ReferenceAudioEngine implements AudioEngine {
     if (!this.ensureContext()) return;
     this.note(880, 0, 0.03, 'square', 0.12);
   }
+
+  /**
+   * Before Soundscape, Shuffle made no sound. This records that: it makes no
+   * context and schedules nothing. Shuffle's sound is new with Soundscape, and
+   * held to its own numbers instead (src/audio/departures.ts).
+   */
+  playShuffle(): void {}
 }

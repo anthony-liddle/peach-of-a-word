@@ -45,7 +45,7 @@ export function EditionCard({ theme, costume = null, onClose }: Props) {
       <h2 className="edition__title">{crown}</h2>
       <p className="edition__line">{copy(theme).completionLine}</p>
       <button className="edition__close" onClick={onClose}>
-        Keep going
+        Keep playing
       </button>
     </div>
   );

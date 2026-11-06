@@ -20,7 +20,7 @@ const OLD_NAME = '8 Letters in Search of a Word';
 // carries the pitch, not the name. This copy is duplicated across the three
 // description tags and the generated manifest, so pin it in one place here.
 const DESCRIPTION =
-  'Make words from eight scrambled letters, then find the source word they all came from. A new puzzle daily.';
+  'Make words from eight scrambled letters, then find the long word they all came from. A new puzzle daily.';
 
 describe('index.html', () => {
   test('the retired name appears nowhere', () => {

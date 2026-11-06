@@ -31,7 +31,7 @@ export function TypeCase({
             className="sort"
             disabled={used}
             onClick={() => game.addTile(id)}
-            aria-label={`Letter ${tile.letter}${used ? ', already set' : ''}`}
+            aria-label={`Letter ${tile.letter}${used ? ', already in the word' : ''}`}
           >
             {tile.letter}
           </button>

@@ -31,8 +31,7 @@ type RevealProps = {
     }
 );
 
-const NO_DEFINITION =
-  'No definition on hand for this one. It is still a real word you found.';
+const NO_DEFINITION = 'No definition on hand for this one. It still counts.';
 
 export function Reveal(props: RevealProps) {
   const { onClose, returnFocusTo } = props;
@@ -146,17 +145,23 @@ export function Reveal(props: RevealProps) {
           </div>
         )}
 
-        <p className="reveal__attribution">
-          {creditFor({
-            word: props.word,
-            register: props.register,
-            // Only a crown carries an entry, and only an entry can carry an
-            // etymology. Eleven crowns have none, and a card that is not
-            // showing one must not credit one.
-            hasEtymology:
-              props.register === 'crown' && Boolean(props.entry?.etymology),
-          })}
-        </p>
+        {/* The credit sits under what it credits, as the iPhone's does, so
+            "Looking it up." and a card with no definition carry none. */}
+        {(props.register === 'crown'
+          ? Boolean(props.entry?.definition || props.entry?.etymology)
+          : props.status === 'ready' && props.definition !== null) && (
+          <p className="reveal__attribution">
+            {creditFor({
+              word: props.word,
+              register: props.register,
+              // Only a crown carries an entry, and only an entry can carry an
+              // etymology. Eleven crowns have none, and a card that is not
+              // showing one must not credit one.
+              hasEtymology:
+                props.register === 'crown' && Boolean(props.entry?.etymology),
+            })}
+          </p>
+        )}
         {/* The way out, pinned to the card's foot as the iPhone pins it
             (CardWayOut): the text scrolls under it, so the button is on screen
             when the card opens, at any length and any text size. Only the
