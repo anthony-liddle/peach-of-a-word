@@ -70,3 +70,41 @@
 .sounds__played .sounds__note {
   margin: 0;
 }
+
+/* A mix's numbers, folded away under its button so the row reads as three
+   choices first. The table fits a phone's width by wrapping its last column,
+   never by scrolling sideways. */
+.sounds__numbers {
+  margin-top: 0.6rem;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+
+.sounds__numbers summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.sounds__table {
+  width: 100%;
+  max-width: 40rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.sounds__table th,
+.sounds__table td {
+  padding: 0.3rem 0.4rem 0.3rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.sounds__table thead th {
+  font-weight: 600;
+}
+
+.sounds__table tbody th {
+  font-weight: 400;
+}

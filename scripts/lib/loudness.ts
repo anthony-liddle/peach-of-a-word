@@ -45,18 +45,20 @@ function biquad(
   return y;
 }
 
+/** BS.1770's short-term window, in seconds. */
+export const SHORT_TERM_S = 3;
+
 /**
- * The loudest momentary loudness of a mono render at 48 kHz, in LUFS: the
- * K-weighted mean square over any 400 ms, as -0.691 + 10 log10 of it. A full
- * scale 997 Hz sine reads -3.01. Silence reads -Infinity.
+ * The loudest K-weighted mean square of a mono render at 48 kHz over any
+ * `windowS`, in LUFS, as -0.691 + 10 log10 of it. Silence reads -Infinity.
  */
-export function momentaryLoudness(x: Float32Array, sampleRate: number): number {
+function loudest(x: Float32Array, sampleRate: number, windowS: number): number {
   if (sampleRate !== LOUDNESS_RATE) {
     throw new Error(
       `K-weighting is written for ${LOUDNESS_RATE} Hz, not ${sampleRate}`,
     );
   }
-  const window = Math.round(MOMENTARY_S * sampleRate);
+  const window = Math.round(windowS * sampleRate);
   // Padded with a window of silence either side, so a sound at the very start
   // or end of the render is still seen whole, and the filters ring out.
   const padded = new Float64Array(x.length + 2 * window);
@@ -70,6 +72,75 @@ export function momentaryLoudness(x: Float32Array, sampleRate: number): number {
     if (sum > most) most = sum;
   }
   return -0.691 + 10 * Math.log10(most / window);
+}
+
+/**
+ * The loudest momentary loudness of a mono render at 48 kHz, in LUFS: the
+ * K-weighted mean square over any 400 ms. A full scale 997 Hz sine reads
+ * -3.01. Silence reads -Infinity.
+ */
+export function momentaryLoudness(x: Float32Array, sampleRate: number): number {
+  return loudest(x, sampleRate, MOMENTARY_S);
+}
+
+/**
+ * The loudest short-term loudness, the same over any 3 s. For a sound shorter
+ * than 400 ms it is always 8.75 dB under the momentary: the same energy, spread
+ * over a window 7.5 times as long.
+ */
+export function shortTermLoudness(x: Float32Array, sampleRate: number): number {
+  return loudest(x, sampleRate, SHORT_TERM_S);
+}
+
+/**
+ * BS.1770-4's true-peak interpolator, Annex 2: four phases of 12 taps, each a
+ * point a quarter of a sample further on.
+ */
+const TRUE_PEAK_PHASES = [
+  [
+    0.001708984375, 0.010986328125, -0.0196533203125, 0.033203125,
+    -0.0594482421875, 0.1373291015625, 0.97216796875, -0.102294921875,
+    0.047607421875, -0.026611328125, 0.014892578125, -0.00830078125,
+  ],
+  [
+    -0.0291748046875, 0.029296875, -0.0517578125, 0.089111328125,
+    -0.16650390625, 0.465087890625, 0.77978515625, -0.2003173828125, 0.1015625,
+    -0.0582275390625, 0.0330810546875, -0.0189208984375,
+  ],
+  [
+    -0.0189208984375, 0.0330810546875, -0.0582275390625, 0.1015625,
+    -0.2003173828125, 0.77978515625, 0.465087890625, -0.16650390625,
+    0.089111328125, -0.0517578125, 0.029296875, -0.0291748046875,
+  ],
+  [
+    -0.00830078125, 0.014892578125, -0.026611328125, 0.047607421875,
+    -0.102294921875, 0.97216796875, 0.1373291015625, -0.0594482421875,
+    0.033203125, -0.0196533203125, 0.010986328125, 0.001708984375,
+  ],
+] as const;
+
+/**
+ * The true peak of a render, in dBTP: the largest magnitude of its 4x
+ * interpolation by BS.1770-4's filter, or of the samples themselves, whichever
+ * is larger. Reads a steady sine up to 0.14 dB over its crest, as the
+ * standard's filter does. Silence reads -Infinity.
+ */
+export function truePeak(x: Float32Array): number {
+  const taps = TRUE_PEAK_PHASES[0].length;
+  let most = 0;
+  for (let i = 0; i < x.length; i++) most = Math.max(most, Math.abs(x[i]!));
+  // Every interpolated point from the first sample's influence to the last's
+  for (let n = 0; n < x.length + taps; n++) {
+    for (const phase of TRUE_PEAK_PHASES) {
+      let y = 0;
+      for (let k = 0; k < taps; k++) {
+        const i = n - k;
+        if (i >= 0 && i < x.length) y += phase[k]! * x[i]!;
+      }
+      most = Math.max(most, Math.abs(y));
+    }
+  }
+  return 20 * Math.log10(most);
 }
 
 /**

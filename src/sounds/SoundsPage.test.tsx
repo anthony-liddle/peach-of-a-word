@@ -4,6 +4,9 @@ import { NullAudioEngine, type AudioEngine } from '@/audio/AudioEngine.ts';
 import { SoundsPage } from './SoundsPage.tsx';
 import { SOUNDS } from './inventory.ts';
 import { lengthOf, type Pair } from './pair.ts';
+import { BALANCE_S, type MixPlayer } from './balance.ts';
+import { MIXES } from './mixes.ts';
+import { LEVELS } from './mixLevels.ts';
 
 beforeEach(() => {
   // The page's own document pins cute before the first paint.
@@ -205,5 +208,124 @@ describe('the sounds page', () => {
     expect(
       within(found).getByRole('heading', { name: 'Length 8, 783.99 Hz' }),
     ).toBeInTheDocument();
+  });
+});
+
+/** A balance player that records what it was asked, and how often it was made. */
+function recordingMixes() {
+  const log: string[] = [];
+  let made = 0;
+  const player: MixPlayer = {
+    play: (mix) => log.push(`play ${mix}`),
+    stop: () => log.push('stop'),
+  };
+  return {
+    log,
+    made: () => made,
+    mixes: () => {
+      made += 1;
+      return player;
+    },
+  };
+}
+
+const mixButtons = () =>
+  screen.getAllByRole('button').filter((b) => b.hasAttribute('data-mix'));
+
+describe('hear the balance', () => {
+  test('has one button per mix, named for it, in the order the mixes are listed', () => {
+    render(
+      <SoundsPage pair={recordingPair().pair} mixes={recordingMixes().mixes} />,
+    );
+    expect(mixButtons().map((b) => b.dataset.mix)).toEqual(
+      MIXES.map((m) => m.id),
+    );
+    expect(mixButtons().map((b) => b.textContent)).toEqual(
+      MIXES.map((m) => m.title),
+    );
+  });
+
+  test('makes nothing on load: the player comes with the first press', () => {
+    const rec = recordingMixes();
+    render(<SoundsPage pair={recordingPair().pair} mixes={rec.mixes} />);
+    expect(rec.made()).toBe(0);
+    fireEvent.click(mixButtons()[1]!);
+    fireEvent.click(mixButtons()[2]!);
+    expect(rec.made()).toBe(1);
+    expect(rec.log).toEqual(['play raised', 'play closer']);
+  });
+
+  test('says what is playing until the game rings out, then that nothing is', () => {
+    render(
+      <SoundsPage pair={recordingPair().pair} mixes={recordingMixes().mixes} />,
+    );
+    const section = screen.getByRole('region', { name: 'Hear the balance' });
+    fireEvent.click(mixButtons()[0]!);
+    expect(within(section).getByRole('status')).toHaveTextContent(
+      "Playing Today's mix.",
+    );
+    act(() => vi.advanceTimersByTime((BALANCE_S + 1.7) * 1000));
+    expect(within(section).getByRole('status')).toHaveTextContent(
+      'Nothing playing.',
+    );
+  });
+
+  test('Stop stops it', () => {
+    const rec = recordingMixes();
+    render(<SoundsPage pair={recordingPair().pair} mixes={rec.mixes} />);
+    fireEvent.click(mixButtons()[1]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    expect(rec.log).toEqual(['play raised', 'stop']);
+    expect(
+      within(
+        screen.getByRole('region', { name: 'Hear the balance' }),
+      ).getByRole('status'),
+    ).toHaveTextContent('Nothing playing.');
+  });
+
+  test('muting stops a game mid-play, and a press while muted plays nothing', () => {
+    const rec = recordingMixes();
+    render(<SoundsPage pair={recordingPair().pair} mixes={rec.mixes} />);
+    fireEvent.click(mixButtons()[2]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Mute every cue' }));
+    fireEvent.click(mixButtons()[0]!);
+    expect(rec.log).toEqual(['play closer', 'stop']);
+  });
+
+  test('a sound to compare stops the balance first, so the two never overlap', () => {
+    const rec = recordingMixes();
+    const pair = recordingPair();
+    render(<SoundsPage pair={pair.pair} mixes={rec.mixes} />);
+    fireEvent.click(mixButtons()[1]!);
+    fireEvent.click(soundButtons().find((b) => b.dataset.sound === 'tick')!);
+    expect(rec.log).toEqual(['play raised', 'stop']);
+    expect(pair.log).toEqual(['before tick']);
+  });
+
+  test("shows each mix's numbers as they were measured, with every gap against the peach of a word", () => {
+    render(
+      <SoundsPage pair={recordingPair().pair} mixes={recordingMixes().mixes} />,
+    );
+    for (const mix of MIXES) {
+      const table = screen.getByRole('table', {
+        name: (_, el) =>
+          el.closest('details')?.querySelector('summary')?.textContent ===
+          `${mix.title}, in numbers`,
+      });
+      const rows = within(table).getAllByRole('row').slice(1);
+      expect(rows).toHaveLength(LEVELS[mix.id].rows.length);
+      LEVELS[mix.id].rows.forEach((level, i) => {
+        const cells = within(rows[i]!).getAllByRole('cell');
+        expect(within(rows[i]!).getByRole('rowheader')).toHaveTextContent(
+          level.label,
+        );
+        expect(cells[0]).toHaveTextContent(`${level.dbtp.toFixed(1)} dBTP`);
+        expect(cells[1]).toHaveTextContent(`${level.lufs.toFixed(1)} LUFS`);
+      });
+    }
+    // The tile tap today, the furthest under, and the full basket, over
+    const today = LEVELS.today.rows;
+    expect(today.find((r) => r.cue === 'tick')!.underDb).toBeGreaterThan(30);
+    expect(today.find((r) => r.cue === 'edition')!.underDb).toBeLessThan(0);
   });
 });

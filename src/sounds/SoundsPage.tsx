@@ -1,8 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Decorations } from '@/ui/components/Decorations.tsx';
 import { FOUND_ROWS, SECTIONS, SOUNDS, type Sound } from './inventory.ts';
 import { lengthOf, type Pair } from './pair.ts';
 import { DEPARTURES } from '@/audio/departures.ts';
+import { BALANCE_S, type MixPlayer } from './balance.ts';
+import { MIXES, type Mix, type MixId } from './mixes.ts';
+import { LEVELS, type MixRow } from './mixLevels.ts';
 
 /**
  * One button per sound the game makes, each playing that sound twice from the
@@ -13,7 +16,11 @@ import { DEPARTURES } from '@/audio/departures.ts';
  * B, until the reveal. Nothing on the page says which is which before then: not
  * a label, an attribute or a title.
  *
- * Nothing plays on load. Both engines share one audio context, which the first
+ * Hear the balance plays a short game in each of three mixes, for choosing
+ * how loud the everyday sounds should be beside the two big ones. A press stops
+ * whatever is still sounding, so two mixes never overlap.
+ *
+ * Nothing plays on load. Every engine shares one audio context, which the first
  * tap makes, the same moment the game makes its own.
  */
 type Side = keyof Pair;
@@ -38,31 +45,69 @@ interface Played {
   revealed: boolean;
 }
 
+/** How long after the last beat the status still says it is playing: the basket's ring. */
+const BALANCE_TAIL_S = 1.7;
+
 export function SoundsPage({
   pair,
+  mixes = () => null,
   random = Math.random,
 }: {
   /** The two engines, made on the first call; null where there is no Web Audio. */
   pair: () => Pair | null;
+  /** The balance's player, made on the first call; null where there is no Web Audio. */
+  mixes?: () => MixPlayer | null;
   /** Which comes first in blind mode. */
   random?: () => number;
 }) {
   const engines = useRef<Pair | null>(null);
+  const mixPlayer = useRef<MixPlayer | null>(null);
   const [muted, setMuted] = useState(false);
   const [blind, setBlind] = useState(false);
   const [played, setPlayed] = useState<Played | null>(null);
+  const [playing, setPlaying] = useState<Mix | null>(null);
+
+  // The status says a mix is playing until its last sound has rung out
+  useEffect(() => {
+    if (!playing) return;
+    const done = setTimeout(
+      () => setPlaying(null),
+      (BALANCE_S + BALANCE_TAIL_S) * 1000,
+    );
+    return () => clearTimeout(done);
+  }, [playing]);
+
+  const stopMix = useCallback(() => {
+    mixPlayer.current?.stop();
+    setPlaying(null);
+  }, []);
 
   const toggleMute = useCallback(() => {
     const next = !muted;
     engines.current?.before.setMuted(next);
     engines.current?.soundscape.setMuted(next);
+    // Muting cuts the balance off too, where it is mid-game
+    if (next) stopMix();
     setMuted(next);
-  }, [muted]);
+  }, [muted, stopMix]);
+
+  const playMix = useCallback(
+    (mix: Mix) => {
+      if (muted) return;
+      mixPlayer.current ??= mixes();
+      if (!mixPlayer.current) return;
+      mixPlayer.current.play(mix.id);
+      setPlaying(mix);
+    },
+    [muted, mixes],
+  );
 
   const play = useCallback(
     (sound: Sound) => {
       // Muted, a tap makes nothing at all, as each engine on its own would
       if (muted) return;
+      // One thing at a time: a sound to compare stops the balance
+      stopMix();
       engines.current ??= pair();
       const both = engines.current;
       if (!both) return;
@@ -78,7 +123,7 @@ export function SoundsPage({
       );
       setPlayed({ sound, order, blind, revealed: false });
     },
-    [muted, blind, pair, random],
+    [muted, blind, pair, random, stopMix],
   );
 
   const reveal = useCallback(
@@ -135,6 +180,45 @@ export function SoundsPage({
             : blind
               ? 'Blind. Each button plays A, then B.'
               : 'Sound on. Mute, then try any button below.'}
+        </p>
+      </section>
+
+      <section className="found sounds__section" aria-labelledby="balance">
+        <h2 className="found__title" id="balance">
+          Hear the balance
+        </h2>
+        <p className="sounds__note">
+          A short game, played the way the game plays it: a few letters ticking
+          and the word they set, a Shuffle, finds of three more lengths, a miss,
+          the peach of a word, then the full basket. About{' '}
+          {Math.round(BALANCE_S + BALANCE_TAIL_S)} seconds. Each button plays it
+          in one mix, and stops anything still playing.
+        </p>
+        <p className="sounds__note">
+          On an iPhone, turn silent mode off first. This page is silent in it,
+          as every web page is.
+        </p>
+        {MIXES.map((mix) => (
+          <MixView
+            key={mix.id}
+            mix={mix}
+            play={() => playMix(mix)}
+            levels={LEVELS[mix.id].rows}
+            finds={LEVELS[mix.id].finds}
+            worst={LEVELS[mix.id].worst}
+          />
+        ))}
+        <div className="sounds__row">
+          <button type="button" className="btn sounds__btn" onClick={stopMix}>
+            Stop
+          </button>
+        </div>
+        <p className="sounds__note" role="status">
+          {muted
+            ? 'Muted. The mixes play nothing.'
+            : playing
+              ? `Playing ${playing.title}.`
+              : 'Nothing playing.'}
         </p>
       </section>
 
@@ -243,5 +327,73 @@ function SoundRow({
         </div>
       )}
     </>
+  );
+}
+
+/** A number as the table shows it: one place, and a plain minus. */
+const one = (n: number): string => n.toFixed(1);
+
+/** A gap from the peach of a word, in both measures. */
+function against(row: MixRow): string {
+  if (row.underDb === 0) return 'Itself';
+  const way = row.underDb > 0 ? 'under' : 'over';
+  return `${one(Math.abs(row.underDb))} dB ${way} (${one(Math.abs(row.underPhon))} phon)`;
+}
+
+function MixView({
+  mix,
+  play,
+  levels,
+  finds,
+  worst,
+}: {
+  mix: Mix;
+  play: () => void;
+  levels: MixRow[];
+  finds: { lufs: [number, number]; dbtp: [number, number] };
+  worst: number;
+}) {
+  return (
+    <div className="sounds__group">
+      <div className="sounds__row">
+        <button
+          type="button"
+          className="btn sounds__btn"
+          data-mix={mix.id satisfies MixId}
+          onClick={play}
+        >
+          {mix.title}
+        </button>
+      </div>
+      <p className="sounds__note">{mix.line}</p>
+      <details className="sounds__numbers">
+        <summary>{mix.title}, in numbers</summary>
+        <table className="sounds__table">
+          <thead>
+            <tr>
+              <th scope="col">Sound</th>
+              <th scope="col">Peak</th>
+              <th scope="col">Loudness</th>
+              <th scope="col">Against the peach of a word</th>
+            </tr>
+          </thead>
+          <tbody>
+            {levels.map((row) => (
+              <tr key={row.cue}>
+                <th scope="row">{row.label}</th>
+                <td>{one(row.dbtp)} dBTP</td>
+                <td>{one(row.lufs)} LUFS</td>
+                <td>{against(row)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="sounds__note">
+          All 30 finds: {one(finds.lufs[0])} to {one(finds.lufs[1])} LUFS,
+          peaking at {one(finds.dbtp[0])} to {one(finds.dbtp[1])} dBTP. The most
+          any pile-up of sounds in the game reaches: {one(worst)} dBTP.
+        </p>
+      </details>
+    </div>
   );
 }
