@@ -129,6 +129,16 @@ describe('the sounds page', () => {
     expect(localStorage.getItem('e8-theme')).toBeNull();
   });
 
+  test("says the cue plays in the mix chosen since, by the mix's own numbers", () => {
+    const { pair } = recordingPair();
+    render(<SoundsPage pair={pair} />);
+    expect(
+      screen.getByText(
+        'Since 9 November 2026, every cue plays in the mix chosen that day: the finds and the miss 2.6 dB louder than before, the peach of a word and the full basket 1.9 dB lower, and the tile tap and Shuffle 23.1 dB louder than when they were chosen. So the two sounds differ in loudness, on purpose, and in blind mode that gives the order away.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   test('blind mode plays A and B in an order nothing shows, until the reveal', () => {
     const { pair, log } = recordingPair();
     const draws = [0.9, 0.1];

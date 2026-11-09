@@ -15,8 +15,8 @@
  * (3 * 0.1, not 0.3), the duration, the waveform and the peak. The three
  * literals inside note() itself, the floor, the attack and the tail, are copied
  * below, and src/audio/peachCues.test.ts holds the document to what the engine
- * actually schedules, so a change to note() fails there instead of being copied
- * wrongly.
+ * actually schedules, times Bea's mix since 9 November 2026 (mix.ts), so a
+ * change to note() fails there instead of being copied wrongly.
  *
  * One instrument per waveform: each fades over its own note, its decay lasting
  * until the note's release, which is where the game's ramp to the floor ends.

@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { CostumePart } from '@/ui/costumes.ts';
 import { GROWTH_STAGES, bounds, type GrowthStage } from './growthStages.ts';
-import cues from '@/audio/peach.cues.json';
+import cues from './soundtrack.cues.json';
 import {
   BEATS,
   FACE_S,

@@ -9,7 +9,7 @@ import cues from './peach.cues.json';
  * peach.cues.json, written from the game's previous engine,
  * ReferenceAudioEngine, which stays as the reference the cues are held to. All
  * but the departures (departures.ts), chosen by ear since: the tick and
- * Shuffle.
+ * Shuffle. Every cue plays in Bea's mix (mix.ts).
  *
  * It keeps that engine's lifecycle. Nothing exists until the first cue, which
  * must come from a gesture: that cue creates the AudioContext and resumes it in
@@ -27,9 +27,14 @@ export class SoundscapeAudioEngine implements AudioEngine {
   /**
    * The game passes nothing, and the engine makes its own AudioContext on the
    * first cue. `given` plays into a context the caller owns instead, such as an
-   * OfflineAudioContext for a render, which is never resumed.
+   * OfflineAudioContext for a render, which is never resumed. `document` is
+   * the game's cue file unless the caller gives another, as the store art
+   * gives the one its sound was mixed from.
    */
-  constructor(private readonly given?: BaseAudioContext) {}
+  constructor(
+    private readonly given?: BaseAudioContext,
+    private readonly document: typeof cues = cues,
+  ) {}
 
   setMuted(muted: boolean): void {
     this.muted = muted;
@@ -83,7 +88,7 @@ export class SoundscapeAudioEngine implements AudioEngine {
       // it then awaits is its scheduler worklet, which only music uses. So the
       // cues load and the first one plays now, inside the gesture, not after.
       void engine.initialize();
-      engine.loadCues(cues);
+      engine.loadCues(this.document);
       this.context = context;
       this.engine = engine;
     }

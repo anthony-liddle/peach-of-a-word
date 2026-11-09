@@ -14,11 +14,14 @@ import {
 import { spreadBetween } from '../../scripts/lib/renderSpread.ts';
 import { momentaryLoudness } from '../../scripts/lib/loudness.ts';
 import { DEPARTURES, departed } from './departures.ts';
+import { cueGainDb, factor } from './mix.ts';
 
 /**
  * Every sound the game makes, as its Soundscape cue and through the game's
  * previous engine, rendered offline in the same browser in the same run and
- * compared sample by sample: in Chromium, Firefox and WebKit.
+ * compared sample by sample: in Chromium, Firefox and WebKit. Each cue plays
+ * in Bea's mix (mix.ts), so it is held to the old engine's sound times its
+ * gain.
  *
  * Each sound starts four times, in four power-of-two ranges up to 8 to 16 s:
  * a time is rounded to float32 inside the renderer, by an amount that grows
@@ -109,17 +112,21 @@ function passesOver(group: Sound[]): Play[] {
   });
 }
 
-/** The largest difference between the two, and the old engine's peak. */
+/**
+ * The largest difference between the cue and the old engine's sound times the
+ * cue's gain in the mix, and the old engine's peak.
+ */
 function compare(
   cue: Float32Array,
   old: Float32Array,
+  gain: number,
   from: number,
   to: number,
 ) {
   let largest = 0;
   let peak = 0;
   for (let i = from; i < to; i++) {
-    largest = Math.max(largest, Math.abs((cue[i] ?? 0) - (old[i] ?? 0)));
+    largest = Math.max(largest, Math.abs((cue[i] ?? 0) - gain * (old[i] ?? 0)));
     peak = Math.max(peak, Math.abs(old[i] ?? 0));
   }
   return { largest, peak };
@@ -166,7 +173,13 @@ describe(`every sound's cue against the game's engine, in this browser`, () => {
           const next = plays[k + 1];
           const from = k === 0 ? 0 : Math.round(at * RATE);
           const to = next ? Math.round(next.at * RATE) : cue.length;
-          const { largest, peak } = compare(cue, old, from, to);
+          const { largest, peak } = compare(
+            cue,
+            old,
+            factor(cueGainDb(sound.id)),
+            from,
+            to,
+          );
           if (largest > worst.largest)
             worst = { largest, at: `${sound.id} at ${at} s` };
           // The quietest sound, the tick, peaks at about 0.02
@@ -181,12 +194,18 @@ describe(`every sound's cue against the game's engine, in this browser`, () => {
 /**
  * The fixture was captured in Chrome 154 by rendering each sound from time 0
  * for 2 s, trimming it where the oscillators stop, and measuring that; the
- * rejected guess also note by note. The same here, through each engine.
+ * rejected guess also note by note. The same here, through each engine, with
+ * a cue's render divided by its gain: the fixture is the old engine's sound at
+ * its own level, and the mix taken out of a cue leaves that sound.
  */
-async function measured(make: Make, sound: Sound): Promise<Measurement> {
+async function measured(
+  make: Make,
+  sound: Sound,
+  gain = 1,
+): Promise<Measurement> {
   const options =
     sound.cue === 'playInvalid' ? { pairSplitS: PAIR_SPLIT_S } : {};
-  const full = await render(make, [{ sound, at: 0 }], 2);
+  const full = (await render(make, [{ sound, at: 0 }], 2)).map((x) => x / gain);
   const first = measure(full, RATE, options);
   return measure(
     full.subarray(0, Math.round(first.stop * RATE)),
@@ -227,8 +246,11 @@ describe.runIf(server.browser === 'chromium')(
           'control',
         ).toEqual([]);
         expect(
-          withinFixture(sound.id, await measured(soundscape, sound)),
-          'cue',
+          withinFixture(
+            sound.id,
+            await measured(soundscape, sound, factor(cueGainDb(sound.id))),
+          ),
+          'cue, the mix taken out',
         ).toEqual([]);
       });
     }
@@ -237,8 +259,9 @@ describe.runIf(server.browser === 'chromium')(
 
 /**
  * The departures, which leave the old engine on purpose, held to their own
- * numbers instead: as each was measured when it was chosen, in Chromium. Every
- * browser is held to them, to a tenth of a dB and a millisecond.
+ * numbers instead: as each was measured when it was chosen, in Chromium, and
+ * raised since by the click's gain in Bea's mix. Every browser is held to
+ * them, to a tenth of a dB and a millisecond.
  */
 describe(`each departure against its own numbers, in this browser`, () => {
   for (const sound of SOUNDS.filter((s) => departed(s.id))) {
@@ -246,11 +269,12 @@ describe(`each departure against its own numbers, in this browser`, () => {
       const full = await render(soundscape, [{ sound, at: 0 }], 2);
       const m = measure(full, RATE);
       const { heard } = DEPARTURES[sound.id]!;
+      const gain = cueGainDb(sound.id);
       expect(Math.abs(m.duration * 1000 - heard.durationMs)).toBeLessThan(1);
-      expect(Math.abs(m.peakDbfs - heard.peakDbfs)).toBeLessThan(0.15);
-      expect(Math.abs(momentaryLoudness(full, RATE) - heard.lufs)).toBeLessThan(
-        0.15,
-      );
+      expect(Math.abs(m.peakDbfs - (heard.peakDbfs + gain))).toBeLessThan(0.15);
+      expect(
+        Math.abs(momentaryLoudness(full, RATE) - (heard.lufs + gain)),
+      ).toBeLessThan(0.15);
     });
   }
 });
