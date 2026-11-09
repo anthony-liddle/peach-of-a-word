@@ -83,6 +83,7 @@ export class SoundscapeAudioEngine implements AudioEngine {
     if (!this.engine) {
       const context = this.given ?? newAudioContext();
       if (!context) return null;
+      if (!this.given) playThroughSilentMode();
       const engine = new Soundscape({ context });
       // initialize() builds the whole graph before it waits for anything: what
       // it then awaits is its scheduler worklet, which only music uses. So the
@@ -96,6 +97,33 @@ export class SoundscapeAudioEngine implements AudioEngine {
       void (this.context as AudioContext).resume();
     }
     return this.engine;
+  }
+}
+
+/**
+ * The page's sound plays in silent mode, where the browser lets a page say so.
+ *
+ * On an iPhone every browser is WebKit, Chrome and Firefox included, and
+ * WebKit puts a page's Web Audio in the ambient session, which silent mode
+ * silences, unless the page asks for another through the Audio Session API.
+ * WebKit offers it from Safari 16.4 (iOS 16.4) and on the Mac; no other
+ * engine does yet. Where it is missing, nothing changes.
+ *
+ * `playback` is the only type that plays in silent mode, and in WebKit it
+ * does not mix: starting the game's sound pauses other apps' audio, such as a
+ * podcast. A muted game never asks, so it never takes the session.
+ *
+ * A session that refuses leaves the game as it was, sounding as before.
+ */
+function playThroughSilentMode(): void {
+  const { audioSession } = navigator as Navigator & {
+    audioSession?: { type: string };
+  };
+  if (!audioSession) return;
+  try {
+    audioSession.type = 'playback';
+  } catch {
+    // The ambient session the browser chose stands, and the cue still plays
   }
 }
 

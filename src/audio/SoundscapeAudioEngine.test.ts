@@ -146,6 +146,81 @@ describe('the lifecycle it keeps', () => {
   });
 });
 
+/**
+ * On an iPhone, every browser is WebKit, and WebKit silences a page's Web
+ * Audio in silent mode unless the page asks for the playback session. The
+ * Audio Session API is how it asks: `navigator.audioSession`, where offered.
+ */
+describe('the audio session, where the browser offers one', () => {
+  /** A browser's `navigator.audioSession`, recording each type it is set to. */
+  function offerAudioSession() {
+    const types: string[] = [];
+    const session = {
+      get type() {
+        return types.at(-1) ?? 'auto';
+      },
+      set type(type: string) {
+        types.push(type);
+      },
+    };
+    vi.stubGlobal('navigator', { ...navigator, audioSession: session });
+    return types;
+  }
+
+  test('the first cue asks for playback, so the game sounds in silent mode, once', () => {
+    installFakeAudio();
+    const types = offerAudioSession();
+    const engine = new SoundscapeAudioEngine();
+    expect(types).toEqual([]);
+    engine.tick();
+    engine.playFound(5);
+    expect(types).toEqual(['playback']);
+    expect(played()).toEqual(['playCue tick', 'playCue found-5-set']);
+  });
+
+  test('muted, it asks for nothing, so a muted game never takes the session', () => {
+    installFakeAudio();
+    const types = offerAudioSession();
+    const engine = new SoundscapeAudioEngine();
+    engine.setMuted(true);
+    engine.tick();
+    expect(types).toEqual([]);
+    engine.setMuted(false);
+    engine.tick();
+    expect(types).toEqual(['playback']);
+  });
+
+  test('rendering into a context it is given, it leaves the session alone', () => {
+    installFakeAudio();
+    const types = offerAudioSession();
+    new SoundscapeAudioEngine(
+      new FakeAudioContext() as unknown as BaseAudioContext,
+    ).tick();
+    expect(types).toEqual([]);
+  });
+
+  test('where the browser offers no session, it plays as before', () => {
+    installFakeAudio();
+    vi.stubGlobal('navigator', { ...navigator, audioSession: undefined });
+    new SoundscapeAudioEngine().tick();
+    expect(played()).toEqual(['playCue tick']);
+  });
+
+  test('a session that refuses the type still leaves the cue to play', () => {
+    installFakeAudio();
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      audioSession: {
+        set type(_: string) {
+          throw new Error('refused');
+        },
+      },
+    });
+    new SoundscapeAudioEngine().tick();
+    expect(played()).toEqual(['playCue tick']);
+  });
+});
+
 describe('the cue each call plays', () => {
   test('every sound on the /sounds page plays the cue of the same name', () => {
     installFakeAudio();
