@@ -159,6 +159,20 @@ describe("Bea's mix", () => {
     expect(Object.keys(MIX.gains).sort()).toEqual(
       Object.keys(document.instruments).sort(),
     );
+    expect(Object.keys(MIX.factors).sort()).toEqual(
+      Object.keys(document.instruments).sort(),
+    );
+  });
+
+  test('keeps each factor the double its gain in dB gives, here', () => {
+    // Written down, so the file holds on any platform; a platform's own
+    // 10 ** may round the last bit the other way, so this allows two
+    for (const [name, db] of Object.entries(MIX.gains)) {
+      const factor = (MIX.factors as Record<string, number>)[name]!;
+      expect(Math.abs(factor - 10 ** (db / 20)) / factor, name).toBeLessThan(
+        5e-16,
+      );
+    }
   });
 
   test('moves whole cues: every note of a cue is one instrument', () => {

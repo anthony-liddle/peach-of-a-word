@@ -32,14 +32,24 @@ export const MIX: {
    * find and the miss, the triangle the peach of a word and the full basket.
    */
   gains: Record<Instrument, number>;
+  /**
+   * Each gain as the factor the cue file was multiplied by, 10^(dB/20), kept
+   * as the double it was. `10 **` can round its last bit differently on
+   * another platform, and a factor written down multiplies the same on all of
+   * them, so the file is the old sound times these, to the last bit,
+   * everywhere.
+   */
+  factors: Record<Instrument, number>;
 } = {
   chosen: '2026-11-09',
   name: 'Closer still',
   gains: { click: 23.1, sine: 2.6, triangle: -1.9 },
+  factors: {
+    click: 14.288939585111029,
+    sine: 1.3489628825916535,
+    triangle: 0.8035261221856173,
+  },
 };
-
-/** dB as a linear factor, computed as the cue file's levels were. */
-export const factor = (db: number): number => 10 ** (db / 20);
 
 /** The mix's gain on an instrument, in dB. */
 export function gainDbOf(instrument: string): number {
@@ -49,15 +59,25 @@ export function gainDbOf(instrument: string): number {
   return db;
 }
 
-/** The mix's gain on an instrument, as a linear factor. */
-export const gainOf = (instrument: string): number =>
-  factor(gainDbOf(instrument));
+/** The mix's gain on an instrument, as the factor the cue file was multiplied by. */
+export function gainOf(instrument: string): number {
+  const factor = (MIX.factors as Record<string, number>)[instrument];
+  if (factor === undefined)
+    throw new Error(`no gain for an instrument named ${instrument}`);
+  return factor;
+}
 
-/** The mix's gain on a cue, in dB: every note of a cue is one instrument's. */
-export function cueGainDb(id: string): number {
+/** The instrument a cue plays: every note of a cue is one instrument's. */
+function instrumentOf(id: string): string {
   const cue = (
     cues.cues as Record<string, { notes: { instrument: string }[] }>
   )[id];
   if (!cue) throw new Error(`no cue named ${id}`);
-  return gainDbOf(cue.notes[0]!.instrument);
+  return cue.notes[0]!.instrument;
 }
+
+/** The mix's gain on a cue, in dB. */
+export const cueGainDb = (id: string): number => gainDbOf(instrumentOf(id));
+
+/** The mix's gain on a cue, as a factor. */
+export const cueGain = (id: string): number => gainOf(instrumentOf(id));

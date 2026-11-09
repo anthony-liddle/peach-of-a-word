@@ -14,7 +14,7 @@ import {
 import { spreadBetween } from '../../scripts/lib/renderSpread.ts';
 import { momentaryLoudness } from '../../scripts/lib/loudness.ts';
 import { DEPARTURES, departed } from './departures.ts';
-import { cueGainDb, factor } from './mix.ts';
+import { cueGain, cueGainDb } from './mix.ts';
 
 /**
  * Every sound the game makes, as its Soundscape cue and through the game's
@@ -176,7 +176,7 @@ describe(`every sound's cue against the game's engine, in this browser`, () => {
           const { largest, peak } = compare(
             cue,
             old,
-            factor(cueGainDb(sound.id)),
+            cueGain(sound.id),
             from,
             to,
           );
@@ -248,7 +248,7 @@ describe.runIf(server.browser === 'chromium')(
         expect(
           withinFixture(
             sound.id,
-            await measured(soundscape, sound, factor(cueGainDb(sound.id))),
+            await measured(soundscape, sound, cueGain(sound.id)),
           ),
           'cue, the mix taken out',
         ).toEqual([]);

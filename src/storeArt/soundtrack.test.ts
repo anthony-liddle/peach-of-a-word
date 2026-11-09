@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { MIX, factor } from '@/audio/mix.ts';
+import { MIX, gainOf } from '@/audio/mix.ts';
 
 /**
  * The store art's cues, frozen: the game's cue file as it was when the store
@@ -27,11 +27,11 @@ describe("the store art's cues", () => {
 
   test("are the game's cues without Bea's mix: its gains on them make the game's file", () => {
     const doc = JSON.parse(frozen) as Doc;
-    for (const [name, db] of Object.entries(MIX.gains)) {
-      doc.instruments[name]!.envelopeFloor *= factor(db);
+    for (const name of Object.keys(MIX.gains)) {
+      doc.instruments[name]!.envelopeFloor *= gainOf(name);
       for (const cue of Object.values(doc.cues))
         for (const note of cue.notes)
-          if (note.instrument === name) note.level *= factor(db);
+          if (note.instrument === name) note.level *= gainOf(name);
     }
     expect(doc).toEqual(JSON.parse(game));
   });
