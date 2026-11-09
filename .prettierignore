@@ -15,3 +15,7 @@ scripts/data-raw/swift-meta.json
 # canonical serializer so that saving it unchanged reproduces its bytes, and
 # later by its cue editor. src/audio/peachCues.test.ts holds it to that form.
 src/audio/peach.cues.json
+
+# The store art's frozen copy of that file, byte for byte: its SHA-256 is the
+# pin src/storeArt/soundtrack.test.ts holds it to.
+src/storeArt/soundtrack.cues.json

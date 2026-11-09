@@ -8,7 +8,8 @@ import type { Theme } from '@/ui/useTheme.ts';
  * Until Soundscape, this was the game's engine. It is no longer: the game plays
  * its sounds as Soundscape cues, through SoundscapeAudioEngine. This stays as
  * the record those cues are held to, sample by sample, in Chromium, Firefox
- * and WebKit, and as the "before" on the /sounds page. It is not in the game's
+ * and WebKit, times each cue's gain in Bea's mix (src/audio/mix.ts), and as
+ * the "before" on the /sounds page. It is not in the game's
  * bundle, and a test fails if it gets there.
  *
  * Do not edit it to make a comparison pass. If a cue and this engine disagree,

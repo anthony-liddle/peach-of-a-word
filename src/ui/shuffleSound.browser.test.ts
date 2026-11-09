@@ -13,6 +13,7 @@ import { NullAudioEngine, type AudioEngine } from '@/audio/AudioEngine.ts';
 import { SoundscapeAudioEngine } from '@/audio/SoundscapeAudioEngine.ts';
 import { GameStorage, type KeyValueStore } from '@/persistence/storage.ts';
 import { Game } from './Game.tsx';
+import { truePeak } from '../../scripts/lib/loudness.ts';
 
 /**
  * Shuffle's sound in the game itself, not on the sounds page: pressed with
@@ -162,10 +163,10 @@ describe(`pressed fast, ten times, then a letter, in ${server.browser}`, () => {
 
       const onePeak = peak(one);
       console.log(
-        `${server.browser}, ${perSecond} a second: one Shuffle peaks at ${dbfs(onePeak).toFixed(2)} dBFS, ten at ${dbfs(peak(ten)).toFixed(2)}, ten and the letter at ${dbfs(peak(mix)).toFixed(2)}`,
+        `${server.browser}, ${perSecond} a second: one Shuffle peaks at ${dbfs(onePeak).toFixed(2)} dBFS, ten at ${dbfs(peak(ten)).toFixed(2)}, ten and the letter at ${dbfs(peak(mix)).toFixed(2)}, ${truePeak(mix).toFixed(2)} dBTP`,
       );
-      // Far from clipping, at any pace
-      expect(dbfs(peak(mix))).toBeLessThan(-20);
+      // Under Bea's mix's ceiling, at any pace, between samples too
+      expect(truePeak(mix)).toBeLessThan(-1);
       // At eight a second, nothing stacks: ten peak as one, to within 0.1 dB
       if (perSecond === 8)
         expect(peak(ten)).toBeLessThanOrEqual(onePeak * 10 ** (0.1 / 20));

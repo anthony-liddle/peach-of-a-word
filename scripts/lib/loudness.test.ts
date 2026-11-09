@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { momentaryLoudness, periodicity } from './loudness.ts';
+import { momentaryLoudness, periodicity, truePeak } from './loudness.ts';
 
 const RATE = 48000;
 
@@ -37,6 +37,47 @@ describe('momentaryLoudness', () => {
     expect(momentaryLoudness(sine(4000, 0.1, 0.2), RATE)).toBeGreaterThan(
       momentaryLoudness(sine(880, 0.1, 0.2), RATE) + 3,
     );
+  });
+});
+
+describe('truePeak', () => {
+  /** A sine at a quarter of the rate, started at 45 degrees: every sample lands 3 dB under its crest. */
+  const quarter = Float32Array.from({ length: RATE }, (_, i) =>
+    Math.sin((Math.PI * i) / 2 + Math.PI / 4),
+  );
+  /** The steady middle, so the ends' ringing stays out of it. */
+  const middle = quarter.subarray(1000, RATE - 1000);
+
+  test("finds the crest between samples: BS.1770's quarter-rate sine reads 3 dB over its samples", () => {
+    const samples = 20 * Math.log10(Math.max(...middle.map(Math.abs)));
+    expect(samples).toBeCloseTo(-3.01, 2);
+    // BS.1770-4's own filter reads a steady sine up to 0.14 dB high
+    expect(truePeak(middle)).toBeGreaterThan(-0.01);
+    expect(truePeak(middle)).toBeLessThan(0.15);
+  });
+
+  test("reads a 997 Hz sine at its crest, within the filter's ripple", () => {
+    // Faded in and out over 10 ms: a sine cut off mid-cycle overshoots between
+    // samples, as a true peak meter rightly shows
+    const fade = 0.01 * RATE;
+    const faded = sine(997, 0.5, 1).map((v, i, all) => {
+      const edge = Math.min(i, all.length - 1 - i);
+      return edge < fade
+        ? v * (0.5 - 0.5 * Math.cos((Math.PI * edge) / fade))
+        : v;
+    });
+    expect(truePeak(faded)).toBeCloseTo(20 * Math.log10(0.5), 1);
+  });
+
+  test('is never under the sample peak', () => {
+    const click = new Float32Array(400);
+    click[200] = 0.25;
+    click[201] = -0.25;
+    expect(truePeak(click)).toBeGreaterThanOrEqual(20 * Math.log10(0.25));
+  });
+
+  test('reads silence as -Infinity', () => {
+    expect(truePeak(new Float32Array(100))).toBe(-Infinity);
   });
 });
 

@@ -1,11 +1,15 @@
 import { SoundscapeAudioEngine } from '@/audio/SoundscapeAudioEngine.ts';
 import { BEATS, LOOP_S, SAMPLE_RATE } from './motion.ts';
+import cues from './soundtrack.cues.json';
 
 /**
  * The header's sound, one loop of it, mono, at the video's sample rate:
- * `BEATS` played through the game's own audio engine, Soundscape, from the
- * game's own cue file, into an OfflineAudioContext. Nothing is recorded from
- * a speaker.
+ * `BEATS` played through the game's own audio engine, Soundscape, into an
+ * OfflineAudioContext. Nothing is recorded from a speaker.
+ *
+ * Its cues are the game's cue file as it was when the store art's sound was
+ * mixed, frozen in soundtrack.cues.json: the store art's sound was mixed on
+ * its own, so the game's later mix (src/audio/mix.ts) leaves it as it is.
  *
  * The engine schedules from the context's clock, as the game does, so the
  * clock is moved to each beat while it's played, as `cues.browser.test.ts`
@@ -21,7 +25,7 @@ export async function renderSoundtrack(): Promise<Float32Array> {
   const context = new OfflineAudioContext(1, loop * 3, SAMPLE_RATE);
   let now = 0;
   Object.defineProperty(context, 'currentTime', { get: () => now });
-  const engine = new SoundscapeAudioEngine(context);
+  const engine = new SoundscapeAudioEngine(context, cues);
   engine.setTheme('cute');
   for (let k = 0; k < 3; k++)
     for (const beat of BEATS) {

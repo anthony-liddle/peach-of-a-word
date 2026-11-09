@@ -13,7 +13,9 @@
  *
  * Both were chosen on 5 November 2026 from candidates on the preview of
  * peach-of-a-word#182, never merged: the tick is candidate A's first take,
- * Shuffle candidate E's, each at the level it was heard at.
+ * Shuffle candidate E's, each at the level it was heard at. Since 9 November
+ * both play in Bea's mix (mix.ts), louder by the click's gain; `heard` stays
+ * as they were measured when chosen, and the tests add the gain.
  */
 export interface Departure {
   /** The day it was chosen. */

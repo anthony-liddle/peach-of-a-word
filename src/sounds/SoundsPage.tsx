@@ -3,6 +3,7 @@ import { Decorations } from '@/ui/components/Decorations.tsx';
 import { FOUND_ROWS, SECTIONS, SOUNDS, type Sound } from './inventory.ts';
 import { lengthOf, type Pair } from './pair.ts';
 import { DEPARTURES } from '@/audio/departures.ts';
+import { MIX } from '@/audio/mix.ts';
 
 /**
  * One button per sound the game makes, each playing that sound twice from the
@@ -108,6 +109,15 @@ export function SoundsPage({
           Each button plays its sound twice: as the game played it before
           Soundscape, then as a Soundscape cue. In blind mode it plays them as A
           and B, in an order it does not show, until you reveal it.
+        </p>
+        <p className="sounds__note">
+          Since {ON.format(new Date(MIX.chosen))}, every cue plays in the mix
+          chosen that day: the finds and the miss {MIX.gains.sine.toFixed(1)} dB
+          louder than before, the peach of a word and the full basket{' '}
+          {(-MIX.gains.triangle).toFixed(1)} dB lower, and the tile tap and
+          Shuffle {MIX.gains.click.toFixed(1)} dB louder than when they were
+          chosen. So the two sounds differ in loudness, on purpose, and in blind
+          mode that gives the order away.
         </p>
         <div className="sounds__row sounds__controls">
           {/* Pressed wears the game's primary fill, so on and off differ by

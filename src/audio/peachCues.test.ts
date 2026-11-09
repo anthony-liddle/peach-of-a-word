@@ -15,6 +15,7 @@ import {
 import { FakeAudioContext } from '@/testing/fakeAudioContext.ts';
 import { SOUNDS } from '@/sounds/inventory.ts';
 import { DEPARTURES, departed } from './departures.ts';
+import { MIX, gainOf } from './mix.ts';
 
 /**
  * peach.cues.json, the game's 35 sounds as Soundscape cues, held to what the
@@ -23,7 +24,9 @@ import { DEPARTURES, departed } from './departures.ts';
  * recording context, so a change on either side fails here.
  *
  * All but the departures (departures.ts): sounds chosen by ear since, which
- * leave the old engine on purpose and are held to their own numbers.
+ * leave the old engine on purpose and are held to their own numbers. And every
+ * cue plays in Bea's mix (mix.ts): its level and its instrument's floor are
+ * the old ones times its instrument's gain, to the last bit.
  */
 const TEXT = readFileSync(resolve(__dirname, 'peach.cues.json'), 'utf8');
 const parsed = parseCueDocument(TEXT);
@@ -151,6 +154,41 @@ describe('each departure', () => {
   });
 });
 
+describe("Bea's mix", () => {
+  test('gives every instrument a gain, and nothing else', () => {
+    expect(Object.keys(MIX.gains).sort()).toEqual(
+      Object.keys(document.instruments).sort(),
+    );
+    expect(Object.keys(MIX.factors).sort()).toEqual(
+      Object.keys(document.instruments).sort(),
+    );
+  });
+
+  test('keeps each factor the double its gain in dB gives, here', () => {
+    // Written down, so the file holds on any platform; a platform's own
+    // 10 ** may round the last bit the other way, so this allows two
+    for (const [name, db] of Object.entries(MIX.gains)) {
+      const factor = (MIX.factors as Record<string, number>)[name]!;
+      expect(Math.abs(factor - 10 ** (db / 20)) / factor, name).toBeLessThan(
+        5e-16,
+      );
+    }
+  });
+
+  test('moves whole cues: every note of a cue is one instrument', () => {
+    for (const [name, cue] of Object.entries(document.cues))
+      expect(new Set(cue.notes.map((n) => n.instrument)), name).toHaveLength(1);
+  });
+
+  test("raises every instrument's floor with its notes, the click's too, so each cue is its old sound times the gain", () => {
+    // The floor every note of the old engine ramps from, through the master
+    const [first] = schedule(SOUNDS.find((s) => s.id === 'found-3-set')!.play);
+    const floor = first!.events[0]!.value * MASTER_GAIN;
+    for (const [name, instrument] of Object.entries(document.instruments))
+      expect(instrument.envelopeFloor, name).toBe(floor * gainOf(name));
+  });
+});
+
 describe.each(
   SOUNDS.filter((s) => !departed(s.id)).map((s) => [s.id, s] as const),
 )('%s', (id, sound) => {
@@ -165,11 +203,13 @@ describe.each(
       // Waveform, and the frequency the oscillator holds, which is a float32
       expect(instrument.waveform).toBe(g.type);
       expect(Math.fround(midiToFrequency(note.pitch))).toBe(Math.fround(g.hz));
-      // Starts at the same double, peaks at the same level through the master
+      // Starts at the same double, peaks at the same level through the
+      // master, times Bea's mix, multiplied in the order the file was
+      const k = gainOf(note.instrument);
       expect(note.start).toBe(g.start);
       expect(floor!.time).toBe(g.start);
-      expect(note.level).toBe(peak!.value * MASTER_GAIN);
-      expect(instrument.envelopeFloor).toBe(floor!.value * MASTER_GAIN);
+      expect(note.level).toBe(peak!.value * MASTER_GAIN * k);
+      expect(instrument.envelopeFloor).toBe(floor!.value * MASTER_GAIN * k);
       expect(end!.value).toBe(floor!.value);
       // The attack reaches the peak when the game's does, to the last bit or
       // two, and the decay lasts until the note's release, at its duration,
