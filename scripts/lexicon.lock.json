@@ -1,7 +1,7 @@
 {
-  "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. v1.11.0 writes the reveal rows of the eleven calendar crowns that had none, so every crown's card has a meaning and an origin; only etymology.tsv moves among the files taken here. Every archive was repacked, so every download hash moves. No file was added. See scripts/update-lexicon.ts.",
+  "comment": "The pinned orchard release. Edited only by a deliberate update, never to silence a failure. assets[] are download hashes and change when an archive is repacked; files[] are content hashes and change only when the words do. v1.1.0 changed every archive hash and no content hash. v1.11.0 writes the reveal rows of the eleven calendar crowns that had none, so every crown's card has a meaning and an origin; only etymology.tsv moves among the files taken here. Every archive was repacked, so every download hash moves. No file was added. v1.11.1 corrects eighty calendar crowns' cards, whose meaning or origin was wrong; again only etymology.tsv moves among the files taken here, and every archive was repacked. See scripts/update-lexicon.ts.",
   "repo": "anthony-liddle/orchard",
-  "version": "v1.11.0",
+  "version": "v1.11.1",
   "files": {
     "enable.txt": "98d038730d9046da39c09e834bfe44ad948e5809c54ab2f926106b576c1844a1",
     "scowl95-additions.txt": "ffa1a153e2c48a085383bebc0a9a1ae6323756b62e605b07ccf59ea3b6352d38",
@@ -10,13 +10,13 @@
     "beyond-size-95.txt": "e9a0eabad9dbea44cffb7ce995df516c68938a33ca15ed2e451f18aaa027b8cd",
     "dictionary-patch.tsv": "b57127cdeb33cc19a84216b5436762e4b190b02456326820f7ea73a2ff42c848",
     "definitions.tsv": "1408a5d259e1b939619db50c761e42f02ba4ca6711db0c10e9acfa95ab1b0e03",
-    "etymology.tsv": "94e1d1e6d8c9fcee53bde4007b0bc9cf582a15c486595c9eaaff0a51ad991cc3",
+    "etymology.tsv": "e35c4264235731dbf590453dd929d4b644e5b8f6bcf9263330d364d94d04e95f",
     "gloss-provenance.tsv": "0b6719c97fc47e0acce41072634b2fff1ca23606d051e2d7fa329a07821481ff"
   },
   "assets": {
-    "lexicon.tar.gz": "7e10f6de8886de661fb320d0af82842edb1a5f6c5b7b15fdc85f44aa9e8563e8",
+    "lexicon.tar.gz": "23ced962229e8102d221364e78c4d2db23e9c4fb05c1be5977402e1b4467b93d",
     "dictionary-patch.tsv": "b57127cdeb33cc19a84216b5436762e4b190b02456326820f7ea73a2ff42c848",
-    "definitions.tar.gz": "fa0e74e177386fc697b32b84964bdb6469ed22824b1045a1966acf38bdcdbf49",
-    "etymology.tar.gz": "f6ada3844c44485a6e18ba250a337bbdbaefea681ba515e77c5d38ccb6ee5030"
+    "definitions.tar.gz": "1470a93c8123146c414e56633864fa18a67746b05902f8343fcd161583ce201e",
+    "etymology.tar.gz": "c4a02d68e7602d7cb712e001cf7ef4f5c5f294ac204b6d7c54c6d3de281647f4"
   }
 }
