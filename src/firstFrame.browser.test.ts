@@ -17,7 +17,20 @@ import css from '@/index.css?raw';
  * - **before any stylesheet,** the canvas, whose colour follows the root's
  *   `color-scheme`;
  * - **with the stylesheet,** the page's own background.
+ *
+ * **Only a document the browser told the system's scheme counts.** Firefox
+ * can parse a frame made within a few milliseconds of another one in the
+ * scheme from before the emulated switch; by some tens of milliseconds it has
+ * caught up. A computer that is dark is dark long before a page loads, so a
+ * frame parsed in the old scheme isn't the case under test. Each document
+ * records what `prefers-color-scheme` told it as it parsed, before the head's
+ * own script runs, and a frame told the wrong scheme is made again a moment
+ * later. The assertions on what the head's script did are not retried.
  */
+
+/** Runs first in the head: what the system's scheme was as it parsed. */
+const PROBE =
+  "<script>window.__parsedDark = matchMedia('(prefers-color-scheme: dark)').matches;</script>";
 
 /** The head as the browser parses it, without the app's module script. */
 function head(): string {
@@ -37,18 +50,33 @@ afterEach(async () => {
   await commands.emulateColorScheme('light');
 });
 
-/** A fresh document from the head, with or without the stylesheet. */
-async function firstFrame(withStyles: boolean): Promise<Document> {
-  frame = document.createElement('iframe');
-  frame.style.cssText = 'width:375px;height:200px;border:0';
+/**
+ * A fresh document from the head, with or without the stylesheet, parsed with
+ * the system's scheme as `scheme`.
+ */
+async function firstFrame(
+  withStyles: boolean,
+  scheme: 'light' | 'dark',
+): Promise<Document> {
   const styles = withStyles ? `<style>${css}</style>` : '';
-  frame.srcdoc = `<!doctype html><html lang="en" data-theme="cute"><head>${head()}${styles}</head><body><p>Peach</p></body></html>`;
-  const loaded = new Promise((r) =>
-    frame!.addEventListener('load', r, { once: true }),
+  for (let attempt = 0; attempt < 20; attempt++) {
+    frame = document.createElement('iframe');
+    frame.style.cssText = 'width:375px;height:200px;border:0';
+    frame.srcdoc = `<!doctype html><html lang="en" data-theme="cute"><head>${PROBE}${head()}${styles}</head><body><p>Peach</p></body></html>`;
+    const loaded = new Promise((r) =>
+      frame!.addEventListener('load', r, { once: true }),
+    );
+    document.body.append(frame);
+    await loaded;
+    const told = (frame.contentWindow as Window & { __parsedDark?: boolean })
+      .__parsedDark;
+    if (told === (scheme === 'dark')) return frame.contentDocument!;
+    frame.remove();
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error(
+    `The browser never parsed a new document with the system ${scheme}`,
   );
-  document.body.append(frame);
-  await loaded;
-  return frame.contentDocument!;
 }
 
 /** Relative luminance of a computed `rgb()` colour, 0 to 1. */
@@ -68,12 +96,12 @@ async function paints(setup: {
   await commands.emulateColorScheme(setup.scheme);
   if (setup.appearance) localStorage.setItem('e8-appearance', setup.appearance);
   if (setup.theme) localStorage.setItem('e8-theme', setup.theme);
-  const bare = await firstFrame(false);
+  const bare = await firstFrame(false, setup.scheme);
   const canvas = bare.defaultView!.getComputedStyle(
     bare.documentElement,
   ).colorScheme;
   frame!.remove();
-  const styled = await firstFrame(true);
+  const styled = await firstFrame(true, setup.scheme);
   const page = luminance(
     styled.defaultView!.getComputedStyle(styled.body).backgroundColor,
   );
