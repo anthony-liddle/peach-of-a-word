@@ -39,6 +39,14 @@ export default defineConfig({
       // The page renders audio, not pixels, so a failure's screenshot shows nothing
       screenshotFailures: false,
       provider: playwright(),
+      // A test can put the browser in dark or light, as a phone or a computer
+      // set that way would be: `commands.emulateColorScheme('dark')`. The
+      // page's own `prefers-color-scheme` follows, in every engine.
+      commands: {
+        emulateColorScheme: async (ctx, scheme: 'light' | 'dark') => {
+          await ctx.page.emulateMedia({ colorScheme: scheme });
+        },
+      },
       instances: [
         { browser: 'chromium' },
         { browser: 'firefox' },
