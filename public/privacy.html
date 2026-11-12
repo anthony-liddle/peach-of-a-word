@@ -53,6 +53,18 @@
         --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
         --radius: 18px;
       }
+      /* Cocoa, the game's dark, for the same tokens: drawn when the script
+         below finds the page dark, by the game's own rule. Letterpress has no
+         dark yet. standaloneHtml.test.ts holds each value to src/index.css. */
+      [data-theme='cute'][data-appearance='dark'] {
+        --paper: #2b1a14;
+        --paper-deep: #3b2720;
+        --ink: #ffeadf;
+        --ink-soft: #f0cfbf;
+        --ink-faint: #d9b3a1;
+        --accent: #ff8bae;
+        --rule: #4a3229;
+      }
       * {
         box-sizing: border-box;
       }
@@ -145,6 +157,34 @@
         if (icon)
           icon.href =
             theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+        // The appearance, by index.html's rule: System follows the computer
+        // or phone, Light and Dark are the player's choice in the game, and
+        // only cute has a dark. Set before the first paint, and again when
+        // the system changes, so a page left open follows it as the game does.
+        var appearance;
+        try {
+          appearance = localStorage.getItem('e8-appearance');
+        } catch (e) {
+          appearance = null;
+        }
+        var system = null;
+        try {
+          system = window.matchMedia('(prefers-color-scheme: dark)');
+        } catch (e) {
+          system = null;
+        }
+        var paint = function () {
+          var dark =
+            theme === 'cute' &&
+            (appearance === 'dark' ||
+              (appearance !== 'light' && !!system && system.matches));
+          var root = document.documentElement;
+          root.dataset.appearance = dark ? 'dark' : 'light';
+          root.style.colorScheme = dark ? 'dark' : 'light';
+        };
+        paint();
+        if (system && system.addEventListener)
+          system.addEventListener('change', paint);
       })();
       // The app opens this page at /privacy?from=app. Marked before paint, as
       // the theme is, so the footer never flashes on screen there; from
