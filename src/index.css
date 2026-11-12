@@ -2002,6 +2002,7 @@ button {
   content: '\00B7';
   margin-right: 0.75rem;
   color: var(--ink-faint);
+  display: inline-block;
 }
 
 /* ---- Edition Complete (the win state) ----------------------------------- */
