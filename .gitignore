@@ -16,3 +16,6 @@ scripts/_investigate/
 !.vscode/extensions.json
 .idea/
 *.log
+
+# Claude Code worktrees: one per task, removed once its work merges.
+.claude/worktrees/
