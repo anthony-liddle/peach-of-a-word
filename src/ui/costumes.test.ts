@@ -16,7 +16,7 @@ import { GROWTH_STAGES } from '@/storeArt/growthStages.ts';
  * other fails in the one that was not changed.
  */
 const COSTUME_TABLE_SHA256 =
-  '8ca85d325a075be36611aecb411f081b5537a8db053fff8e13ec22a45e5a74d3';
+  '352148807734e0286fcd82f96e5171d0180116accf68aca2f5d30761e7670f8b';
 
 /** Each command and its numbers, for absolute M, L, C and Z only. */
 function commands(d: string): { op: string; points: [number, number][] }[] {

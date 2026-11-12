@@ -549,6 +549,13 @@ export const COSTUMES: Record<CostumeId, Costume> = {
     spoken: 'wearing a top hat',
     replacesFace: false,
     parts: [
+      // brim rim.
+      {
+        d: 'M21.2 20.5 C21.8 16 79.3 24.1 78.6 28.5 C78 33 20.6 24.9 21.2 20.5 Z',
+        fill: '#8C86AA',
+        stroke: '#8C86AA',
+        strokeWidth: 2.4,
+      },
       // The brim, tilted with the hat.
       {
         d:
@@ -560,6 +567,12 @@ export const COSTUMES: Record<CostumeId, Costume> = {
       {
         d: 'M35 1.7 C35.2 0.2 70.8 5.2 70.6 6.7 L65.8 26.2 L34.2 21.8 Z',
         fill: '#2E2A3A',
+      },
+      // hat crown rim.
+      {
+        d: 'M35.9 14.5 L36 2.8 C36.2 1.3 69.8 6.3 69.6 7.8 L66.7 18.5',
+        stroke: '#8C86AA',
+        strokeWidth: 1.4,
       },
       // Its gold band.
       {

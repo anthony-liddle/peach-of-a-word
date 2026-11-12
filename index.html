@@ -8,7 +8,23 @@
       name="description"
       content="Make words from eight scrambled letters, then find the long word they all came from. A new puzzle daily."
     />
-    <meta name="theme-color" content="#fff4ee" />
+    <!-- Light and dark. The canvas is dark before any stylesheet when the
+         computer or phone is, and the address bar is the page's colour: Cocoa
+         in dark, the peach-cream in light. The script below pins both to the
+         page's own appearance, which a player's choice or letterpress can
+         make differ from the system's; these are what a browser that never
+         runs it falls back on. -->
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="theme-color"
+      content="#fff4ee"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#2b1a14"
+      media="(prefers-color-scheme: dark)"
+    />
     <link rel="canonical" href="%VITE_SITE_URL%/" />
 
     <!-- Icons: the tab icon follows the theme. It is set before the first paint
@@ -52,6 +68,37 @@
         }
         if (size === 'large' || size === 'largest')
           document.documentElement.dataset.textSize = size;
+        // The appearance, same no-flash contract: System follows the
+        // computer or phone, Light and Dark are the player's, kept per device.
+        // Only cute has a dark; letterpress is light in every appearance. The
+        // root carries the result and its colour-scheme before the first
+        // paint, so the first frame is already dark when it should be.
+        // useAppearance.ts keeps it so, by the same rule.
+        var appearance;
+        try {
+          appearance = localStorage.getItem('e8-appearance');
+        } catch (e) {
+          appearance = null;
+        }
+        var systemDark = false;
+        try {
+          systemDark = window.matchMedia(
+            '(prefers-color-scheme: dark)',
+          ).matches;
+        } catch (e) {
+          systemDark = false;
+        }
+        var dark =
+          theme === 'cute' &&
+          (appearance === 'dark' || (appearance !== 'light' && systemDark));
+        var root = document.documentElement;
+        root.dataset.appearance = dark ? 'dark' : 'light';
+        root.style.colorScheme = dark ? 'dark' : 'light';
+        var bars = document.querySelectorAll('meta[name="theme-color"]');
+        for (var i = 0; i < bars.length; i++) {
+          bars[i].removeAttribute('media');
+          bars[i].setAttribute('content', dark ? '#2b1a14' : '#fff4ee');
+        }
       })();
     </script>
 

@@ -123,10 +123,18 @@ describe('static chrome and splash color', () => {
     readFileSync(resolve(process.cwd(), 'public/site.webmanifest'), 'utf8'),
   ) as { theme_color: string; background_color: string };
 
-  test('the theme-color meta is the cute background', () => {
-    expect(html.toLowerCase()).toContain(
-      `<meta name="theme-color" content="${CUTE_BG}" />`,
+  test('the theme-color metas are the cute background in light and Cocoa in dark', () => {
+    // Two, by the system's scheme, for a browser that never runs the script
+    // before the first paint; the script then pins both to the page's own
+    // appearance (useAppearance.ts).
+    const flat = html.toLowerCase().replace(/\s+/g, ' ');
+    expect(flat).toContain(
+      `<meta name="theme-color" content="${CUTE_BG}" media="(prefers-color-scheme: light)" />`,
     );
+    expect(flat).toContain(
+      '<meta name="theme-color" content="#2b1a14" media="(prefers-color-scheme: dark)" />',
+    );
+    expect(flat).toContain('<meta name="color-scheme" content="light dark" />');
   });
 
   test('the manifest theme and background colors are the cute background', () => {

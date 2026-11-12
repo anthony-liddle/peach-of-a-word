@@ -8,11 +8,10 @@ import {
   type GameApi,
   type Glint,
 } from './useGame.ts';
-import { useTheme, type Theme } from './useTheme.ts';
+import { useTheme } from './useTheme.ts';
 import { copy } from './themeCopy.ts';
 import { boardCostume } from './costumes.ts';
 import { applyFavicon } from './favicon.ts';
-import { nextTextSize, useTextSize, type TextSize } from './useTextSize.ts';
 import { useWideBoard } from './useWideBoard.ts';
 import { FoundList } from './components/FoundList.tsx';
 import { TierMeter } from './components/TierMeter.tsx';
@@ -26,6 +25,7 @@ import { Decorations } from './components/Decorations.tsx';
 import { ComposingStick } from './components/ComposingStick.tsx';
 import { TypeCase } from './components/TypeCase.tsx';
 import { Controls } from './components/Controls.tsx';
+import { SettingsMenu } from './components/SettingsMenu.tsx';
 import { useGlobalKeys } from './useGlobalKeys.ts';
 import { useDefinitions } from './useDefinitions.ts';
 import { classifyWord } from '@/engine/index.ts';
@@ -63,6 +63,7 @@ export function Game({ data, audio, storage }: Props) {
   // global key handler can stand down while it is up (the same precedent as the
   // reveal), and so focus can return to the trigger on close.
   const [howOpen, setHowOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Dev only: the card probe's target, read once from the URL. See
   // `DevCardProbe` for why it exists and what it is allowed to render.
@@ -119,7 +120,8 @@ export function Game({ data, audio, storage }: Props) {
   // (`revealOpen`) and the explainer do: Enter is its way out's, and no key
   // reaches the board behind it.
   const tilesRef = useRef<HTMLDivElement>(null);
-  useGlobalKeys(game, howOpen || quiet !== null, tilesRef);
+  // The popover's arrows, Space and Escape are its own while it is open.
+  useGlobalKeys(game, howOpen || quiet !== null || settingsOpen, tilesRef);
 
   const onWordTap = useCallback(
     (word: string, trigger: HTMLElement) => {
@@ -210,7 +212,11 @@ export function Game({ data, audio, storage }: Props) {
           leave or reload.
         </p>
       )}
-      <Toolbar game={game} />
+      <Toolbar
+        game={game}
+        settingsOpen={settingsOpen}
+        onSettingsOpenChange={setSettingsOpen}
+      />
 
       <div className="board">
         <div className="play">
@@ -323,9 +329,16 @@ function Masthead() {
   );
 }
 
-function Toolbar({ game }: { game: GameApi }) {
+function Toolbar({
+  game,
+  settingsOpen,
+  onSettingsOpenChange,
+}: {
+  game: GameApi;
+  settingsOpen: boolean;
+  onSettingsOpenChange: (open: boolean) => void;
+}) {
   const { state } = game;
-  const [theme, setTheme] = useTheme();
   // The streak has one home at any given width, never two at the same one. At
   // narrow widths it is the flame in the tier meter, above the well; here it is
   // the pill. The pill survives at two-column widths because the meter there
@@ -335,7 +348,7 @@ function Toolbar({ game }: { game: GameApi }) {
   // twice.
   const wide = useWideBoard();
   return (
-    <div className="toolbar">
+    <div className={settingsOpen ? 'toolbar toolbar--raised' : 'toolbar'}>
       <div className="modes" role="group" aria-label="Mode">
         <button
           aria-pressed={state.mode === 'daily'}
@@ -352,23 +365,6 @@ function Toolbar({ game }: { game: GameApi }) {
       </div>
 
       <div className="toolbar__right">
-        {/* Wide screens: the segmented pair. Narrow screens: a single swap
-            button (CSS swaps which one shows), so the labels never clip. */}
-        <div className="modes theme-seg" role="group" aria-label="Theme">
-          <button
-            aria-pressed={theme === 'letterpress'}
-            onClick={() => setTheme('letterpress')}
-          >
-            Letterpress
-          </button>
-          <button
-            aria-pressed={theme === 'cute'}
-            onClick={() => setTheme('cute')}
-          >
-            Cute
-          </button>
-        </div>
-        <ThemeSwap theme={theme} setTheme={setTheme} />
         {state.mode === 'daily' ? (
           wide && (
             <span className="chip" title="Days cleared in a row">
@@ -390,92 +386,16 @@ function Toolbar({ game }: { game: GameApi }) {
             ✦
           </button>
         )}
-        <TextSizeButton />
-        <button
-          className="iconbtn iconbtn--accent"
-          aria-pressed={game.muted}
-          onClick={game.toggleMute}
-          aria-label={game.muted ? 'Unmute sound' : 'Mute sound'}
-          title={game.muted ? 'Sound off' : 'Sound on'}
-        >
-          {game.muted ? '◌' : '♪'}
-        </button>
+        {/* The theme, the appearance, the text size and sound, in one
+            popover: see SettingsMenu. */}
+        <SettingsMenu
+          open={settingsOpen}
+          onOpenChange={onSettingsOpenChange}
+          muted={game.muted}
+          onToggleMute={game.toggleMute}
+        />
       </div>
     </div>
-  );
-}
-
-/**
- * The three-step text-size cycler, for players who have not found (or do not
- * know about) their browser's own text setting. Cycles regular, large,
- * largest; the accessible name states the current step and the action, like
- * ThemeSwap, and a local polite live region announces each change the way the
- * share confirmation does. The growing page itself is the sighted feedback.
- */
-function TextSizeButton() {
-  const [size, setSize] = useTextSize();
-  const [announced, setAnnounced] = useState('');
-  const labels: Record<TextSize, string> = {
-    regular: 'Regular',
-    large: 'Large',
-    largest: 'Largest',
-  };
-  const next = nextTextSize(size);
-  const cycle = () => {
-    setSize(next);
-    setAnnounced(`Text size: ${labels[next]}`);
-  };
-  return (
-    <>
-      <button
-        type="button"
-        className="iconbtn textsize"
-        onClick={cycle}
-        aria-label={`Text size: ${labels[size]}. Activate to switch to ${labels[next].toLowerCase()}.`}
-        title={`Text size: ${labels[size]}`}
-      >
-        <span aria-hidden="true">Aa</span>
-      </button>
-      <span className="visually-hidden" aria-live="polite" aria-atomic="true">
-        {announced}
-      </span>
-    </>
-  );
-}
-
-/**
- * The compact theme control for narrow screens. It shows the current theme (to
- * match the Daily/Endless pair above it) with a swap glyph that signals it is
- * tap-to-change, and toggles to the other theme. The accessible name states the
- * action since the visible label only shows the current state.
- */
-function ThemeSwap({
-  theme,
-  setTheme,
-}: {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-}) {
-  const isCute = theme === 'cute';
-  // Display labels only. The stored value stays 'letterpress', so renaming the
-  // label migrates nothing and saved preferences are untouched.
-  const currentName = isCute ? 'Cute' : 'Letterpress';
-  const nextName = isCute ? 'Letterpress' : 'Cute';
-  return (
-    <button
-      type="button"
-      className="theme-swap"
-      onClick={() => setTheme(isCute ? 'letterpress' : 'cute')}
-      aria-label={`Theme: ${currentName}. Activate to switch to ${nextName}.`}
-    >
-      <span className="theme-swap__glyph" aria-hidden="true">
-        ◐
-      </span>
-      <span className="theme-swap__name">{currentName}</span>
-      <span className="theme-swap__cycle" aria-hidden="true">
-        ⇄
-      </span>
-    </button>
   );
 }
 

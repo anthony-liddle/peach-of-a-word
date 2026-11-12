@@ -93,8 +93,10 @@ export const COSTUME_LABELS: Record<CostumeId, readonly string[]> = {
   ],
   'santa-hat': ['hat', 'hat fold', 'fur trim', 'pompom'],
   'top-hat': [
+    'brim rim',
     'brim',
     'hat crown',
+    'hat crown rim',
     'band',
     'hat crown edge',
     'brim edge',

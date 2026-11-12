@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import { DEFAULT_THEME } from './ui/useTheme.ts';
@@ -179,6 +179,30 @@ describe('privacy.html', () => {
    * links, and Settings' privacy row, which opens this page. The policy named
    * only the first two until 5 November 2026.
    */
+  /**
+   * The website's paragraph names each key the game keeps in the browser's
+   * local storage. The appearance's, `e8-appearance`, went unnamed until 12
+   * November 2026, when the setting that writes it was ready to ship. Read from
+   * the source, by the keys' own prefixes, so a new key fails here until the
+   * policy names it too.
+   */
+  test('names every key the game keeps in local storage', () => {
+    const keys = new Set<string>();
+    const dir = resolve(process.cwd(), 'src');
+    for (const file of readdirSync(dir, { recursive: true }) as string[]) {
+      if (!/\.tsx?$/.test(file) || /\.test\.|^testing\//.test(file)) continue;
+      const source = readFileSync(resolve(dir, file), 'utf8');
+      for (const [, key] of source.matchAll(
+        /'(e8-[a-z-]+|eight-letters\/v\d+)'/g,
+      ))
+        keys.add(key!);
+    }
+    expect([...keys].sort()).toEqual(
+      expect.arrayContaining(['e8-theme', 'eight-letters/v1']),
+    );
+    for (const key of keys) expect(html).toContain(`<code>${key}</code>`);
+  });
+
   test('names every way from the app to the web', () => {
     const text = new DOMParser()
       .parseFromString(html, 'text/html')
