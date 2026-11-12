@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { commands } from 'vitest/browser';
 import html from '../index.html?raw';
 import css from '@/index.css?raw';
@@ -50,19 +50,24 @@ afterEach(async () => {
   await commands.emulateColorScheme('light');
 });
 
+/** The game's first document: the head, with or without the stylesheet. */
+function gameDocument(withStyles: boolean): string {
+  const styles = withStyles ? `<style>${css}</style>` : '';
+  return `<!doctype html><html lang="en" data-theme="cute"><head>${PROBE}${head()}${styles}</head><body><p>Peach</p></body></html>`;
+}
+
 /**
- * A fresh document from the head, with or without the stylesheet, parsed with
- * the system's scheme as `scheme`.
+ * A fresh frame of `doc`, which starts its head with `PROBE`, parsed with the
+ * system's scheme as `scheme`.
  */
 async function firstFrame(
-  withStyles: boolean,
+  doc: string,
   scheme: 'light' | 'dark',
 ): Promise<Document> {
-  const styles = withStyles ? `<style>${css}</style>` : '';
   for (let attempt = 0; attempt < 20; attempt++) {
     frame = document.createElement('iframe');
     frame.style.cssText = 'width:375px;height:200px;border:0';
-    frame.srcdoc = `<!doctype html><html lang="en" data-theme="cute"><head>${PROBE}${head()}${styles}</head><body><p>Peach</p></body></html>`;
+    frame.srcdoc = doc;
     const loaded = new Promise((r) =>
       frame!.addEventListener('load', r, { once: true }),
     );
@@ -96,12 +101,12 @@ async function paints(setup: {
   await commands.emulateColorScheme(setup.scheme);
   if (setup.appearance) localStorage.setItem('e8-appearance', setup.appearance);
   if (setup.theme) localStorage.setItem('e8-theme', setup.theme);
-  const bare = await firstFrame(false, setup.scheme);
+  const bare = await firstFrame(gameDocument(false), setup.scheme);
   const canvas = bare.defaultView!.getComputedStyle(
     bare.documentElement,
   ).colorScheme;
   frame!.remove();
-  const styled = await firstFrame(true, setup.scheme);
+  const styled = await firstFrame(gameDocument(true), setup.scheme);
   const page = luminance(
     styled.defaultView!.getComputedStyle(styled.body).backgroundColor,
   );
@@ -140,5 +145,84 @@ describe('the first frame', () => {
     });
     expect(canvas).toBe('light');
     expect(page).toBeGreaterThan(0.7);
+  });
+});
+
+/**
+ * The standalone pages, the privacy policy, support and the 404, whole as the
+ * site serves them (Antoine, 12 November 2026). Their styles and their script
+ * are inline, so the first frame is the page itself.
+ */
+describe.each(['privacy', 'support', '404'])('/%s.html', (name) => {
+  let source = '';
+
+  beforeAll(async () => {
+    source = await (await fetch(`/${name}.html`)).text();
+    expect(source).toContain(`<title>`);
+  });
+
+  /** The page, told the system's scheme first, as the game's documents are. */
+  const page = () => source.replace('<head>', `<head>${PROBE}`);
+
+  async function pagePaints(setup: {
+    scheme: 'light' | 'dark';
+    appearance?: 'system' | 'light' | 'dark';
+    theme?: 'cute' | 'letterpress';
+  }): Promise<{ canvas: string; page: number }> {
+    await commands.emulateColorScheme(setup.scheme);
+    if (setup.appearance)
+      localStorage.setItem('e8-appearance', setup.appearance);
+    if (setup.theme) localStorage.setItem('e8-theme', setup.theme);
+    const doc = await firstFrame(page(), setup.scheme);
+    const view = doc.defaultView!;
+    return {
+      canvas: view.getComputedStyle(doc.documentElement).colorScheme,
+      page: luminance(view.getComputedStyle(doc.body).backgroundColor),
+    };
+  }
+
+  test('a dark computer or phone, and nothing chosen: dark from the first frame', async () => {
+    const { canvas, page } = await pagePaints({ scheme: 'dark' });
+    expect(canvas).toBe('dark');
+    expect(page).toBeLessThan(0.05);
+  });
+
+  test('a light one, and Dark chosen: dark from the first frame', async () => {
+    const { canvas, page } = await pagePaints({
+      scheme: 'light',
+      appearance: 'dark',
+    });
+    expect(canvas).toBe('dark');
+    expect(page).toBeLessThan(0.05);
+  });
+
+  test('a dark one, and Light chosen: light, as asked', async () => {
+    const { canvas, page } = await pagePaints({
+      scheme: 'dark',
+      appearance: 'light',
+    });
+    expect(canvas).toBe('light');
+    expect(page).toBeGreaterThan(0.8);
+  });
+
+  test('a dark one in letterpress: light, which has no dark yet', async () => {
+    const { canvas, page } = await pagePaints({
+      scheme: 'dark',
+      theme: 'letterpress',
+    });
+    expect(canvas).toBe('light');
+    expect(page).toBeGreaterThan(0.7);
+  });
+
+  test('left open on System, it turns dark with the computer, and back', async () => {
+    const doc = await firstFrame(page(), 'light');
+    const view = doc.defaultView!;
+    const background = () =>
+      luminance(view.getComputedStyle(doc.body).backgroundColor);
+    expect(background()).toBeGreaterThan(0.8);
+    await commands.emulateColorScheme('dark');
+    await expect.poll(background, { timeout: 2000 }).toBeLessThan(0.05);
+    await commands.emulateColorScheme('light');
+    await expect.poll(background, { timeout: 2000 }).toBeGreaterThan(0.8);
   });
 });

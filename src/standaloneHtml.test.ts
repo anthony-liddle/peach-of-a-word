@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { DEFAULT_THEME } from './ui/useTheme.ts';
 import { faviconHref } from './ui/favicon.ts';
 
@@ -71,6 +71,167 @@ describe.each(PAGES)('%s', (path) => {
   test('the retired 8-tile favicon is gone from this page too', () => {
     expect(html).not.toContain('/favicon.ico');
     expect(html).not.toContain('/favicon.svg');
+  });
+});
+
+/**
+ * The appearance, on every standalone page (Antoine, 12 November 2026): a
+ * player whose computer or phone is dark, or who chose Dark in the game, reads
+ * the policy, the support page and the 404 dark too.
+ *
+ * **By index.html's own rule, run, not reread.** Each page's script and
+ * index.html's run against the same storage and the same system, in every
+ * combination, and must leave the root alike. The pages' copies of the rule
+ * are their own, as their theme scripts are, so this is what keeps them in
+ * step with the game's.
+ */
+describe.each(PAGES)('%s, in each appearance', (path) => {
+  const html = read(path);
+  const index = read('index.html');
+  const root = document.documentElement;
+  const original = window.matchMedia;
+
+  /** The system's scheme, and the page's listener on it. */
+  let systemDark: boolean | 'throws' = false;
+  let onChange: (() => void) | null = null;
+
+  /** Runs a document's classic head scripts here, against `root`. */
+  const run = (doc: string) => {
+    const head = new DOMParser().parseFromString(doc, 'text/html').head;
+    for (const script of head.querySelectorAll('script:not([type])'))
+      new Function(script.textContent ?? '')();
+  };
+
+  const resolveIn = (
+    doc: string,
+    saved: { theme?: string | undefined; appearance?: string | undefined },
+    blocked = false,
+  ) => {
+    localStorage.clear();
+    if (saved.theme) localStorage.setItem('e8-theme', saved.theme);
+    if (saved.appearance)
+      localStorage.setItem('e8-appearance', saved.appearance);
+    const getItem = Storage.prototype.getItem;
+    if (blocked)
+      Storage.prototype.getItem = () => {
+        throw new Error('storage blocked');
+      };
+    delete root.dataset.theme;
+    delete root.dataset.appearance;
+    root.style.colorScheme = '';
+    try {
+      run(doc);
+    } finally {
+      Storage.prototype.getItem = getItem;
+    }
+    return {
+      theme: root.dataset.theme,
+      appearance: root.dataset.appearance,
+      scheme: root.style.colorScheme,
+    };
+  };
+
+  beforeEach(() => {
+    systemDark = false;
+    onChange = null;
+    window.matchMedia = ((query: string) => {
+      if (systemDark === 'throws') throw new Error('no matchMedia');
+      return {
+        get matches() {
+          return query === '(prefers-color-scheme: dark)' && !!systemDark;
+        },
+        media: query,
+        addEventListener: (_: string, fn: () => void) => {
+          onChange = fn;
+        },
+        removeEventListener: () => {},
+      };
+    }) as unknown as typeof window.matchMedia;
+  });
+
+  afterEach(() => {
+    window.matchMedia = original;
+    localStorage.clear();
+    delete root.dataset.theme;
+    delete root.dataset.appearance;
+    root.style.colorScheme = '';
+  });
+
+  test('resolves as index.html does, in every combination', () => {
+    const themes = [undefined, 'cute', 'letterpress', 'sepia'];
+    const appearances = [undefined, 'system', 'light', 'dark', 'dusk'];
+    const systems = [false, true, 'throws'] as const;
+    let darks = 0;
+    for (const theme of themes)
+      for (const appearance of appearances)
+        for (const system of systems)
+          for (const blocked of [false, true]) {
+            systemDark = system;
+            const saved = { theme, appearance };
+            const game = resolveIn(index, saved, blocked);
+            const page = resolveIn(html, saved, blocked);
+            const named = JSON.stringify({ ...saved, system, blocked });
+            expect(page, named).toEqual(game);
+            if (page.appearance === 'dark') darks++;
+          }
+    // Not two scripts that agree by doing nothing: some combinations are dark.
+    expect(darks).toBeGreaterThan(0);
+  });
+
+  test('a dark computer, nothing chosen: dark; letterpress: light', () => {
+    systemDark = true;
+    expect(resolveIn(html, {})).toMatchObject({
+      appearance: 'dark',
+      scheme: 'dark',
+    });
+    expect(resolveIn(html, { theme: 'letterpress' })).toMatchObject({
+      appearance: 'light',
+      scheme: 'light',
+    });
+  });
+
+  test('on System, a page left open follows the system', () => {
+    resolveIn(html, { appearance: 'system' });
+    expect(root.dataset.appearance).toBe('light');
+    systemDark = true;
+    onChange?.();
+    expect(root.dataset.appearance).toBe('dark');
+    expect(root.style.colorScheme).toBe('dark');
+    systemDark = false;
+    onChange?.();
+    expect(root.dataset.appearance).toBe('light');
+  });
+
+  test('a chosen Light stays light when the system turns dark', () => {
+    resolveIn(html, { appearance: 'light' });
+    systemDark = true;
+    onChange?.();
+    expect(root.dataset.appearance).toBe('light');
+  });
+
+  /**
+   * Each colour the page's cute block sets is set again for dark, at the
+   * game's Cocoa value for the same token, so the pages and the game can't
+   * drift apart. The game's pairs are measured in appearanceContrast.test.ts.
+   */
+  test("its dark colours are the game's Cocoa, token for token", () => {
+    const block = (css: string, selector: string) => {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, `no ${selector} block`).toBeGreaterThan(-1);
+      const body = css.slice(at, css.indexOf('}', at));
+      return Object.fromEntries(
+        [...body.matchAll(/(--[a-z-]+):\s*(#[0-9a-f]{3,8})\b/gi)].map(
+          ([, name, value]) => [name, value!.toLowerCase()],
+        ),
+      );
+    };
+    const dark = "[data-theme='cute'][data-appearance='dark']";
+    const light = block(html, "[data-theme='cute']");
+    const cocoa = block(read('src/index.css'), dark);
+    const page = block(html, dark);
+    expect(Object.keys(page).sort()).toEqual(Object.keys(light).sort());
+    for (const [name, value] of Object.entries(page))
+      expect(value, name).toBe(cocoa[name]);
   });
 });
 
