@@ -146,6 +146,18 @@ function renderGame(store = fakeStore()) {
   );
 }
 
+/**
+ * The theme, chosen as a player now does: Settings, its radio, then Escape,
+ * which closes the popover so the board has the keyboard back.
+ */
+function chooseTheme(name: 'Cute' | 'Letterpress') {
+  const settings = screen.getByRole('button', { name: 'Settings' });
+  if (settings.getAttribute('aria-expanded') !== 'true')
+    fireEvent.click(settings);
+  fireEvent.click(screen.getByRole('radio', { name }));
+  fireEvent.keyDown(document, { key: 'Escape' });
+}
+
 describe('Game', () => {
   beforeEach(() => {
     // jsdom has no Web Audio; NullAudioEngine sidesteps it entirely.
@@ -502,18 +514,21 @@ describe('Game', () => {
     expect(within(glossary).getByText('sea', GRID)).toBeInTheDocument();
   });
 
-  it('toggles mute', () => {
+  it('toggles sound from Settings', () => {
     renderGame();
-    const mute = screen.getByRole('button', { name: /mute sound/i });
-    fireEvent.click(mute);
-    expect(
-      screen.getByRole('button', { name: /unmute sound/i }),
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    const sound = screen.getByRole('checkbox', { name: 'Sound' });
+    expect(sound).toBeChecked();
+    fireEvent.click(sound);
+    expect(screen.getByRole('checkbox', { name: 'Sound' })).not.toBeChecked();
   });
 
   it('switches and persists the theme, and names the right fonts', () => {
+    // From letterpress, since choosing the theme already chosen changes
+    // nothing, as a radio button doesn't.
+    document.documentElement.dataset.theme = 'letterpress';
     renderGame();
-    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    chooseTheme('Cute');
     expect(document.documentElement.dataset.theme).toBe('cute');
     expect(localStorage.getItem('e8-theme')).toBe('cute');
     // Each theme names its own typefaces, in one verb since November 2026.
@@ -523,7 +538,7 @@ describe('Game', () => {
     expect(colophon()).toMatch(/Fredoka and Nunito/);
     expect(colophon()).not.toMatch(/Fraunces/);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
+    chooseTheme('Letterpress');
     expect(document.documentElement.dataset.theme).toBe('letterpress');
     expect(colophon()).toContain(copy('letterpress').typeCredit);
   });
@@ -534,33 +549,24 @@ describe('Game', () => {
     // The stored value was already letterpress, so nothing migrates.
     document.documentElement.dataset.theme = 'cute';
     renderGame();
-    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
+    chooseTheme('Letterpress');
 
-    expect(screen.queryByRole('button', { name: 'Classic' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Classic' })).toBeNull();
     expect(document.documentElement.dataset.theme).toBe('letterpress');
     expect(localStorage.getItem('e8-theme')).toBe('letterpress');
   });
 
-  it('swaps the theme from the compact button and keeps name and label in sync', () => {
+  it('shows the current theme in Settings, and switches it both ways', () => {
     document.documentElement.dataset.theme = 'letterpress';
     renderGame();
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('radio', { name: 'Letterpress' })).toBeChecked();
 
-    // In letterpress it shows the current theme and offers to switch to cute.
-    const fromLetterpress = screen.getByRole('button', {
-      name: /theme: letterpress\. activate to switch to cute/i,
-    });
-    expect(fromLetterpress).toHaveTextContent(/letterpress/i);
-
-    fireEvent.click(fromLetterpress);
+    fireEvent.click(screen.getByRole('radio', { name: 'Cute' }));
     expect(document.documentElement.dataset.theme).toBe('cute');
+    expect(screen.getByRole('radio', { name: 'Cute' })).toBeChecked();
 
-    // Now it shows Cute and offers the way back to Letterpress.
-    const fromCute = screen.getByRole('button', {
-      name: /theme: cute\. activate to switch to letterpress/i,
-    });
-    expect(fromCute).toHaveTextContent(/cute/i);
-
-    fireEvent.click(fromCute);
+    fireEvent.click(screen.getByRole('radio', { name: 'Letterpress' }));
     expect(document.documentElement.dataset.theme).toBe('letterpress');
   });
 
@@ -875,7 +881,7 @@ describe("Game the well's line", () => {
     renderGame();
     find('denar');
     expect(stick().querySelector('.mark--mythic')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    chooseTheme('Cute');
     // The same element; the stylesheet draws a pressmark in letterpress and
     // the gem in cute.
     expect(stick().querySelector('.mark--mythic')).toBeTruthy();
@@ -1212,10 +1218,10 @@ describe('Game source-word celebration', () => {
     dismissReveal();
     expect(message().textContent).toBe('You found the peach of a word.');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    chooseTheme('Cute');
     expect(message().textContent).toBe('You found the Peach of a Word!');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
+    chooseTheme('Letterpress');
     expect(message().textContent).toBe('You found the peach of a word.');
   });
 
@@ -1234,7 +1240,7 @@ describe('Game source-word celebration', () => {
       expect(board()).toContain(s);
     }
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    chooseTheme('Cute');
     for (const s of [
       copy('cute').mastheadSubline,
       copy('cute').submitWord,
@@ -1275,7 +1281,7 @@ describe('Game source-word celebration', () => {
     const spoken = screen.getByRole('status').textContent;
     dismissReveal();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
+    chooseTheme('Letterpress');
     // A live region speaks whenever its text changes, so holding the text still
     // is what "no second announcement" looks like from the outside. The find is
     // a point in time; re-skinning the page is not a new one.
@@ -1290,7 +1296,7 @@ describe('Game source-word celebration', () => {
     renderGame();
     findSource();
     dismissReveal();
-    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
+    chooseTheme('Letterpress');
 
     type('sea');
     fireEvent.keyDown(window, { key: 'Enter' });
@@ -1601,7 +1607,7 @@ describe('Controls layout', () => {
     renderGame();
     const letterpress = skeleton(controls().innerHTML, 'letterpress');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    chooseTheme('Cute');
     const cute = skeleton(controls().innerHTML, 'cute');
 
     expect(cute).toBe(letterpress);
@@ -1968,8 +1974,8 @@ describe('Game Mythic glint', () => {
     expect(first).toBeTruthy();
     // A redraw of the same line keeps the same glint, never a new one, so
     // its sweep is not started again.
-    fireEvent.click(screen.getByRole('button', { name: 'Letterpress' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cute' }));
+    chooseTheme('Letterpress');
+    chooseTheme('Cute');
     expect(wellGlint()).toBe(first);
   });
 

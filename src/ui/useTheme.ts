@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { applyFavicon } from './favicon.ts';
+import { appearanceStore } from './useAppearance.ts';
 
 export type Theme = 'letterpress' | 'cute';
 
@@ -36,6 +37,8 @@ function readTheme(): Theme {
 
 function setTheme(next: Theme): void {
   document.documentElement.dataset.theme = next;
+  // Only cute has a dark, so a theme change can turn the page dark or light.
+  appearanceStore.refresh();
   // The tab icon follows the theme too. The pre-paint script sets the initial
   // one; this keeps it in step on every toggle.
   applyFavicon(next);

@@ -94,10 +94,21 @@ const radio = (name: string, value: string) =>
     `input[type="radio"][name="${name}"][value="${value}"]`,
   );
 
+/**
+ * Safari's engine leaves buttons out of Tab unless the player has turned on
+ * "Press Tab to highlight each item", and Option-Tab reaches them instead. So
+ * a keyboard player there presses Option-Tab, and so does the test.
+ */
+const tab =
+  /AppleWebKit/.test(navigator.userAgent) &&
+  !/Chrome|Firefox/.test(navigator.userAgent)
+    ? '{Alt>}{Tab}{/Alt}'
+    : '{Tab}';
+
 /** Tab until the Settings button has focus, as a keyboard player would. */
 async function tabToSettings() {
   for (let i = 0; i < 60 && document.activeElement !== button(); i++) {
-    await userEvent.keyboard('{Tab}');
+    await userEvent.keyboard(tab);
   }
   expect(document.activeElement, 'Tab never reached Settings').toBe(button());
 }

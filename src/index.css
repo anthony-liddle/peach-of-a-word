@@ -40,6 +40,8 @@
   --ink-soft: #5a5446; /* secondary text, ~6.3:1 on paper (AA) */
   --ink-faint: #6e6755; /* muted labels, ~4.9:1 on paper (AA) */
   --accent: #9d2b25; /* rubricated red: the everyday accent and chrome */
+  --button: #9d2b25; /* the primary button, the accent */
+  --scrim: rgba(33, 28, 21, 0.55);
   --accent-deep: #7a1f1b;
   --crown: #b5872f; /* amber: the source-word colour */
   --crown-deep: #8a661f;
@@ -97,7 +99,12 @@
 
 /* ============================ Cute ================================== */
 [data-theme='cute'] {
+  color-scheme: light;
   --paper: #fff4ee;
+  /* The page's foot, where its gradient ends. Its own token so dark can
+     redeclare it, and so the contrast test can read the colour text sits on
+     at the bottom of the page. */
+  --page-foot: #ffe6dc;
   --paper-deep: #ffffff; /* white surfaces */
   --paper-edge: #ffd9c8;
   --ink: #6b4636; /* warm cocoa, 6.9:1 on the bg (AA) */
@@ -132,13 +139,64 @@
   --surface-highlight: transparent;
   --surface-shadow: #ffc9b4;
 
-  --page-bg: linear-gradient(180deg, #fff4ee, #ffe6dc);
+  --page-bg: linear-gradient(180deg, var(--paper), var(--page-foot));
+  /* The big pink buttons' fill: Pick word, Keep playing, a card's close, the
+     pressed Daily or Endless. The pink today, but its own token: on a dark
+     page they are the brightest thing on screen, and if they glare first
+     thing in the morning they tone down here, in one place, without moving
+     the pink in text and the meter. */
+  --button: #c42e60;
+  /* Text on --button where it isn't the page's colour: the pressed mode and a
+     card's close. */
+  --on-accent: #ffffff;
+  /* The veil behind a card, and the soft glow under one. */
+  --scrim: rgba(33, 28, 21, 0.55);
+  --card-glow: rgba(255, 140, 120, 0.3);
   --tile-bg: var(--paper-deep);
   --tile-shadow: 0 5px 0 var(--surface-shadow);
   --tile-foot: transparent;
   --well-bg: var(--paper-deep);
   --well-shadow: 0 6px 0 var(--rule);
   --fill: var(--accent);
+}
+
+/* ========================= Cute, in dark =============================
+   Cocoa: the light theme's cocoa ink turned into the night, from the dark
+   mode report (vault, reports/2026-11-11 Dark Mode.md, palettes.json), where
+   every pair a player reads was measured. Drawn when the root says
+   data-appearance="dark", which the script in index.html sets before the
+   first paint and useAppearance.ts keeps: System follows the computer or
+   phone, and a player can choose Light or Dark. Letterpress has no dark yet,
+   so this is cute's only. Every colour the light block sets is set again here
+   (appearanceContrast.test.ts holds that, and every pair). */
+[data-theme='cute'][data-appearance='dark'] {
+  color-scheme: dark;
+  --paper: #2b1a14;
+  --page-foot: #22140f;
+  --paper-deep: #3b2720;
+  --paper-edge: #5a3d31;
+  --ink: #ffeadf;
+  --ink-soft: #f0cfbf;
+  --ink-faint: #d9b3a1;
+  --accent: #ff8bae;
+  --accent-deep: #ff6f99;
+  --crown: #ff9e58;
+  --crown-deep: #ffb47e;
+  --error: #ff8bae;
+  /* The light pink, not a deeper one: on a dark well the deeper is the
+     weaker, 4.5:1 or under where this reads 6.4:1. */
+  --error-deep: #ff8bae;
+  --rule: #4a3229;
+  --tile-face: #3b2720;
+  --tile-edge: #5a3d31;
+  --good: #ff8bae;
+  --discovery: #c4b0ff;
+  --deco-bloom: #8fd3b6;
+  --surface-shadow: #150c08;
+  --button: #ff8bae;
+  --on-accent: #2b1119;
+  --scrim: rgba(8, 4, 3, 0.62);
+  --card-glow: rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -462,8 +520,8 @@ button {
   color: var(--paper);
 }
 [data-theme='cute'] .modes button[aria-pressed='true'] {
-  background: var(--accent);
-  color: #fff;
+  background: var(--button);
+  color: var(--on-accent);
 }
 .toolbar__right {
   display: inline-flex;
@@ -505,50 +563,96 @@ button {
   font-size: 0.95rem;
   line-height: 1;
 }
-/* The text-size cycler. Visually one of the icon buttons; the pseudo-element
-   quietly widens the hit area to the 44px tap floor without growing the
-   36px control row it sits in (a pseudo participates in its button's hit
-   testing, so the extra ring is tappable). */
-.textsize {
-  position: relative;
-}
-.textsize::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-}
-.iconbtn--accent[aria-pressed='true'] {
-  border-color: var(--accent);
-  color: var(--accent);
-}
 .iconbtn--crown {
   border-color: var(--crown);
   color: var(--crown-deep);
 }
-/* The compact theme control. Hidden on wide screens (the segmented pair shows
-   instead); revealed at the narrow breakpoint below. Matches the other row
-   controls in height and style, squared in classic and a pill in cute via the
-   shared --radius token. */
-.theme-swap {
-  display: none;
-  align-items: center;
-  gap: 0.45rem;
-  height: var(--control-h);
-  padding: 0 0.85rem;
-  border: 1px solid var(--ink);
-  border-radius: var(--radius);
-  background: var(--paper-deep);
-  font-size: 0.875rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  touch-action: manipulation;
+/* ---- Settings: one button, one popover -------------------------------------
+   The theme, the appearance, the text size and sound, which had each been a
+   control in this row, behind one button (SettingsMenu.tsx). The popover hangs
+   from the button's right edge and is never wider than the screen less its
+   gutters, so it fits 320px at the largest text. */
+.settings {
+  position: relative;
 }
-.theme-swap__glyph,
-.theme-swap__cycle {
-  font-size: 0.9em;
-  line-height: 1;
+.settings__button {
+  position: relative;
+  color: var(--ink);
+}
+.settings__button svg {
+  display: block;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+/* The 44px tap floor without growing the 36px row: the pseudo-element widens
+   the hit area, and a pseudo takes part in its button's hit testing. */
+.settings__button::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+.settings__button[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.settings__panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: min(20rem, calc(100vw - 2rem));
+  padding: 0.9rem 1rem 0.8rem;
+  display: grid;
+  gap: 0.6rem;
+  background: var(--paper-deep);
+  color: var(--ink);
+  border: 1.5px solid var(--tile-edge);
+  border-radius: var(--card-radius);
+  box-shadow: 0 6px 0 var(--surface-shadow);
+  font-size: 0.95rem;
+  text-align: left;
+}
+.settings__group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.settings__group legend {
+  padding: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink-soft);
 }
+/* Each choice a 44px-tall target, wrapping rather than overflowing. */
+.settings__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  margin-right: 0.9rem;
+  cursor: pointer;
+}
+.settings__choice input {
+  accent-color: var(--accent);
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+}
+.settings__group:disabled .settings__choice {
+  color: var(--ink-faint);
+  cursor: default;
+}
+.settings__note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ink-faint);
+}
+
 /* Narrow widths: stack into two fixed rows (toggle, then controls) for both
    modes, so the wider New Puzzle cluster can never wrap differently from the
    Streak pill and shift everything below. Same structure, same height. */
@@ -564,24 +668,6 @@ button {
   }
   .toolbar__right {
     justify-content: flex-end;
-  }
-  /* Collapse the segmented theme pair to the single swap button so the row
-     never clips or spills onto a third line. */
-  .theme-seg {
-    display: none;
-  }
-  .theme-swap {
-    display: inline-flex;
-  }
-  /* Tighten the swap button here, and only here. Its label is the theme name,
-     and Letterpress is half again as long as the Cute it alternates with, so at
-     the narrowest width and the largest text step the untightened control ran
-     11px past the toolbar. Trimming the padding, the gap and a little of the
-     tracking buys about 24px, which clears the longest label with room over. */
-  .theme-swap {
-    gap: 0.3rem;
-    padding: 0 0.55rem;
-    letter-spacing: 0.06em;
   }
 }
 
@@ -872,8 +958,8 @@ button {
    carries the accent and reads unmistakably live. Given more room than Delete so
    the two adjacent high-frequency buttons differ in weight and width. */
 .btn--primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--button);
+  border-color: var(--button);
   color: var(--paper);
   font-weight: 600;
   flex: 2 1 auto;
@@ -1228,7 +1314,7 @@ button {
    text around them, which is these. The 44px of 2.5.5 (AAA) is for standalone
    controls, and using it here inflated every tally row to 44px.
 
-   A real box, not the pseudo-ring .textsize uses: the 0.35rem row gap means an
+   A real box, not the pseudo-ring .settings__button uses: the 0.35rem row gap means an
    overhanging ring would overlap the next rung and steal its taps. */
 .summary__rung {
   appearance: none;
@@ -1681,7 +1767,7 @@ button {
 .reveal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(33, 28, 21, 0.55);
+  background: var(--scrim);
   display: grid;
   place-content: center;
   padding: 1.2rem;
@@ -2065,7 +2151,7 @@ button {
   border: 1.5px solid var(--tile-edge);
   box-shadow:
     0 12px 0 var(--surface-shadow),
-    0 22px 48px rgba(255, 140, 120, 0.3);
+    0 22px 48px var(--card-glow);
 }
 [data-theme='cute'] .edition {
   border-top: 1.5px solid var(--tile-edge); /* drop the classic double rule */
@@ -2073,9 +2159,9 @@ button {
 /* Overlay buttons follow the cute button system: pink pills, no double outline. */
 [data-theme='cute'] .reveal__close,
 [data-theme='cute'] .edition__close {
-  border: 1.5px solid var(--accent);
-  background: var(--accent);
-  color: #fff;
+  border: 1.5px solid var(--button);
+  background: var(--button);
+  color: var(--on-accent);
 }
 
 @keyframes fade {
