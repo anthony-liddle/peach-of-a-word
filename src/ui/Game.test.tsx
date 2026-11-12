@@ -1,9 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, beforeEach, vi } from 'vitest';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { Game, GLINT_MS } from './Game.tsx';
 import { CONFETTI_DURATION_MS } from './components/confetti.ts';
+import { COPY_CONFIRMATION } from './share/shareDaily.ts';
 import {
   createListDictionary,
   createListWordSource,
@@ -134,6 +142,20 @@ function activeTheme(): Theme {
  */
 function closeReveal() {
   return screen.getByRole('button', { name: copy(activeTheme()).revealClose });
+}
+
+/**
+ * A computer's Share: no share sheet, so each press copies. Returns every text
+ * copied so far, in order.
+ */
+function clipboard() {
+  const writeText = vi.fn((_text: string) => Promise.resolve());
+  Object.defineProperty(navigator, 'share', {
+    value: undefined,
+    configurable: true,
+  });
+  Object.assign(navigator, { clipboard: { writeText } });
+  return { copied: () => writeText.mock.calls.map(([text]) => text) };
 }
 
 function renderGame(store = fakeStore()) {
@@ -794,23 +816,52 @@ describe('Game edition complete', () => {
     expect(text).not.toMatch(/eased/i);
   });
 
-  it('lands on the persistent Share when the celebration is dismissed', () => {
-    // scrollIntoView is stubbed globally for jsdom; spy to assert it is called.
+  it('puts focus back on the letter tiles when Keep playing is pressed, and moves nothing', () => {
+    // scrollIntoView is stubbed globally for jsdom; spy to assert it is not
+    // called. Keep playing used to land on the found list's Share, which was
+    // the stand-in for Share on the card, and scrolled the page to it.
     const scrollIntoView = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
 
     renderGame();
     completeTheSet();
-
-    // Dismissing the in-the-moment card hands her to the durable Share: it is
-    // scrolled into view and focused, so it never feels gone with the popup.
     fireEvent.click(screen.getByRole('button', { name: /keep playing/i }));
 
-    const glossary = screen.getByRole('region', { name: /words found/i });
-    const share = within(glossary).getByRole('button', { name: /share/i });
-    expect(document.activeElement).toBe(share);
-    expect(scrollIntoView).toHaveBeenCalled();
+    // Where typing goes, as the button says: a letter typed on a chip hands
+    // focus back to the same tiles (useGlobalKeys).
+    expect(document.activeElement).toBe(
+      screen.getByRole('group', { name: 'Letter tiles' }),
+    );
+    expect(scrollIntoView).not.toHaveBeenCalled();
 
     scrollIntoView.mockRestore();
+  });
+
+  it("offers Share on the crown card, under Keep playing, copying what the list's Share copies", async () => {
+    const { copied } = clipboard();
+    renderGame();
+    completeTheSet();
+
+    const card = editionCard()!;
+    const share = within(card).getByRole('button', { name: 'Share' });
+    const keepPlaying = within(card).getByRole('button', {
+      name: /keep playing/i,
+    });
+    expect(
+      keepPlaying.compareDocumentPosition(share) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.click(share);
+    // Confirmed inside the card, in the card's own live region, where the
+    // player is looking, rather than in the list's behind it.
+    const confirm = await within(card).findByText(COPY_CONFIRMATION);
+    expect(confirm).toHaveAttribute('aria-live', 'polite');
+
+    // The card stays up while the list's Share is pressed: it doesn't block.
+    const glossary = screen.getByRole('region', { name: /words found/i });
+    fireEvent.click(within(glossary).getByRole('button', { name: 'Share' }));
+    await waitFor(() => expect(copied()).toHaveLength(2));
+    expect(copied()[0]).toBe(copied()[1]);
   });
 
   // Moved, like the meter, by a JS media query, so exactly one card in each
@@ -832,6 +883,83 @@ describe('Game edition complete', () => {
     const cards = document.querySelectorAll('.edition');
     expect(cards).toHaveLength(1);
     expect(cards[0]!.parentElement).toBe(document.querySelector('.app'));
+  });
+});
+
+// The peach card is the one place the answer is on screen, so its Share is
+// held to the daily rule hardest: the text it copies never carries the word.
+describe('Game Share on the peach card', () => {
+  const glossary = () => screen.getByRole('region', { name: /words found/i });
+  const findWord = (w: string) => {
+    type(w);
+    fireEvent.keyDown(window, { key: 'Enter' });
+  };
+
+  it("offers Share in the card's way out, under its button, copying what the list's Share copies", async () => {
+    const { copied } = clipboard();
+    renderGame();
+    findWord('serenade');
+
+    const card = screen.getByRole('dialog', { name: 'serenade' });
+    const share = within(card).getByRole('button', { name: 'Share' });
+    // In the pinned bar, after the way out, so the text still scrolls under
+    // both and the card still opens on its way out.
+    expect(share.closest('.reveal__way-out')).not.toBeNull();
+    expect(
+      closeReveal().compareDocumentPosition(share) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(closeReveal());
+
+    fireEvent.click(share);
+    const confirm = await within(card).findByText(COPY_CONFIRMATION);
+    expect(confirm).toHaveAttribute('aria-live', 'polite');
+
+    fireEvent.click(closeReveal());
+    fireEvent.click(within(glossary()).getByRole('button', { name: 'Share' }));
+    await waitFor(() => expect(copied()).toHaveLength(2));
+    expect(copied()[0]).toBe(copied()[1]);
+  });
+
+  it.each(['Cute', 'Letterpress'] as const)(
+    'never names the peach of a word in the daily share from its own card, in %s',
+    async (theme) => {
+      const { copied } = clipboard();
+      renderGame();
+      chooseTheme(theme);
+      findWord('serenade');
+
+      const card = screen.getByRole('dialog', { name: 'serenade' });
+      fireEvent.click(within(card).getByRole('button', { name: 'Share' }));
+      await waitFor(() => expect(copied()).toHaveLength(1));
+      expect(copied()[0]).toMatch(/^🍑 Peach of a Word · /);
+      expect(copied()[0]).not.toMatch(/serenade/i);
+    },
+  );
+
+  it("names the found word from the card in Endless, as the list's Share does", async () => {
+    const { copied } = clipboard();
+    renderGame();
+    fireEvent.click(screen.getByRole('button', { name: 'Endless' }));
+    findWord('serenade');
+
+    const card = screen.getByRole('dialog', { name: 'serenade' });
+    fireEvent.click(within(card).getByRole('button', { name: 'Share' }));
+    fireEvent.click(closeReveal());
+    fireEvent.click(within(glossary()).getByRole('button', { name: 'Share' }));
+    await waitFor(() => expect(copied()).toHaveLength(2));
+    expect(copied()[0]).toMatch(/serenade/i);
+    expect(copied()[0]).toBe(copied()[1]);
+  });
+
+  it("gives a found word's card no Share", async () => {
+    renderGame();
+    findWord('sea');
+    fireEvent.click(
+      document.querySelector<HTMLButtonElement>('.stick button')!,
+    );
+    const card = await screen.findByRole('dialog', { name: 'sea' });
+    expect(within(card).queryByRole('button', { name: 'Share' })).toBeNull();
   });
 });
 

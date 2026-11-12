@@ -179,3 +179,65 @@ describe('the four spots that were hard-coded for light', () => {
     ).toMatch(/background:\s*var\(--button\)/);
   });
 });
+
+/**
+ * Share on the two cards (`.share--quiet`) is text with no fill, on the cards'
+ * --paper, and a fill of --paper-deep under the pointer. Its colours are read
+ * from its own rules, so changing them changes what this checks, in every
+ * theme and appearance a card is drawn in: letterpress (light only), cute and
+ * Cocoa.
+ */
+describe('Share on a card reads at 4.5:1 in every theme and appearance', () => {
+  const rule = (sel: string) => {
+    const esc = sel.replace(/[.[\]$()+*?^|{}\\]/g, '\\$&');
+    const body = css.match(new RegExp(`\\n${esc}\\s*\\{([^}]*)\\}`))?.[1];
+    if (!body) throw new Error(`No rule for ${sel} in index.css`);
+    return body;
+  };
+  const tokenIn = (body: string, property: string) => {
+    const m = body.match(
+      new RegExp(`(?:^|[;\\s])${property}:\\s*var\\((--[\\w-]+)\\)`),
+    );
+    if (!m) throw new Error(`No ${property}: var(...) in the rule`);
+    return m[1]!;
+  };
+  /** A letterpress token's hex, following var() inside its own block. */
+  const letterpress = (name: string): string => {
+    const b = css.match(
+      /\n:root,\s*\[data-theme='letterpress'\]\s*\{([\s\S]*?)\n\}/,
+    )?.[1];
+    if (!b) throw new Error('No letterpress block in index.css');
+    const own = new Map(
+      [...b.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [
+        m[1]!,
+        m[2]!.trim(),
+      ]),
+    );
+    let value = own.get(name) ?? '';
+    for (let i = 0; i < 4 && value.startsWith('var('); i++)
+      value = own.get(value.slice(4, -1).trim()) ?? '';
+    if (!/^#[0-9a-f]{6}$/i.test(value))
+      throw new Error(`${name} isn't a hex in letterpress: ${value}`);
+    return value.toLowerCase();
+  };
+
+  const label = () => tokenIn(rule('.share--quiet .share__btn'), 'color');
+  const hovered = () =>
+    tokenIn(rule('.share--quiet .share__btn:hover'), 'background');
+  const looks = [
+    ['letterpress', letterpress],
+    ['cute', (n: string) => hex('light', n)],
+    ['Cocoa', (n: string) => hex('dark', n)],
+  ] as const;
+
+  test.each(looks)('on the card, in %s', (_, read) => {
+    expect(contrast(read(label()), read('--paper'))).toBeGreaterThanOrEqual(
+      4.5,
+    );
+  });
+  test.each(looks)('under the pointer, in %s', (_, read) => {
+    expect(contrast(read(label()), read(hovered()))).toBeGreaterThanOrEqual(
+      4.5,
+    );
+  });
+});

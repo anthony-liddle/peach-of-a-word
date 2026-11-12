@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { CostumeId } from '../costumes.ts';
 import type { Theme } from '../useTheme.ts';
 import { crownName, copy, ornament } from '../themeCopy.ts';
@@ -8,6 +9,11 @@ interface Props {
   /** What the peach is wearing on this board, if anything. See costumes.ts. */
   costume?: CostumeId | null;
   onClose: () => void;
+  /**
+   * Share, under Keep playing: the found list's own control, quiet, so the
+   * moment can be shared without closing the card first.
+   */
+  share?: ReactNode;
 }
 
 /**
@@ -24,7 +30,7 @@ interface Props {
  * costume day the peach wears it under the drawn crown, and a sentence a screen
  * reader can find says what it is wearing.
  */
-export function EditionCard({ theme, costume = null, onClose }: Props) {
+export function EditionCard({ theme, costume = null, onClose, share }: Props) {
   const crown = crownName(theme);
   const mark = ornament(theme);
   return (
@@ -47,6 +53,7 @@ export function EditionCard({ theme, costume = null, onClose }: Props) {
       <button className="edition__close" onClick={onClose}>
         Keep playing
       </button>
+      {share}
     </div>
   );
 }
