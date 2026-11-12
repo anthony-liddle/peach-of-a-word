@@ -1,4 +1,4 @@
-import { useState, type Ref } from 'react';
+import { useState } from 'react';
 import type { Puzzle } from '@/engine/index.ts';
 import { APP_DISPLAY_NAME } from '@/displayName.ts';
 import { useTheme } from '../useTheme.ts';
@@ -19,10 +19,10 @@ interface Props {
   /** The puzzle's date, shown short in the daily block. Ignored for endless. */
   date: Date;
   /**
-   * A handle on the Share button itself, so completion can land the player on
-   * the durable Share once the celebration card is dismissed.
+   * Quiet on a card, under the card's own button: the same action and the
+   * same text, set back so the card's way out stays the thing to press.
    */
-  buttonRef?: Ref<HTMLButtonElement>;
+  variant?: 'quiet' | undefined;
 }
 
 /**
@@ -33,7 +33,7 @@ interface Props {
  * from the display-name constant, never hardcoded, so the pending rename flows
  * through.
  */
-export function ShareButton({ puzzle, found, mode, date, buttonRef }: Props) {
+export function ShareButton({ puzzle, found, mode, date, variant }: Props) {
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [theme] = useTheme();
 
@@ -56,12 +56,11 @@ export function ShareButton({ puzzle, found, mode, date, buttonRef }: Props) {
   }
 
   return (
-    <div className="share">
+    <div className={variant === 'quiet' ? 'share share--quiet' : 'share'}>
       <button
         type="button"
-        className="btn share__btn"
+        className={variant === 'quiet' ? 'share__btn' : 'btn share__btn'}
         onClick={onShare}
-        ref={buttonRef}
       >
         Share
       </button>

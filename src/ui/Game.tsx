@@ -148,23 +148,35 @@ export function Game({ data, audio, storage }: Props) {
 
   const closeQuiet = useCallback(() => setQuiet(null), []);
 
-  // Dismissing the completion card hands the player to the durable Share: the
-  // celebration is the in-the-moment offer, the glossary Share is the path that
-  // persists. Landing on it means the result never feels gone with the popup.
-  // The card never moves the glossary: it is fixed on a phone, and laid over
-  // the glossary in its grid cell at two-column widths, so the Share is already
-  // in place to scroll to.
-  const shareRef = useRef<HTMLButtonElement>(null);
+  // One Share, built once, wherever it is offered: the found list, and the two
+  // cards that open for the big finds, quiet on a card under its own button.
+  // The same props everywhere, so the text a card copies is the list's at that
+  // moment by construction.
+  const share = (variant?: 'quiet') => (
+    <ShareButton
+      puzzle={state.puzzle}
+      found={state.found}
+      mode={state.mode}
+      date={new Date()}
+      variant={variant}
+    />
+  );
+
+  // Keep playing puts focus back where typing goes, as it says: the letter
+  // tiles, as a letter typed on a chip does (useGlobalKeys). It used to land
+  // on the found list's Share and scroll the page to it, which was the stand-in
+  // for Share on the card. With Share on the card, nothing moves.
   const dismissEdition = useCallback(() => {
     game.closeEdition();
-    const share = shareRef.current;
-    if (share) {
-      share.focus({ preventScroll: true });
-      share.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    tilesRef.current?.focus({ preventScroll: true });
   }, [game]);
   const editionCard = state.editionOpen && (
-    <EditionCard theme={theme} costume={costume} onClose={dismissEdition} />
+    <EditionCard
+      theme={theme}
+      costume={costume}
+      onClose={dismissEdition}
+      share={share('quiet')}
+    />
   );
 
   // Fire the cute confetti once, on the completion beat. The pulse increments
@@ -246,15 +258,7 @@ export function Game({ data, audio, storage }: Props) {
           glint={glinting}
           showTier={wide}
           onWordTap={onWordTap}
-          summaryExtra={
-            <ShareButton
-              puzzle={state.puzzle}
-              found={state.found}
-              mode={state.mode}
-              date={new Date()}
-              buttonRef={shareRef}
-            />
-          }
+          summaryExtra={share()}
         />
 
         {/* Two-column widths only: the completion card lands over the top of
@@ -295,6 +299,7 @@ export function Game({ data, audio, storage }: Props) {
           entry={state.sourceEntry}
           costume={costume}
           onClose={game.closeReveal}
+          share={share('quiet')}
         />
       ) : quiet ? (
         <Reveal

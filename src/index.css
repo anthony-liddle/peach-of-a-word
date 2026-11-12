@@ -1411,6 +1411,36 @@ button {
 .share__confirm:empty {
   margin-top: 0;
 }
+/* Share on a card, under the card's own button (EditionCard, Reveal): the
+   same control, set back. No fill, no outline and no rule above it, so the
+   card's button stays the thing to press. Still a button, in the card
+   buttons' type, never a link, and it keeps the list's 44px.
+
+   The confirmation takes no room until there is one. In the peach card's
+   pinned bar a reserved empty line would come out of the prose for good, and
+   on a phone the share sheet is its own confirmation, so the line shows only
+   where Share copies. */
+.share--quiet {
+  margin-top: 0.4rem;
+  padding-top: 0;
+  border-top: 0;
+}
+.share--quiet .share__btn {
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.share--quiet .share__btn:hover {
+  background: var(--paper-deep);
+}
+.share--quiet .share__confirm:empty {
+  min-height: 0;
+}
 
 .found__group {
   margin-bottom: 1.4rem;
