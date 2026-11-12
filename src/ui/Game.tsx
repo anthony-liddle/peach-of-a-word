@@ -348,7 +348,7 @@ function Toolbar({
   // twice.
   const wide = useWideBoard();
   return (
-    <div className="toolbar">
+    <div className={settingsOpen ? 'toolbar toolbar--raised' : 'toolbar'}>
       <div className="modes" role="group" aria-label="Mode">
         <button
           aria-pressed={state.mode === 'daily'}

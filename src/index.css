@@ -260,6 +260,12 @@ button {
   position: relative;
   z-index: 1;
 }
+/* The toolbar while its settings popover is open, so the popover is drawn over
+   the board rather than under it: the board comes later at the same level.
+   Only then, so the toolbar never sits over a card's scrim. */
+.app > .toolbar--raised {
+  z-index: 2;
+}
 
 /* ---- Cute decorations (peaches, dino, florettes) ----------------------- */
 .decorations {

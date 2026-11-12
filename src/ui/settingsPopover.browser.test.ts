@@ -182,6 +182,26 @@ describe('the settings popover', () => {
     expect(document.activeElement).toBe(button());
   });
 
+  test('it is drawn over the board, not under it', async () => {
+    await page.viewport(375, 812);
+    mount();
+    await tabToSettings();
+    await userEvent.keyboard('{Enter}');
+    // Each of its controls is the thing under its own centre: nothing of
+    // the board, which comes later in the page, is painted over it.
+    for (const input of dialog()!.querySelectorAll('input')) {
+      const box = input.getBoundingClientRect();
+      const top = document.elementFromPoint(
+        box.x + box.width / 2,
+        box.y + box.height / 2,
+      );
+      expect(
+        dialog()!.contains(top),
+        `${input.name} ${input.value} is under ${top?.className}`,
+      ).toBe(true);
+    }
+  });
+
   test('it fits a 320px screen at the largest text, with nothing to scroll sideways', async () => {
     await page.viewport(320, 640);
     mount('largest');
