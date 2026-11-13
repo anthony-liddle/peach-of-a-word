@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { setPointer } from '@/testing/viewport.ts';
 import { COPY_CONFIRMATION, shareDaily } from './shareDaily.ts';
 
 const BLOCK = '🍑 Peach of a Word · Jun 18\nPeachy Keen Supreme\n226 pts';
@@ -37,6 +38,39 @@ describe('shareDaily', () => {
       configurable: true,
     });
   }
+
+  test('copies on a computer, even when the browser offers a share sheet', async () => {
+    // Chrome and Safari on a Mac, and Chrome and Edge on Windows, all have
+    // navigator.share. On a computer the game copies anyway.
+    setPointer('fine');
+    const share = vi.fn().mockResolvedValue(undefined);
+    setShare(share);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    setClipboard(writeText);
+
+    const result = await shareDaily(BLOCK);
+
+    expect(share).not.toHaveBeenCalled();
+    expect(writeText).toHaveBeenCalledWith(BLOCK);
+    expect(result).toEqual({
+      method: 'clipboard',
+      confirmation: COPY_CONFIRMATION,
+    });
+  });
+
+  test('keeps the share sheet on a phone or a tablet', async () => {
+    setPointer('coarse');
+    const share = vi.fn().mockResolvedValue(undefined);
+    setShare(share);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    setClipboard(writeText);
+
+    const result = await shareDaily(BLOCK);
+
+    expect(share).toHaveBeenCalledTimes(1);
+    expect(writeText).not.toHaveBeenCalled();
+    expect(result.method).toBe('share');
+  });
 
   test('calls the Web Share API when present', async () => {
     const share = vi.fn().mockResolvedValue(undefined);

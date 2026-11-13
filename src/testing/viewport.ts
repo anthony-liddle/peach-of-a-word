@@ -17,11 +17,19 @@ export const DESKTOP_WIDTH = 1024;
 /** The suite's default. Most tests are about behaviour, and Bea plays on a phone. */
 let widthPx = PHONE_WIDTH;
 
+/**
+ * The primary pointer, which is how the game tells a computer from a phone
+ * (`isComputer`). A finger by default, as on a phone. Separate from the width,
+ * since an iPad is wide and still points with a finger.
+ */
+type Pointer = 'fine' | 'coarse';
+let pointer: Pointer = 'coarse';
+
 const lists = new Set<{ query: string; notify: () => void }>();
 
 /**
- * Evaluate the query forms this app actually uses: min-width in em or px.
- * Anything else (prefers-reduced-motion, hover) reports false, which is the
+ * Evaluate the query forms this app actually uses: min-width in em or px,
+ * and the primary pointer. Anything else (prefers-reduced-motion, hover) reports false, which is the
  * same answer jsdom's absence effectively gave and keeps motion suppressed.
  *
  * em resolves against 16px, the jsdom root size. The app's own text-size steps
@@ -30,10 +38,18 @@ const lists = new Set<{ query: string; notify: () => void }>();
  * than merely convenient.
  */
 function evaluate(query: string): boolean {
+  const p = /^\(pointer:\s*(fine|coarse)\)$/.exec(query.trim());
+  if (p) return p[1] === pointer;
   const m = /\(min-width:\s*([\d.]+)(em|px)\)/.exec(query);
   if (!m) return false;
   const px = m[2] === 'em' ? Number(m[1]) * 16 : Number(m[1]);
   return widthPx >= px;
+}
+
+/** Set the primary pointer: 'fine' for a mouse or trackpad, a computer. */
+export function setPointer(next: Pointer): void {
+  pointer = next;
+  for (const list of lists) list.notify();
 }
 
 /** Set the viewport width, notifying anything already listening. */
@@ -78,6 +94,7 @@ export function installMatchMedia(): void {
  */
 export function resetViewport(): void {
   widthPx = PHONE_WIDTH;
+  pointer = 'coarse';
   lists.clear();
   installMatchMedia();
 }

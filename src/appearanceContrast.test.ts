@@ -240,4 +240,29 @@ describe('Share on a card reads at 4.5:1 in every theme and appearance', () => {
       4.5,
     );
   });
+
+  // The letterpress peach card is amber, so its Share is the card's deep
+  // amber, not the theme's oxblood: 4.53:1 on the card's paper. Under the
+  // pointer it keeps that paper, since the quiet Share's --paper-deep fill
+  // would take the amber to 4.02:1, and draws a hairline instead.
+  const peach = "[data-theme='letterpress'] .reveal .share--quiet .share__btn";
+  test("on the letterpress peach card, in the card's amber", () => {
+    const amber = tokenIn(rule(peach), 'color');
+    expect(amber).toBe('--crown-deep');
+    expect(
+      contrast(letterpress(amber), letterpress('--paper')),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+  test('under the pointer on the letterpress peach card, still on its paper', () => {
+    const hover = rule(`${peach}:hover`);
+    expect(hover).toMatch(/background:\s*transparent/);
+    const line = hover.match(
+      /box-shadow:\s*inset 0 0 0 1px var\((--[\w-]+)\)/,
+    )?.[1];
+    expect(line).toBeDefined();
+    // The hairline is a control's edge: 3:1 against the paper.
+    expect(
+      contrast(letterpress(line!), letterpress('--paper')),
+    ).toBeGreaterThanOrEqual(3);
+  });
 });

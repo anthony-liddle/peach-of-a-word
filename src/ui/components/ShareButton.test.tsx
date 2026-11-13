@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Puzzle } from '@/engine/index.ts';
 import { APP_DISPLAY_NAME } from '@/displayName.ts';
+import { setPointer } from '@/testing/viewport.ts';
 import { ShareButton } from './ShareButton.tsx';
 
 function testPuzzle(): Puzzle {
@@ -174,5 +175,33 @@ describe('ShareButton', () => {
         screen.getByText('Copied. Paste it anywhere.'),
       ).toBeInTheDocument();
     });
+  });
+
+  test("on a computer, a card's Share copies and confirms, though a share sheet is on offer", async () => {
+    setPointer('fine');
+    const share = vi.fn().mockResolvedValue(undefined);
+    setShare(share);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    render(
+      <ShareButton
+        puzzle={testPuzzle()}
+        found={['NOTECASE', 'OCAS']}
+        mode="daily"
+        date={new Date(2026, 5, 18)}
+        variant="quiet"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /share/i }));
+
+    expect(
+      await screen.findByText('Copied. Paste it anywhere.'),
+    ).toBeInTheDocument();
+    expect(share).not.toHaveBeenCalled();
+    expect(writeText).toHaveBeenCalledTimes(1);
   });
 });

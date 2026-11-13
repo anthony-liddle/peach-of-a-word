@@ -17,9 +17,10 @@ if (typeof HTMLCanvasElement !== 'undefined') {
   HTMLCanvasElement.prototype.getContext = () => null;
 }
 
-// jsdom does not implement scrollIntoView. Completion uses it to bring the
-// persistent Share into view; stub it as a no-op so tests that drive completion
-// do not throw on the missing method. Production browsers implement it.
+// jsdom does not implement scrollIntoView. The game no longer calls it (Keep
+// playing used to scroll to the found list's Share), but Game.test.tsx spies on
+// it to hold Keep playing to scrolling nothing, and a spy needs the method to
+// exist. Production browsers implement it.
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
