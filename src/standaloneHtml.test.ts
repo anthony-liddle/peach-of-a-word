@@ -20,7 +20,12 @@ import { faviconHref } from './ui/favicon.ts';
  * was written by copying the first and would have inherited the bug just as
  * easily.
  */
-const PAGES = ['public/privacy.html', 'public/support.html', 'public/404.html'];
+const PAGES = [
+  'public/privacy.html',
+  'public/support.html',
+  'public/404.html',
+  'transfer.html',
+];
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -390,6 +395,13 @@ describe('vercel.json rewrites', () => {
     expect(config.rewrites).toContainEqual({
       source: '/support',
       destination: '/support.html',
+    });
+  });
+
+  test('/transfer serves the transfer page', () => {
+    expect(config.rewrites).toContainEqual({
+      source: '/transfer',
+      destination: '/transfer.html',
     });
   });
 

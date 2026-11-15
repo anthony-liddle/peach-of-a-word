@@ -1,0 +1,36 @@
+{
+  "about": "Streak links as the transfer page writes them. streak.test.ts holds the web's writer to every row. scripts/streak-link-parity.mjs turns the rows into StreakLinkVectors.swift in the iOS repo, where StreakTransferTests parses each link. Nothing keeps the two copies in step but that script: change a row here, run it, and commit the Swift file it writes in the iOS repo.",
+  "origin": "https://peachofaword.com",
+  "links": [
+    {
+      "count": 1,
+      "lastClearedDayIndex": 318,
+      "link": "peachofaword://streak?v=1&count=1&lastCleared=318",
+      "address": "https://peachofaword.com/transfer#streak?v=1&count=1&lastCleared=318"
+    },
+    {
+      "count": 2,
+      "lastClearedDayIndex": 317,
+      "link": "peachofaword://streak?v=1&count=2&lastCleared=317",
+      "address": "https://peachofaword.com/transfer#streak?v=1&count=2&lastCleared=317"
+    },
+    {
+      "count": 53,
+      "lastClearedDayIndex": 239,
+      "link": "peachofaword://streak?v=1&count=53&lastCleared=239",
+      "address": "https://peachofaword.com/transfer#streak?v=1&count=53&lastCleared=239"
+    },
+    {
+      "count": 146,
+      "lastClearedDayIndex": 318,
+      "link": "peachofaword://streak?v=1&count=146&lastCleared=318",
+      "address": "https://peachofaword.com/transfer#streak?v=1&count=146&lastCleared=318"
+    },
+    {
+      "count": 1000,
+      "lastClearedDayIndex": 1167,
+      "link": "peachofaword://streak?v=1&count=1000&lastCleared=1167",
+      "address": "https://peachofaword.com/transfer#streak?v=1&count=1000&lastCleared=1167"
+    }
+  ]
+}

@@ -268,6 +268,16 @@ describe('Game', () => {
     expect(link?.textContent).toMatch(/privacy/i);
   });
 
+  it('offers the move to the iPhone app from the footer', () => {
+    renderGame();
+    const footer = document.querySelector('.colophon') as HTMLElement;
+    // The one way a player on a Home Screen icon reaches the page: that
+    // window has no address bar, and its save is its own.
+    const link = footer.querySelector('a[href="/transfer"]');
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toMatch(/app/i);
+  });
+
   it('keeps the dedication present in the cute theme too', () => {
     document.documentElement.dataset.theme = 'cute';
     renderGame();
