@@ -2,6 +2,16 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { CostumePart } from '@/ui/costumes.ts';
 import { GROWTH_STAGES, bounds, type GrowthStage } from './growthStages.ts';
+import {
+  CONFETTI_AT,
+  CONFETTI_PEACH,
+  GLYPHS,
+  KINDS,
+  confettiAt,
+  frameOf,
+  inFrame,
+  type Drawn,
+} from './confetti.ts';
 import cues from './soundtrack.cues.json';
 import {
   BEATS,
@@ -13,6 +23,7 @@ import {
   SINK_S,
   START_AT,
   peachAt,
+  peachUnit,
   type Beat,
 } from './motion.ts';
 import {
@@ -43,6 +54,9 @@ import {
  * to lay over the background itself. `?sheet=arrivals&placement=<placement>` shows the
  * frames where each stage arrives, and `?sheet=moment&placement=<placement>`
  * one moment small, with its time under it, for the slowed loop point.
+ * The confetti falls over both as the crown lands (`confetti.ts`), and
+ * `?sheet=pieces&size=<pixels>` shows each kind of piece unturned, to hold
+ * against the app's.
  *
  * **The row fills the safe area's width** and is centred in it, marked
  * `data-focal`; the capture script fails if any of it strays. The rest of
@@ -70,6 +84,8 @@ export function StoreArtPage() {
   if (sheet === 'arrivals') return <Arrivals placement={placement} />;
   if (sheet === 'moment')
     return <Moment placement={placement} from={Number(params.get('t') ?? 0)} />;
+  if (sheet === 'pieces')
+    return <Pieces size={Number(params.get('size') ?? 66)} />;
   return <Index />;
 }
 
@@ -285,20 +301,13 @@ function Canvas({
 // ---- In motion ----------------------------------------------------------------
 
 /**
- * How much of the safe area's height the peach's box fills. The rest is room
- * for a stage's grow-in, which overshoots its size by about a tenth of a
- * percent (`LARGEST_SCALE`).
- */
-const PEACH_FILL = 0.99;
-
-/**
  * The growing peach at `t` seconds, centred in the safe area, as big as its
  * box allows. Every stage is drawn in the same box, so the peach never moves;
  * only the drawing changes.
  */
 function GrowingPeach({ safe, t }: { safe: Rect; t: number }) {
   const box = PEACH_BOX;
-  const unit = Math.min(safe.w / box.w, safe.h / box.h) * PEACH_FILL;
+  const unit = peachUnit(safe);
   return (
     <div
       style={{
@@ -335,6 +344,114 @@ function GrowingPeach({ safe, t }: { safe: Rect; t: number }) {
           ))}
       </svg>
     </div>
+  );
+}
+
+/**
+ * The fonts SwiftUI draws the confetti's glyphs in, on iOS as on a Mac: the
+ * system font for the heart and the star, and Zapf Dingbats for the
+ * sparkle, which the system font lacks. Named, not embedded, so no font's
+ * outlines are copied into the repo.
+ */
+const GLYPH_FONT = 'system-ui, "Zapf Dingbats"';
+
+/**
+ * One piece, as `Confetti.swift` draws it: a box its size across, the glyph
+ * centred in it, or the peach filling it, turned about its middle. SwiftUI
+ * fades each part of the peach on its own, with no compositing group, so the
+ * highlight shows through as it does in the app.
+ */
+function ConfettiPiece({
+  d,
+  x = d.x - d.size / 2,
+  y = d.y - d.size / 2,
+}: {
+  d: Omit<Drawn, 'index'>;
+  /** Where its box's corner is: by default, where its middle puts it. */
+  x?: number;
+  y?: number;
+}) {
+  return (
+    <div
+      data-piece={d.kind}
+      style={{
+        width: d.size,
+        height: d.size,
+        transform: `translate(${x}px, ${y}px) rotate(${d.rotation}deg)`,
+      }}
+    >
+      {d.kind === 'peach' ? (
+        <svg viewBox="0 0 100 100" width={d.size} height={d.size}>
+          {CONFETTI_PEACH.map((p, i) => (
+            <path
+              key={i}
+              d={p.d}
+              fill={p.fill}
+              opacity={(p.opacity ?? 1) * d.opacity}
+            />
+          ))}
+        </svg>
+      ) : (
+        <span
+          style={{
+            fontFamily: GLYPH_FONT,
+            fontSize: d.size,
+            color: GLYPHS[d.kind][1],
+            opacity: d.opacity,
+          }}
+        >
+          {GLYPHS[d.kind][0]}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The confetti at `t` seconds, over the whole art, as the app's falls over
+ * the whole card: never focal, so the safe-area check leaves it be.
+ */
+function ConfettiLayer({
+  placement,
+  t,
+}: {
+  placement: PlacementId;
+  t: number;
+}) {
+  const frame = frameOf(placement);
+  const pieces = confettiAt(t, frame).filter((d) => inFrame(d, frame));
+  if (!pieces.length) return null;
+  return (
+    <div className="store-art__confetti" aria-hidden="true">
+      {pieces.map((d) => (
+        <ConfettiPiece key={d.index} d={d} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Each kind of piece unturned and whole, `size` pixels across, side by side
+ * with `size` between them, on cute's page: to hold against SwiftUI's own
+ * render of the app's pieces.
+ */
+function Pieces({ size }: { size: number }) {
+  return (
+    <main data-sheet="pieces" style={{ background: BACKDROP[0] }}>
+      <div
+        className="store-art__confetti"
+        style={{ position: 'relative', width: size * 7, height: size }}
+      >
+        {KINDS.map((kind, i) => (
+          <ConfettiPiece
+            key={kind}
+            d={{ kind, x: 0, y: 0, size, rotation: 0, opacity: 1 }}
+            x={2 * i * size}
+            y={0}
+          />
+        ))}
+      </div>
+    </main>
   );
 }
 
@@ -376,6 +493,7 @@ export function MotionFrame({
   return (
     <Canvas placement={placement} guides={guides} bare={bare}>
       <GrowingPeach safe={PLACEMENTS[placement].safe} t={t} />
+      <ConfettiLayer placement={placement} t={t} />
     </Canvas>
   );
 }
@@ -610,9 +728,10 @@ const AFTER = [0, 0.1, 0.2, 0.4, SETTLED_S];
 
 /**
  * For each stage, the frame where it arrives and the frames after, until it
- * has settled, with the cue it plays; then the crown sinking into the soil's
- * mound as it comes back, and the soil's face once the crown has gone. Each frame is cropped to 4:3
- * about the peach.
+ * has settled, with the cue it plays; the confetti falling, from the crown's
+ * landing until it has gone; then the crown sinking into the soil's mound as
+ * it comes back, and the soil's face once the crown has gone. Each frame is
+ * cropped to 4:3 about the peach.
  */
 function Arrivals({ placement }: { placement: PlacementId }) {
   const rows = [
@@ -623,6 +742,13 @@ function Arrivals({ placement }: { placement: PlacementId }) {
       after: AFTER,
       first: 'arrives',
     })),
+    {
+      title: 'the confetti, thrown as the crown lands',
+      at: CONFETTI_AT,
+      sound: 'Edition Complete rings out by 8.22 s',
+      after: [0.4, 0.9, 1.4, 1.9, 2.4],
+      first: 'throws',
+    },
     {
       title: 'sinking into the soil, as the mound comes back under it',
       at: RETURN_AT,

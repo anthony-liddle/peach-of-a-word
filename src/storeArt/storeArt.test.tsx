@@ -3,7 +3,8 @@ import { resolve } from 'node:path';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GROWTH_STAGES } from './growthStages.ts';
-import { ARRIVALS, SETTLED_S } from './motion.ts';
+import { CONFETTI_AT, CONFETTI_PEACH, PIECE_COUNT } from './confetti.ts';
+import { ARRIVALS, POSTERS, RETURN_AT, SETTLED_S } from './motion.ts';
 import { Art, MotionFrame } from './StoreArtPage.tsx';
 import { PLACEMENTS, type PlacementId } from './storeArtSpec.ts';
 
@@ -78,6 +79,31 @@ describe('the store art page', () => {
       const box = (c: HTMLElement) =>
         c.querySelector('[data-focal]')!.getAttribute('viewBox');
       expect(box(settled)).toBe(box(at(0)));
+    },
+  );
+
+  it.each(['header', 'search'] as const)(
+    'throws the confetti over the %s as the crown lands, outside the focal peach, and has it gone before the sink',
+    (p) => {
+      const at = (t: number) =>
+        render(<MotionFrame placement={p} t={t} bare />).container;
+      expect(at(CONFETTI_AT - 0.01).querySelector('[data-piece]')).toBeNull();
+      const mid = at(CONFETTI_AT + 1.2);
+      const pieces = [...mid.querySelectorAll<HTMLElement>('[data-piece]')];
+      expect(pieces.length).toBeGreaterThan(PIECE_COUNT / 2);
+      expect(new Set(pieces.map((e) => e.dataset.piece))).toEqual(
+        new Set(['peach', 'heart', 'star', 'sparkle']),
+      );
+      expect(mid.querySelector('[data-focal] [data-piece]')).toBeNull();
+      // The glyphs are the app's, and nothing else is text.
+      expect(mid.textContent!.replace(/[✿♥★✦]/g, '')).toBe('');
+      // The peach in the burst shows no face.
+      const peach = mid.querySelector('[data-piece="peach"] svg')!;
+      expect(peach.querySelectorAll('path')).toHaveLength(
+        CONFETTI_PEACH.length,
+      );
+      expect(at(RETURN_AT).querySelector('[data-piece]')).toBeNull();
+      expect(at(POSTERS.clear).querySelector('[data-piece]')).toBeNull();
     },
   );
 });
