@@ -369,6 +369,17 @@ describe('privacy.html', () => {
     for (const key of keys) expect(html).toContain(`<code>${key}</code>`);
   });
 
+  test('says how a streak moves to the app, and that nothing passes through', () => {
+    const text = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.textContent!.replace(/\s+/g, ' ');
+    expect(text).toContain(
+      'You can move your streak to the iOS app from peachofaword.com/transfer.',
+    );
+    expect(text).toContain("so it doesn't pass through this site");
+    expect(text).toContain('The page counts no visits.');
+  });
+
   test('names every way from the app to the web', () => {
     const text = new DOMParser()
       .parseFromString(html, 'text/html')
