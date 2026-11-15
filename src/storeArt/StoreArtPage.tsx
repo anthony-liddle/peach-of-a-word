@@ -8,6 +8,7 @@ import {
   GLYPHS,
   KINDS,
   confettiAt,
+  glyphKey,
   frameOf,
   inFrame,
   type Drawn,
@@ -54,9 +55,9 @@ import {
  * to lay over the background itself. `?sheet=arrivals&placement=<placement>` shows the
  * frames where each stage arrives, and `?sheet=moment&placement=<placement>`
  * one moment small, with its time under it, for the slowed loop point.
- * The confetti falls over both as the crown lands (`confetti.ts`), and
- * `?sheet=pieces&size=<pixels>` shows each kind of piece unturned, to hold
- * against the app's.
+ * The confetti falls across both as the crown lands (`confetti.ts`), and
+ * `?sheet=pieces&pt=<points>&point=<pixels a point>` shows each kind of piece
+ * unturned, to hold against the app's.
  *
  * **The row fills the safe area's width** and is centred in it, marked
  * `data-focal`; the capture script fails if any of it strays. The rest of
@@ -85,7 +86,12 @@ export function StoreArtPage() {
   if (sheet === 'moment')
     return <Moment placement={placement} from={Number(params.get('t') ?? 0)} />;
   if (sheet === 'pieces')
-    return <Pieces size={Number(params.get('size') ?? 66)} />;
+    return (
+      <Pieces
+        points={Number(params.get('pt') ?? 22)}
+        point={Number(params.get('point') ?? 3)}
+      />
+    );
   return <Index />;
 }
 
@@ -352,6 +358,13 @@ function GrowingPeach({ safe, t }: { safe: Rect; t: number }) {
  * system font for the heart and the star, and Zapf Dingbats for the
  * sparkle, which the system font lacks. Named, not embedded, so no font's
  * outlines are copied into the repo.
+ *
+ * **Drawn as their outlines when there are any,** read from those same fonts
+ * by `scripts/glyph-outlines.swift` and given to the page by the capture as
+ * `window.storeArtGlyphs`. Chrome's text isn't the same twice: a glyph's
+ * edge pixels could differ by up to 85 levels with what was drawn before.
+ * Paths are, as the peach is. Without them, as in a test or opened by hand,
+ * the glyphs are text.
  */
 const GLYPH_FONT = 'system-ui, "Zapf Dingbats"';
 
@@ -371,6 +384,10 @@ function ConfettiPiece({
   x?: number;
   y?: number;
 }) {
+  const outline =
+    d.kind === 'peach'
+      ? undefined
+      : window.storeArtGlyphs?.[glyphKey(d.kind, d.points)];
   return (
     <div
       data-piece={d.kind}
@@ -390,6 +407,15 @@ function ConfettiPiece({
               opacity={(p.opacity ?? 1) * d.opacity}
             />
           ))}
+        </svg>
+      ) : outline ? (
+        <svg
+          viewBox={`0 0 ${d.points} ${d.points}`}
+          width={d.size}
+          height={d.size}
+          aria-label={GLYPHS[d.kind][0]}
+        >
+          <path d={outline} fill={GLYPHS[d.kind][1]} opacity={d.opacity} />
         </svg>
       ) : (
         <span
@@ -435,11 +461,12 @@ function ConfettiLayer({
 }
 
 /**
- * Each kind of piece unturned and whole, `size` pixels across, side by side
- * with `size` between them, on cute's page: to hold against SwiftUI's own
- * render of the app's pieces.
+ * Each kind of piece unturned and whole, `points` across at `point` pixels a
+ * point, side by side with a piece's width between them, on cute's page: to
+ * hold against SwiftUI's own render of the app's pieces.
  */
-function Pieces({ size }: { size: number }) {
+function Pieces({ points, point }: { points: number; point: number }) {
+  const size = points * point;
   return (
     <main data-sheet="pieces" style={{ background: BACKDROP[0] }}>
       <div
@@ -449,7 +476,7 @@ function Pieces({ size }: { size: number }) {
         {KINDS.map((kind, i) => (
           <ConfettiPiece
             key={kind}
-            d={{ kind, x: 0, y: 0, size, rotation: 0, opacity: 1 }}
+            d={{ kind, x: 0, y: 0, size, points, rotation: 0, opacity: 1 }}
             x={2 * i * size}
             y={0}
           />
@@ -461,6 +488,8 @@ function Pieces({ size }: { size: number }) {
 
 declare global {
   interface Window {
+    /** The confetti's glyphs as outlines, by `glyphKey`, from the capture. */
+    storeArtGlyphs?: Record<string, string>;
     /** Move the growing peach to `t` seconds, and resolve once it's painted. */
     storeArtSeek?: (t: number) => Promise<void>;
   }

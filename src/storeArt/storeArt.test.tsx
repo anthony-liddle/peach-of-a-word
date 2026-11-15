@@ -3,7 +3,12 @@ import { resolve } from 'node:path';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GROWTH_STAGES } from './growthStages.ts';
-import { CONFETTI_AT, CONFETTI_PEACH, PIECE_COUNT } from './confetti.ts';
+import {
+  CONFETTI_AT,
+  CONFETTI_PEACH,
+  GLYPHS_WANTED,
+  PIECE_COUNT,
+} from './confetti.ts';
 import { ARRIVALS, RETURN_AT, SETTLED_S } from './motion.ts';
 import { Art, MotionFrame } from './StoreArtPage.tsx';
 import { PLACEMENTS, type PlacementId } from './storeArtSpec.ts';
@@ -105,6 +110,29 @@ describe('the store art page', () => {
       expect(at(RETURN_AT).querySelector('[data-piece]')).toBeNull();
     },
   );
+
+  it('draws each glyph as its outline when the capture gives it one, not as text', () => {
+    window.storeArtGlyphs = Object.fromEntries(
+      GLYPHS_WANTED.map((g) => [g.key, 'M0 0 L1 0 L1 1 Z']),
+    );
+    try {
+      const art = render(
+        <MotionFrame placement="search" t={CONFETTI_AT + 1.2} bare />,
+      ).container;
+      const glyphs = [
+        ...art.querySelectorAll('[data-piece]:not([data-piece="peach"])'),
+      ];
+      expect(glyphs.length).toBeGreaterThan(0);
+      for (const g of glyphs) {
+        expect(g.querySelector('span')).toBeNull();
+        expect(g.querySelector('svg path')!.getAttribute('d')).toBe(
+          'M0 0 L1 0 L1 1 Z',
+        );
+      }
+    } finally {
+      delete window.storeArtGlyphs;
+    }
+  });
 
   it.each(['header', 'search'] as const)(
     'draws the confetti behind the peach and its crown in the %s, so no piece crosses the face',

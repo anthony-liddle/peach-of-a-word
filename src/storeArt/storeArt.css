@@ -32,6 +32,8 @@ html:has(.store-art--bare) body {
 .store-art__confetti svg {
   display: block;
   flex: none;
+  /* A glyph's outline can reach a hair past its box, as its text could. */
+  overflow: visible;
 }
 .store-art__confetti span {
   line-height: normal;

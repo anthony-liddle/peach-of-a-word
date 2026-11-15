@@ -100,6 +100,7 @@ import {
 } from '../src/storeArt/motion.ts';
 import {
   CONFETTI_AT,
+  GLYPHS_WANTED,
   confettiAt,
   frameOf,
   inFrame,
@@ -417,6 +418,14 @@ async function loopFrames(
   }
   if (!hasConfetti(placement, CONFETTI_FRAME))
     throw new Error(`${placement}: frame ${CONFETTI_FRAME} has no confetti.`);
+  // Every glyph drawn as its outline: Chrome's text isn't the same twice.
+  const asText = await chrome.evaluate<number>(
+    `document.querySelectorAll('.store-art__confetti span').length`,
+  );
+  if (asText)
+    throw new Error(
+      `${placement}: ${asText} of the confetti's glyphs are drawn as text, not outlines.`,
+    );
   console.log(
     `${placement}: ${LOOP_FRAMES} frames, every one in the safe area`,
   );
@@ -1249,12 +1258,43 @@ async function encodeCheck(shots: Buffer[], path: string) {
   console.log(`wrote ${path.slice(OUT.length + 1)}`);
 }
 
+/**
+ * The confetti's glyphs, as SVG outlines by `glyphKey`, from the fonts the
+ * app draws them in, read on this Mac each time (`glyph-outlines.swift`), so
+ * no font's outlines are kept in the repo.
+ */
+function glyphOutlines(): Record<string, string> {
+  const run = spawnSync(
+    'swift',
+    [resolve(import.meta.dirname, 'glyph-outlines.swift')],
+    { input: JSON.stringify(GLYPHS_WANTED), encoding: 'utf8' },
+  );
+  if (run.status !== 0)
+    throw new Error(`glyph-outlines.swift failed:\n${run.stderr.slice(-2000)}`);
+  const outlines = JSON.parse(run.stdout) as Record<string, string>;
+  const missing = GLYPHS_WANTED.filter(
+    (g) => !outlines[g.key]?.startsWith('M'),
+  );
+  if (missing.length)
+    throw new Error(`No outline for ${missing.map((g) => g.key).join(', ')}.`);
+  return outlines;
+}
+
 const notes: string[] = [];
 const work = mkdtempSync(join(tmpdir(), 'store-motion-'));
 const chrome = await launchChrome();
 try {
   await chrome.send('Page.enable');
   await chrome.send('Runtime.enable');
+  // The confetti's glyphs as outlines, read from this Mac's own fonts, for
+  // every page this opens.
+  const outlines = glyphOutlines();
+  await chrome.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `window.storeArtGlyphs = ${JSON.stringify(outlines)};`,
+  });
+  notes.push(
+    `The confetti's ${Object.keys(outlines).length} glyphs drawn as outlines from this Mac's fonts, by scripts/glyph-outlines.swift.`,
+  );
 
   // ---- The sound -------------------------------------------------------------
   await size(chrome, 1280, 800);

@@ -67,6 +67,13 @@ export const GLYPHS: Record<Exclude<Kind, 'peach'>, [string, string]> = {
   sparkle: ['✦', '#FF9E58'],
 };
 
+/**
+ * Where a glyph's outline is kept, by what it is and its size in points:
+ * `window.storeArtGlyphs`, which `capture-store-motion.ts` fills from this
+ * Mac's own fonts (`scripts/glyph-outlines.swift`).
+ */
+export const glyphKey = (kind: Kind, points: number) => `${kind}:${points}`;
+
 /** The peach in the burst: `PeachMark(showsFace: false)`, and no costume. */
 export const CONFETTI_PEACH: readonly CostumePart[] = PERFECTLY_PEACHY.filter(
   (p) => !p.faceOnly,
@@ -122,6 +129,22 @@ export const PIECES: readonly Piece[] = (() => {
     size: within(SIZE),
   }));
 })();
+
+/**
+ * Every glyph the burst draws, by its key: what it is, and its size in
+ * points, for `scripts/glyph-outlines.swift` to outline.
+ */
+export const GLYPHS_WANTED = PIECES.flatMap((p) =>
+  p.kind === 'peach'
+    ? []
+    : [
+        {
+          key: glyphKey(p.kind, p.size),
+          glyph: GLYPHS[p.kind][0],
+          points: p.size,
+        },
+      ],
+);
 
 // ---- SwiftUI's easeIn ----------------------------------------------------------
 
@@ -183,6 +206,8 @@ export interface Drawn {
   y: number;
   /** Its box, square, before it turns. */
   size: number;
+  /** Its size in the app's points, as `Confetti.swift` draws its glyph. */
+  points: number;
   /** How far it has turned about its middle, in degrees. */
   rotation: number;
   opacity: number;
@@ -208,6 +233,7 @@ export function confettiAt(t: number, frame: Frame): Drawn[] {
       x: piece.x * width + e * piece.drift * point,
       y: -MARGIN * point + e * (height + 2 * MARGIN * point),
       size: piece.size * point,
+      points: piece.size,
       rotation: e * piece.spin,
       opacity: MOST_OPAQUE * e,
     });
