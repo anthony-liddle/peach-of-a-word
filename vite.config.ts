@@ -55,10 +55,16 @@ export default defineConfig(({ command }) => ({
        * game makes, served at /sounds by a rewrite. It is an entry rather than
        * a file in public/ so it imports the real audio engines and the game's
        * stylesheet instead of a copy of either.
+       *
+       * transfer.html moves a player's streak to the iOS app, served at
+       * /transfer by a rewrite. An entry for the same reason: it reads the
+       * save through the game's own storage and counts days by the game's own
+       * rule, rather than by copies of either.
        */
       input: {
         index: resolve(__dirname, 'index.html'),
         sounds: resolve(__dirname, 'sounds.html'),
+        transfer: resolve(__dirname, 'transfer.html'),
       },
     },
   },

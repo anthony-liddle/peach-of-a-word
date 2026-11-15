@@ -437,6 +437,12 @@ function Colophon({
       <a className="colophon__privacy" href="/privacy">
         Privacy
       </a>
+      {/* The way to the transfer page, and the only one for a player on a Home
+          Screen icon: that window has no address bar, and its save is its own,
+          apart from the browser's. Beside Privacy, as the same kind of thing. */}
+      <a className="colophon__transfer" href="/transfer">
+        Move your streak to the iPhone app
+      </a>
       {/* The title says what the game is to everyone; this says who it is for
           to the one person meant to notice it. Unornamented on purpose. */}
       <p className="colophon__dedication">for Bea</p>

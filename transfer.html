@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en" data-theme="cute">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Move your streak to the app | Peach of a Word</title>
+    <meta
+      name="description"
+      content="Move your Peach of a Word streak from the browser you play in to the iPhone app."
+    />
+    <!-- Linked from the game's footer, for players, but not a page to find in
+         a search: it does nothing without a save in the same browser. -->
+    <meta name="robots" content="noindex" />
+    <!-- Icons: the tab icon follows the theme, same contract as index.html and
+         the pages in public/. The default is the cute peach, the default theme. -->
+    <link
+      rel="icon"
+      id="favicon"
+      href="/favicon-cute.svg"
+      type="image/svg+xml"
+    />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      /* The two theme palettes, lifted from src/index.css by way of
+         support.html. Only the tokens this page uses are copied. */
+      :root,
+      [data-theme='letterpress'] {
+        --paper: #f1eee6;
+        --paper-deep: #e7e1d2;
+        --ink: #211d17;
+        --ink-soft: #5a5446;
+        --ink-faint: #6e6755;
+        --accent: #9d2b25;
+        --rule: #cabf9f;
+        --button: #9d2b25;
+        --on-accent: #f1eee6;
+        --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --weight-display: 700;
+        --font-body: 'Spectral', Georgia, serif;
+        --radius: 3px;
+      }
+      [data-theme='cute'] {
+        --paper: #fff4ee;
+        --paper-deep: #ffffff;
+        --ink: #6b4636;
+        --ink-soft: #6f5142;
+        --ink-faint: #7e5c4a;
+        --accent: #c42e60;
+        --rule: #ffe0d2;
+        --button: #c42e60;
+        --on-accent: #ffffff;
+        --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+        --weight-display: 600;
+        --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+        --radius: 18px;
+      }
+      /* Cocoa, the game's dark, for the same tokens: drawn when the script
+         below finds the page dark, by the game's own rule. Letterpress has no
+         dark yet. standaloneHtml.test.ts holds each value to src/index.css. */
+      [data-theme='cute'][data-appearance='dark'] {
+        --paper: #2b1a14;
+        --paper-deep: #3b2720;
+        --ink: #ffeadf;
+        --ink-soft: #f0cfbf;
+        --ink-faint: #d9b3a1;
+        --accent: #ff8bae;
+        --rule: #4a3229;
+        --button: #ff8bae;
+        --on-accent: #2b1119;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      /* The page shows and hides its parts with the hidden attribute, and the
+         button rule below sets a display of its own, which would win. */
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        margin: 0;
+        padding: 2.5rem 1.25rem 4rem;
+        font-family: var(--font-body);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 34rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: var(--weight-display);
+        font-size: 1.75rem;
+        line-height: 1.25;
+        margin: 0 0 1rem;
+      }
+      .lede {
+        font-size: 1.05rem;
+      }
+      a {
+        color: var(--accent);
+      }
+      .card {
+        background: var(--paper-deep);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        margin: 1.75rem 0 1.25rem;
+        text-align: center;
+      }
+      .count {
+        font-family: var(--font-display);
+        font-weight: var(--weight-display);
+        font-size: 3rem;
+        line-height: 1.1;
+        margin: 0;
+      }
+      .count-label {
+        color: var(--ink-soft);
+        margin: 0.25rem 0 0;
+      }
+      .warning {
+        border-left: 3px solid var(--accent);
+        padding-left: 0.85rem;
+      }
+      /* The way to the app is a real link, because the whole job is opening
+         an address, and iOS treats a link's tap as the plainest gesture
+         there is. It also keeps the address in the page, where it can be
+         read and tested. The copy button takes the same look. */
+      .button {
+        display: block;
+        width: 100%;
+        text-align: center;
+        text-decoration: none;
+        font: inherit;
+        font-family: var(--font-display);
+        font-weight: var(--weight-display);
+        font-size: 1.1rem;
+        color: var(--on-accent);
+        background: var(--button);
+        border: 0;
+        border-radius: var(--radius);
+        padding: 0.85rem 1.5rem;
+        cursor: pointer;
+      }
+      .note {
+        color: var(--ink-soft);
+        font-size: 0.9375rem;
+      }
+      /* The address is long and has no spaces, so it has to be allowed to
+         break anywhere, or it widens the page on a phone. */
+      .address {
+        margin: 0 0 1rem;
+        padding: 0.6rem 0.75rem;
+        background: var(--paper-deep);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        overflow-wrap: anywhere;
+        word-break: break-all;
+        line-height: 1.5;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.875em;
+        color: var(--ink-soft);
+      }
+      footer {
+        margin-top: 3rem;
+        border-top: 1px solid var(--rule);
+        padding-top: 1rem;
+        color: var(--ink-faint);
+        font-size: 0.875rem;
+      }
+    </style>
+    <script>
+      // Match the theme the player already chose, read from the same key the
+      // game writes. Wrapped because localStorage throws outright in some
+      // privacy modes. The theme and the tab icon are resolved together, the
+      // same as index.html and the pages in public/.
+      (function () {
+        var DEFAULT = 'cute';
+        var saved;
+        try {
+          saved = localStorage.getItem('e8-theme');
+        } catch (e) {
+          saved = null; /* storage blocked: fall back to the default */
+        }
+        var theme =
+          saved === 'cute' || saved === 'letterpress' ? saved : DEFAULT;
+        document.documentElement.dataset.theme = theme;
+        var icon = document.getElementById('favicon');
+        if (icon)
+          icon.href =
+            theme === 'cute' ? '/favicon-cute.svg' : '/favicon-classic.svg';
+        // The appearance, by index.html's rule: System follows the computer
+        // or phone, Light and Dark are the player's choice in the game, and
+        // only cute has a dark. Set before the first paint, and again when
+        // the system changes, so a page left open follows it as the game does.
+        var appearance;
+        try {
+          appearance = localStorage.getItem('e8-appearance');
+        } catch (e) {
+          appearance = null;
+        }
+        var system = null;
+        try {
+          system = window.matchMedia('(prefers-color-scheme: dark)');
+        } catch (e) {
+          system = null;
+        }
+        var paint = function () {
+          var dark =
+            theme === 'cute' &&
+            (appearance === 'dark' ||
+              (appearance !== 'light' && !!system && system.matches));
+          var root = document.documentElement;
+          root.dataset.appearance = dark ? 'dark' : 'light';
+          root.style.colorScheme = dark ? 'dark' : 'light';
+        };
+        paint();
+        if (system && system.addEventListener)
+          system.addEventListener('change', paint);
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Move your streak to the app</h1>
+
+      <p class="lede">
+        Your streak is kept in the browser you play in. This page hands it to
+        the Peach of a Word app on your iPhone.
+      </p>
+
+      <!-- Every part below starts hidden, and src/transfer/page.ts shows the
+           ones that fit. Without the script, nothing offers what it can't do. -->
+      <section id="found" class="card" hidden>
+        <p class="count" id="count"></p>
+        <p class="count-label" id="count-label"></p>
+      </section>
+
+      <p id="ended-yesterday" class="warning" hidden>
+        Move it before you play in the app today. If you've already played there
+        today, first play today's board on the web until today counts toward
+        your streak, then move it.
+      </p>
+
+      <div id="on-phone" hidden>
+        <p><a id="send" class="button">Send it to the app</a></p>
+        <div id="after-send" class="note">
+          <p>
+            When iOS asks, tap Open. The app takes your streak, unless its own
+            is already as long.
+          </p>
+          <p>
+            Past days shows the streak's days as finished once the app has been
+            closed and opened again.
+          </p>
+          <p>
+            If nothing opens, the app isn't on this phone. Nothing changes
+            either way.
+          </p>
+        </div>
+      </div>
+
+      <div id="on-computer" hidden>
+        <p>
+          The app is on your phone, so your streak travels in this page's
+          address. Copy it, send it to yourself however you like, and open it on
+          your iPhone.
+        </p>
+        <p class="address"><code id="address"></code></p>
+        <p>
+          <button id="copy" class="button" type="button">
+            Copy the address
+          </button>
+        </p>
+        <p id="copy-status" class="note" role="status"></p>
+        <p class="note">
+          The streak is in the part after the #, which a browser never sends to
+          a website.
+        </p>
+      </div>
+
+      <div id="none" hidden>
+        <p id="none-browser" hidden>
+          There's no streak going in this browser. If you play in a different
+          browser, open this page there.
+        </p>
+        <p id="none-address" hidden>
+          The streak in this address isn't going any more. Copy a new address
+          from the browser you play in.
+        </p>
+        <p id="days-safe">
+          Your days are safe in the browser you play in. An update to the app
+          will bring them across.
+        </p>
+      </div>
+
+      <p class="note">
+        Don't have the app yet?
+        <a href="https://apps.apple.com/us/app/peach-of-a-word/id6799815181"
+          >It's free on the App Store.</a
+        >
+      </p>
+
+      <!-- The words the script puts in place, kept here with the rest of the
+           page's words so every one is read and checked the same way. -->
+      <div id="words" hidden>
+        <span id="say-day">day in your streak</span>
+        <span id="say-days">days in your streak</span>
+        <span id="copy-done">Copied. Open it on your iPhone.</span>
+        <span id="copy-failed"
+          >That didn't copy. Select the address above and copy it
+          yourself.</span
+        >
+      </div>
+
+      <footer>
+        <a href="/">Back to the game</a>
+      </footer>
+    </main>
+    <script type="module" src="/src/transfer/main.ts"></script>
+  </body>
+</html>

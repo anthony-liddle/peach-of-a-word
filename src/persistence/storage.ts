@@ -156,6 +156,26 @@ export class GameStorage {
     this.write(state);
   }
 
+  /**
+   * The streak as it was saved, whether or not it's still going: its count and
+   * the day it was last extended. For the transfer page, which hands both to
+   * the app. Null when the save holds no pair of whole numbers, since a save
+   * is only ever as trustworthy as the browser it sits in.
+   */
+  savedStreak(): { count: number; lastClearedDayIndex: number } | null {
+    const streak: unknown = this.read().streak;
+    if (!streak || typeof streak !== 'object') return null;
+    const { count, lastClearedDayIndex } = streak as Record<string, unknown>;
+    if (
+      typeof count !== 'number' ||
+      typeof lastClearedDayIndex !== 'number' ||
+      !Number.isSafeInteger(count) ||
+      !Number.isSafeInteger(lastClearedDayIndex)
+    )
+      return null;
+    return { count, lastClearedDayIndex };
+  }
+
   /** Current streak as of today. A missed day shows the streak as broken (0). */
   currentStreak(todayIndex: number): number {
     const { count, lastClearedDayIndex } = this.read().streak;
