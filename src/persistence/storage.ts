@@ -176,6 +176,30 @@ export class GameStorage {
     return { count, lastClearedDayIndex };
   }
 
+  /**
+   * Every day the save holds words for, for the transfer page to hand to the
+   * app. A day whose entry isn't a day number, an eight-letter word in
+   * lowercase and a list is left out, and so is anything in a list that isn't
+   * text. Nothing here judges the words themselves: the app checks each one
+   * against that day's board.
+   */
+  savedDays(): Record<number, DayProgress> {
+    const days: unknown = this.read().days;
+    if (!days || typeof days !== 'object') return {};
+    const out: Record<number, DayProgress> = {};
+    for (const [key, entry] of Object.entries(days)) {
+      if (!/^\d+$/.test(key) || !entry || typeof entry !== 'object') continue;
+      const { sourceWord, found } = entry as Record<string, unknown>;
+      if (typeof sourceWord !== 'string' || !SOURCE_WORD.test(sourceWord))
+        continue;
+      if (!Array.isArray(found)) continue;
+      const words = found.filter((w): w is string => typeof w === 'string');
+      if (words.length === 0) continue;
+      out[Number(key)] = { sourceWord, found: words };
+    }
+    return out;
+  }
+
   /** Current streak as of today. A missed day shows the streak as broken (0). */
   currentStreak(todayIndex: number): number {
     const { count, lastClearedDayIndex } = this.read().streak;
