@@ -19,10 +19,11 @@ import type { Rect } from './storeArtSpec.ts';
  */
 
 /**
- * The loop, in seconds: 320 frames at 30 fps, 10.67 s. The video frames and
- * the AAC frames line up every 8/15 s, and this is 20 of those.
+ * The loop, in seconds: 336 frames at 30 fps, 11.20 s. The video frames and
+ * the AAC frames line up every 8/15 s, and this is 21 of those: one more
+ * than before the confetti, all of it on the crown's hold.
  */
-export const LOOP_S = 320 / 30;
+export const LOOP_S = 336 / 30;
 
 /**
  * When each stage arrives, in seconds into the loop, in the order of
@@ -31,13 +32,17 @@ export const LOOP_S = 320 / 30;
 export const ARRIVALS: readonly number[] = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.6];
 
 /**
- * When the crown starts back to the soil, at 9.37 s. It sinks, shrinking into
+ * When the crown starts back to the soil, at 9.90 s. It sinks, shrinking into
  * the middle of the soil's mound as it fades, and the bare mound fades in
  * under it, so the peach sinks into the soil and the frame is never empty.
  * Only once the crown has gone does the soil's face fade in, so the two faces
  * never show at once.
+ *
+ * **One 8/15 s step later than before the confetti,** whose last piece leaves
+ * the frame at 9.34 s, so the crown rests, still and clear, for 0.56 s before
+ * it sinks. At 9.37 s the last piece left with less than a frame to spare.
  */
-export const RETURN_AT = 281 / 30;
+export const RETURN_AT = 297 / 30;
 export const SINK_S = 0.5;
 export const FACE_S = 0.4;
 /** The share of its size the crown has sunk to as it goes. */
@@ -45,8 +50,12 @@ export const SUNK = 0.3;
 
 /**
  * Where each video starts, and its poster frame, at 8.30 s: the crown,
- * settled, after Edition Complete has rung out at 8.22 s and before it sinks.
- * The loop is the same wherever it starts; each file is turned to start here.
+ * settled, with the confetti in the air, after Edition Complete has rung out
+ * at 8.22 s. The loop is the same wherever it starts; each file is turned to
+ * start here, so it joins mid-fall, on two frames of the loop in a row.
+ *
+ * Antoine's choice, 15 November, over starting at 9.40 s with the confetti
+ * gone and joining on the still crown: the poster shows the confetti.
  */
 export const START_AT = 249 / 30;
 
@@ -136,6 +145,20 @@ export const PEACH_BOX: Rect = (() => {
   const b = Math.max(...all.map((b) => b.y + b.h));
   return { x, y, w: r - x, h: b - y };
 })();
+
+/**
+ * How much of the safe area's height the peach's box fills. The rest is room
+ * for a stage's grow-in, which overshoots its size by about a tenth of a
+ * percent (`LARGEST_SCALE`).
+ */
+const PEACH_FILL = 0.99;
+
+/**
+ * Pixels to one unit of the peach's box, in a placement's safe area: the
+ * peach as big as its box allows, centred in it.
+ */
+export const peachUnit = (safe: Rect) =>
+  Math.min(safe.w / PEACH_BOX.w, safe.h / PEACH_BOX.h) * PEACH_FILL;
 
 /**
  * The largest any drawing gets: a stage's grow-in overshoots its full size by

@@ -98,6 +98,15 @@ import {
   SINK_S,
   START_AT,
 } from '../src/storeArt/motion.ts';
+import {
+  CONFETTI_AT,
+  GLYPHS_WANTED,
+  confettiAt,
+  frameOf,
+  inFrame,
+  lastPieceGone,
+  reach,
+} from '../src/storeArt/confetti.ts';
 import { PLACEMENTS, type PlacementId } from '../src/storeArt/storeArtSpec.ts';
 
 const { values } = parseArgs({
@@ -150,6 +159,14 @@ const EDGE_S = 0.05;
 const SILENT_DBFS = -90;
 /** A frame mid-arrival, for the checks that need something moving. */
 const MID_FRAME = Math.round((ARRIVALS[3]! + 0.12) * FPS);
+/** A frame with the confetti in the air, for the same checks. */
+const CONFETTI_FRAME = Math.round((CONFETTI_AT + 1.2) * FPS);
+
+/** Whether any confetti is in `placement`'s frame `f` of the loop. */
+const hasConfetti = (placement: PlacementId, f: number) => {
+  const frame = frameOf(placement);
+  return confettiAt(f / FPS, frame).some((d) => inFrame(d, frame));
+};
 
 /**
  * The mono mix in both channels, each at its full level. ffmpeg's own `-ac 2`
@@ -358,20 +375,18 @@ async function bareFrames(
     throw new Error(`${placement} at ${scale} isn't whole pixels.`);
   await size(chrome, width, height);
   await transparent(chrome, true);
-  await open(chrome, `?motion=${placement}&bare=1`);
+  // On the soil, where nothing is drawn at the corner: the confetti can reach
+  // any spot, so the page is checked for transparency before the times asked.
+  await open(chrome, `?motion=${placement}&bare=1&t=0`);
+  if (decodeRgbaPng(await screenshot(chrome, width, height, scale)).data[3])
+    throw new Error(`${placement}: the bare frame's corner isn't clear.`);
   const failures: string[] = [];
   const shots: Buffer[] = [];
-  for (const [f, t] of times.entries()) {
+  for (const t of times) {
     await seek(chrome, t);
     const out = await strays(chrome);
     if (out.length) failures.push(...out.map((o) => `${t.toFixed(3)} s: ${o}`));
     shots.push(await screenshot(chrome, width, height, scale));
-    if (f === 0) {
-      // On transparency, or the background would be the browser's again.
-      const { data } = decodeRgbaPng(shots[0]!);
-      if (data[3] !== 0)
-        throw new Error(`${placement}: the bare frame's corner isn't clear.`);
-    }
   }
   if (failures.length)
     throw new Error(
@@ -382,8 +397,9 @@ async function bareFrames(
 
 /**
  * Every frame of one loop of `placement`, at `scale`. The loop's last frame
- * must be its first, and a frame mid-arrival captured again must come out
- * the same.
+ * must be its first, and a frame mid-arrival and a frame with the confetti
+ * in the air, each captured again, must come out the same: the confetti is
+ * seeded, so a second render gives the same pixels.
  */
 async function loopFrames(
   chrome: Chrome,
@@ -394,18 +410,62 @@ async function loopFrames(
   const shots = await bareFrames(chrome, placement, scale, times);
   if (!shots.at(-1)!.equals(shots[0]!))
     throw new Error(`${placement}: the loop's last frame isn't its first.`);
-  await seek(chrome, MID_FRAME / FPS);
   const { width, height } = PLACEMENTS[placement];
-  if (
-    !(await screenshot(chrome, width, height, scale)).equals(shots[MID_FRAME]!)
-  )
+  for (const f of [MID_FRAME, CONFETTI_FRAME]) {
+    await seek(chrome, f / FPS);
+    if (!(await screenshot(chrome, width, height, scale)).equals(shots[f]!))
+      throw new Error(`${placement}: frame ${f} came out different twice.`);
+  }
+  if (!hasConfetti(placement, CONFETTI_FRAME))
+    throw new Error(`${placement}: frame ${CONFETTI_FRAME} has no confetti.`);
+  // Every glyph drawn as its outline: Chrome's text isn't the same twice.
+  const asText = await chrome.evaluate<number>(
+    `document.querySelectorAll('.store-art__confetti span').length`,
+  );
+  if (asText)
     throw new Error(
-      `${placement}: frame ${MID_FRAME} came out different twice.`,
+      `${placement}: ${asText} of the confetti's glyphs are drawn as text, not outlines.`,
     );
   console.log(
     `${placement}: ${LOOP_FRAMES} frames, every one in the safe area`,
   );
   return shots;
+}
+
+/**
+ * The confetti is drawn behind the peach, so no piece crosses its face: from
+ * when the crown has settled until the last piece has gone, every pixel the
+ * settled crown draws solid, as it is once the confetti has gone, is the same
+ * in every frame. A piece in front would change some.
+ */
+function behindThePeach(placement: PlacementId, shots: Buffer[]): string {
+  const settled = Math.ceil((CONFETTI_AT + SETTLED_S) * FPS);
+  const gone = Math.ceil(lastPieceGone(frameOf(placement)) * FPS);
+  if (gone >= Math.round(RETURN_AT * FPS))
+    throw new Error(`${placement}: the crown sinks before frame ${gone}.`);
+  const clear = decodeRgbaPng(shots[gone]!).data;
+  const solid: number[] = [];
+  for (let i = 0; i < clear.length; i += 4)
+    if (clear[i + 3] === 255) solid.push(i);
+  const crossed: string[] = [];
+  let checked = 0;
+  for (let f = settled; f < gone; f++) {
+    if (!hasConfetti(placement, f)) continue;
+    const art = decodeRgbaPng(shots[f]!).data;
+    const changed = solid.filter(
+      (i) => art.readUInt32BE(i) !== clear.readUInt32BE(i),
+    ).length;
+    if (changed) crossed.push(`frame ${f}, ${changed} px`);
+    checked++;
+  }
+  if (crossed.length)
+    throw new Error(
+      `${placement}: confetti crosses the peach, in front of it: ${crossed.join('; ')}.`,
+    );
+  return (
+    `${placement}: the confetti is behind the peach: frames ${settled} to ${gone - 1}, ${checked} with confetti, ` +
+    `each the same as frame ${gone} in all ${solid.length} px the settled crown draws solid.`
+  );
 }
 
 /**
@@ -416,6 +476,10 @@ async function loopFrames(
  *   its own 8-bit, dithered gradient, which shows through by up to 1.5, and
  *   Chrome keeps an edge's colour premultiplied at 8 bits, worth up to 0.5
  *   more once laid over, and rounding the last 0.5;
+ * - where confetti is, 0.5 more for each piece over the pixel: the bare
+ *   frame lays each see-through piece over what's under it on transparency,
+ *   at 8 bits, before it's laid over the background, one rounding a layer
+ *   that the page, drawing them straight onto its background, doesn't make;
  * - each row of background within half a level on average, since only the
  *   browser dithers it.
  */
@@ -453,8 +517,21 @@ async function sameAsThePage(
     const page = run.stdout;
     const art = decodeRgbaPng(shots[frame]!);
     const ours = overBackdrop(art, backdropRows(art.height));
+    // The pieces in the frame, and how many reach a pixel, a pixel's width
+    // to spare for their anti-aliasing.
+    const pieces = confettiAt(frame / FPS, frameOf(placement)).filter((d) =>
+      inFrame(d, frameOf(placement)),
+    );
+    const over = (x: number, y: number) =>
+      pieces.filter(
+        (d) =>
+          Math.hypot(d.x - (x + 0.5) / scale, d.y - (y + 0.5) / scale) <
+          reach(d) + 1 / scale,
+      ).length;
     let solid = 0;
     let edge = 0;
+    /** The most a pixel under confetti is off, as a share of its mark. */
+    let under = { off: 0, mark: 2.5, share: 0 };
     let worstRow = 0;
     let worstAt = 0;
     for (let y = 0; y < art.height; y++) {
@@ -464,11 +541,16 @@ async function sameAsThePage(
       for (let x = 0; x < art.width; x++) {
         const p = y * art.width + x;
         const alpha = art.data[p * 4 + 3]!;
+        const layers = alpha > 0 && alpha < 255 ? over(x, y) : 0;
         for (let c = 0; c < 3; c++) {
           const mine = ours.readUInt16LE(p * 6 + c * 2) / 257;
           const off = Math.abs(mine - page[p * 3 + c]!);
           if (alpha === 255) solid = Math.max(solid, off);
-          else if (alpha > 0) edge = Math.max(edge, off);
+          else if (layers) {
+            const mark = 2.5 + 0.5 * layers;
+            if (off / mark > under.share)
+              under = { off, mark, share: off / mark };
+          } else if (alpha > 0) edge = Math.max(edge, off);
           else {
             sumPage += page[p * 3 + c]!;
             sumOurs += mine;
@@ -481,8 +563,11 @@ async function sameAsThePage(
     }
     const found =
       `solid art within ${solid.toFixed(2)} levels, its edges within ${edge.toFixed(2)}, ` +
+      (pieces.length
+        ? `the confetti's see-through pixels at most ${under.off.toFixed(2)} where the mark is ${under.mark.toFixed(1)}, ${(100 * under.share).toFixed(0)}% of it, `
+        : '') +
       `the background's rows within ${worstRow.toFixed(2)} on average`;
-    if (solid > 0.5 || edge > 2.5 || worstRow > 0.5)
+    if (solid > 0.5 || edge > 2.5 || under.share > 1 || worstRow > 0.5)
       throw new Error(
         `${placement}, frame ${frame}: laid over the background, it differs from the page's: ${found} (worst row ${worstAt} of ${art.height}).`,
       );
@@ -495,13 +580,14 @@ async function sameAsThePage(
 
 /**
  * `shots`, laid over the background, `loops` times over, into `path`: H.264
- * in BT.709, for looking at, not for upload; with `sound`, looped as often.
+ * in BT.709, for looking at, not for upload; with `aac`, the file's own
+ * sound, as it is.
  */
 async function encodePreview(
   shots: Buffer[],
   path: string,
   loops: number,
-  sound?: string,
+  aac?: string,
 ): Promise<void> {
   const first = decodeRgbaPng(shots[0]!);
   // 4:2:0 needs an even height, so the half-size header's last row goes.
@@ -515,14 +601,7 @@ async function encodePreview(
     data: art.data.subarray(0, width * height * 4),
   });
   const enc = encoder(yuvInput(width, height), [
-    ...(sound
-      ? [
-          '-i',
-          sound,
-          '-af',
-          `aloop=loop=${loops - 1}:size=${LOOP_SAMPLES},${DUAL_MONO}`,
-        ]
-      : []),
+    ...(aac ? ['-i', aac, '-map', '0:v', '-map', '1:a'] : []),
     '-vf',
     TAGGED,
     '-c:v',
@@ -530,7 +609,7 @@ async function encodePreview(
     '-crf',
     16,
     ...BT709,
-    ...(sound ? ['-c:a', 'aac', '-b:a', '256k', '-ar', SAMPLE_RATE] : ['-an']),
+    ...(aac ? ['-c:a', 'copy'] : ['-an']),
     '-movflags',
     '+faststart',
     path,
@@ -564,13 +643,17 @@ const fileName = (placement: Moving) => {
 const QUANTISER = 4;
 /**
  * How often each file has a key frame, never placed by a scene cut, since
- * there are none. Search's every 2 s. The header's every 32 frames, 10 a
- * loop, so both loops are encoded alike: that brings its average to about
+ * there are none. Search's every 2 s. The header's every 42 frames, 8 a
+ * loop, so both loops are encoded alike: that keeps its average about
  * 10 Mbps, as search's is, inside the 7.5 to 45.5 Mbps Headloop saw App Store
- * Connect process. Every 60 frames it was 6.6, and a lower quantiser barely
- * moved it: 7.3 at quantiser 2.
+ * Connect process.
+ *
+ * Before the confetti, the header's still background cost almost nothing
+ * between key frames: every 60 frames it was 6.6 Mbps, and every 32, 10.5.
+ * The confetti adds its own: measured on 15 November, every 32 frames came
+ * to 12.4 Mbps, 42 to 10.3, 48 to 9.5 and 56 to 8.6.
  */
-const GOPS = { header: 32, search: 60 } as const;
+const GOPS = { header: 42, search: 60 } as const;
 /**
  * H.264 levels. The header's frame fits 5.1. Search's 3840 x 2560 is 38,400
  * macroblocks, past the 36,864 that 5.1 and 5.2 allow, so 6.0, as Apple's
@@ -587,16 +670,27 @@ const LEVELS = { header: '5.1', search: '6.0' } as const;
 const MOST_FLAT_ROWS = 16;
 const MOST_OFF = 0.1;
 /**
- * The frames measured: every key frame, the poster first; one midway between
- * two; and the second loop's first.
+ * The file's frames measured, by their place in the file: every key frame;
+ * one midway between two; and the second loop's first. Any the confetti is
+ * in are left out and listed, since the strip measured must be background in
+ * every frame, and the confetti reaches every column. A key frame is made at
+ * the same quantiser whatever else is in it, so the clear ones stand for
+ * the rest.
  */
 const measured = (placement: Moving) => {
   const gop = GOPS[placement];
+  const clear = (f: number) =>
+    !hasConfetti(placement, (START_FRAME + f) % LOOP_FRAMES);
   const keys = Array.from(
     { length: Math.ceil((FILE_LOOPS * LOOP_FRAMES) / gop) },
     (_, k) => k * gop,
   );
-  return [...new Set([...keys, gop / 2, LOOP_FRAMES])].sort((a, b) => a - b);
+  const midway = keys.map((k) => k + gop / 2).find(clear)!;
+  const second = keys.find((k) => k >= LOOP_FRAMES && clear(k))!;
+  const all = [...new Set([...keys, midway, LOOP_FRAMES, second])].sort(
+    (a, b) => a - b,
+  );
+  return { frames: all.filter(clear), skipped: all.filter((f) => !clear(f)) };
 };
 const PLANES = ['y', 'cb', 'cr'] as const;
 
@@ -610,7 +704,8 @@ const planeMeans = (frame: Yuv) =>
 
 /**
  * One loop of `shots` as raw 4:2:0 frames in `path`, over `backdrop` made
- * with `rows` and `dither`; and which columns any frame draws in.
+ * with `rows` and `dither`; and which columns any of the `counted` frames
+ * draws in, by their place in the file, in either loop.
  */
 function writeLoop(
   shots: Buffer[],
@@ -618,14 +713,17 @@ function writeLoop(
   rows: Uint16Array,
   backdrop: Yuv,
   dither: boolean,
+  counted: number[],
 ): Uint8Array {
   const drawn = new Uint8Array(backdrop.width);
+  const counts = new Set(counted.map((f) => f % shots.length));
   const fd = openSync(path, 'w');
   try {
-    for (const shot of shots) {
+    for (const [f, shot] of shots.entries()) {
       const art = decodeRgbaPng(shot);
-      for (let i = 3; i < art.data.length; i += 4)
-        if (art.data[i]) drawn[((i - 3) >> 2) % art.width] = 1;
+      if (counts.has(f))
+        for (let i = 3; i < art.data.length; i += 4)
+          if (art.data[i]) drawn[((i - 3) >> 2) % art.width] = 1;
       writeSync(fd, yuvFrame(art, rows, backdrop, dither));
     }
   } finally {
@@ -1055,11 +1153,19 @@ function fullSize(
     rounded: join(work, `rounded-${name}`),
     dithered: join(OUT, name),
   };
+  const { frames, skipped } = measured(placement);
   let drawn: Uint8Array = new Uint8Array(width);
   for (const dither of [false, true]) {
     const yuv = join(work, 'loop.yuv');
     const backdrop = yuvBackdrop(width, height, rows, dither);
-    drawn = writeLoop(turned(shots, START_FRAME), yuv, rows, backdrop, dither);
+    drawn = writeLoop(
+      turned(shots, START_FRAME),
+      yuv,
+      rows,
+      backdrop,
+      dither,
+      frames,
+    );
     encodeFile(
       yuv,
       placement,
@@ -1070,9 +1176,15 @@ function fullSize(
     console.log(`${placement}: encoded, ${dither ? 'dithered' : 'rounded'}`);
   }
   const [x0, x1] = artFreeStrip(drawn);
-  const frames = measured(placement);
   const rounded = decodedFrames(paths.rounded, width, height, frames);
-  const dithered = decodedFrames(paths.dithered, width, height, frames);
+  // The poster too, first, whether or not the confetti is in it.
+  const [encodedPoster, ...dithered] = decodedFrames(
+    paths.dithered,
+    width,
+    height,
+    [...new Set([0, ...frames])],
+  );
+  if (frames[0] === 0) dithered.unshift(encodedPoster!);
   const before = measureBanding(rounded, x0, x1);
   const after = measureBanding(dithered, x0, x1);
   const describe = (b: Bands) =>
@@ -1082,7 +1194,10 @@ function fullSize(
         `flat for ${b[p].flatRows} rows at most, 8-row means within ${b[p].off.toFixed(3)} of the ramp`,
     ).join('; ');
   lines.push(
-    `${placement}, banding in columns ${x0} to ${x1}, decoded frames ${frames.join(', ')}, the worst of each:`,
+    `${placement}, banding in columns ${x0} to ${x1}, decoded frames ${frames.join(', ')}, the worst of each` +
+      (skipped.length
+        ? ` (left out, with confetti in them: ${skipped.join(', ')}):`
+        : ':'),
     `  rounded: ${describe(before)}`,
     `  dithered: ${describe(after)}`,
   );
@@ -1105,7 +1220,7 @@ function fullSize(
     height,
     data: yuvFrame(poster, rows, yuvBackdrop(width, height, rows, true), true),
   };
-  lines.push(sameAsEncoded(placement, ours, dithered[0]!));
+  lines.push(sameAsEncoded(placement, ours, encodedPoster!));
   const info = probeFile(paths.dithered);
   writeFileSync(
     join(SIDE, 'ffprobe', `${name}.json`),
@@ -1143,12 +1258,43 @@ async function encodeCheck(shots: Buffer[], path: string) {
   console.log(`wrote ${path.slice(OUT.length + 1)}`);
 }
 
+/**
+ * The confetti's glyphs, as SVG outlines by `glyphKey`, from the fonts the
+ * app draws them in, read on this Mac each time (`glyph-outlines.swift`), so
+ * no font's outlines are kept in the repo.
+ */
+function glyphOutlines(): Record<string, string> {
+  const run = spawnSync(
+    'swift',
+    [resolve(import.meta.dirname, 'glyph-outlines.swift')],
+    { input: JSON.stringify(GLYPHS_WANTED), encoding: 'utf8' },
+  );
+  if (run.status !== 0)
+    throw new Error(`glyph-outlines.swift failed:\n${run.stderr.slice(-2000)}`);
+  const outlines = JSON.parse(run.stdout) as Record<string, string>;
+  const missing = GLYPHS_WANTED.filter(
+    (g) => !outlines[g.key]?.startsWith('M'),
+  );
+  if (missing.length)
+    throw new Error(`No outline for ${missing.map((g) => g.key).join(', ')}.`);
+  return outlines;
+}
+
 const notes: string[] = [];
 const work = mkdtempSync(join(tmpdir(), 'store-motion-'));
 const chrome = await launchChrome();
 try {
   await chrome.send('Page.enable');
   await chrome.send('Runtime.enable');
+  // The confetti's glyphs as outlines, read from this Mac's own fonts, for
+  // every page this opens.
+  const outlines = glyphOutlines();
+  await chrome.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `window.storeArtGlyphs = ${JSON.stringify(outlines)};`,
+  });
+  notes.push(
+    `The confetti's ${Object.keys(outlines).length} glyphs drawn as outlines from this Mac's fonts, by scripts/glyph-outlines.swift.`,
+  );
 
   // ---- The sound -------------------------------------------------------------
   await size(chrome, 1280, 800);
@@ -1160,11 +1306,71 @@ try {
   // The peak to the hundredth: ebur128 prints one decimal, and -10.26 read
   // as -10.3 once set a gain that put the mix at -0.96 dBTP.
   const rawPeak = truePeak(rawPath);
-  const gainDb = Math.min(TARGET_LUFS - before.lufs, CEILING_DBTP - rawPeak);
-  const gain = 10 ** (gainDb / 20);
-  const mixed = raw.map((s) => s * gain);
   const soundPath = join(SIDE, 'header-sound.wav');
-  writeFileSync(soundPath, encodeWav(mixed, SAMPLE_RATE));
+  /** The mix at one gain of `db`, kept where the file's sound is kept. */
+  const mixAt = (db: number) => {
+    const gain = 10 ** (db / 20);
+    const out = raw.map((s) => s * gain);
+    writeFileSync(soundPath, encodeWav(out, SAMPLE_RATE));
+    return out;
+  };
+  const signed = (db: number) => `${db >= 0 ? '+' : ''}${db.toFixed(2)}`;
+  let gainDb = Math.min(TARGET_LUFS - before.lufs, CEILING_DBTP - rawPeak);
+  let mixed = mixAt(gainDb);
+
+  // The sound is encoded once, as the files carry it, or taken as it is from
+  // a file already handed off, and held to the ceiling as encoded. If the AAC
+  // goes over where the mix didn't, the ceiling wins: the gain comes down a
+  // hundredth of a dB at a time until it holds. Where AAC's frames fall
+  // against the chord moves its peak by thousandths, so a file that starts
+  // somewhere else can need it.
+  const aac = join(work, 'header-sound.m4a');
+  if (SOUND_FROM) {
+    ffmpeg([
+      '-loglevel',
+      'error',
+      '-i',
+      SOUND_FROM,
+      '-map',
+      '0:a',
+      '-c:a',
+      'copy',
+      aac,
+    ]);
+    notes.push(
+      `The header's AAC is ${basename(SOUND_FROM)}'s, as it is, not a fresh encode of the sound below.`,
+    );
+  }
+  for (;;) {
+    if (!SOUND_FROM)
+      ffmpeg([
+        '-loglevel',
+        'error',
+        '-i',
+        soundPath,
+        '-af',
+        `aloop=loop=${FILE_LOOPS - 1}:size=${LOOP_SAMPLES},${DUAL_MONO}`,
+        '-c:a',
+        'aac',
+        '-b:a',
+        '256k',
+        '-ar',
+        SAMPLE_RATE,
+        aac,
+      ]);
+    const encodedPeak = truePeak(aac);
+    if (encodedPeak <= CEILING_DBTP) break;
+    if (SOUND_FROM)
+      throw new Error(
+        `As AAC, the header's sound peaks at ${encodedPeak.toFixed(2)} dBTP, over the ${CEILING_DBTP} dBTP ceiling, at the gain kept.`,
+      );
+    const lower = Math.ceil(gainDb * 100 - 1) / 100;
+    notes.push(
+      `As AAC at ${signed(gainDb)} dB, the sound peaked at ${encodedPeak.toFixed(3)} dBTP, over the ${CEILING_DBTP} dBTP ceiling, so the gain comes down to ${signed(lower)} dB.`,
+    );
+    gainDb = lower;
+    mixed = mixAt(gainDb);
+  }
   const after = loudness(soundPath);
   const edge = Math.round(EDGE_S * SAMPLE_RATE);
   const [first, last] = [
@@ -1181,66 +1387,31 @@ try {
   notes.push(
     `Sound, ${SAMPLE_RATE} Hz mono, one ${LOOP_S.toFixed(2)} s loop, turned to start at ${START_AT.toFixed(2)} s.`,
     `  As rendered, the game's own level: ${before.lufs} LUFS integrated, true peak ${rawPeak.toFixed(2)} dBTP at 4 times oversampled.`,
-    `  Mixed, one gain of ${gainDb >= 0 ? '+' : ''}${gainDb.toFixed(2)} dB: ` +
+    `  Mixed, one gain of ${signed(gainDb)} dB: ` +
       `${after.lufs} LUFS, true peak ${truePeak(soundPath).toFixed(2)} dBTP, sample peak ${dbfs(peak).toFixed(2)} dBFS.`,
     `  The first and last ${EDGE_S * 1000} ms: RMS ${first.toFixed(1)} and ${last.toFixed(1)} dBFS.`,
   );
-
-  // At full size the sound is encoded once, or taken as it is from a file
-  // already handed off, held to the ceiling as encoded, and put in the file
-  // as it is.
-  let aac: string | undefined;
-  if (SOUND_FROM) {
-    aac = join(work, 'header-sound.m4a');
-    ffmpeg([
-      '-loglevel',
-      'error',
-      '-i',
-      SOUND_FROM,
-      '-map',
-      '0:a',
-      '-c:a',
-      'copy',
-      aac,
-    ]);
-    notes.push(
-      `The header's AAC is ${basename(SOUND_FROM)}'s, as it is, not a fresh encode of the sound above.`,
-    );
-  } else if (!PREVIEW) {
-    aac = join(work, 'header-sound.m4a');
-    ffmpeg([
-      '-loglevel',
-      'error',
-      '-i',
-      soundPath,
-      '-af',
-      `aloop=loop=${FILE_LOOPS - 1}:size=${LOOP_SAMPLES},${DUAL_MONO}`,
-      '-c:a',
-      'aac',
-      '-b:a',
-      '256k',
-      '-ar',
-      SAMPLE_RATE,
-      aac,
-    ]);
-  }
-  if (aac) {
-    const encodedPeak = truePeak(aac);
-    if (encodedPeak > CEILING_DBTP)
-      throw new Error(
-        `As AAC, the header's sound peaks at ${encodedPeak.toFixed(2)} dBTP, over the ${CEILING_DBTP} dBTP ceiling, at the gain kept.`,
-      );
-  }
 
   // ---- The frames and the videos -------------------------------------------
   const sums: string[] = [];
   for (const placement of ['header', 'search'] as const) {
     const shots = await loopFrames(chrome, placement, SCALE);
-    if (!shots[START_FRAME - 1]!.equals(shots[START_FRAME]!))
-      throw new Error(`${placement}: the file's last frame isn't its first.`);
+    // Each file starts with the confetti in the air, so it joins mid-fall:
+    // its last frame is the loop's frame before its first, as every frame
+    // is, so it's seamless, but not still.
+    if (
+      shots[START_FRAME - 1]!.equals(shots[START_FRAME]!) ||
+      !hasConfetti(placement, START_FRAME)
+    )
+      throw new Error(
+        `${placement}: the file doesn't start with the confetti in the air.`,
+      );
     notes.push(
+      `${placement}: the file joins mid-fall, on two frames of the loop in a row.`,
+      behindThePeach(placement, shots),
       ...(await sameAsThePage(chrome, placement, SCALE, shots, [
         MID_FRAME,
+        CONFETTI_FRAME,
         START_FRAME,
       ])),
     );
@@ -1249,7 +1420,7 @@ try {
         turned(shots, START_FRAME),
         join(OUT, `${placement}-preview.mp4`),
         FILE_LOOPS,
-        placement === 'header' ? soundPath : undefined,
+        placement === 'header' ? aac : undefined,
       );
     else {
       notes.push(
@@ -1349,12 +1520,20 @@ try {
   notes.unshift(
     `A ${LOOP_S.toFixed(2)} s loop at ${FPS} fps, ${LOOP_FRAMES} frames.`,
     `Each file starts on the crown at ${START_AT.toFixed(2)} s, frame ${START_FRAME}, its poster frame, ` +
+      'with the confetti in the air, ' +
       `and plays the loop ${FILE_LOOPS} times: ${FILE_LOOPS * LOOP_FRAMES} frames, ${(FILE_LOOPS * LOOP_S).toFixed(2)} s.`,
     ...BEATS.map(
       (b) =>
         `${b.at.toFixed(2)} s, frame ${Math.round(b.at * FPS)}: ` +
         `${GROWTH_STAGES.find((s) => s.id === b.stage)!.spoken}, ` +
-        (b.call === 'edition' ? 'edition' : `found-${b.length}-set`),
+        (b.call === 'edition'
+          ? 'edition, and the confetti'
+          : `found-${b.length}-set`),
+    ),
+    ...(['header', 'search'] as const).map(
+      (p) =>
+        `${lastPieceGone(frameOf(p)).toFixed(3)} s: the confetti's last piece has left the ${p}'s frame ` +
+        `(a point is ${frameOf(p).point.toFixed(2)} px)`,
     ),
     `${RETURN_AT.toFixed(2)} s, frame ${Math.round(RETURN_AT * FPS)}: the crown sinks into the soil as its mound comes back under it, silent`,
     `${(RETURN_AT + SINK_S).toFixed(2)} s, frame ${Math.round((RETURN_AT + SINK_S) * FPS)}: the crown has gone; the soil's face fades in`,

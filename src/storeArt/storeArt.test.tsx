@@ -3,7 +3,13 @@ import { resolve } from 'node:path';
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GROWTH_STAGES } from './growthStages.ts';
-import { ARRIVALS, SETTLED_S } from './motion.ts';
+import {
+  CONFETTI_AT,
+  CONFETTI_PEACH,
+  GLYPHS_WANTED,
+  PIECE_COUNT,
+} from './confetti.ts';
+import { ARRIVALS, RETURN_AT, SETTLED_S } from './motion.ts';
 import { Art, MotionFrame } from './StoreArtPage.tsx';
 import { PLACEMENTS, type PlacementId } from './storeArtSpec.ts';
 
@@ -78,6 +84,72 @@ describe('the store art page', () => {
       const box = (c: HTMLElement) =>
         c.querySelector('[data-focal]')!.getAttribute('viewBox');
       expect(box(settled)).toBe(box(at(0)));
+    },
+  );
+
+  it.each(['header', 'search'] as const)(
+    'throws the confetti over the %s as the crown lands, outside the focal peach, and has it gone before the sink',
+    (p) => {
+      const at = (t: number) =>
+        render(<MotionFrame placement={p} t={t} bare />).container;
+      expect(at(CONFETTI_AT - 0.01).querySelector('[data-piece]')).toBeNull();
+      const mid = at(CONFETTI_AT + 1.2);
+      const pieces = [...mid.querySelectorAll<HTMLElement>('[data-piece]')];
+      expect(pieces.length).toBeGreaterThan(PIECE_COUNT / 2);
+      expect(new Set(pieces.map((e) => e.dataset.piece))).toEqual(
+        new Set(['peach', 'heart', 'star', 'sparkle']),
+      );
+      expect(mid.querySelector('[data-focal] [data-piece]')).toBeNull();
+      // The glyphs are the app's, and nothing else is text.
+      expect(mid.textContent!.replace(/[✿♥★✦]/g, '')).toBe('');
+      // The peach in the burst shows no face.
+      const peach = mid.querySelector('[data-piece="peach"] svg')!;
+      expect(peach.querySelectorAll('path')).toHaveLength(
+        CONFETTI_PEACH.length,
+      );
+      expect(at(RETURN_AT).querySelector('[data-piece]')).toBeNull();
+    },
+  );
+
+  it('draws each glyph as its outline when the capture gives it one, not as text', () => {
+    window.storeArtGlyphs = Object.fromEntries(
+      GLYPHS_WANTED.map((g) => [g.key, 'M0 0 L1 0 L1 1 Z']),
+    );
+    try {
+      const art = render(
+        <MotionFrame placement="search" t={CONFETTI_AT + 1.2} bare />,
+      ).container;
+      const glyphs = [
+        ...art.querySelectorAll('[data-piece]:not([data-piece="peach"])'),
+      ];
+      expect(glyphs.length).toBeGreaterThan(0);
+      for (const g of glyphs) {
+        expect(g.querySelector('span')).toBeNull();
+        expect(g.querySelector('svg path')!.getAttribute('d')).toBe(
+          'M0 0 L1 0 L1 1 Z',
+        );
+      }
+    } finally {
+      delete window.storeArtGlyphs;
+    }
+  });
+
+  it.each(['header', 'search'] as const)(
+    'draws the confetti behind the peach and its crown in the %s, so no piece crosses the face',
+    (p) => {
+      const art = render(
+        <MotionFrame placement={p} t={CONFETTI_AT + 1.2} />,
+      ).container.querySelector<HTMLElement>('.store-art')!;
+      const confetti = art.querySelector<HTMLElement>('.store-art__confetti')!;
+      const peach = art.querySelector('[data-focal]')!;
+      // Both are positioned with no z-index, so the one drawn first is under:
+      // the confetti, before the peach's layer.
+      expect(
+        confetti.compareDocumentPosition(peach) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      for (const el of [confetti, peach.parentElement!])
+        expect(el.style.zIndex).toBe('');
     },
   );
 });

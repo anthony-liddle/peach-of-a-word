@@ -11,6 +11,34 @@ html:has(.store-art--bare),
 html:has(.store-art--bare) body {
   background: transparent;
 }
+/* The confetti, across the whole art and behind the peach, which the page
+   draws after it. Each piece is a box its size across,
+   placed and turned inline about its middle, its glyph centred in it on
+   the line the system font gives it, as SwiftUI centres a Text. */
+.store-art__confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.store-art__confetti > div {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.store-art__confetti svg {
+  display: block;
+  flex: none;
+  /* A glyph's outline can reach a hair past its box, as its text could. */
+  overflow: visible;
+}
+.store-art__confetti span {
+  line-height: normal;
+  white-space: pre;
+}
 /* For checking only: never in a file to upload. */
 .store-art__safe {
   position: absolute;
