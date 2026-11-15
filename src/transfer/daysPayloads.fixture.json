@@ -1,0 +1,82 @@
+{
+  "about": "Days payloads as the transfer page writes them for the app's paste. days.test.ts holds the web's writer to every row's json and text. scripts/days-payload-parity.mjs turns the rows into DaysPayloadVectors.swift in the iOS repo, where DaysTransferTests parses each text. Nothing keeps the two copies in step but that script.",
+  "prefix": "Peach of a Word days: ",
+  "payloads": [
+    {
+      "name": "a streak going, three days with words, and a day opened with none",
+      "save": {
+        "version": 1,
+        "streak": {
+          "count": 3,
+          "lastClearedDayIndex": 318
+        },
+        "days": {
+          "315": {
+            "sourceWord": "lanterns",
+            "found": []
+          },
+          "316": {
+            "sourceWord": "industry",
+            "found": ["dust", "rust", "stud"]
+          },
+          "317": {
+            "sourceWord": "forecast",
+            "found": ["cast", "fore", "forecast"]
+          },
+          "318": {
+            "sourceWord": "favorite",
+            "found": ["five", "rite"]
+          }
+        },
+        "endless": null
+      },
+      "json": "{\"v\":1,\"streak\":{\"count\":3,\"lastClearedDayIndex\":318},\"days\":{\"316\":{\"sourceWord\":\"industry\",\"found\":[\"dust\",\"rust\",\"stud\"]},\"317\":{\"sourceWord\":\"forecast\",\"found\":[\"cast\",\"fore\",\"forecast\"]},\"318\":{\"sourceWord\":\"favorite\",\"found\":[\"five\",\"rite\"]}}}",
+      "text": "Peach of a Word days: eyJ2IjoxLCJzdHJlYWsiOnsiY291bnQiOjMsImxhc3RDbGVhcmVkRGF5SW5kZXgiOjMxOH0sImRheXMiOnsiMzE2Ijp7InNvdXJjZVdvcmQiOiJpbmR1c3RyeSIsImZvdW5kIjpbImR1c3QiLCJydXN0Iiwic3R1ZCJdfSwiMzE3Ijp7InNvdXJjZVdvcmQiOiJmb3JlY2FzdCIsImZvdW5kIjpbImNhc3QiLCJmb3JlIiwiZm9yZWNhc3QiXX0sIjMxOCI6eyJzb3VyY2VXb3JkIjoiZmF2b3JpdGUiLCJmb3VuZCI6WyJmaXZlIiwicml0ZSJdfX19"
+    },
+    {
+      "name": "a streak that has ended, which still says which days it cleared",
+      "save": {
+        "version": 1,
+        "streak": {
+          "count": 5,
+          "lastClearedDayIndex": 300
+        },
+        "days": {
+          "299": {
+            "sourceWord": "mnemonic",
+            "found": ["mine", "omen"]
+          },
+          "300": {
+            "sourceWord": "validity",
+            "found": ["avid"]
+          }
+        },
+        "endless": {
+          "sourceWord": "chestnut",
+          "found": ["nest"]
+        }
+      },
+      "json": "{\"v\":1,\"streak\":{\"count\":5,\"lastClearedDayIndex\":300},\"days\":{\"299\":{\"sourceWord\":\"mnemonic\",\"found\":[\"mine\",\"omen\"]},\"300\":{\"sourceWord\":\"validity\",\"found\":[\"avid\"]}}}",
+      "text": "Peach of a Word days: eyJ2IjoxLCJzdHJlYWsiOnsiY291bnQiOjUsImxhc3RDbGVhcmVkRGF5SW5kZXgiOjMwMH0sImRheXMiOnsiMjk5Ijp7InNvdXJjZVdvcmQiOiJtbmVtb25pYyIsImZvdW5kIjpbIm1pbmUiLCJvbWVuIl19LCIzMDAiOnsic291cmNlV29yZCI6InZhbGlkaXR5IiwiZm91bmQiOlsiYXZpZCJdfX19"
+    },
+    {
+      "name": "never a day cleared, so no streak",
+      "save": {
+        "version": 1,
+        "streak": {
+          "count": 0,
+          "lastClearedDayIndex": null
+        },
+        "days": {
+          "318": {
+            "sourceWord": "favorite",
+            "found": ["five", "rite"]
+          }
+        },
+        "endless": null
+      },
+      "json": "{\"v\":1,\"days\":{\"318\":{\"sourceWord\":\"favorite\",\"found\":[\"five\",\"rite\"]}}}",
+      "text": "Peach of a Word days: eyJ2IjoxLCJkYXlzIjp7IjMxOCI6eyJzb3VyY2VXb3JkIjoiZmF2b3JpdGUiLCJmb3VuZCI6WyJmaXZlIiwicml0ZSJdfX19"
+    }
+  ]
+}
