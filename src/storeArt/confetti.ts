@@ -19,9 +19,10 @@ import { PLACEMENTS, type PlacementId } from './storeArtSpec.ts';
  * - **Seeded, not random,** so a second render gives the same pixels.
  * - **Each piece turns about its own middle.** The app turns each piece after
  *   placing it, so SwiftUI turns its whole path about the middle of the card,
- *   and the pieces swing round it as they fall. On a phone every path still
- *   ends off the screen. In the header's wide frame, turned that way, pieces
- *   would come to rest inside it, so they could never all leave.
+ *   and the pieces swing round it as they fall. In the header's wide frame,
+ *   turned that way, a piece ending a little below the frame's foot and
+ *   turned a quarter would come to rest inside it, so they could never all
+ *   leave.
  * - **Sized beside the crown** as the app's are beside the crown card's peach,
  *   112 points across: a point here is the peach's drawn size over 112.
  * - **The frame is the art,** not the card: the pieces fall from above it to
