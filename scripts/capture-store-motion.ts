@@ -4,12 +4,9 @@
  * page is given, never a screen recording; and the header's sound, rendered
  * offline through the game's own audio engine from the game's own cue file.
  *
- *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir> --poster <air|clear>
- *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir> --poster <air|clear> --sound-from <header.mp4>
- *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir> --poster <air|clear> --preview
- *
- * `--poster` is where each file starts, its poster frame (`POSTERS` in
- * `motion.ts`): `air`, with the confetti in the air, or `clear`, with it gone.
+ *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir>
+ *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir> --sound-from <header.mp4>
+ *     pnpm exec tsx scripts/capture-store-motion.ts --out <dir> --preview
  *
  * At full size, the files for App Store Connect, into `<dir>`, named as the
  * stills are, with `SHA256SUMS.txt`: each the loop twice, turned to start and
@@ -99,8 +96,7 @@ import {
   SAMPLE_RATE,
   SETTLED_S,
   SINK_S,
-  POSTERS,
-  type Poster,
+  START_AT,
 } from '../src/storeArt/motion.ts';
 import {
   CONFETTI_AT,
@@ -115,17 +111,11 @@ import { PLACEMENTS, type PlacementId } from '../src/storeArt/storeArtSpec.ts';
 const { values } = parseArgs({
   options: {
     out: { type: 'string' },
-    poster: { type: 'string' },
     preview: { type: 'boolean', default: false },
     'sound-from': { type: 'string' },
   },
 });
 if (!values.out) throw new Error('Pass --out <dir>.');
-const POSTER = values.poster as Poster;
-if (!(POSTER in POSTERS))
-  throw new Error(`Pass --poster ${Object.keys(POSTERS).join(' or ')}.`);
-/** Where each file starts, and its poster frame. */
-const START_AT = POSTERS[POSTER];
 const PREVIEW = values.preview;
 const SOUND_FROM = values['sound-from'] && resolve(values['sound-from']);
 if (PREVIEW && SOUND_FROM)
@@ -434,6 +424,42 @@ async function loopFrames(
 }
 
 /**
+ * The confetti is drawn behind the peach, so no piece crosses its face: from
+ * when the crown has settled until the last piece has gone, every pixel the
+ * settled crown draws solid, as it is once the confetti has gone, is the same
+ * in every frame. A piece in front would change some.
+ */
+function behindThePeach(placement: PlacementId, shots: Buffer[]): string {
+  const settled = Math.ceil((CONFETTI_AT + SETTLED_S) * FPS);
+  const gone = Math.ceil(lastPieceGone(frameOf(placement)) * FPS);
+  if (gone >= Math.round(RETURN_AT * FPS))
+    throw new Error(`${placement}: the crown sinks before frame ${gone}.`);
+  const clear = decodeRgbaPng(shots[gone]!).data;
+  const solid: number[] = [];
+  for (let i = 0; i < clear.length; i += 4)
+    if (clear[i + 3] === 255) solid.push(i);
+  const crossed: string[] = [];
+  let checked = 0;
+  for (let f = settled; f < gone; f++) {
+    if (!hasConfetti(placement, f)) continue;
+    const art = decodeRgbaPng(shots[f]!).data;
+    const changed = solid.filter(
+      (i) => art.readUInt32BE(i) !== clear.readUInt32BE(i),
+    ).length;
+    if (changed) crossed.push(`frame ${f}, ${changed} px`);
+    checked++;
+  }
+  if (crossed.length)
+    throw new Error(
+      `${placement}: confetti crosses the peach, in front of it: ${crossed.join('; ')}.`,
+    );
+  return (
+    `${placement}: the confetti is behind the peach: frames ${settled} to ${gone - 1}, ${checked} with confetti, ` +
+    `each the same as frame ${gone} in all ${solid.length} px the settled crown draws solid.`
+  );
+}
+
+/**
  * The page's own render of `frames`, against the same frames laid over the
  * background here, each colour channel in levels:
  * - solid art within half a level, so the colours are the page's;
@@ -608,13 +634,17 @@ const fileName = (placement: Moving) => {
 const QUANTISER = 4;
 /**
  * How often each file has a key frame, never placed by a scene cut, since
- * there are none. Search's every 2 s. The header's every 32 frames, 10 a
- * loop, so both loops are encoded alike: that brings its average to about
+ * there are none. Search's every 2 s. The header's every 42 frames, 8 a
+ * loop, so both loops are encoded alike: that keeps its average about
  * 10 Mbps, as search's is, inside the 7.5 to 45.5 Mbps Headloop saw App Store
- * Connect process. Every 60 frames it was 6.6, and a lower quantiser barely
- * moved it: 7.3 at quantiser 2.
+ * Connect process.
+ *
+ * Before the confetti, the header's still background cost almost nothing
+ * between key frames: every 60 frames it was 6.6 Mbps, and every 32, 10.5.
+ * The confetti adds its own: measured on 15 November, every 32 frames came
+ * to 12.4 Mbps, 42 to 10.3, 48 to 9.5 and 56 to 8.6.
  */
-const GOPS = { header: 32, search: 60 } as const;
+const GOPS = { header: 42, search: 60 } as const;
 /**
  * H.264 levels. The header's frame fits 5.1. Search's 3840 x 2560 is 38,400
  * macroblocks, past the 36,864 that 5.1 and 5.2 allow, so 6.0, as Apple's
@@ -1326,19 +1356,19 @@ try {
   const sums: string[] = [];
   for (const placement of ['header', 'search'] as const) {
     const shots = await loopFrames(chrome, placement, SCALE);
-    // Started with the confetti gone, the file joins on the still crown, its
-    // last frame the same picture as its first. Started with it in the air,
-    // it joins mid-fall: its last frame is the loop's frame before its first,
-    // as every frame is, so it's seamless, but not still.
-    const still = shots[START_FRAME - 1]!.equals(shots[START_FRAME]!);
-    if (POSTER === 'clear' && !still)
-      throw new Error(`${placement}: the file's last frame isn't its first.`);
-    if (POSTER === 'air' && (still || !hasConfetti(placement, START_FRAME)))
+    // Each file starts with the confetti in the air, so it joins mid-fall:
+    // its last frame is the loop's frame before its first, as every frame
+    // is, so it's seamless, but not still.
+    if (
+      shots[START_FRAME - 1]!.equals(shots[START_FRAME]!) ||
+      !hasConfetti(placement, START_FRAME)
+    )
       throw new Error(
         `${placement}: the file doesn't start with the confetti in the air.`,
       );
     notes.push(
-      `${placement}: the file joins ${still ? 'on the still crown, its last frame its first' : 'mid-fall, on two frames of the loop in a row'}.`,
+      `${placement}: the file joins mid-fall, on two frames of the loop in a row.`,
+      behindThePeach(placement, shots),
       ...(await sameAsThePage(chrome, placement, SCALE, shots, [
         MID_FRAME,
         CONFETTI_FRAME,
@@ -1450,7 +1480,7 @@ try {
   notes.unshift(
     `A ${LOOP_S.toFixed(2)} s loop at ${FPS} fps, ${LOOP_FRAMES} frames.`,
     `Each file starts on the crown at ${START_AT.toFixed(2)} s, frame ${START_FRAME}, its poster frame, ` +
-      `with the confetti ${POSTER === 'air' ? 'in the air' : 'gone'}, ` +
+      'with the confetti in the air, ' +
       `and plays the loop ${FILE_LOOPS} times: ${FILE_LOOPS * LOOP_FRAMES} frames, ${(FILE_LOOPS * LOOP_S).toFixed(2)} s.`,
     ...BEATS.map(
       (b) =>

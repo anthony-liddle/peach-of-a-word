@@ -19,7 +19,6 @@ import {
   ARRIVALS,
   BEATS,
   LOOP_S,
-  POSTERS,
   RETURN_AT,
   START_AT,
   peachAt,
@@ -143,32 +142,22 @@ describe('the confetti in the store art', () => {
     },
   );
 
-  it('leaves room for a file to start on the still crown with the confetti gone', () => {
-    const start = POSTERS.clear;
-    // The file's last frame is the one before its first: both clear of
-    // confetti in both placements, and the crown settled, alone and still.
-    for (const t of [start - 1 / 30, start])
-      for (const placement of MOVING) {
-        const frame = frameOf(placement);
-        expect(
-          confettiAt(t, frame).filter((d) => inFrame(d, frame)),
-          `${placement} at ${t.toFixed(3)} s`,
-        ).toEqual([]);
-      }
+  it('rests the crown, still and clear of confetti, for half a second before it sinks', () => {
     for (const placement of MOVING)
-      expect(lastPieceGone(frameOf(placement))).toBeLessThan(start - 1 / 30);
-    expect(peachAt(start - 1 / 30)).toEqual(peachAt(start));
-    expect(start).toBeLessThan(RETURN_AT);
+      expect(RETURN_AT - lastPieceGone(frameOf(placement))).toBeGreaterThan(
+        0.5,
+      );
+    // Settled: the same picture from the last piece's going to the sink.
+    expect(peachAt(RETURN_AT - 1 / 240)).toEqual(peachAt(9.34));
   });
 
-  it('starts the other file on the crown with the confetti in the air, after Edition Complete', () => {
-    const start = POSTERS.air;
+  it('starts each file on the crown with the confetti in the air, after Edition Complete', () => {
     for (const placement of MOVING) {
       const frame = frameOf(placement);
       expect(
-        confettiAt(start, frame).filter((d) => inFrame(d, frame)).length,
+        confettiAt(START_AT, frame).filter((d) => inFrame(d, frame)).length,
       ).toBeGreaterThan(PIECE_COUNT / 2);
     }
-    expect(peachAt(start)).toEqual(peachAt(START_AT));
+    expect(peachAt(START_AT)).toEqual(peachAt(CONFETTI_AT + 1));
   });
 });

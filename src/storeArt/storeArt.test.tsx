@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GROWTH_STAGES } from './growthStages.ts';
 import { CONFETTI_AT, CONFETTI_PEACH, PIECE_COUNT } from './confetti.ts';
-import { ARRIVALS, POSTERS, RETURN_AT, SETTLED_S } from './motion.ts';
+import { ARRIVALS, RETURN_AT, SETTLED_S } from './motion.ts';
 import { Art, MotionFrame } from './StoreArtPage.tsx';
 import { PLACEMENTS, type PlacementId } from './storeArtSpec.ts';
 
@@ -103,7 +103,25 @@ describe('the store art page', () => {
         CONFETTI_PEACH.length,
       );
       expect(at(RETURN_AT).querySelector('[data-piece]')).toBeNull();
-      expect(at(POSTERS.clear).querySelector('[data-piece]')).toBeNull();
+    },
+  );
+
+  it.each(['header', 'search'] as const)(
+    'draws the confetti behind the peach and its crown in the %s, so no piece crosses the face',
+    (p) => {
+      const art = render(
+        <MotionFrame placement={p} t={CONFETTI_AT + 1.2} />,
+      ).container.querySelector<HTMLElement>('.store-art')!;
+      const confetti = art.querySelector<HTMLElement>('.store-art__confetti')!;
+      const peach = art.querySelector('[data-focal]')!;
+      // Both are positioned with no z-index, so the one drawn first is under:
+      // the confetti, before the peach's layer.
+      expect(
+        confetti.compareDocumentPosition(peach) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      for (const el of [confetti, peach.parentElement!])
+        expect(el.style.zIndex).toBe('');
     },
   );
 });

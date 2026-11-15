@@ -27,6 +27,8 @@ import { PLACEMENTS, type PlacementId } from './storeArtSpec.ts';
  *   112 points across: a point here is the peach's drawn size over 112.
  * - **The frame is the art,** not the card: the pieces fall from above it to
  *   below it in the app's own times, so they fall fewer points a second.
+ * - **Behind the peach and its crown,** where the app throws it over the
+ *   card, so no piece ever crosses the peach's face.
  * - **No costume** on the peaches, as with all the store art.
  *
  * Like `peachAt`, everything is a function of the time it's given, never of

@@ -39,8 +39,8 @@ export const ARRIVALS: readonly number[] = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.6];
  * never show at once.
  *
  * **One 8/15 s step later than before the confetti,** whose last piece leaves
- * the frame at 9.34 s. At 9.37 s it left with less than a frame to spare, and
- * no still crown to start a file on with the confetti gone.
+ * the frame at 9.34 s, so the crown rests, still and clear, for 0.56 s before
+ * it sinks. At 9.37 s the last piece left with less than a frame to spare.
  */
 export const RETURN_AT = 297 / 30;
 export const SINK_S = 0.5;
@@ -49,19 +49,15 @@ export const FACE_S = 0.4;
 export const SUNK = 0.3;
 
 /**
- * The two places a file can start, each its own poster frame, both on the
- * crown, settled, after Edition Complete has rung out at 8.22 s and before
- * it sinks. The loop is the same wherever it starts.
- * - `air`, 8.30 s: the confetti still in the air, where the files started
- *   before there was confetti.
- * - `clear`, 9.40 s: the confetti gone, its last piece out of the frame at
- *   9.34 s, so the file's last frame, the one before, is the same picture.
+ * Where each video starts, and its poster frame, at 8.30 s: the crown,
+ * settled, with the confetti in the air, after Edition Complete has rung out
+ * at 8.22 s. The loop is the same wherever it starts; each file is turned to
+ * start here, so it joins mid-fall, on two frames of the loop in a row.
+ *
+ * Antoine's choice, 15 November, over starting at 9.40 s with the confetti
+ * gone and joining on the still crown: the poster shows the confetti.
  */
-export const POSTERS = { air: 249 / 30, clear: 282 / 30 } as const;
-export type Poster = keyof typeof POSTERS;
-
-/** Where each video starts, until Antoine chooses its poster frame. */
-export const START_AT = POSTERS.air;
+export const START_AT = 249 / 30;
 
 /**
  * The frame rates Apple takes, and the audio frame an AAC encoder works in at

@@ -408,8 +408,12 @@ function ConfettiPiece({
 }
 
 /**
- * The confetti at `t` seconds, over the whole art, as the app's falls over
- * the whole card: never focal, so the safe-area check leaves it be.
+ * The confetti at `t` seconds, across the whole art, as the app's falls
+ * across the whole card: never focal, so the safe-area check leaves it be.
+ *
+ * **Behind the peach and its crown,** where the app throws it over the card,
+ * so no piece ever crosses the peach's face. Antoine's change, 15 November.
+ * Drawn first, with no z-index, so the peach is drawn over it.
  */
 function ConfettiLayer({
   placement,
@@ -492,8 +496,8 @@ export function MotionFrame({
 }) {
   return (
     <Canvas placement={placement} guides={guides} bare={bare}>
-      <GrowingPeach safe={PLACEMENTS[placement].safe} t={t} />
       <ConfettiLayer placement={placement} t={t} />
+      <GrowingPeach safe={PLACEMENTS[placement].safe} t={t} />
     </Canvas>
   );
 }
