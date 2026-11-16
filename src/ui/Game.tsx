@@ -14,6 +14,10 @@ import { boardCostume } from './costumes.ts';
 import { applyFavicon } from './favicon.ts';
 import { useWideBoard } from './useWideBoard.ts';
 import { FoundList } from './components/FoundList.tsx';
+import {
+  TRANSFER_LINK_SHOWN,
+  TransferLink,
+} from './components/TransferLink.tsx';
 import { TierMeter } from './components/TierMeter.tsx';
 import { ShareButton } from './components/ShareButton.tsx';
 import { Reveal, type QuietCategory } from './components/Reveal.tsx';
@@ -437,12 +441,9 @@ function Colophon({
       <a className="colophon__privacy" href="/privacy">
         Privacy
       </a>
-      {/* The way to the transfer page, and the only one for a player on a Home
-          Screen icon: that window has no address bar, and its save is its own,
-          apart from the browser's. Beside Privacy, as the same kind of thing. */}
-      <a className="colophon__transfer" href="/transfer">
-        Move your streak to the iPhone app
-      </a>
+      {/* The way to the transfer page, built and kept off until Antoine turns
+          it on. See TransferLink. */}
+      {TRANSFER_LINK_SHOWN && <TransferLink />}
       {/* The title says what the game is to everyone; this says who it is for
           to the one person meant to notice it. Unornamented on purpose. */}
       <p className="colophon__dedication">for Bea</p>

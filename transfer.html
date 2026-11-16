@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Move your streak to the app | Peach of a Word</title>
+    <title>Transfer your streak | Peach of a Word</title>
     <meta
       name="description"
-      content="Move your Peach of a Word streak from the browser you play in to the iPhone app."
+      content="Transfer your Peach of a Word streak to the iPhone app."
     />
     <!-- Linked from the game's footer, for players, but not a page to find in
          a search: it does nothing without a save in the same browser. -->
@@ -227,11 +227,11 @@
   </head>
   <body>
     <main>
-      <h1>Move your streak to the app</h1>
+      <h1>Transfer your streak to the app</h1>
 
       <p class="lede">
-        Your streak is kept in the browser you play in. This page hands it to
-        the Peach of a Word app on your iPhone.
+        Your streak is saved in the browser you play in. This page sends it to
+        the app on your iPhone.
       </p>
 
       <!-- Every part below starts hidden, and src/transfer/page.ts shows the
@@ -242,56 +242,31 @@
       </section>
 
       <p id="ended-yesterday" class="warning" hidden>
-        Move it before you play in the app today. If you've already played there
-        today, first play today's board on the web until today counts toward
-        your streak, then move it.
+        Transfer it before you play in the app today, so today counts toward
+        your streak.
       </p>
 
       <div id="on-phone" hidden>
         <p><a id="send" class="button">Send it to the app</a></p>
-        <div id="after-send" class="note">
-          <p>
-            When iOS asks, tap Open. The app takes your streak, unless its own
-            is already as long.
-          </p>
-          <p>
-            Past days shows the streak's days as finished once the app has been
-            closed and opened again.
-          </p>
-          <p>
-            If nothing opens, the app isn't on this phone. Nothing changes
-            either way.
-          </p>
-        </div>
+        <p id="after-send" class="note">When iOS asks, tap Open.</p>
       </div>
 
       <div id="on-computer" hidden>
-        <p>
-          The app is on your phone, so your streak travels in this page's
-          address. Copy it, send it to yourself however you like, and open it on
-          your iPhone.
-        </p>
+        <p>Copy this link, send it to yourself, and open it on your iPhone.</p>
         <p class="address"><code id="address"></code></p>
         <p>
-          <button id="copy" class="button" type="button">
-            Copy the address
-          </button>
+          <button id="copy" class="button" type="button">Copy link</button>
         </p>
         <p id="copy-status" class="note" role="status"></p>
-        <p class="note">
-          The streak is in the part after the #, which a browser never sends to
-          a website.
-        </p>
       </div>
 
       <div id="none" hidden>
         <p id="none-browser" hidden>
-          There's no streak going in this browser. If you play in a different
+          There's no current streak in this browser. If you play in a different
           browser, open this page there.
         </p>
         <p id="none-address" hidden>
-          The streak in this address isn't going any more. Copy a new address
-          from the browser you play in.
+          This link has expired. Copy a new one from the browser you play in.
         </p>
         <p id="days-safe">
           Your days are safe in the browser you play in. An update to the app
@@ -313,8 +288,7 @@
         <span id="say-days">days in your streak</span>
         <span id="copy-done">Copied. Open it on your iPhone.</span>
         <span id="copy-failed"
-          >That didn't copy. Select the address above and copy it
-          yourself.</span
+          >That didn't copy. Select the link and copy it.</span
         >
       </div>
 
