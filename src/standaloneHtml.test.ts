@@ -20,7 +20,12 @@ import { faviconHref } from './ui/favicon.ts';
  * was written by copying the first and would have inherited the bug just as
  * easily.
  */
-const PAGES = ['public/privacy.html', 'public/support.html', 'public/404.html'];
+const PAGES = [
+  'public/privacy.html',
+  'public/support.html',
+  'public/404.html',
+  'transfer.html',
+];
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -364,6 +369,21 @@ describe('privacy.html', () => {
     for (const key of keys) expect(html).toContain(`<code>${key}</code>`);
   });
 
+  test("says how a streak moves to the app, in Antoine's two sentences", () => {
+    const text = new DOMParser()
+      .parseFromString(html, 'text/html')
+      .body.textContent!.replace(/\s+/g, ' ');
+    // Antoine's two sentences, approved in Game Copy on 16 November 2026.
+    expect(text).toContain(
+      'You can move your streak to the iOS app from peachofaword.com/transfer. ' +
+        'That page reads it from this browser and hands it to the app in a link ' +
+        'you tap on your iPhone.',
+    );
+    // His two sentences are the whole of it.
+    expect(text).not.toContain("From a computer, you copy the page's address");
+    expect(text).not.toContain('The page counts no visits.');
+  });
+
   test('names every way from the app to the web', () => {
     const text = new DOMParser()
       .parseFromString(html, 'text/html')
@@ -390,6 +410,13 @@ describe('vercel.json rewrites', () => {
     expect(config.rewrites).toContainEqual({
       source: '/support',
       destination: '/support.html',
+    });
+  });
+
+  test('/transfer serves the transfer page', () => {
+    expect(config.rewrites).toContainEqual({
+      source: '/transfer',
+      destination: '/transfer.html',
     });
   });
 

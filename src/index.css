@@ -2046,6 +2046,16 @@ button {
   display: inline-block;
 }
 
+/* The way to the iPhone app, on a line of its own under the pair: it's the
+   longest of the three, and at a phone's width a third item in their row
+   broke across two lines mid-link. As wide as its words, so the tap lands on
+   the link and not on the whole line. */
+.colophon__transfer {
+  display: block;
+  width: fit-content;
+  margin: 0.5rem auto 0;
+}
+
 /* ---- Edition Complete (the win state) ----------------------------------- */
 /* A sibling to the reveal, but ink and oxblood, ornamental, and non-blocking:
    no backdrop, near the top, so the board below stays live. Fixed over a

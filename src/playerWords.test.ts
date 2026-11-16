@@ -105,6 +105,7 @@ function pageStrings(path: string): Found[] {
 
 const PAGES = [
   'index.html',
+  'transfer.html',
   ...readdirSync(resolve(root, 'public'))
     .filter((name) => name.endsWith('.html'))
     .map((name) => `public/${name}`),
@@ -144,6 +145,7 @@ describe("the player's words", () => {
     expect(PAGES).toEqual(
       expect.arrayContaining([
         'index.html',
+        'transfer.html',
         'public/privacy.html',
         'public/support.html',
         'public/404.html',
