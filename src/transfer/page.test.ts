@@ -9,12 +9,21 @@ import { renderTransfer } from './page.ts';
  * suite's jsdom, and the page module run over it with the browser's parts
  * handed in. What a player sees in each case is asserted on what's shown, not
  * on the source.
+ *
+ * **These are the streak's screens, opened from a copied link.** Once the app
+ * reads pasted days, the page opened in a player's own browser copies days
+ * and streak together (`pageDays.test.ts`). A link copied before then, with a
+ * streak after its #, still opens these.
  */
 const html = readFileSync(resolve(process.cwd(), 'transfer.html'), 'utf8');
 const body = new DOMParser().parseFromString(html, 'text/html').body.innerHTML;
 
 const TODAY = 318; // 15 November 2026
 const ORIGIN = 'https://peachofaword.com';
+
+/** The address the page wrote for a streak, as a copied link carries it. */
+const link = (count: number, last: number) =>
+  `#streak?v=1&count=${count}&lastCleared=${last}`;
 
 function storageWith(
   streak?: { count: number; lastClearedDayIndex: number | null } | undefined,
@@ -72,9 +81,9 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('on a phone, with a streak going', () => {
+describe('on a phone, from a link with a streak going', () => {
   test('shows the count and a link that opens the app with it', () => {
-    load({ streak: { count: 12, lastClearedDayIndex: 318 } });
+    load({ hash: link(12, 318) });
     expect(shown('found')).toBe(true);
     expect(words('count')).toBe('12');
     expect(words('count-label')).toBe('days in your streak');
@@ -88,56 +97,31 @@ describe('on a phone, with a streak going', () => {
   });
 
   test('one day reads as one day', () => {
-    load({ streak: { count: 1, lastClearedDayIndex: 318 } });
+    load({ hash: link(1, 318) });
     expect(words('count-label')).toBe('day in your streak');
   });
 
   test('says what the app does with it, and what nothing opening means', () => {
-    load({ streak: { count: 12, lastClearedDayIndex: 318 } });
+    load({ hash: link(12, 318) });
     expect(shown('after-send')).toBe(true);
   });
 
   test('ending today, it needs no warning', () => {
-    load({ streak: { count: 12, lastClearedDayIndex: 318 } });
+    load({ hash: link(12, 318) });
     expect(shown('ended-yesterday')).toBe(false);
   });
 
   test('ending yesterday, it warns about playing in the app first', () => {
-    load({ streak: { count: 12, lastClearedDayIndex: 317 } });
+    load({ hash: link(12, 317) });
     expect(shown('ended-yesterday')).toBe(true);
     expect(shown('send')).toBe(true);
   });
 });
 
-describe('with no streak going', () => {
-  test.each([
-    ['no save', undefined],
-    ['a streak that never started', { count: 0, lastClearedDayIndex: null }],
-    [
-      'a streak that ended two days ago',
-      { count: 9, lastClearedDayIndex: 316 },
-    ],
-  ])('%s: says so, and that the days are safe', (_, streak) => {
-    load({ streak });
-    expect(shown('none')).toBe(true);
-    expect(shown('none-browser')).toBe(true);
-    expect(shown('none-address')).toBe(false);
-    expect(shown('days-safe')).toBe(true);
-    expect(shown('found')).toBe(false);
-    expect(shown('send')).toBe(false);
-    expect(shown('on-computer')).toBe(false);
-  });
-
-  test('offers no link at all', () => {
-    load({ streak: { count: 9, lastClearedDayIndex: 316 } });
-    expect(document.querySelector('a[href^="peachofaword:"]')).toBeNull();
-  });
-});
-
-describe('on a computer', () => {
+describe('on a computer, from a link', () => {
   test('offers its own address, carrying the streak, to copy', async () => {
     const { copy } = load({
-      streak: { count: 12, lastClearedDayIndex: 318 },
+      hash: link(12, 318),
       computer: true,
     });
     const address = `${ORIGIN}/transfer#streak?v=1&count=12&lastCleared=318`;
@@ -151,7 +135,7 @@ describe('on a computer', () => {
 
   test('when the copy fails, says to copy it by hand', async () => {
     load({
-      streak: { count: 12, lastClearedDayIndex: 318 },
+      hash: link(12, 318),
       computer: true,
       copy: () => Promise.reject(new Error('denied')),
     });
@@ -162,7 +146,7 @@ describe('on a computer', () => {
 
   test('the warning shows there too', () => {
     load({
-      streak: { count: 12, lastClearedDayIndex: 317 },
+      hash: link(12, 317),
       computer: true,
     });
     expect(shown('ended-yesterday')).toBe(true);
@@ -213,7 +197,14 @@ describe('every visit', () => {
 
   test('without its script, offers nothing it cannot do', () => {
     document.body.innerHTML = body;
-    for (const id of ['found', 'on-phone', 'on-computer', 'none'])
+    for (const id of [
+      'found',
+      'on-phone',
+      'on-computer',
+      'none',
+      'days-found',
+      'copy-days-part',
+    ])
       expect(shown(id), id).toBe(false);
   });
 });
