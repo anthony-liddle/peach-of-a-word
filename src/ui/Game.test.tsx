@@ -272,14 +272,15 @@ describe('Game', () => {
     expect(link?.textContent).toMatch(/privacy/i);
   });
 
-  // Built and kept off (Antoine, 16 November 2026): the footer shows no way
-  // to the transfer page until the App Store link is ready to share. A small
-  // PR turns it on, by TRANSFER_LINK_SHOWN.
-  it('shows no way to the transfer page until it is turned on', () => {
-    expect(TRANSFER_LINK_SHOWN).toBe(false);
+  // Turned on 16 November 2026 (Antoine), with the App Store link ready to
+  // share. It was built and kept off until then, by TRANSFER_LINK_SHOWN.
+  it('offers the transfer page from the footer', () => {
+    expect(TRANSFER_LINK_SHOWN).toBe(true);
     renderGame();
     const footer = document.querySelector('.colophon') as HTMLElement;
-    expect(footer.querySelector('a[href="/transfer"]')).toBeNull();
+    const link = footer.querySelector('a[href="/transfer"]');
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toBe('Transfer your streak to the iPhone app');
   });
 
   it('has the link built, for when it is turned on', () => {

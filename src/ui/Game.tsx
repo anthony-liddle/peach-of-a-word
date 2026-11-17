@@ -441,8 +441,8 @@ function Colophon({
       <a className="colophon__privacy" href="/privacy">
         Privacy
       </a>
-      {/* The way to the transfer page, built and kept off until Antoine turns
-          it on. See TransferLink. */}
+      {/* The way to the transfer page, and the only one from a Home Screen
+          icon. See TransferLink. */}
       {TRANSFER_LINK_SHOWN && <TransferLink />}
       {/* The title says what the game is to everyone; this says who it is for
           to the one person meant to notice it. Unornamented on purpose. */}

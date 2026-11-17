@@ -3,10 +3,11 @@
  * Screen icon, the only way there, since that window has no address bar and
  * its save is its own, apart from the browser's.
  *
- * **Built and kept off** (Antoine, 16 November 2026): it stays hidden until
- * the App Store link is ready to share. Turning it on is this one constant.
+ * **On since 16 November 2026** (Antoine), with the App Store link ready to
+ * share. It was built and kept off until then, and this one constant is the
+ * switch.
  */
-export const TRANSFER_LINK_SHOWN = false;
+export const TRANSFER_LINK_SHOWN = true;
 
 export function TransferLink() {
   return (
