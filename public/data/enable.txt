@@ -18406,8 +18406,6 @@ brownnosing
 brownout
 brownouts
 browns
-brownshirt
-brownshirts
 brownstone
 brownstones
 browny
@@ -59307,8 +59305,6 @@ fudged
 fudges
 fudging
 fuds
-fuehrer
-fuehrers
 fuel
 fueled
 fueler
@@ -59357,8 +59353,6 @@ fuguing
 fuguist
 fuguists
 fugus
-fuhrer
-fuhrers
 fuji
 fujis
 fulcra
@@ -61606,8 +61600,6 @@ gestalten
 gestaltist
 gestaltists
 gestalts
-gestapo
-gestapos
 gestate
 gestated
 gestates
@@ -68125,8 +68117,6 @@ herpetologies
 herpetologist
 herpetologists
 herpetology
-herrenvolk
-herrenvolks
 herried
 herries
 herring
@@ -150138,10 +150128,6 @@ swasher
 swashers
 swashes
 swashing
-swastica
-swasticas
-swastika
-swastikas
 swat
 swatch
 swatches

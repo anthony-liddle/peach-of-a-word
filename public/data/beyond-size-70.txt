@@ -16642,9 +16642,6 @@ arvicolous
 arviculture
 arvos
 ary
-aryan
-aryanize
-aryans
 aryballi
 aryballoi
 aryballoid
@@ -28788,9 +28785,6 @@ blackprint
 blackrag
 blackroot
 blackseed
-blackshirt
-blackshirted
-blackshirts
 blacksmithings
 blackstick
 blackstrap
@@ -33529,8 +33523,6 @@ brownnosers
 brownnoses
 brownnosing
 brownprint
-brownshirt
-brownshirts
 browntail
 browntop
 brownweed
@@ -111521,8 +111513,6 @@ herpolhode
 herquein
 herr
 herrengrundite
-herrenvolk
-herrenvolks
 herrerasaur
 herrerasaurus
 herrgrdsost
@@ -113134,9 +113124,6 @@ hithertoward
 hitherunto
 hitherwards
 hithes
-hitler
-hitlerian
-hitlerism
 hitless
 hittite
 hiv
@@ -263735,9 +263722,6 @@ swashway
 swashwork
 swashworks
 swashy
-swastica
-swasticas
-swastikaed
 swatchbook
 swatchbooks
 swatcher

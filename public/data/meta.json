@@ -1,10 +1,10 @@
 {
   "counts": {
-    "enable": 172515,
-    "scowl95Additions": 254242,
-    "boundary": 426757,
-    "common": 10867,
-    "beyond70": 315413,
+    "enable": 172501,
+    "scowl95Additions": 254232,
+    "boundary": 426733,
+    "common": 10866,
+    "beyond70": 315397,
     "beyond95": 5385,
     "sourcePool": 793,
     "definitionsCovered": 24568

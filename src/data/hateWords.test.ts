@@ -59,7 +59,40 @@ describe('hate salutes, symbols and group names', () => {
     ]) {
       expect(denied, w).toContain(w);
     }
-    expect(denied).toHaveLength(25);
+    expect(denied).toHaveLength(49);
+  });
+
+  it('ships the sweep that followed, in every form', () => {
+    for (const w of [
+      'hitler',
+      'hitlerism',
+      'fuhrer',
+      'gestapo',
+      'herrenvolk',
+      'aryanize',
+      'blackshirt',
+      'brownshirt',
+      'swastika',
+      'aryan',
+    ]) {
+      expect(denied, w).toContain(w);
+    }
+  });
+
+  it('answers hitler and swastika as if they were not words', () => {
+    expect(validateGuess('hitler', puzzleFor('hitlerxy'), new Set()).kind).toBe(
+      'not-a-word',
+    );
+    expect(
+      validateGuess('swastika', puzzleFor('swastika'), new Set()).kind,
+    ).toBe('not-a-word');
+  });
+
+  it('keeps fascist a word, but never in a basket', () => {
+    expect(new Set(merged.common).has('fascist')).toBe(false);
+    const result = validateGuess('fascist', puzzleFor('fascistz'), new Set());
+    expect(result.kind).toBe('valid');
+    if (result.kind === 'valid') expect(result.rung).not.toBe('set');
   });
 
   it('answers heil, nazi and klansman as if they were not words', () => {
