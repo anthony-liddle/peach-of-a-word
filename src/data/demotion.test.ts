@@ -88,13 +88,15 @@ describe('the committed demotions', () => {
     // 51 from orchard v1.8.1: twink, twinks and karen, none common either.
     // 62 from orchard v1.10.0, 2026-10-27: the eleven crude words Antoine took
     // out of every basket, each of them common before.
+    // 63 from orchard v1.11.3, 2026-11-19: fascist, out of the basket as racist
+    // was, on Antoine's answers to the hate-word sweep. No rack can spell it.
     //
     // The count is pinned on purpose, and this is the second record of it
     // rather than an accident: a stray demote row is a curation change nobody
     // decided, and it should fail here rather than reach a board quietly.
     // Moving this number is part of making the decision, not a chore that
     // follows it.
-    expect(demoted).toHaveLength(62);
+    expect(demoted).toHaveLength(63);
     for (const word of [
       'rape',
       'genocide',
@@ -108,6 +110,8 @@ describe('the committed demotions', () => {
       'sex',
       'abused',
       'racist',
+      // Antoine, 2026-11-19: political, as racist is racial.
+      'fascist',
       'sexual',
       'terror',
       // Added 2026-08-11, and the first curation decision to arrive from
