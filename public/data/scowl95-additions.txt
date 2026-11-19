@@ -107026,9 +107026,6 @@ klang
 klangfarbe
 klangfarbes
 klangs
-klanism
-klans
-klansman
 klaprotholite
 klavier
 klaviers
@@ -128533,12 +128530,10 @@ nazdrowie
 naze
 nazeranna
 nazes
-naziism
 nazim
 nazir
 nazirite
 nazirs
-nazism
 nbw
 ndebele
 ndjamena
