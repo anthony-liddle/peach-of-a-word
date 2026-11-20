@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Transfer your streak | Peach of a Word</title>
+    <title>Transfer your days | Peach of a Word</title>
     <meta
       name="description"
-      content="Transfer your Peach of a Word streak to the iPhone app."
+      content="Transfer your Peach of a Word days and streak to the iPhone app."
     />
     <!-- Linked from the game's footer, for players, but not a page to find in
          a search: it does nothing without a save in the same browser. -->
@@ -161,6 +161,13 @@
         word-break: break-all;
         line-height: 1.5;
       }
+      textarea.address {
+        display: block;
+        width: 100%;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.8125rem;
+        color: var(--ink-soft);
+      }
       code {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 0.875em;
@@ -227,15 +234,56 @@
   </head>
   <body>
     <main>
-      <h1>Transfer your streak to the app</h1>
+      <h1>Transfer your days to the app</h1>
 
       <p class="lede">
-        Your streak is saved in the browser you play in. This page sends it to
-        the app on your iPhone.
+        Your days and your streak are saved in the browser you play in. This
+        page copies them for the app on your iPhone.
       </p>
 
       <!-- Every part below starts hidden, and src/transfer/page.ts shows the
            ones that fit. Without the script, nothing offers what it can't do. -->
+
+      <!-- The page opened in the browser a player plays in: days and streak,
+           copied together for the app's Paste. -->
+      <section id="days-found" class="card" hidden>
+        <p class="count" id="days-count"></p>
+        <p class="count-label" id="days-label"></p>
+        <p class="count-label" id="days-streak" hidden></p>
+      </section>
+
+      <div id="copy-days-part" hidden>
+        <p>
+          <button id="copy-days" class="button" type="button">
+            Copy your days
+          </button>
+        </p>
+        <p id="copy-days-status" class="note" role="status"></p>
+        <textarea
+          id="days-text"
+          class="address"
+          rows="4"
+          readonly
+          hidden
+          aria-label="Your days, to copy"
+        ></textarea>
+        <ol id="paste-steps">
+          <li>On your iPhone, open the app, then Settings.</li>
+          <li>Under Transfer from the website, tap Paste.</li>
+        </ol>
+        <p class="note">
+          On a computer? Copy your days, send them to yourself, and paste them
+          in the app on your iPhone.
+        </p>
+      </div>
+
+      <p id="none-saved" hidden>
+        There's nothing saved in this browser to transfer. If you play in a
+        different browser, open this page there.
+      </p>
+
+      <!-- A link copied before the app read pasted days, with a streak after
+           its #: the streak's own screens. -->
       <section id="found" class="card" hidden>
         <p class="count" id="count"></p>
         <p class="count-label" id="count-label"></p>
@@ -268,10 +316,6 @@
         <p id="none-address" hidden>
           This link has expired. Copy a new one from the browser you play in.
         </p>
-        <p id="days-safe">
-          Your days are safe in the browser you play in. An update to the app
-          will bring them across.
-        </p>
       </div>
 
       <p class="note">
@@ -286,6 +330,14 @@
       <div id="words" hidden>
         <span id="say-day">day in your streak</span>
         <span id="say-days">days in your streak</span>
+        <span id="say-day-to-transfer">day to transfer</span>
+        <span id="say-days-to-transfer">days to transfer</span>
+        <span id="say-streak-one">With your streak of 1 day.</span>
+        <span id="say-streak">With your streak of {n} days.</span>
+        <span id="days-copied">Copied. Now paste them in the app.</span>
+        <span id="days-not-copied"
+          >That didn't copy. Select the text below and copy it.</span
+        >
         <span id="copy-done">Copied. Open it on your iPhone.</span>
         <span id="copy-failed"
           >That didn't copy. Select the link and copy it.</span
