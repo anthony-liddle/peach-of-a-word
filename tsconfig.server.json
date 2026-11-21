@@ -1,0 +1,25 @@
+{
+  // The flag server: the Vercel Function in api/ and its code in server/,
+  // which run on Node, not in a browser. Checked like the node scripts are,
+  // with node's types and no DOM, so `pnpm typecheck` covers them.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["api", "server"]
+}

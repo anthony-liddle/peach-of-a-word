@@ -33,7 +33,13 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.ts', 'vite.config.ts', 'vitest.setup.ts'],
+    files: [
+      'scripts/**/*.ts',
+      'vite.config.ts',
+      'vitest.setup.ts',
+      'api/**/*.ts',
+      'server/**/*.ts',
+    ],
     languageOptions: { globals: globals.node },
   },
   prettier,
