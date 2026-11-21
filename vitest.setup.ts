@@ -5,9 +5,12 @@ import { installMatchMedia, resetViewport } from './src/testing/viewport.ts';
 // jsdom implements no matchMedia, so the board's two-column branch would never
 // render under test and the layout that must not regress would be the untested
 // one. Install an evaluator over a settable width, and reset to a phone between
-// tests so a width set in one never leaks into the next.
-installMatchMedia();
-afterEach(resetViewport);
+// tests so a width set in one never leaks into the next. Not in the node
+// environment, which the flag server's tests run in, since it has no window.
+if (typeof window !== 'undefined') {
+  installMatchMedia();
+  afterEach(resetViewport);
+}
 
 // jsdom does not implement the canvas 2d context: getContext returns null and
 // logs "Not implemented" to the virtual console. The confetti overlay handles a
