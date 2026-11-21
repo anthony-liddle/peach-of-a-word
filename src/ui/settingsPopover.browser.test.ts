@@ -54,7 +54,12 @@ afterEach(() => {
   root?.unmount();
   host?.remove();
   document.getElementById('game-css')?.remove();
-  for (const key of ['e8-theme', 'e8-appearance', 'e8-text-size'])
+  for (const key of [
+    'e8-theme',
+    'e8-appearance',
+    'e8-text-size',
+    'e8-length-counts',
+  ])
     localStorage.removeItem(key);
   const el = document.documentElement;
   delete el.dataset.theme;
@@ -155,7 +160,17 @@ describe('the settings popover', () => {
       'Large',
       'Largest',
       'Sound',
+      'Word counts by length',
     ]);
+    // The word counts' line is its description, so a screen reader hears
+    // what turning it off does.
+    const counts = [...d!.querySelectorAll('input')].at(-1)!;
+    const line = document.getElementById(
+      counts.getAttribute('aria-describedby') ?? '',
+    );
+    expect(line?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      "Turn this off to see each length only once you've found a word that long.",
+    );
   });
 
   test('the arrow keys choose within a group, and the page follows at once', async () => {

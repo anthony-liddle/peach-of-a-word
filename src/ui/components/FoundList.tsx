@@ -65,6 +65,14 @@ interface Props {
    * cute, and never under reduced motion; this only draws it.
    */
   glint?: Glint | null;
+  /**
+   * Word counts by length, from Settings: true shows every length in the
+   * basket from the first find, each with its "X of Y", so an uncracked length
+   * still shows what is missing. False shows a length only once a word that
+   * long is found. Defaults to true, the setting's own default. The basket's
+   * total shows either way. See useLengthCounts.
+   */
+  lengthCounts?: boolean;
 }
 
 type Category = MarkCategory;
@@ -208,12 +216,22 @@ export function FoundList({
   ladder = true,
   costume = null,
   glint = null,
+  lengthCounts = true,
 }: Props) {
   // The one classification pass. The grid below and the rung panels above are
   // both derived from it, so a word is never Rare in one readout and not the
   // other.
   const words = useMemo(() => classifyFound(puzzle, found), [puzzle, found]);
-  const groups = useMemo(() => buildGroups(puzzle, words), [puzzle, words]);
+  // With the counts off, a length shows once she has a word that long, of
+  // either kind: an off-page find shows its length too, reading "0 of Y".
+  const groups = useMemo(
+    () =>
+      buildGroups(puzzle, words).filter(
+        (g) =>
+          lengthCounts || g.setWords.length > 0 || g.offPageWords.length > 0,
+      ),
+    [puzzle, words, lengthCounts],
+  );
 
   // Her best find, from that same pass rather than a third walk over found.
   const bestWord = useMemo(() => bestOf(words), [words]);
