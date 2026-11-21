@@ -2,17 +2,20 @@ import { useEffect, useId, useRef } from 'react';
 import { useTheme, type Theme } from '../useTheme.ts';
 import { useAppearance, type Appearance } from '../useAppearance.ts';
 import { useTextSize, type TextSize } from '../useTextSize.ts';
+import { useLengthCounts } from '../useLengthCounts.ts';
 
 /**
- * The settings popover: the theme, the appearance, the text size and sound,
- * behind one button in the toolbar (Antoine, 11 November 2026). It cleared the
- * toolbar, which had no room left at 320px and the largest text, and gave the
- * new appearance a home.
+ * The settings popover: the theme, the appearance, the text size, sound and
+ * word counts by length, behind one button in the toolbar (Antoine, 11
+ * November 2026). It cleared the toolbar, which had no room left at 320px and
+ * the largest text, and gave the new appearance a home. Word counts by length
+ * joined it on 21 November 2026.
  *
  * **Native controls, so the keyboard and screen readers get them for free.**
  * Each choice is a group of radio buttons in a `fieldset` named by its
  * `legend`: Tab reaches the chosen one, the arrow keys move and choose, and a
- * screen reader says "Appearance, Dark, 3 of 3". Sound is a checkbox.
+ * screen reader says "Appearance, Dark, 3 of 3". Sound and the word counts
+ * are checkboxes.
  *
  * **A non-modal dialog.** The button says it opens one (`aria-haspopup`) and
  * whether it is open (`aria-expanded`). Opening moves focus to the first
@@ -39,10 +42,12 @@ export function SettingsMenu({
   const [theme, setTheme] = useTheme();
   const [appearance, setAppearance] = useAppearance();
   const [size, setSize] = useTextSize();
+  const [lengthCounts, setLengthCounts] = useLengthCounts();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const noteId = useId();
+  const countsNoteId = useId();
 
   const close = (returnFocus: boolean) => {
     onOpenChange(false);
@@ -190,6 +195,24 @@ export function SettingsMenu({
             <input type="checkbox" checked={!muted} onChange={onToggleMute} />
             Sound
           </label>
+          {/* Word counts by length, on by default: off, a length shows only once
+              a word that long is found. See useLengthCounts. Its line says
+              what turning it off does, and is its description. */}
+          <div className="settings__counts">
+            <label className="settings__choice">
+              <input
+                type="checkbox"
+                checked={lengthCounts}
+                aria-describedby={countsNoteId}
+                onChange={() => setLengthCounts(!lengthCounts)}
+              />
+              Word counts by length
+            </label>
+            <p className="settings__note" id={countsNoteId}>
+              Turn this off to see each length only once you&apos;ve found a
+              word that long.
+            </p>
+          </div>
         </div>
       )}
     </div>
