@@ -1,4 +1,4 @@
-import { dailySourceWord } from '../../src/engine/daily.ts';
+import { dailySourceWord } from '../../src/engine/daily.js';
 import type { FlagData } from './data.ts';
 import type { FlagStore } from './store.ts';
 

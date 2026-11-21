@@ -1,7 +1,7 @@
-import { loadFlagData } from '../server/flag/data.ts';
-import { handleFlagRequest } from '../server/flag/handler.ts';
-import { notifierFromEnv } from '../server/flag/notify.ts';
-import { storeFromEnv } from '../server/flag/store.ts';
+import { loadFlagData } from '../server/flag/data.js';
+import { handleFlagRequest } from '../server/flag/handler.js';
+import { notifierFromEnv } from '../server/flag/notify.js';
+import { storeFromEnv } from '../server/flag/store.js';
 
 /**
  * `/api/flag`, a Vercel Function. POST sends flags, DELETE takes them back.
