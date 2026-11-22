@@ -209,8 +209,7 @@ export function SettingsMenu({
               Word counts by length
             </label>
             <p className="settings__note" id={countsNoteId}>
-              Turn this off to see each length only once you&apos;ve found a
-              word that long.
+              Turn off to hide each length until you find a word that long.
             </p>
           </div>
         </div>

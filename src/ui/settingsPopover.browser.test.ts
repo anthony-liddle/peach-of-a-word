@@ -169,7 +169,7 @@ describe('the settings popover', () => {
       counts.getAttribute('aria-describedby') ?? '',
     );
     expect(line?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      "Turn this off to see each length only once you've found a word that long.",
+      'Turn off to hide each length until you find a word that long.',
     );
   });
 
