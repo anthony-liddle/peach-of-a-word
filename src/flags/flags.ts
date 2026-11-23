@@ -1,4 +1,6 @@
+import { DAILY_EPOCH } from '@/engine/config.ts';
 import type { FlagReason } from './model.ts';
+import { checkFlag, epochDay, MAX_PER_REQUEST, utcDay } from './wire.ts';
 
 /**
  * This device's flags: the list under `e8-flags`, and the sender.
@@ -8,9 +10,14 @@ import type { FlagReason } from './model.ts';
  * function at all, so neither can reach the live store; both leave the flag
  * waiting.
  *
- * **What a flag is dropped for.** Only two things, and quietly:
- * - the server refusing its shape, a 400 or a 413, since it will never be
- *   taken;
+ * **What a flag is dropped for.** Only these, and quietly:
+ * - failing the server's own shape check, `src/flags/wire.ts`, run here on
+ *   each waiting flag before a batch is made, so a corrupt flag in
+ *   `e8-flags` goes alone and never takes good flags down with it;
+ * - the server refusing a batch's shape anyway, a 400 or a 413, since it will
+ *   never be taken. After the check above, that means the two disagree: a
+ *   board's day the server thinks hasn't come yet, from a device whose clock
+ *   runs ahead, or a page left open since an older build;
  * - 60 days without going, so nothing waits forever.
  *
  * Anything else keeps it waiting: a 403 is the kill switch, a 429 the rate
@@ -34,7 +41,9 @@ export const MAX_WAITING = 50;
 export const KEEP_DAYS = 60;
 const DAY_MS = 86_400_000;
 const RETRY_MS = 10 * 60_000;
-const BATCH = 20;
+const BATCH = MAX_PER_REQUEST;
+/** The first day a board can name, as the server counts it. */
+const FIRST_DAY = epochDay(DAILY_EPOCH);
 const ENDPOINT = '/api/flag';
 
 /** A daily board names its day; the web's Endless names its rack. */
@@ -200,9 +209,35 @@ export function createFlags(deps: FlagsDeps) {
     }
   }
 
+  /**
+   * Drops, each on its own, the waiting flags the server's own check refuses,
+   * with the server's day range as this device's clock sees it.
+   */
+  function dropRefused() {
+    const days = {
+      first: FIRST_DAY,
+      last: utcDay(new Date(deps.now() + DAY_MS)),
+    };
+    const refused = new Set(
+      read(deps.storage)
+        .flags.filter(
+          (f) =>
+            f.state === 'waiting' && !checkFlag(wire(f, deps.version), days),
+        )
+        .map((f) => f.id),
+    );
+    if (refused.size > 0) {
+      update((s) => ({
+        ...s,
+        flags: s.flags.filter((f) => !refused.has(f.id)),
+      }));
+    }
+  }
+
   /** One pass over everything waiting. Stops at the first answer that means later. */
   async function pass() {
     prune();
+    dropRefused();
     for (;;) {
       const batch = read(deps.storage)
         .flags.filter((f) => f.state === 'waiting')

@@ -200,7 +200,8 @@ describe('the flag on a card', () => {
     await act(async () => {
       for (let i = 0; i < MAX_WAITING; i++) {
         await flags.flag({
-          word: `w${String.fromCharCode(97 + (i % 26))}${i}`,
+          // Letters only, as the server takes a word.
+          word: `w${String.fromCharCode(97 + Math.floor(i / 26))}${String.fromCharCode(97 + (i % 26))}`,
           reason: 'definition',
           board: { day: '2026-07-01' },
         });

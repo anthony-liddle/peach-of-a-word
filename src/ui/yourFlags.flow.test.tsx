@@ -99,7 +99,8 @@ async function seed(word = 'near') {
     await device.flag({
       word,
       reason: 'definition',
-      board: { day: '2026-01-01' },
+      // On or after the game's first day, as the server takes a board.
+      board: { day: '2026-07-01' },
     });
   });
 }

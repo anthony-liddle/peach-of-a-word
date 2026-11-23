@@ -2,23 +2,18 @@ import type { EpochDate } from '@/data/gameData.ts';
 import type { Rung } from '@/engine/types.ts';
 import { copy } from '@/ui/themeCopy.ts';
 import type { Theme } from '@/ui/useTheme.ts';
+import type { Reason } from './wire.ts';
 
 /**
  * A flag on a word: what a player can say about a card, and how it reads.
  *
  * Every string here is from the wording pass in "Flagging Words From The
  * Cards", with Antoine's lines (22 and 23 November). The server takes the
- * reasons as written in `FlagReason`; see `server/flag/handler.ts`.
+ * reasons as written in `FlagReason`; see `src/flags/wire.ts`.
  */
 
-/** What the server takes. */
-export type FlagReason =
-  | 'not-a-word'
-  | 'offensive'
-  | 'definition'
-  | 'should-count'
-  | 'rarer'
-  | 'more-common';
+/** What the server takes: its own list, from the shape check both share. */
+export type FlagReason = Reason;
 
 /**
  * Which card a flag is made on. The peach card is the board's own long word;

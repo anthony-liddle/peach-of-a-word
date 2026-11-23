@@ -1,4 +1,13 @@
 import { dailySourceWord } from '../../src/engine/daily.js';
+import {
+  checkFlag,
+  epochDay,
+  isFlagId,
+  MAX_BODY_BYTES,
+  MAX_PER_REQUEST,
+  utcDay,
+  type WireFlag,
+} from '../../src/flags/wire.js';
 import type { FlagData } from './data.ts';
 import type { FlagStore } from './store.ts';
 
@@ -6,8 +15,10 @@ import type { FlagStore } from './store.ts';
  * `/api/flag`: a player's flag on a word, and taking it back.
  *
  * **Two kinds of no.** A request whose shape is wrong (not JSON, too big, a
- * field that isn't a checkable value) gets a plain 400 or 413, and the device
- * drops it. A well-shaped flag that fails a check needing the data (its word
+ * field that isn't a checkable value) gets a plain 400 or 413. The shape
+ * check is `src/flags/wire.ts`, and the web runs it too, on each flag before
+ * it sends, so a request the web makes is refused only if the two disagree
+ * about the day. A well-shaped flag that fails a check needing the data (its word
  * isn't on that board, its reason doesn't fit the word, it suggests a denied
  * word, or the day's cap is reached) is dropped alone and the answer is still
  * 202, the same as a stored flag. So nothing about the lists can be probed
@@ -29,8 +40,6 @@ export interface FlagDeps {
   readonly cap?: number;
 }
 
-export const MAX_BODY_BYTES = 4096;
-export const MAX_PER_REQUEST = 20;
 export const KEEP_SECONDS = 60 * 24 * 60 * 60;
 export const DAILY_CAP = 20_000;
 const COUNT_SECONDS = 2 * 24 * 60 * 60;
@@ -40,42 +49,11 @@ export const OFFENSIVE_MESSAGE = 'A word was flagged as offensive.';
 export const UNUSUAL_AT = 200;
 export const UNUSUAL_MESSAGE = 'Unusual number of flags today.';
 
-const REASONS = [
-  'not-a-word',
-  'offensive',
-  'definition',
-  'should-count',
-  'rarer',
-  'more-common',
-] as const;
-type Reason = (typeof REASONS)[number];
-const FIELDS = new Set([
-  'id',
-  'word',
-  'day',
-  'rack',
-  'reason',
-  'platform',
-  'version',
-]);
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const WORD = /^[a-z]{3,8}$/;
-const RACK = /^[a-z]{8}$/;
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const VERSION = /^[0-9A-Za-z.() +-]{1,24}$/;
-
-interface Flag {
-  readonly id: string;
-  readonly word: string;
-  readonly day?: string;
-  readonly rack?: string;
-  readonly reason: Reason;
-  readonly platform: 'ios' | 'web';
-  readonly version: string;
-}
+/** A flag that passed the shape check in `src/flags/wire.ts`. */
+type Flag = WireFlag;
 
 const empty = (status: number, headers?: Record<string, string>) =>
-  new Response(null, { status, headers });
+  new Response(null, headers ? { status, headers } : { status });
 
 export async function handleFlagRequest(
   request: Request,
@@ -183,7 +161,7 @@ async function handleDelete(body: unknown, deps: FlagDeps): Promise<Response> {
     !Array.isArray(ids) ||
     ids.length === 0 ||
     ids.length > MAX_PER_REQUEST ||
-    !ids.every((id) => typeof id === 'string' && UUID.test(id))
+    !ids.every(isFlagId)
   ) {
     return empty(400);
   }
@@ -214,36 +192,12 @@ function parseFlags(
   ) {
     return null;
   }
-  const first = `${data.epoch.year}-${pad(data.epoch.month)}-${pad(data.epoch.day)}`;
+  const days = { first: epochDay(data.epoch), last: tomorrow };
   const flags: Flag[] = [];
   for (const raw of list) {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
-      return null;
-    const f = raw as Record<string, unknown>;
-    if (!Object.keys(f).every((k) => FIELDS.has(k))) return null;
-    const { id, word, day, rack, reason, platform, version } = f;
-    if (typeof id !== 'string' || !UUID.test(id)) return null;
-    if (typeof word !== 'string' || !WORD.test(word)) return null;
-    if (!REASONS.includes(reason as Reason)) return null;
-    if (platform !== 'ios' && platform !== 'web') return null;
-    if (typeof version !== 'string' || !VERSION.test(version)) return null;
-    if ((day === undefined) === (rack === undefined)) return null;
-    if (day !== undefined) {
-      if (typeof day !== 'string' || !isRealDay(day)) return null;
-      if (day < first || day > tomorrow) return null;
-    }
-    if (rack !== undefined && (typeof rack !== 'string' || !RACK.test(rack))) {
-      return null;
-    }
-    flags.push({
-      id: id.toLowerCase(),
-      word,
-      ...(day !== undefined ? { day: day as string } : {}),
-      ...(rack !== undefined ? { rack: rack as string } : {}),
-      reason: reason as Reason,
-      platform,
-      version,
-    });
+    const flag = checkFlag(raw, days);
+    if (!flag) return null;
+    flags.push(flag);
   }
   return flags;
 }
@@ -296,20 +250,6 @@ function spells(longWord: string, word: string): boolean {
     left.splice(at, 1);
   }
   return true;
-}
-
-function isRealDay(day: string): boolean {
-  if (!DAY.test(day)) return false;
-  const date = new Date(`${day}T00:00:00Z`);
-  return !Number.isNaN(date.getTime()) && utcDay(date) === day;
-}
-
-function utcDay(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
 }
 
 /** The body as text, or null past the limit, which is checked before reading. */

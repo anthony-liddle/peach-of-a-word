@@ -6,6 +6,9 @@ import {
   type FlagsDeps,
   type NewFlag,
 } from './flags.ts';
+import { MAX_BODY_BYTES, MAX_PER_REQUEST, REASONS } from './wire.ts';
+import { handleFlagRequest } from '../../server/flag/handler.ts';
+import { MemoryStore, testData } from '../../server/flag/testing.ts';
 
 /*
  * The device's flags: the waiting list under `e8-flags`, and the sender.
@@ -80,6 +83,12 @@ function setup(answers: Answer[] = [202], over: Partial<FlagsDeps> = {}) {
   };
 }
 
+/** The i-th of many made-up words, in letters only, as the server takes them. */
+const nth = (prefix: string, i: number) =>
+  prefix +
+  String.fromCharCode(97 + Math.floor(i / 26)) +
+  String.fromCharCode(97 + (i % 26));
+
 const daily = (
   word: string,
   reason: NewFlag['reason'] = 'definition',
@@ -104,9 +113,7 @@ describe('making a flag', () => {
   it(`keeps at most ${MAX_WAITING} waiting, and says so`, async () => {
     const { flags } = setup(['offline']);
     for (let i = 0; i < MAX_WAITING; i++) {
-      expect(
-        await flags.flag(daily(`w${String.fromCharCode(97 + (i % 26))}${i}`)),
-      ).toBe('made');
+      expect(await flags.flag(daily(nth('w', i)))).toBe('made');
     }
     expect(flags.full()).toBe(true);
     expect(await flags.flag(daily('blick'))).toBe('full');
@@ -180,8 +187,7 @@ describe('sending', () => {
   it('sends what is waiting in batches of 20', async () => {
     // Each flag made offline tries once and stops at the first failure.
     const { flags, net, later } = setup([...Array(45).fill('offline'), 202]);
-    for (let i = 0; i < 45; i++)
-      await flags.flag(daily(`zo${String.fromCharCode(97 + (i % 26))}${i}`));
+    for (let i = 0; i < 45; i++) await flags.flag(daily(nth('zo', i)));
     later(11 * 60_000);
     net.calls.length = 0;
     await flags.send('online');
@@ -242,7 +248,7 @@ describe('sixty days', () => {
   it('keeps every flag under 60 days old in the list, sent or waiting', async () => {
     const { flags, later } = setup([202]);
     for (let i = 0; i < 60; i++) {
-      await flags.flag(daily(`zo${String.fromCharCode(97 + (i % 26))}${i}`));
+      await flags.flag(daily(nth('zo', i)));
       later(DAY_MS / 2);
     }
     expect(flags.list()).toHaveLength(60);
@@ -357,33 +363,108 @@ describe('two tabs, one list', () => {
   });
 });
 
-describe('the size of a request', () => {
-  it("keeps 20 of the longest flags under the server's 4 KB", async () => {
-    const { flags, net } = setup(
-      ['offline', ...Array(19).fill('offline'), 'offline'],
-      {
-        version: 'abcdefg',
-        online: () => false,
-      },
+/**
+ * The real flag server, its store in memory and its boards the made-up ones of
+ * its own tests, so a test here meets the server's own checks, not a stand-in.
+ */
+function realServer() {
+  const store = new MemoryStore();
+  const answers: number[] = [];
+  const fn = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+    const res = await handleFlagRequest(
+      new Request(new URL(String(url), 'https://example.test'), init),
+      { data: testData, store, notify: null, now: () => new Date(T0) },
     );
-    for (let i = 0; i < 20; i++) {
+    answers.push(res.status);
+    return res;
+  });
+  return { fn: fn as unknown as typeof fetch, store, answers };
+}
+
+describe('a stored flag the server would refuse', () => {
+  const ON_THE_FIRST_DAY = { day: '2026-06-23' };
+  const stored = (over: Record<string, unknown>) => ({
+    word: 'bad',
+    reason: 'definition',
+    board: ON_THE_FIRST_DAY,
+    madeAt: T0,
+    state: 'waiting',
+    tried: false,
+    ...over,
+  });
+  const GOOD = '00000000-0000-4000-8000-000000000001';
+  const ALSO_GOOD = '00000000-0000-4000-8000-000000000003';
+  const BAD = '00000000-0000-4000-8000-000000000002';
+
+  it.each([
+    ['a reason the server has never had', { reason: 'bogus' }],
+    ['a word in capitals', { word: 'BAD' }],
+    ['a board with neither a day nor a rack', { board: {} }],
+    ['a day before the game began', { board: { day: '2026-06-01' } }],
+    ['an ID that is not one', { id: 'not-an-id' }],
+  ])(
+    'is dropped alone, and the good flags beside it still go: %s',
+    async (_what, corrupt) => {
+      const storage = memory({
+        [FLAGS_KEY]: JSON.stringify({
+          version: 1,
+          flags: [
+            stored({ id: GOOD }),
+            stored({ id: BAD, word: 'hide', ...corrupt }),
+            stored({ id: ALSO_GOOD, word: 'hide', reason: 'rarer' }),
+          ],
+          forget: [],
+          lastTry: null,
+        }),
+      });
+      const server = realServer();
+      const flags = createFlags({
+        storage,
+        fetch: server.fn,
+        now: () => T0,
+        newId: () => '00000000-0000-4000-8000-000000000009',
+        version: 'abc1234',
+      });
+      await flags.send('load');
+      expect(server.answers).not.toContain(400);
+      expect(server.store.flagKeys().sort()).toEqual([
+        `flag:${GOOD}`,
+        `flag:${ALSO_GOOD}`,
+      ]);
+      expect(flags.list().map((f) => [f.id, f.state])).toEqual([
+        [GOOD, 'sent'],
+        [ALSO_GOOD, 'sent'],
+      ]);
+    },
+  );
+});
+
+describe('the size of a request', () => {
+  it("keeps the biggest batch the web can build within the server's limit", async () => {
+    // The longest of each field: an 8-letter word, a day (two characters more
+    // than a rack), the longest reason the server takes, and a version as long
+    // as the build's, the first 7 characters of its commit. Measured on the
+    // bodies the sender actually sends.
+    const longest = [...REASONS].sort((a, b) => b.length - a.length)[0]!;
+    const sent: { flags: number; bytes: number }[] = [];
+    const offline = (async (_url: unknown, init?: RequestInit) => {
+      const body = String(init?.body);
+      sent.push({
+        flags: JSON.parse(body).flags.length,
+        bytes: new TextEncoder().encode(body).length,
+      });
+      throw new TypeError('Failed to fetch');
+    }) as unknown as typeof fetch;
+    const { flags } = setup([202], { fetch: offline, version: 'abcdefg' });
+    for (let i = 0; i < MAX_WAITING; i++) {
       await flags.flag({
-        word: `abcdefg${String.fromCharCode(97 + i)}`,
-        reason: 'should-count',
-        board: { rack: 'abcdefgh' },
+        word: nth('abcdef', i),
+        reason: longest,
+        board: { day: '2026-07-01' },
       });
     }
-    expect(net.calls).toEqual([]);
-    const body = JSON.stringify({
-      flags: flags.list().map((f) => ({
-        id: f.id,
-        word: f.word,
-        ...f.board,
-        reason: f.reason,
-        platform: 'web',
-        version: 'abcdefg',
-      })),
-    });
-    expect(new TextEncoder().encode(body).length).toBeLessThan(4096);
+    const biggest = sent.reduce((a, b) => (b.bytes > a.bytes ? b : a));
+    expect(biggest.flags).toBe(MAX_PER_REQUEST);
+    expect(biggest.bytes).toBeLessThanOrEqual(MAX_BODY_BYTES);
   });
 });
