@@ -2211,3 +2211,65 @@ describe('Game Mythic glint', () => {
     expect(glints()).toHaveLength(0);
   });
 });
+
+/**
+ * The basket's lengths: each one shows from the first find, with its count,
+ * unless Word counts by length is off in Settings (Antoine and Bea, 21
+ * November 2026). Off, a length shows once a word that long is found, and the
+ * basket's total stays.
+ *
+ * Through the setting as it's kept, in local storage under its own key, so
+ * these hold what the setting does and not only what the list is handed.
+ */
+describe('Game word counts by length', () => {
+  afterEach(() => localStorage.removeItem('e8-length-counts'));
+
+  function findSea() {
+    type('sea');
+    fireEvent.keyDown(window, { key: 'Enter' });
+  }
+
+  it('shows an unfound length, reading 0 of its count, with the setting on', () => {
+    renderGame();
+    findSea();
+    // sea is three letters; the five-letter basket words, eased and erase,
+    // are unfound.
+    const head = screen.getByRole('heading', { name: '5 letters' });
+    const group = head.closest('section') as HTMLElement;
+    expect(within(group).getByText('0 of 2')).toBeInTheDocument();
+  });
+
+  it('shows no unfound length with the setting off, and keeps the total', () => {
+    localStorage.setItem('e8-length-counts', 'off');
+    renderGame();
+    findSea();
+    expect(
+      screen.getByRole('heading', { name: '3 letters' }),
+    ).toBeInTheDocument();
+    for (const length of [4, 5, 8])
+      expect(
+        screen.queryByRole('heading', { name: `${length} letters` }),
+      ).not.toBeInTheDocument();
+    expect(screen.queryByText(/^0 of \d+$/)).not.toBeInTheDocument();
+    expect(screen.getByText(/1 of 6 words/i)).toBeInTheDocument();
+  });
+
+  it('turns off from Settings, and the list follows at once', () => {
+    renderGame();
+    findSea();
+    expect(
+      screen.getByRole('heading', { name: '5 letters' }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    const counts = screen.getByRole('checkbox', {
+      name: 'Word counts by length',
+    });
+    expect(counts).toBeChecked();
+    fireEvent.click(counts);
+    expect(counts).not.toBeChecked();
+    expect(localStorage.getItem('e8-length-counts')).toBe('off');
+    expect(
+      screen.queryByRole('heading', { name: '5 letters' }),
+    ).not.toBeInTheDocument();
+  });
+});

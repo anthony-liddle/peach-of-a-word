@@ -9,6 +9,7 @@ import {
   type Glint,
 } from './useGame.ts';
 import { useTheme } from './useTheme.ts';
+import { useLengthCounts } from './useLengthCounts.ts';
 import { copy } from './themeCopy.ts';
 import { boardCostume } from './costumes.ts';
 import { applyFavicon } from './favicon.ts';
@@ -94,6 +95,7 @@ export function Game({ data, audio, storage }: Props) {
 
   const { state } = game;
   const [theme] = useTheme();
+  const [lengthCounts] = useLengthCounts();
   // What the peach wears on this board, by the board's own date, never
   // today's: Endless has no date and letterpress never dresses. A development
   // build previews any date from the address, ?costumeDate=YYYY-MM-DD; the
@@ -260,6 +262,7 @@ export function Game({ data, audio, storage }: Props) {
           theme={theme}
           costume={costume}
           glint={glinting}
+          lengthCounts={lengthCounts}
           showTier={wide}
           onWordTap={onWordTap}
           summaryExtra={share()}
