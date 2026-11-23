@@ -175,6 +175,29 @@ describe('POST /api/flag, which reasons fit which word', () => {
     expect(store.flagKeys()).toHaveLength(0);
   });
 
+  it("drops a flag on a day the server hasn't reached, alone, like a word off its board", async () => {
+    // A fast clock: 25 June when the server is on the 23rd, so past even
+    // tomorrow's board. "few" spells from that day's long word and would be
+    // kept on it, so only the day can drop it. The flag beside it is kept.
+    const t = deps();
+    const res = await handleFlagRequest(
+      post({
+        flags: [
+          aFlag({
+            id: ID,
+            day: '2026-06-25',
+            word: 'few',
+            reason: 'should-count',
+          }),
+          aFlag({ id: ID2 }),
+        ],
+      }),
+      t.d,
+    );
+    expect(res.status).toBe(202);
+    expect(t.store.flagKeys()).toEqual([`flag:${ID2}`]);
+  });
+
   it("past the day's cap, stores nothing and still answers 202", async () => {
     const t = deps({ cap: 2 });
     for (const id of [ID, ID2, 'c1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d']) {
@@ -205,7 +228,6 @@ describe('POST /api/flag, refusing the shape', () => {
     ['a malformed day', { flags: [aFlag({ day: '2026-6-23' })] }],
     ['a day that does not exist', { flags: [aFlag({ day: '2026-06-31' })] }],
     ['a day before the first board', { flags: [aFlag({ day: '2026-06-22' })] }],
-    ['a day after tomorrow', { flags: [aFlag({ day: '2026-06-25' })] }],
     [
       'a rack that is not eight letters',
       { flags: [aFlag({ day: undefined, rack: 'abc' })] },

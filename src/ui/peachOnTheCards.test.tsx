@@ -116,7 +116,8 @@ describe('the peach on the reveal card', () => {
   it('is not on the card in letterpress, which stays text', () => {
     playOn(2026, 10, 31, 'letterpress');
     find('serenade');
-    expect(screen.getByRole('dialog').querySelector('svg')).toBeNull();
+    // The peach's own drawing, by its class: the card's flag is an icon too.
+    expect(revealPeach()).toBeNull();
   });
 
   it("wears the ghost on 31 October's board, in any year, and says so", () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameData } from '@/data/gameData.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
@@ -34,6 +34,11 @@ import { SettingsMenu } from './components/SettingsMenu.tsx';
 import { useGlobalKeys } from './useGlobalKeys.ts';
 import { useDefinitions } from './useDefinitions.ts';
 import { classifyWord } from '@/engine/index.ts';
+import { FlagsContext, type FlagsUI } from '@/flags/context.ts';
+import { deviceFlags } from '@/flags/device.ts';
+import type { Board } from '@/flags/flags.ts';
+import { dayOfIndex } from '@/flags/model.ts';
+import { YourFlags } from './components/YourFlags.tsx';
 
 interface QuietState {
   word: string;
@@ -122,12 +127,86 @@ export function Game({ data, audio, storage }: Props) {
 
   const [quiet, setQuiet] = useState<QuietState | null>(null);
 
+  // This device's flags, and the board a card's flag names: the daily's day,
+  // or the web Endless's rack, which is the board's long word.
+  const flags = useMemo(() => deviceFlags(), []);
+  const board = useMemo<Board | null>(
+    () =>
+      state.mode === 'endless'
+        ? { rack: state.puzzle.sourceWord }
+        : state.dayIndex !== null
+          ? { day: dayOfIndex(state.dayIndex, data.dailyCalendar.epoch) }
+          : null,
+    [state.mode, state.puzzle.sourceWord, state.dayIndex, data],
+  );
+  // Flags still waiting go on load, when the network comes back, and when
+  // the tab is seen again; the sender keeps those to once every 10 minutes.
+  useEffect(() => {
+    void flags.send('load');
+    const online = () => void flags.send('online');
+    const visible = () => {
+      if (document.visibilityState === 'visible') void flags.send('visible');
+    };
+    window.addEventListener('online', online);
+    document.addEventListener('visibilitychange', visible);
+    return () => {
+      window.removeEventListener('online', online);
+      document.removeEventListener('visibilitychange', visible);
+    };
+  }, [flags]);
+
+  // Your flags opens on its own (Antoine, 22 November): from Settings' row,
+  // which closes Settings, or over a card from its line. Closing it goes back
+  // where it came from: Settings, open, with focus on the row; or the card,
+  // with focus on the link.
+  const [yourFlags, setYourFlags] = useState<{
+    from: 'settings' | 'card';
+    back: HTMLElement | null;
+  } | null>(null);
+  const backToFlagsRow = useRef(false);
+  const openYourFlagsFromSettings = useCallback(() => {
+    setSettingsOpen(false);
+    setYourFlags({ from: 'settings', back: null });
+  }, []);
+  const closeYourFlags = useCallback(() => {
+    if (yourFlags?.from === 'settings') {
+      backToFlagsRow.current = true;
+      setSettingsOpen(true);
+    } else if (yourFlags?.back?.isConnected) {
+      yourFlags.back.focus({ preventScroll: true });
+    }
+    setYourFlags(null);
+  }, [yourFlags]);
+  // After Settings' own effect has put focus on its first control: a child's
+  // effects run before its parent's.
+  useEffect(() => {
+    if (!settingsOpen || !backToFlagsRow.current) return;
+    backToFlagsRow.current = false;
+    document.querySelector<HTMLElement>('.flags__row')?.focus();
+  }, [settingsOpen]);
+  const flagsUI = useMemo<FlagsUI>(
+    () => ({
+      flags,
+      board,
+      mode: state.mode,
+      // The link itself, passed in: Safari doesn't focus a button on a click,
+      // so the active element there would be the card.
+      openYourFlags: (trigger) => setYourFlags({ from: 'card', back: trigger }),
+    }),
+    [flags, board, state.mode],
+  );
+
   // A word's card owns the keyboard while it is open, as the crown's card
   // (`revealOpen`) and the explainer do: Enter is its way out's, and no key
   // reaches the board behind it.
   const tilesRef = useRef<HTMLDivElement>(null);
-  // The popover's arrows, Space and Escape are its own while it is open.
-  useGlobalKeys(game, howOpen || quiet !== null || settingsOpen, tilesRef);
+  // The popover's arrows, Space and Escape are its own while it is open, and
+  // so are Your flags'.
+  useGlobalKeys(
+    game,
+    howOpen || quiet !== null || settingsOpen || yourFlags !== null,
+    tilesRef,
+  );
 
   const onWordTap = useCallback(
     (word: string, trigger: HTMLElement) => {
@@ -221,24 +300,26 @@ export function Game({ data, audio, storage }: Props) {
   }, [glinting]);
 
   return (
-    <div className="app">
-      <Decorations celebrate={state.editionOpen} />
-      <Masthead />
-      {!storage.persistent && (
-        <p className="storage-note">
-          This browser is not saving progress. Your words will be lost when you
-          leave or reload.
-        </p>
-      )}
-      <Toolbar
-        game={game}
-        settingsOpen={settingsOpen}
-        onSettingsOpenChange={setSettingsOpen}
-      />
+    <FlagsContext.Provider value={flagsUI}>
+      <div className="app">
+        <Decorations celebrate={state.editionOpen} />
+        <Masthead />
+        {!storage.persistent && (
+          <p className="storage-note">
+            This browser is not saving progress. Your words will be lost when
+            you leave or reload.
+          </p>
+        )}
+        <Toolbar
+          game={game}
+          settingsOpen={settingsOpen}
+          onSettingsOpenChange={setSettingsOpen}
+          onOpenFlags={openYourFlagsFromSettings}
+        />
 
-      <div className="board">
-        <div className="play">
-          {/* Narrow widths only: the meter sits above the well, the way the app
+        <div className="board">
+          <div className="play">
+            {/* Narrow widths only: the meter sits above the well, the way the app
               has it. At two-column widths it stays in the glossary in the right
               column, in exactly the place it has always been.
 
@@ -247,82 +328,97 @@ export function Game({ data, audio, storage }: Props) {
               arrives later: it would shove the well and the rack down mid-play,
               on the first word of the day. Zeros on an empty board are honest;
               furniture that materialises under a thumb is not. */}
-          {!wide && (
-            <TierMeter tier={state.tier} theme={theme} streak={game.streak} />
-          )}
-          <ComposingStick game={game} glint={glinting} onWordTap={onWordTap} />
-          <TypeCase game={game} ref={tilesRef} />
-          <Controls game={game} />
-        </div>
+            {!wide && (
+              <TierMeter tier={state.tier} theme={theme} streak={game.streak} />
+            )}
+            <ComposingStick
+              game={game}
+              glint={glinting}
+              onWordTap={onWordTap}
+            />
+            <TypeCase game={game} ref={tilesRef} />
+            <Controls game={game} />
+          </div>
 
-        <FoundList
-          puzzle={state.puzzle}
-          found={state.found}
-          tier={state.tier}
-          theme={theme}
-          costume={costume}
-          glint={glinting}
-          lengthCounts={lengthCounts}
-          showTier={wide}
-          onWordTap={onWordTap}
-          summaryExtra={share()}
-        />
+          <FoundList
+            puzzle={state.puzzle}
+            found={state.found}
+            tier={state.tier}
+            theme={theme}
+            costume={costume}
+            glint={glinting}
+            lengthCounts={lengthCounts}
+            showTier={wide}
+            onWordTap={onWordTap}
+            summaryExtra={share()}
+          />
 
-        {/* Two-column widths only: the completion card lands over the top of
+          {/* Two-column widths only: the completion card lands over the top of
             the glossary's column, beside the well and the rack rather than on
             them, since play goes on under it. On a phone it is over the page,
             below. One node, placed here like the meter. */}
-        {wide && editionCard}
-      </div>
+          {wide && editionCard}
+        </div>
 
-      <Colophon triggerRef={howTriggerRef} onOpenHow={() => setHowOpen(true)} />
+        <Colophon
+          triggerRef={howTriggerRef}
+          onOpenHow={() => setHowOpen(true)}
+        />
 
-      {/* Screen-reader announcements: found words, tier changes, the crown.
+        {/* Screen-reader announcements: found words, tier changes, the crown.
           Settled when the find happens, never re-resolved under it. */}
-      <div className="visually-hidden" role="status" aria-live="polite">
-        {spokenAnnouncement}
-      </div>
+        <div className="visually-hidden" role="status" aria-live="polite">
+          {spokenAnnouncement}
+        </div>
 
-      {!wide && editionCard}
+        {!wide && editionCard}
 
-      {confettiOn && <Confetti onDone={endConfetti} costume={costume} />}
+        {confettiOn && <Confetti onDone={endConfetti} costume={costume} />}
 
-      {/* Dev only: ?card=<word> opens that word's card with its real gloss.
+        {/* Dev only: ?card=<word> opens that word's card with its real gloss.
           Compiled out of production by the env guard. See DevCardProbe. */}
-      {import.meta.env.DEV && probe ? (
-        <DevCardProbe
-          word={probe.word}
-          rack={probe.rack}
-          register={probe.register}
-          theme={theme}
-          costume={costume}
-          onClose={() => setProbe(null)}
-        />
-      ) : state.revealOpen ? (
-        <Reveal
-          register="crown"
-          theme={theme}
-          word={state.puzzle.sourceWord}
-          entry={state.sourceEntry}
-          costume={costume}
-          onClose={game.closeReveal}
-          share={share('quiet')}
-        />
-      ) : quiet ? (
-        <Reveal
-          theme={theme}
-          register="quiet"
-          word={quiet.word}
-          category={quiet.category}
-          status={quiet.status}
-          definition={quiet.definition}
-          returnFocusTo={quiet.trigger}
-          onClose={closeQuiet}
-        />
-      ) : null}
+        {import.meta.env.DEV && probe ? (
+          <DevCardProbe
+            word={probe.word}
+            rack={probe.rack}
+            register={probe.register}
+            theme={theme}
+            costume={costume}
+            onClose={() => setProbe(null)}
+          />
+        ) : state.revealOpen ? (
+          <Reveal
+            register="crown"
+            theme={theme}
+            word={state.puzzle.sourceWord}
+            entry={state.sourceEntry}
+            costume={costume}
+            onClose={game.closeReveal}
+            share={share('quiet')}
+          />
+        ) : quiet ? (
+          <Reveal
+            theme={theme}
+            register="quiet"
+            word={quiet.word}
+            category={quiet.category}
+            status={quiet.status}
+            definition={quiet.definition}
+            returnFocusTo={quiet.trigger}
+            onClose={closeQuiet}
+          />
+        ) : null}
 
-      {howOpen && <HowItWorks onClose={closeHow} />}
-    </div>
+        {howOpen && <HowItWorks onClose={closeHow} />}
+
+        {yourFlags && (
+          <YourFlags
+            onClose={closeYourFlags}
+            overCard={yourFlags.from === 'card'}
+          />
+        )}
+      </div>
+    </FlagsContext.Provider>
   );
 }
 
@@ -345,10 +441,12 @@ function Toolbar({
   game,
   settingsOpen,
   onSettingsOpenChange,
+  onOpenFlags,
 }: {
   game: GameApi;
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
+  onOpenFlags: () => void;
 }) {
   const { state } = game;
   // The streak has one home at any given width, never two at the same one. At
@@ -405,6 +503,7 @@ function Toolbar({
           onOpenChange={onSettingsOpenChange}
           muted={game.muted}
           onToggleMute={game.toggleMute}
+          onOpenFlags={onOpenFlags}
         />
       </div>
     </div>

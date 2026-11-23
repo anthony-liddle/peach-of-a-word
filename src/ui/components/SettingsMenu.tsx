@@ -3,6 +3,7 @@ import { useTheme, type Theme } from '../useTheme.ts';
 import { useAppearance, type Appearance } from '../useAppearance.ts';
 import { useTextSize, type TextSize } from '../useTextSize.ts';
 import { useLengthCounts } from '../useLengthCounts.ts';
+import { useFlagList, useFlagsUI } from '@/flags/context.ts';
 
 /**
  * The settings popover: the theme, the appearance, the text size, sound and
@@ -33,12 +34,17 @@ export function SettingsMenu({
   onOpenChange,
   muted,
   onToggleMute,
+  onOpenFlags,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   muted: boolean;
   onToggleMute: () => void;
+  /** Opens Your flags on its own, over the game. */
+  onOpenFlags?: () => void;
 }) {
+  const flagsUI = useFlagsUI();
+  const flagList = useFlagList(flagsUI?.flags ?? null);
   const [theme, setTheme] = useTheme();
   const [appearance, setAppearance] = useAppearance();
   const [size, setSize] = useTextSize();
@@ -212,6 +218,23 @@ export function SettingsMenu({
               Turn off to hide each length until you find a word that long.
             </p>
           </div>
+          {/* Your flags: the row and its count, never the words (Antoine, 22
+              November). It opens the list on its own, so the list can never
+              push these settings out of view. There once anything is flagged. */}
+          {flagList.length > 0 && onOpenFlags && (
+            <button
+              type="button"
+              className="flags__row"
+              aria-haspopup="dialog"
+              onClick={onOpenFlags}
+            >
+              <span>Your flags</span>
+              <span className="flags__count">
+                {flagList.length}
+                <span aria-hidden="true"> ›</span>
+              </span>
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -9,3 +9,10 @@
  * scripts/lib/dataVersion.ts for why the URL has to change when the data does.
  */
 declare const __DATA_VERSION__: string;
+
+/**
+ * The build, sent as a flag's version: Vercel's commit SHA for the build, its
+ * first seven characters, injected in vite.config.ts. "dev" on a local build
+ * and "test" under test.
+ */
+declare const __APP_VERSION__: string;
