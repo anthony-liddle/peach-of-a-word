@@ -38,16 +38,6 @@ export interface WireFlag {
   readonly version: string;
 }
 
-/**
- * The days a flag's board may name, as UTC dates: the game's first day, to
- * tomorrow by the checker's clock, since a player ahead of UTC is on
- * tomorrow's board.
- */
-export interface DayRange {
-  readonly first: string;
-  readonly last: string;
-}
-
 const FIELDS = new Set([
   'id',
   'word',
@@ -68,8 +58,15 @@ export function isFlagId(id: unknown): id is string {
   return typeof id === 'string' && UUID.test(id);
 }
 
-/** The flag, with its ID in lower case, if it's well shaped; null if not. */
-export function checkFlag(raw: unknown, days: DayRange): WireFlag | null {
+/**
+ * The flag, with its ID in lower case, if it's well shaped; null if not.
+ *
+ * A day must be a real one, on or after `firstDay`, the game's first board.
+ * A day after the server's tomorrow is well shaped: the server drops that
+ * flag alone, as it does a word off its board, so a device whose clock runs
+ * fast loses only its own flag (Antoine, 23 November).
+ */
+export function checkFlag(raw: unknown, firstDay: string): WireFlag | null {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return null;
   }
@@ -84,7 +81,7 @@ export function checkFlag(raw: unknown, days: DayRange): WireFlag | null {
   if ((day === undefined) === (rack === undefined)) return null;
   if (day !== undefined) {
     if (typeof day !== 'string' || !isRealDay(day)) return null;
-    if (day < days.first || day > days.last) return null;
+    if (day < firstDay) return null;
   }
   if (rack !== undefined && (typeof rack !== 'string' || !RACK.test(rack))) {
     return null;

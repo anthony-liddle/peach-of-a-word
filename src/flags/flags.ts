@@ -1,6 +1,6 @@
 import { DAILY_EPOCH } from '@/engine/config.ts';
 import type { FlagReason } from './model.ts';
-import { checkFlag, epochDay, MAX_PER_REQUEST, utcDay } from './wire.ts';
+import { checkFlag, epochDay, MAX_PER_REQUEST } from './wire.ts';
 
 /**
  * This device's flags: the list under `e8-flags`, and the sender.
@@ -15,9 +15,8 @@ import { checkFlag, epochDay, MAX_PER_REQUEST, utcDay } from './wire.ts';
  *   each waiting flag before a batch is made, so a corrupt flag in
  *   `e8-flags` goes alone and never takes good flags down with it;
  * - the server refusing a batch's shape anyway, a 400 or a 413, since it will
- *   never be taken. After the check above, that means the two disagree: a
- *   board's day the server thinks hasn't come yet, from a device whose clock
- *   runs ahead, or a page left open since an older build;
+ *   never be taken. After the check above, that means a page left open since
+ *   an older build, whose check the server no longer shares;
  * - 60 days without going, so nothing waits forever.
  *
  * Anything else keeps it waiting: a 403 is the kill switch, a 429 the rate
@@ -210,19 +209,17 @@ export function createFlags(deps: FlagsDeps) {
   }
 
   /**
-   * Drops, each on its own, the waiting flags the server's own check refuses,
-   * with the server's day range as this device's clock sees it.
+   * Drops, each on its own, the waiting flags the server's own check refuses.
+   * A day the server hasn't reached yet isn't one: the server drops that flag
+   * alone, so a fast clock loses only its own.
    */
   function dropRefused() {
-    const days = {
-      first: FIRST_DAY,
-      last: utcDay(new Date(deps.now() + DAY_MS)),
-    };
     const refused = new Set(
       read(deps.storage)
         .flags.filter(
           (f) =>
-            f.state === 'waiting' && !checkFlag(wire(f, deps.version), days),
+            f.state === 'waiting' &&
+            !checkFlag(wire(f, deps.version), FIRST_DAY),
         )
         .map((f) => f.id),
     );

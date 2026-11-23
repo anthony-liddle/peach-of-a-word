@@ -439,6 +439,52 @@ describe('a stored flag the server would refuse', () => {
   );
 });
 
+describe('a device whose clock runs fast', () => {
+  it('loses only its own flag on a day the server has not reached, and the rest of the batch is stored', async () => {
+    const server = realServer();
+    const storage = memory({
+      [FLAGS_KEY]: JSON.stringify({
+        version: 1,
+        flags: [
+          {
+            id: '00000000-0000-4000-8000-000000000001',
+            word: 'bad',
+            reason: 'definition',
+            board: { day: '2026-06-23' },
+            madeAt: T0,
+            state: 'waiting',
+            tried: false,
+          },
+          {
+            // Two days past the server's today, on this device's own board.
+            id: '00000000-0000-4000-8000-000000000002',
+            word: 'few',
+            reason: 'should-count',
+            board: { day: '2026-07-03' },
+            madeAt: T0,
+            state: 'waiting',
+            tried: false,
+          },
+        ],
+        forget: [],
+        lastTry: null,
+      }),
+    });
+    const flags = createFlags({
+      storage,
+      fetch: server.fn,
+      now: () => T0 + 2 * DAY_MS,
+      newId: () => '00000000-0000-4000-8000-000000000009',
+      version: 'abc1234',
+    });
+    await flags.send('load');
+    expect(server.answers).toEqual([202]);
+    expect(server.store.flagKeys()).toEqual([
+      'flag:00000000-0000-4000-8000-000000000001',
+    ]);
+  });
+});
+
 describe('the size of a request', () => {
   it("keeps the biggest batch the web can build within the server's limit", async () => {
     // The longest of each field: an 8-letter word, a day (two characters more

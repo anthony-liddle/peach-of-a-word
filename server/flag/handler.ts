@@ -17,10 +17,11 @@ import type { FlagStore } from './store.ts';
  * **Two kinds of no.** A request whose shape is wrong (not JSON, too big, a
  * field that isn't a checkable value) gets a plain 400 or 413. The shape
  * check is `src/flags/wire.ts`, and the web runs it too, on each flag before
- * it sends, so a request the web makes is refused only if the two disagree
- * about the day. A well-shaped flag that fails a check needing the data (its word
- * isn't on that board, its reason doesn't fit the word, it suggests a denied
- * word, or the day's cap is reached) is dropped alone and the answer is still
+ * it sends, so a request the web makes is refused only by a page left open
+ * since an older build. A well-shaped flag that fails a check needing the data
+ * or the clock (its day is one the server hasn't reached, its word isn't on
+ * that board, its reason doesn't fit the word, it suggests a denied word, or
+ * the day's cap is reached) is dropped alone and the answer is still
  * 202, the same as a stored flag. So nothing about the lists can be probed
  * through this endpoint, and a slur suggested as a word is never kept.
  *
@@ -79,11 +80,8 @@ async function handlePost(body: unknown, deps: FlagDeps): Promise<Response> {
   const now = deps.now();
   const today = utcDay(now);
   const data = deps.data();
-  const flags = parseFlags(
-    body,
-    data,
-    utcDay(new Date(now.getTime() + 86_400_000)),
-  );
+  const tomorrow = utcDay(new Date(now.getTime() + 86_400_000));
+  const flags = parseFlags(body, data);
   if (flags === null) return empty(400);
 
   // The checks above need no store, so a preview proves the bundle carries
@@ -93,7 +91,7 @@ async function handlePost(body: unknown, deps: FlagDeps): Promise<Response> {
 
   // A flag that doesn't fit is dropped before the store hears of it, so it
   // costs nothing.
-  const fitting = flags.filter((flag) => fits(flag, data));
+  const fitting = flags.filter((flag) => fits(flag, data, tomorrow));
   if (fitting.length === 0) return empty(202);
 
   // ONE COMMAND COUNTS THE WHOLE REQUEST. Upstash bills by command and the
@@ -179,11 +177,7 @@ async function handleDelete(body: unknown, deps: FlagDeps): Promise<Response> {
 }
 
 /** The flags, if every one is well shaped; null if any is not. */
-function parseFlags(
-  body: unknown,
-  data: FlagData,
-  tomorrow: string,
-): Flag[] | null {
+function parseFlags(body: unknown, data: FlagData): Flag[] | null {
   const list = (body as { flags?: unknown } | null)?.flags;
   if (
     !Array.isArray(list) ||
@@ -192,10 +186,10 @@ function parseFlags(
   ) {
     return null;
   }
-  const days = { first: epochDay(data.epoch), last: tomorrow };
+  const firstDay = epochDay(data.epoch);
   const flags: Flag[] = [];
   for (const raw of list) {
-    const flag = checkFlag(raw, days);
+    const flag = checkFlag(raw, firstDay);
     if (!flag) return null;
     flags.push(flag);
   }
@@ -203,8 +197,11 @@ function parseFlags(
 }
 
 /**
- * Whether a well-shaped flag is one to keep. Its word must be spelled from its
- * board's long word, and its reason must fit the word:
+ * Whether a well-shaped flag is one to keep. Its board's day must be one the
+ * server has reached, tomorrow at the latest, for a player already past
+ * midnight: a later day is a fast clock, and loses only its own flag, as a
+ * word off its board does (Antoine, 23 November). Its word must be spelled
+ * from its board's long word, and its reason must fit the word:
  * - a refused word can only be suggested, `should-count`, and not if it's on
  *   a deny row;
  * - the board's own long word can be `offensive` or `definition`, and has no
@@ -214,7 +211,8 @@ function parseFlags(
  *   orchard works it out from the word and the lists, so nothing here needs
  *   the grade lists, and no grade is checked.
  */
-function fits(flag: Flag, data: FlagData): boolean {
+function fits(flag: Flag, data: FlagData, tomorrow: string): boolean {
+  if (flag.day !== undefined && flag.day > tomorrow) return false;
   const longWord =
     flag.rack !== undefined
       ? endlessRack(flag.rack, data)
