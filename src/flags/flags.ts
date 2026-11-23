@@ -51,18 +51,25 @@ export interface Flag {
   word: string;
   reason: FlagReason;
   board: Board;
-  /** When it was made, in milliseconds. Its 60 days count from here. */
+  /** When it was made, in milliseconds. A waiting flag's 60 days count from here. */
   madeAt: number;
   state: 'waiting' | 'sent';
   /** A POST carrying it went out, answered or not. */
   tried: boolean;
+  /** When a POST carrying it last went out. */
+  triedAt?: number;
+  /** When the server took it. A sent flag's 60 days count from here, as the server's do. */
+  sentAt?: number;
 }
 
 interface Saved {
   version: 1;
   flags: Flag[];
-  /** Flags taken back that the server may hold, to ask it to forget. */
-  forget: { id: string; madeAt: number }[];
+  /**
+   * Flags taken back that the server may hold, to ask it to forget, each from
+   * when it may have reached the server: its sending, or its last attempt.
+   */
+  forget: { id: string; since: number }[];
   lastTry: number | null;
 }
 
@@ -113,7 +120,7 @@ function read(storage: FlagsDeps['storage']): Saved {
       flags: v.flags.filter(isFlag),
       forget: Array.isArray(v.forget)
         ? v.forget.filter(
-            (f) => typeof f?.id === 'string' && typeof f?.madeAt === 'number',
+            (f) => typeof f?.id === 'string' && typeof f?.since === 'number',
           )
         : [],
       lastTry: typeof v.lastTry === 'number' ? v.lastTry : null,
@@ -135,34 +142,47 @@ function wire(f: Flag, version: string) {
   };
 }
 
+/** Where a flag's 60 days start: its sending once sent, its making until then. */
+const startOf = (f: Flag) =>
+  f.state === 'sent' ? (f.sentAt ?? f.madeAt) : f.madeAt;
+
+/**
+ * TWO TABS SHARE ONE LIST. Every change reads `e8-flags` again first and
+ * writes the result, so a tab never writes back a list older than another
+ * tab's last change; `refresh` brings a tab's view up to date when the other
+ * writes (the page listens for `storage`).
+ */
 export function createFlags(deps: FlagsDeps) {
   let saved = read(deps.storage);
   const listeners = new Set<() => void>();
   let sending: Promise<void> | null = null;
   let again = false;
 
-  const isOld = (madeAt: number) => deps.now() - madeAt > KEEP_DAYS * DAY_MS;
+  const isOld = (start: number) => deps.now() - start > KEEP_DAYS * DAY_MS;
+  const notify = () => listeners.forEach((l) => l());
 
-  function commit(next: Saved) {
-    saved = next;
+  /** Reads the list again, applies a change, and writes it. */
+  function update(change: (s: Saved) => Saved) {
+    saved = change(read(deps.storage));
     try {
       deps.storage.setItem(FLAGS_KEY, JSON.stringify(saved));
     } catch {
       // Storage full or denied: the list lives for this page only.
     }
-    listeners.forEach((l) => l());
+    notify();
   }
 
   function prune() {
+    const s = read(deps.storage);
     if (
-      saved.flags.some((f) => isOld(f.madeAt)) ||
-      saved.forget.some((f) => isOld(f.madeAt))
+      s.flags.some((f) => isOld(startOf(f))) ||
+      s.forget.some((f) => isOld(f.since))
     ) {
-      commit({
-        ...saved,
-        flags: saved.flags.filter((f) => !isOld(f.madeAt)),
-        forget: saved.forget.filter((f) => !isOld(f.madeAt)),
-      });
+      update((x) => ({
+        ...x,
+        flags: x.flags.filter((f) => !isOld(startOf(f))),
+        forget: x.forget.filter((f) => !isOld(f.since)),
+      }));
     }
   }
 
@@ -184,45 +204,47 @@ export function createFlags(deps: FlagsDeps) {
   async function pass() {
     prune();
     for (;;) {
-      const batch = saved.flags
-        .filter((f) => f.state === 'waiting')
+      const batch = read(deps.storage)
+        .flags.filter((f) => f.state === 'waiting')
         .slice(0, BATCH);
       if (batch.length === 0) break;
       const ids = new Set(batch.map((f) => f.id));
       // Marked before it goes, so a page closed mid-request still counts it
       // as possibly on the server.
-      commit({
-        ...saved,
-        flags: saved.flags.map((f) =>
-          ids.has(f.id) ? { ...f, tried: true } : f,
+      const at = deps.now();
+      update((s) => ({
+        ...s,
+        flags: s.flags.map((f) =>
+          ids.has(f.id) ? { ...f, tried: true, triedAt: at } : f,
         ),
-      });
+      }));
       const status = await call('POST', {
         flags: batch.map((f) => wire(f, deps.version)),
       });
       if (status === 202) {
-        commit({
-          ...saved,
-          flags: saved.flags.map((f) =>
-            ids.has(f.id) ? { ...f, state: 'sent' } : f,
+        const took = deps.now();
+        update((s) => ({
+          ...s,
+          flags: s.flags.map((f) =>
+            ids.has(f.id) ? { ...f, state: 'sent', sentAt: took } : f,
           ),
-        });
+        }));
       } else if (status === 400 || status === 413) {
-        commit({ ...saved, flags: saved.flags.filter((f) => !ids.has(f.id)) });
+        update((s) => ({ ...s, flags: s.flags.filter((f) => !ids.has(f.id)) }));
       } else {
         return;
       }
     }
     for (;;) {
-      const batch = saved.forget.slice(0, BATCH);
+      const batch = read(deps.storage).forget.slice(0, BATCH);
       if (batch.length === 0) break;
       const ids = new Set(batch.map((f) => f.id));
       const status = await call('DELETE', { ids: [...ids] });
       if (status === 204 || status === 400 || status === 413) {
-        commit({
-          ...saved,
-          forget: saved.forget.filter((f) => !ids.has(f.id)),
-        });
+        update((s) => ({
+          ...s,
+          forget: s.forget.filter((f) => !ids.has(f.id)),
+        }));
       } else {
         return;
       }
@@ -235,23 +257,21 @@ export function createFlags(deps: FlagsDeps) {
    */
   async function send(why: SendReason): Promise<void> {
     prune();
+    const s = read(deps.storage);
     const pending =
-      saved.flags.some((f) => f.state === 'waiting') || saved.forget.length > 0;
+      s.flags.some((f) => f.state === 'waiting') || s.forget.length > 0;
     if (!pending) return;
     if (deps.online && !deps.online()) return;
     const urgent = why === 'made';
-    if (
-      !urgent &&
-      saved.lastTry !== null &&
-      deps.now() - saved.lastTry < RETRY_MS
-    ) {
+    if (!urgent && s.lastTry !== null && deps.now() - s.lastTry < RETRY_MS) {
       return;
     }
     if (sending) {
       again = true;
       return sending;
     }
-    commit({ ...saved, lastTry: deps.now() });
+    const at = deps.now();
+    update((x) => ({ ...x, lastTry: at }));
     sending = pass().finally(() => {
       sending = null;
     });
@@ -262,62 +282,62 @@ export function createFlags(deps: FlagsDeps) {
     }
   }
 
+  const waitingIn = (s: Saved) =>
+    s.flags.filter((f) => f.state === 'waiting').length;
+
   return {
-    /** The flags this device has made in the last 60 days, oldest first. */
+    /** This device's flags still in their 60 days, oldest first. */
     list(): readonly Flag[] {
-      return saved.flags.filter((f) => !isOld(f.madeAt));
+      return saved.flags.filter((f) => !isOld(startOf(f)));
     },
 
     /** Whether the waiting list is at its cap, so the card's flag gives way. */
     full(): boolean {
-      return (
-        saved.flags.filter((f) => f.state === 'waiting').length >= MAX_WAITING
-      );
+      return waitingIn(saved) >= MAX_WAITING;
     },
 
     async flag(input: NewFlag): Promise<'made' | 'already' | 'full'> {
       prune();
+      const s = read(deps.storage);
       if (
-        saved.flags.some(
-          (f) => f.word === input.word && f.reason === input.reason,
-        )
+        s.flags.some((f) => f.word === input.word && f.reason === input.reason)
       ) {
         return 'already';
       }
-      if (this.full()) return 'full';
-      commit({
-        ...saved,
-        flags: [
-          ...saved.flags,
-          {
-            id: deps.newId(),
-            word: input.word,
-            reason: input.reason,
-            board: input.board,
-            madeAt: deps.now(),
-            state: 'waiting',
-            tried: false,
-          },
-        ],
-      });
+      if (waitingIn(s) >= MAX_WAITING) return 'full';
+      const flag: Flag = {
+        id: deps.newId(),
+        word: input.word,
+        reason: input.reason,
+        board: input.board,
+        madeAt: deps.now(),
+        state: 'waiting',
+        tried: false,
+      };
+      update((x) => ({ ...x, flags: [...x.flags, flag] }));
       await send('made');
       return 'made';
     },
 
     async takeBack(id: string): Promise<void> {
-      const f = saved.flags.find((x) => x.id === id);
+      const f = read(deps.storage).flags.find((x) => x.id === id);
       if (!f) return;
-      commit({
-        ...saved,
-        flags: saved.flags.filter((x) => x.id !== id),
-        forget: f.tried
-          ? [...saved.forget, { id, madeAt: f.madeAt }]
-          : saved.forget,
-      });
+      const since = f.sentAt ?? f.triedAt ?? f.madeAt;
+      update((x) => ({
+        ...x,
+        flags: x.flags.filter((y) => y.id !== id),
+        forget: f.tried ? [...x.forget, { id, since }] : x.forget,
+      }));
       if (f.tried) await send('made');
     },
 
     send,
+
+    /** Reads the list again after another tab has written it, and tells subscribers. */
+    refresh(): void {
+      saved = read(deps.storage);
+      notify();
+    },
 
     /** The saved state as it stands, a new object after each change, for React to subscribe to. */
     snapshot(): object {

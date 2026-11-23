@@ -1,4 +1,4 @@
-import { createFlags, type Flags } from './flags.ts';
+import { FLAGS_KEY, createFlags, type Flags } from './flags.ts';
 
 /**
  * This browser's flags, made once. The version is the build's short commit,
@@ -22,13 +22,20 @@ function browserStorage(): Pick<Storage, 'getItem' | 'setItem'> {
 }
 
 export function deviceFlags(): Flags {
-  device ??= createFlags({
-    storage: browserStorage(),
-    fetch: (input, init) => window.fetch(input, init),
-    now: () => Date.now(),
-    newId: () => crypto.randomUUID(),
-    version: __APP_VERSION__,
-    online: () => navigator.onLine,
-  });
+  if (!device) {
+    const flags = createFlags({
+      storage: browserStorage(),
+      fetch: (input, init) => window.fetch(input, init),
+      now: () => Date.now(),
+      newId: () => crypto.randomUUID(),
+      version: __APP_VERSION__,
+      online: () => navigator.onLine,
+    });
+    // Another tab changed the list: show what it holds now.
+    window.addEventListener('storage', (e) => {
+      if (e.key === FLAGS_KEY) flags.refresh();
+    });
+    device = flags;
+  }
   return device;
 }

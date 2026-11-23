@@ -73,6 +73,18 @@ describe('Your flags', () => {
     ).toBeInTheDocument();
   });
 
+  it('says which flag each Take back takes back', async () => {
+    const { flags, ui } = harness();
+    await make(flags, 'zorp', 'rarer');
+    await make(flags, 'grelt', 'definition');
+    panel(ui);
+    const buttons = within(dialog()).getAllByRole('button', {
+      name: 'Take back',
+    });
+    expect(buttons[0]).toHaveAccessibleDescription('grelt, its definition');
+    expect(buttons[1]).toHaveAccessibleDescription('zorp, rarer');
+  });
+
   it('says Waiting to send for a flag that has not gone', async () => {
     const { flags, ui } = harness(503);
     await make(flags, 'zorp', 'more-common');

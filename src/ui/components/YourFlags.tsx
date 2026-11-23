@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { useFlagList, useFlagsUI } from '@/flags/context.ts';
 import { MAX_WAITING } from '@/flags/flags.ts';
 import { shortForm } from '@/flags/model.ts';
@@ -25,6 +25,9 @@ export function YourFlags({
   const list = useFlagList(ui?.flags ?? null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const hadFlags = useRef(false);
+  // Each Take back is described by its own row's word and reason, so a
+  // screen reader can tell them apart.
+  const rowId = useId();
 
   useEffect(() => {
     dialogRef.current?.focus();
@@ -91,7 +94,7 @@ export function YourFlags({
                   {f.state === 'sent' ? '✓' : '◷'}
                 </span>
                 <span>
-                  <span className="flag__reason-line">
+                  <span className="flag__reason-line" id={`${rowId}-${f.id}`}>
                     {f.word}, {shortForm(f.reason)}
                   </span>
                   <span className="flag__status">
@@ -102,6 +105,7 @@ export function YourFlags({
               <button
                 type="button"
                 className="flag__take-back"
+                aria-describedby={`${rowId}-${f.id}`}
                 onClick={() => void flags.takeBack(f.id)}
               >
                 Take back

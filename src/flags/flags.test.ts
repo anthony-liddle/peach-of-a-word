@@ -300,3 +300,90 @@ describe('taking a flag back', () => {
     expect(net.calls.at(-1)!.body).toEqual({ ids: [id] });
   });
 });
+
+describe('sixty days from when the server took it', () => {
+  it('keeps a flag that waited before it went, and lets it be taken back, 60 days from its sending', async () => {
+    const { flags, net, later } = setup(['offline', 202, 204]);
+    await flags.flag(daily('zorp'));
+    later(10 * DAY_MS);
+    await flags.send('load');
+    expect(flags.list()[0]!.state).toBe('sent');
+    later(55 * DAY_MS);
+    await flags.send('load');
+    expect(flags.list()).toHaveLength(1);
+    await flags.takeBack(flags.list()[0]!.id);
+    expect(net.calls.at(-1)).toMatchObject({ method: 'DELETE' });
+  });
+
+  it('still asks the server to forget a flag last tried on day 59, on day 61', async () => {
+    const { flags, net, later } = setup(['offline', 'offline', 'offline', 204]);
+    await flags.flag(daily('zorp'));
+    later(59 * DAY_MS);
+    await flags.send('load');
+    const id = flags.list()[0]!.id;
+    await flags.takeBack(id);
+    later(2 * DAY_MS);
+    const before = net.calls.length;
+    await flags.send('load');
+    expect(net.calls.slice(before)).toMatchObject([
+      { method: 'DELETE', body: { ids: [id] } },
+    ]);
+  });
+});
+
+describe('two tabs, one list', () => {
+  it("keeps both tabs' flags, and either tab can take back the other's", async () => {
+    const store = memory();
+    const net = server(202, 204);
+    let n = 0;
+    const tab = () =>
+      createFlags({
+        storage: store,
+        fetch: net.fn,
+        now: () => T0,
+        newId: () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`,
+        version: 'abc1234',
+      });
+    const a = tab();
+    const b = tab();
+    await a.flag(daily('zorp'));
+    await b.flag(daily('grelt'));
+    expect(b.list().map((f) => f.word)).toEqual(['zorp', 'grelt']);
+    expect(JSON.parse(store.map.get(FLAGS_KEY)!).flags).toHaveLength(2);
+    const grelt = b.list()[1]!.id;
+    await a.takeBack(grelt);
+    expect(b.refresh()).toBeUndefined();
+    expect(b.list().map((f) => f.word)).toEqual(['zorp']);
+  });
+});
+
+describe('the size of a request', () => {
+  it("keeps 20 of the longest flags under the server's 4 KB", async () => {
+    const { flags, net } = setup(
+      ['offline', ...Array(19).fill('offline'), 'offline'],
+      {
+        version: 'abcdefg',
+        online: () => false,
+      },
+    );
+    for (let i = 0; i < 20; i++) {
+      await flags.flag({
+        word: `abcdefg${String.fromCharCode(97 + i)}`,
+        reason: 'should-count',
+        board: { rack: 'abcdefgh' },
+      });
+    }
+    expect(net.calls).toEqual([]);
+    const body = JSON.stringify({
+      flags: flags.list().map((f) => ({
+        id: f.id,
+        word: f.word,
+        ...f.board,
+        reason: f.reason,
+        platform: 'web',
+        version: 'abcdefg',
+      })),
+    });
+    expect(new TextEncoder().encode(body).length).toBeLessThan(4096);
+  });
+});
