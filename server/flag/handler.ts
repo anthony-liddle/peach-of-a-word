@@ -42,6 +42,8 @@ const REASONS = [
   'offensive',
   'definition',
   'should-count',
+  'rarer',
+  'more-common',
 ] as const;
 type Reason = (typeof REASONS)[number];
 const FIELDS = new Set([
@@ -216,8 +218,12 @@ function parseFlags(
  * board's long word, and its reason must fit the word:
  * - a refused word can only be suggested, `should-count`, and not if it's on
  *   a deny row;
- * - the board's own long word can be `offensive` or `definition`;
- * - any other accepted word can be `not-a-word`, `offensive` or `definition`.
+ * - the board's own long word can be `offensive` or `definition`, and has no
+ *   grade to disagree with;
+ * - any other accepted word can be `not-a-word`, `offensive`, `definition`, or
+ *   `rarer` or `more-common` than its grade. The flag doesn't carry the grade:
+ *   orchard works it out from the word and the lists, so nothing here needs
+ *   the grade lists, and no grade is checked.
  */
 function fits(flag: Flag, data: FlagData): boolean {
   const longWord =
@@ -229,7 +235,9 @@ function fits(flag: Flag, data: FlagData): boolean {
     return flag.reason === 'should-count' && !data.denied(flag.word);
   }
   if (flag.reason === 'should-count') return false;
-  if (flag.word === longWord) return flag.reason !== 'not-a-word';
+  if (flag.word === longWord) {
+    return flag.reason === 'offensive' || flag.reason === 'definition';
+  }
   return true;
 }
 
