@@ -5,6 +5,7 @@ import { copy, revealKicker } from '../themeCopy.ts';
 import type { Theme } from '../useTheme.ts';
 import { creditFor } from '../../data/glossProvenance.ts';
 import { PeachMark, SaysWhatThePeachWears } from './PeachMark.tsx';
+import { FlagControl } from './FlagControl.tsx';
 
 export type QuietCategory = 'set' | 'uncommon' | 'rare' | 'mythic';
 
@@ -174,6 +175,24 @@ export function Reveal(props: RevealProps) {
             and, on the peach card, Share under it are pinned. The credit stays
             above, scrolling with the text it credits, as it does on the
             iPhone. */}
+        {/* The flag, at the foot of the scroll under the credit, never in the
+            pinned way out. A found word's card shows it once its definition
+            has loaded, so it knows which card it is. */}
+        {props.register === 'crown' ? (
+          <FlagControl
+            word={props.word}
+            card="peach"
+            grade={null}
+            theme={props.theme}
+          />
+        ) : props.status === 'ready' ? (
+          <FlagControl
+            word={props.word}
+            card={props.definition !== null ? 'definition' : 'no-definition'}
+            grade={props.category}
+            theme={props.theme}
+          />
+        ) : null}
         <div className="reveal__way-out">
           <button ref={closeRef} className="reveal__close" onClick={onClose}>
             {copy(props.theme).revealClose}

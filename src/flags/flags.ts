@@ -319,6 +319,11 @@ export function createFlags(deps: FlagsDeps) {
 
     send,
 
+    /** The saved state as it stands, a new object after each change, for React to subscribe to. */
+    snapshot(): object {
+      return saved;
+    },
+
     subscribe(listener: () => void): () => void {
       listeners.add(listener);
       return () => listeners.delete(listener);

@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 export default defineConfig({
   // Injected by the versioned-data plugin in a real build. Empty here, matching
   // dev, so tests assert against the unversioned paths.
-  define: { __DATA_VERSION__: '""' },
+  define: { __DATA_VERSION__: '""', __APP_VERSION__: '"test"' },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

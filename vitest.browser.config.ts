@@ -13,7 +13,7 @@ import { resolve } from 'node:path';
  */
 export default defineConfig({
   // As in vitest.config.ts: the versioned-data plugin's value in a real build
-  define: { __DATA_VERSION__: '""' },
+  define: { __DATA_VERSION__: '""', __APP_VERSION__: '"test"' },
   resolve: {
     alias: {
       '@': resolve(import.meta.dirname, './src'),

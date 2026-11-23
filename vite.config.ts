@@ -44,6 +44,13 @@ function versionedData(isBuild: boolean): Plugin {
 
 export default defineConfig(({ command }) => ({
   plugins: [react(), versionedData(command === 'build')],
+  // A flag's version: the commit this build is, which Vercel sets on every
+  // build, preview and production. A local build has none and says "dev".
+  define: {
+    __APP_VERSION__: JSON.stringify(
+      (process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev').slice(0, 7),
+    ),
+  },
   build: {
     rollupOptions: {
       /**

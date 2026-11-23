@@ -2282,3 +2282,184 @@ footer.colophon a {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ---- The flag at the foot of a card, the picker, and Your flags ----------
+   Under the credit, never in the pinned way out. Every target is 44px to a
+   finger. See FlagControl and YourFlags. */
+.flag {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.flag__button {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-faint);
+  font: inherit;
+  cursor: pointer;
+}
+/* The icon alone: small to the eye. */
+.flag__button svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.flag__card-line {
+  margin: 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+}
+.flag__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.25rem;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent-deep);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.flag__ask {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.75rem;
+  background: var(--paper);
+  text-align: left;
+}
+.flag__title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+.flag__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.flag__heading {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.flag__note {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  line-height: 1.4;
+}
+/* A choice wraps at the largest text sizes; its words stay centred, and the
+   corners are rounded rather than a pill, so a long one doesn't cut into its
+   own edge (Antoine, 23 November). */
+.flag__reason,
+.flag__cancel {
+  min-height: 2.75rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 1.4rem;
+  border: 1px solid var(--accent);
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+.flag__cancel {
+  border-color: var(--rule);
+  color: var(--ink-faint);
+}
+
+/* Settings' row: the words never show here, only the count. */
+.flags__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.flags__count {
+  color: var(--ink-faint);
+}
+
+/* Your flags, its own panel in the quiet card's skin. Over a card, it sits
+   above the card's own backdrop. */
+.reveal-backdrop--over {
+  z-index: 25;
+}
+.your-flags {
+  text-align: left;
+}
+.your-flags__title {
+  text-transform: none;
+  text-align: center;
+}
+.your-flags__list {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+/* The flag's words and Take back in two columns, so Take back keeps its own
+   column at the largest sizes rather than wrapping under the words. */
+.flag__line {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+.flag__what {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+.flag__state {
+  color: var(--accent-deep);
+}
+.flag__reason-line {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.flag__status {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+.flag__take-back {
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--accent-deep);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
