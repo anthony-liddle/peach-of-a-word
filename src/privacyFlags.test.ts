@@ -5,21 +5,26 @@ import { describe, expect, it } from 'vitest';
 /*
  * What the privacy page says about a flag, held to what the flag is.
  *
- * The server keeps the fields in `server/flag/handler.ts` for 60 days; the
+ * The server keeps the fields in `src/flags/wire.ts` for 60 days; the
  * device keeps them under `e8-flags`. If either changes, this page has to
  * change with it, so these are pinned here. The wording is Antoine's (the
- * wording pass, 22 November; his lines on 23 November).
+ * wording pass, 22 November; his lines on 23 November, and his rewording of
+ * the step 2 lines the same day).
  */
 
 const html = readFileSync(
   resolve(process.cwd(), 'public/privacy.html'),
   'utf8',
 );
-/** The page's words, without its markup or its line breaks. */
+/**
+ * The page's words, without its markup or its line breaks, and with no space
+ * left before a full stop or comma that follows a link or a key.
+ */
 const text = html
   .replace(/<[^>]+>/g, ' ')
   .replace(/&rsquo;/g, "'")
-  .replace(/\s+/g, ' ');
+  .replace(/\s+/g, ' ')
+  .replace(/ ([.,])/g, '$1');
 
 const section = (heading: string) => {
   const at = text.indexOf(heading);
@@ -41,10 +46,10 @@ describe('the privacy page on flagging a word', () => {
       "its board's day",
       "from the website's Endless, the board's long word",
       'your reason',
-      'whether it came from the app or the website and its version',
+      'whether it came from the app or the website, which version sent it,',
       'a random ID made for that flag alone',
       'The server adds the day it arrived',
-      'Nothing about you goes with it',
+      'The flag itself carries nothing about you',
     ]) {
       expect(s, part).toContain(part);
     }
@@ -52,9 +57,8 @@ describe('the privacy page on flagging a word', () => {
 
   it('keeps them 60 days, and says how to take one back', () => {
     const s = section('Flagging a Word');
-    expect(s).toContain('Flags are kept for 60 days');
     expect(s).toContain(
-      'You can take one back from Your flags, in Settings, for those 60 days',
+      'Flags are kept for 60 days and read by hand, and for those 60 days you can take one back from Your flags, in Settings.',
     );
   });
 
@@ -66,13 +70,23 @@ describe('the privacy page on flagging a word', () => {
     expect(s).toContain('United States');
   });
 
-  it('says Vercel sees the network address of every request, and never suggests it acts only for the game', () => {
+  it('says Vercel sees the IP address of every request, and never suggests it acts only for the game', () => {
     expect(text).toContain(
-      'it sees the network address of every request, a flag included',
+      'Vercel hosts the site. Like any web host, it sees the IP address of every request, flags included, and keeps request logs that it uses for its own purposes under its own privacy notice. Peach of a Word itself never stores your address.',
     );
-    expect(text).toContain("The game's own code never stores your address");
+    expect(html).toMatch(
+      /<a\s+href="https:\/\/vercel\.com\/legal\/privacy-notice"\s*>privacy notice<\/a\s*>/,
+    );
+    // One name for the address across the page.
+    expect(text).not.toMatch(/network address/);
     expect(text).not.toMatch(/processes the requests needed to serve pages/);
     expect(text).not.toMatch(/processor|on our behalf/i);
+  });
+
+  it('says the flags you send are the one copy of what the browser keeps', () => {
+    expect(text).toContain(
+      'Clearing your browser storage clears them. There is no account, and apart from the flags you send, no copy of them anywhere else.',
+    );
   });
 
   it('says in its description that it collects the words you flag', () => {
