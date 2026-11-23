@@ -68,11 +68,11 @@ export class MemoryStore implements FlagStore {
     return true;
   }
 
-  async increment(key: string, ttl: number) {
+  async increment(key: string, by: number, ttl: number) {
     this.check();
-    const next = Number(this.values.get(key) ?? '0') + 1;
+    const next = Number(this.values.get(key) ?? '0') + by;
     this.values.set(key, String(next));
-    if (next === 1) this.ttls.set(key, ttl);
+    if (next === by) this.ttls.set(key, ttl);
     return next;
   }
 

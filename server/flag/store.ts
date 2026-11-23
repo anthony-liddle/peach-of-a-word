@@ -9,8 +9,11 @@
 export interface FlagStore {
   /** SET key value NX EX ttl: true when the key was new and is now set. */
   setIfAbsent(key: string, value: string, ttlSeconds: number): Promise<boolean>;
-  /** INCR, with the expiry set when the count starts. Returns the count. */
-  increment(key: string, ttlSeconds: number): Promise<number>;
+  /**
+   * INCRBY, one command whatever `by` is, with the expiry set when the count
+   * starts (one EXPIRE a day). Returns the count.
+   */
+  increment(key: string, by: number, ttlSeconds: number): Promise<number>;
   /** DEL every key named. Keys that aren't there are fine. */
   remove(keys: readonly string[]): Promise<void>;
 }
@@ -40,9 +43,10 @@ export function upstashStore(
     async setIfAbsent(key, value, ttl) {
       return (await command(['SET', key, value, 'NX', 'EX', ttl])) === 'OK';
     },
-    async increment(key, ttl) {
-      const count = Number(await command(['INCR', key]));
-      if (count === 1) await command(['EXPIRE', key, ttl]);
+    async increment(key, by, ttl) {
+      const count = Number(await command(['INCRBY', key, by]));
+      // The count started with this request: nothing was there before it.
+      if (count === by) await command(['EXPIRE', key, ttl]);
       return count;
     },
     async remove(keys) {
