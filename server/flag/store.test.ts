@@ -29,15 +29,15 @@ describe("the Upstash store, over Upstash's REST API", () => {
     });
   });
 
-  it('counts, and sets the expiry when the count starts', async () => {
-    const f = fakeFetch([{ result: 1 }, { result: 1 }, { result: 2 }]);
+  it("counts by a request's flags in one command, and sets the expiry when the count starts", async () => {
+    const f = fakeFetch([{ result: 3 }, { result: 1 }, { result: 5 }]);
     const store = upstashStore('https://db.test', 'secret', f.fn);
-    expect(await store.increment('count:d', 172800)).toBe(1);
-    expect(await store.increment('count:d', 172800)).toBe(2);
+    expect(await store.increment('count:d', 3, 172800)).toBe(3);
+    expect(await store.increment('count:d', 2, 172800)).toBe(5);
     expect(f.sent.map((s) => s.body)).toEqual([
-      ['INCR', 'count:d'],
+      ['INCRBY', 'count:d', '3'],
       ['EXPIRE', 'count:d', '172800'],
-      ['INCR', 'count:d'],
+      ['INCRBY', 'count:d', '2'],
     ]);
   });
 

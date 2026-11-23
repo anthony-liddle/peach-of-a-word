@@ -36,6 +36,9 @@ export const DAILY_CAP = 20_000;
 const COUNT_SECONDS = 2 * 24 * 60 * 60;
 const NOTIFY_SECONDS = 60 * 60;
 export const OFFENSIVE_MESSAGE = 'A word was flagged as offensive.';
+/** The day's count at which Antoine hears that flags are unusually many. */
+export const UNUSUAL_AT = 200;
+export const UNUSUAL_MESSAGE = 'Unusual number of flags today.';
 
 const REASONS = [
   'not-a-word',
@@ -110,12 +113,28 @@ async function handlePost(body: unknown, deps: FlagDeps): Promise<Response> {
   const store = deps.store;
   if (!store) return empty(503);
 
+  // A flag that doesn't fit is dropped before the store hears of it, so it
+  // costs nothing.
+  const fitting = flags.filter((flag) => fits(flag, data));
+  if (fitting.length === 0) return empty(202);
+
+  // ONE COMMAND COUNTS THE WHOLE REQUEST. Upstash bills by command and the
+  // budget is $2 a month, so past the day's cap a request costs that one
+  // INCRBY and nothing else, however many flags it carries. Below the cap,
+  // each flag that fits in the room left is one SET more.
   let offensive = false;
+  let count: number;
   try {
-    for (const flag of flags) {
-      if (!fits(flag, data)) continue;
-      const count = await store.increment(`count:${today}`, COUNT_SECONDS);
-      if (count > (deps.cap ?? DAILY_CAP)) continue;
+    count = await store.increment(
+      `count:${today}`,
+      fitting.length,
+      COUNT_SECONDS,
+    );
+    const room = Math.max(
+      0,
+      (deps.cap ?? DAILY_CAP) - (count - fitting.length),
+    );
+    for (const flag of fitting.slice(0, room)) {
       const stored = await store.setIfAbsent(
         `flag:${flag.id}`,
         JSON.stringify({ ...flag, arrived: today }),
@@ -125,6 +144,22 @@ async function handlePost(body: unknown, deps: FlagDeps): Promise<Response> {
     }
   } catch {
     return empty(503);
+  }
+
+  // The count that carries the day past 200 is the one request to say so.
+  // INCRBY is atomic, so exactly one request a day crosses, and this costs no
+  // command of its own. It counts every flag that fit, retries and those past
+  // the cap included. A failed message isn't sent again that day.
+  if (
+    deps.notify &&
+    count - fitting.length < UNUSUAL_AT &&
+    count >= UNUSUAL_AT
+  ) {
+    try {
+      await deps.notify(UNUSUAL_MESSAGE);
+    } catch {
+      // The flags are kept; the message is a convenience.
+    }
   }
 
   if (offensive && deps.notify) {
