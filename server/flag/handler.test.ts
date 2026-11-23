@@ -99,6 +99,44 @@ describe('POST /api/flag, which reasons fit which word', () => {
     expect(store.flagKeys()).toHaveLength(kept ? 1 : 0);
   });
 
+  describe('a grade the player disagrees with, rarer or more common', () => {
+    it.each(['rarer', 'more-common'])(
+      'stores an accepted word that is not the long word, flagged %s',
+      async (reason) => {
+        const { res, store } = await send(aFlag({ reason }));
+        expect(res.status).toBe(202);
+        expect(store.flagKeys()).toEqual([`flag:${ID}`]);
+        expect(JSON.parse(store.values.get(`flag:${ID}`)!).reason).toBe(reason);
+      },
+    );
+
+    // Nothing at all is written for these, not even the day's count: the
+    // peach has no grade, and a refused word has none to disagree with.
+    const dropped: [string, Record<string, unknown>][] = [
+      ["the day's long word", { word: 'abdeghil' }],
+      [
+        "an Endless rack's long word",
+        { day: undefined, rack: 'mnoprstu', word: 'mnoprstu' },
+      ],
+      ['a refused word', { word: 'dab' }],
+    ];
+    for (const reason of ['rarer', 'more-common']) {
+      it.each(dropped)(
+        `drops %s flagged ${reason}: 202, and the store untouched`,
+        async (_name, over) => {
+          const { res, store } = await send(aFlag({ ...over, reason }));
+          expect(res.status).toBe(202);
+          expect(store.values.size).toBe(0);
+        },
+      );
+    }
+
+    it('never sends the offensive message for a grade', async () => {
+      const { notify } = await send(aFlag({ reason: 'rarer' }));
+      expect(notify).not.toHaveBeenCalled();
+    });
+  });
+
   it("drops a word the board's letters can't spell, and still answers 202", async () => {
     const { res, store } = await send(aFlag({ word: 'sport' }));
     expect(res.status).toBe(202);
