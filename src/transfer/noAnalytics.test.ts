@@ -37,7 +37,16 @@ function fileFor(spec: string, from: string): string | null {
       ? resolve(dirname(resolve(root, from)), spec)
       : null;
   if (!base) return null;
-  for (const candidate of [base, `${base}.ts`, `${base}.tsx`])
+  // A .js specifier names its .ts source, as TypeScript and Vite resolve it:
+  // the flag server's imports are written that way (server/flag/imports.test.ts).
+  const source = base.replace(/\.js$/, '');
+  for (const candidate of [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    `${source}.ts`,
+    `${source}.tsx`,
+  ])
     if (existsSync(candidate) && !candidate.endsWith('/'))
       return candidate.slice(root.length + 1);
   throw new Error(`${from} imports ${spec}, which isn't a file`);

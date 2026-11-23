@@ -1,5 +1,8 @@
-import { DAILY_EPOCH } from './config.ts';
-import { seededPermutation } from './shuffle.ts';
+// By .js, not .ts: the flag server (`api/flag.ts`) loads this file, and
+// Vercel compiles it to .js without rewriting import paths. TypeScript and
+// Vite resolve .js to the .ts source. See server/flag/imports.test.ts.
+import { DAILY_EPOCH } from './config.js';
+import { seededPermutation } from './shuffle.js';
 
 interface EpochDate {
   readonly year: number;

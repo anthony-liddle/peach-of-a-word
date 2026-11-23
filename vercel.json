@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/flag.ts": {
+      "includeFiles": "{public/data/enable.txt,public/data/scowl95-additions.txt,public/data/daily-calendar.json,vendor/lexicon/dictionary-patch.tsv}",
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/support", "destination": "/support.html" },
