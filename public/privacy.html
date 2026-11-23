@@ -6,7 +6,7 @@
     <title>Privacy | Peach of a Word</title>
     <meta
       name="description"
-      content="What Peach of a Word collects: nothing in the iOS app, and aggregate page views on the website."
+      content="What Peach of a Word collects: the words you flag, with nothing about you, and aggregate page views on the website."
     />
     <!-- Icons: the tab icon follows the theme, same contract as index.html.
          The default is the cute peach, the default theme, so a fresh visitor
@@ -196,11 +196,12 @@
   <body>
     <main>
       <h1>Privacy</h1>
-      <p class="updated">Last updated 21 November 2026</p>
+      <p class="updated">Last updated 23 November 2026</p>
 
       <p class="lede">
         Peach of a Word has no accounts or sign-in, and no advertising. No
-        server anywhere holds anything about you. There are two versions, the
+        server anywhere holds anything about you. The one thing a server keeps
+        is a word you flag, with nothing about you. There are two versions, the
         iOS app and the website at peachofaword.com, and they work differently,
         so this page takes them one at a time.
       </p>
@@ -250,12 +251,13 @@
       <h2>The Website Counts Visits</h2>
       <p>
         The game works the way the app does. Puzzle data ships with the page,
-        and your progress, theme, text size, appearance and word counts setting
-        live in your browser's local storage under the keys
-        <code>eight-letters/v1</code>, <code>e8-theme</code>,
-        <code>e8-text-size</code>, <code>e8-appearance</code> and
-        <code>e8-length-counts</code>. Clearing your browser storage clears
-        them. There is no account and no copy of them anywhere else.
+        and your progress, theme, text size, appearance, word counts setting and
+        the words you've flagged live in your browser's local storage under the
+        keys <code>eight-letters/v1</code>, <code>e8-theme</code>,
+        <code>e8-text-size</code>, <code>e8-appearance</code>,
+        <code>e8-length-counts</code> and <code>e8-flags</code>. Clearing your
+        browser storage clears them. There is no account and no copy of them
+        anywhere else.
       </p>
       <p>
         You can move your streak to the iOS app from peachofaword.com/transfer.
@@ -273,23 +275,44 @@
         of you.
       </p>
       <p>
-        Vercel hosts the site, and like any web host it processes the requests
-        needed to serve pages.
+        Vercel hosts the site. As with any website, it sees the network address
+        of every request, a flag included, and keeps request logs under its own
+        privacy notice, for its own purposes too. The game's own code never
+        stores your address.
+      </p>
+
+      <h2>Flagging a Word</h2>
+      <p>
+        Each word's card has a flag. Use it to say a word isn't real, is
+        offensive, has a wrong or missing definition, or is rarer or more common
+        than the game says. A flag sends the word, its board's day (or, from the
+        website's Endless, the board's long word), your reason, whether it came
+        from the app or the website and its version, and a random ID made for
+        that flag alone. The server adds the day it arrived. Nothing about you
+        goes with it. Flags are kept for 60 days and read by hand. You can take
+        one back from Your flags, in Settings, for those 60 days.
+      </p>
+      <p>
+        Upstash, a database service, stores flags for the game. It may process
+        them in the United States or elsewhere, and its terms let it use them to
+        improve its service. The app's flag comes in its next update.
       </p>
 
       <h2>What Neither One Collects</h2>
       <p>
         No accounts exist, so there are no names or email addresses to hold.
         Neither version asks for your contacts, your photos, your location, or a
-        device identifier. Nothing is sold or shared, and no ad network is
-        involved. Nothing here follows you into another app or another website,
-        and neither version holds anything that could identify you personally.
+        device identifier. Nothing is sold, no ad network is involved, and
+        nothing is shared beyond the services that run the game, named above.
+        Nothing here follows you into another app or another website, and
+        neither version holds anything that could identify you personally.
       </p>
 
       <h2>Children</h2>
       <p>
-        Nothing is collected from anyone, children included, so there is nothing
-        held about a child to ask about or to have deleted.
+        Nothing that identifies anyone is collected, children included. A flag
+        carries a word and its day, so there is nothing held about a child to
+        ask about or to have deleted.
       </p>
 
       <h2>Changes and Questions</h2>
