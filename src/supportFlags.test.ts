@@ -25,8 +25,14 @@ const text = html
 describe('the support page while the flag is hidden', () => {
   it('sends a word that should or should not count to the address, as before the flag', () => {
     expect(text).toContain(
-      'Something broken, a word you think should or should not count, or anything else: write to Antoine at anthony@anthonyliddle.dev.',
+      'Something broken, a word you think should or should not count, or anything else: write to Anthony at anthony@anthonyliddle.dev.',
     );
+  });
+
+  // Bea reads this page, and anything Bea can see calls him Anthony
+  // (Antoine, 24 November).
+  it('calls him Anthony, never Antoine', () => {
+    expect(text).not.toMatch(/Antoine/);
   });
 
   it("doesn't send anyone to a flag the game doesn't show", () => {
