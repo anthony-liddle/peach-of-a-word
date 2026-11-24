@@ -179,6 +179,18 @@ describe('the flag, hidden', () => {
     ]);
   });
 
+  it("writes nothing under e8-flags while off, so the privacy page needn't name it", async () => {
+    await act(async () => {
+      renderGame();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(storage.has(FLAGS_KEY)).toBe(false);
+  });
+
   it('sends that flag once flagging is back', async () => {
     aFlagWaiting();
     await act(async () => {

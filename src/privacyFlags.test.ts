@@ -6,9 +6,10 @@ import { describe, expect, it } from 'vitest';
  * What the privacy page says about flagging, held to what the game does.
  *
  * WHILE THE FLAG IS HIDDEN (Antoine, 24 November) the website neither shows a
- * flag nor sends one, so the page says nothing about flagging. The one trace
- * is the key `e8-flags` in What It Keeps, since a browser may still hold a
- * flag made before. The Hosting sentence stays, without "flags included".
+ * flag nor sends one, so the page says nothing about flagging anywhere, the
+ * key `e8-flags` included: the game writes nothing under it while flagging is
+ * off (`flagHidden.flow.test.tsx`). The Hosting sentence stays, without "flags
+ * included".
  *
  * Turning flagging back on brings back the text Antoine approved for it (22
  * and 23 November; web #208 to #210), and these tests with it.
@@ -29,19 +30,15 @@ const text = html
   .replace(/ ([.,])/g, '$1');
 
 describe('the privacy page while flagging is off', () => {
-  it('has no Flagging a Word section, and says nothing about flagging but the key a browser may still hold', () => {
+  it('has no Flagging a Word section, and says nothing about flagging anywhere', () => {
     expect(text).not.toContain('Flagging a Word');
     expect(text).not.toContain('Upstash');
-    const rest = text
-      .replace("the words you've flagged", '')
-      .replace('e8-flags', '');
-    expect(rest).not.toMatch(/flag/i);
-    expect(html).not.toMatch(/content="[^"]*flag/i);
+    expect(html).not.toMatch(/flag/i);
   });
 
-  it('names e8-flags among the keys a browser keeps, with no copy anywhere else', () => {
+  it('names the keys a browser keeps without e8-flags, with no copy anywhere else', () => {
     expect(text).toContain(
-      "and your progress, theme, text size, appearance, word counts setting and the words you've flagged live in your browser's local storage under the keys eight-letters/v1, e8-theme, e8-text-size, e8-appearance, e8-length-counts and e8-flags. Clearing your browser storage clears them. There is no account and no copy of them anywhere else.",
+      "and your progress, theme, text size, appearance and word counts setting live in your browser's local storage under the keys eight-letters/v1, e8-theme, e8-text-size, e8-appearance and e8-length-counts. Clearing your browser storage clears them. There is no account and no copy of them anywhere else.",
     );
   });
 
