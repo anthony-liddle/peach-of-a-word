@@ -25,6 +25,7 @@ import {
 } from '@/engine/index.ts';
 import { sourceFoundAnnouncement, sourceFoundMessage } from './themeCopy.ts';
 import { findLine, type WellLine } from './wellLine.ts';
+import { suggestedLine, suggestedSpoken } from '@/flags/model.ts';
 import type { Theme } from './useTheme.ts';
 import type { GameData } from '@/data/gameData.ts';
 import type { SourceEntry } from '@/data/types.ts';
@@ -46,6 +47,9 @@ export interface Tile {
  */
 export type MessageBody =
   | { readonly kind: 'plain'; readonly text: string }
+  // "Not in the word list.", holding the word the game refused, which the flag
+  // at the well's edge suggests. The other refusals have no word to suggest.
+  | { readonly kind: 'refused'; readonly word: string }
   | { readonly kind: 'source-found'; readonly word: string }
   // Any other find: `tel, 5 points`, led by its rarity's mark when it has one.
   // The same form in both themes and in the app, so it is settled at find
@@ -91,6 +95,7 @@ export interface Glint {
 export function messageText(message: Message, theme: Theme): string {
   const { body } = message;
   if (body.kind === 'plain') return body.text;
+  if (body.kind === 'refused') return NOT_IN_LIST;
   if (body.kind === 'find') return body.line.shown;
   return sourceFoundMessage(theme);
 }
@@ -196,6 +201,7 @@ export type Action =
   | { type: 'CLEAR' }
   | { type: 'SHUFFLE' }
   | { type: 'SUBMIT_RESULT'; result: GuessResult }
+  | { type: 'SUGGESTED'; word: string; sent: boolean }
   | { type: 'OPEN_REVEAL' }
   | { type: 'CLOSE_REVEAL' }
   | { type: 'CLOSE_EDITION' }
@@ -294,6 +300,8 @@ function withLostEndlessLine(slice: Slice): Slice {
   };
 }
 
+const NOT_IN_LIST = 'Not in the word list.';
+
 function messageForRejection(
   result: Exclude<GuessResult, { kind: 'valid' }>,
 ): string {
@@ -301,7 +309,7 @@ function messageForRejection(
     case 'too-short':
       return 'Three letters or more.';
     case 'not-a-word':
-      return 'Not in the word list.';
+      return NOT_IN_LIST;
     case 'already-found':
       return 'Already found.';
   }
@@ -354,10 +362,17 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
       const { result } = action;
       if (result.kind !== 'valid') {
         const text = messageForRejection(result);
+        const body: MessageBody =
+          result.kind === 'not-a-word'
+            ? {
+                kind: 'refused',
+                word: slice.composing.map((id) => letterOf(slice, id)).join(''),
+              }
+            : { kind: 'plain', text };
         return {
           ...slice,
           composing: [],
-          message: { body: { kind: 'plain', text }, tone: 'error' },
+          message: { body, tone: 'error' },
           announcement: bump(slice.announcement, { kind: 'plain', text }),
         };
       }
@@ -408,6 +423,31 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
           result.rung === 'mythic'
             ? { word: result.word, seq: (slice.glint?.seq ?? 0) + 1 }
             : slice.glint,
+      };
+    }
+
+    // The refused word, suggested: its confirmation takes the refusal's
+    // place. Only while that refusal is still the line on show, since the
+    // send answers later. Once a letter has landed the line is gone, and a
+    // confirmation set then would come back when the stick is emptied,
+    // answering nothing. See `ADD_TILE`.
+    case 'SUGGESTED': {
+      const body = slice.message?.body;
+      if (
+        slice.composing.length > 0 ||
+        body?.kind !== 'refused' ||
+        body.word !== action.word
+      ) {
+        return slice;
+      }
+      const text = suggestedLine(action.sent);
+      return {
+        ...slice,
+        message: { body: { kind: 'plain', text }, tone: 'success' },
+        announcement: bump(slice.announcement, {
+          kind: 'plain',
+          text: suggestedSpoken(action.sent),
+        }),
       };
     }
 
@@ -525,6 +565,11 @@ export interface GameApi {
   openReveal: () => void;
   closeReveal: () => void;
   closeEdition: () => void;
+  /**
+   * The refused word on show was suggested, and went (`sent`) or is saved to
+   * go later. Its confirmation replaces the refusal, if that is still the line.
+   */
+  suggested: (word: string, sent: boolean) => void;
   toggleMute: () => void;
   muted: boolean;
   streak: number;
@@ -808,6 +853,11 @@ export function useGame(
     openReveal: useCallback(() => dispatch({ type: 'OPEN_REVEAL' }), []),
     closeReveal: useCallback(() => dispatch({ type: 'CLOSE_REVEAL' }), []),
     closeEdition: useCallback(() => dispatch({ type: 'CLOSE_EDITION' }), []),
+    suggested: useCallback(
+      (word: string, sent: boolean) =>
+        dispatch({ type: 'SUGGESTED', word, sent }),
+      [],
+    ),
     toggleMute,
     muted,
     streak: storage.currentStreak(game.daily.dayIndex ?? 0),

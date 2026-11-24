@@ -39,6 +39,7 @@ import { deviceFlags } from '@/flags/device.ts';
 import type { Board } from '@/flags/flags.ts';
 import { dayOfIndex } from '@/flags/model.ts';
 import { YourFlags } from './components/YourFlags.tsx';
+import { SuggestAsk } from './components/SuggestAsk.tsx';
 
 interface QuietState {
   word: string;
@@ -196,17 +197,54 @@ export function Game({ data, audio, storage }: Props) {
     [flags, board, state.mode],
   );
 
+  // The refused word's popup: the word it asks about, and the flag that
+  // opened it, which Cancel gives the focus back to.
+  const [suggesting, setSuggesting] = useState<{
+    word: string;
+    back: HTMLElement;
+  } | null>(null);
+
   // A word's card owns the keyboard while it is open, as the crown's card
   // (`revealOpen`) and the explainer do: Enter is its way out's, and no key
   // reaches the board behind it.
   const tilesRef = useRef<HTMLDivElement>(null);
   // The popover's arrows, Space and Escape are its own while it is open, and
-  // so are Your flags'.
+  // so are Your flags' and the refused word's popup's.
   useGlobalKeys(
     game,
-    howOpen || quiet !== null || settingsOpen || yourFlags !== null,
+    howOpen ||
+      quiet !== null ||
+      settingsOpen ||
+      yourFlags !== null ||
+      suggesting !== null,
     tilesRef,
   );
+
+  const cancelSuggest = useCallback(() => {
+    const back = suggesting?.back;
+    setSuggesting(null);
+    if (back?.isConnected) back.focus({ preventScroll: true });
+  }, [suggesting]);
+
+  // Suggest: the flag is made and sent, and the focus goes to the letters,
+  // where the next key lands anyway. The line says sent or saved only once
+  // the send has answered, and only if the refusal is still on show.
+  const { suggested } = game;
+  const sendSuggest = useCallback(async () => {
+    if (!suggesting || !board) return;
+    const { word } = suggesting;
+    setSuggesting(null);
+    tilesRef.current?.focus({ preventScroll: true });
+    if (
+      (await flags.flag({ word, reason: 'should-count', board })) !== 'made'
+    ) {
+      return;
+    }
+    const made = flags
+      .list()
+      .find((f) => f.word === word && f.reason === 'should-count');
+    suggested(word, made?.state === 'sent');
+  }, [suggesting, board, flags, suggested]);
 
   const onWordTap = useCallback(
     (word: string, trigger: HTMLElement) => {
@@ -335,6 +373,7 @@ export function Game({ data, audio, storage }: Props) {
               game={game}
               glint={glinting}
               onWordTap={onWordTap}
+              onSuggest={(word, back) => setSuggesting({ word, back })}
             />
             <TypeCase game={game} ref={tilesRef} />
             <Controls game={game} />
@@ -415,6 +454,14 @@ export function Game({ data, audio, storage }: Props) {
           <YourFlags
             onClose={closeYourFlags}
             overCard={yourFlags.from === 'card'}
+          />
+        )}
+
+        {suggesting && (
+          <SuggestAsk
+            word={suggesting.word}
+            onSuggest={() => void sendSuggest()}
+            onCancel={cancelSuggest}
           />
         )}
       </div>

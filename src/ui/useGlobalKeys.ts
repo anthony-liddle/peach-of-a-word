@@ -8,6 +8,11 @@ import type { PlayApi } from './useGame.ts';
  * any native button does, so Enter on one opens that word's card. A letter
  * typed on one hands focus back to the letter tiles, so the next Enter sets
  * the word. Every other button leaves Enter to the page.
+ *
+ * The refused word's flag, marked `data-refused-flag`, leaves Enter to the
+ * page, so Enter there sets the stick as it would with no flag. A letter typed
+ * on it hands focus back to the tiles too, since the flag goes with the
+ * refusal the letter clears.
  */
 export function useGlobalKeys(
   game: PlayApi,
@@ -28,6 +33,9 @@ export function useGlobalKeys(
       const onOpener =
         e.target instanceof Element &&
         e.target.closest('[data-opens-card]') !== null;
+      const onRefusedFlag =
+        e.target instanceof Element &&
+        e.target.closest('[data-refused-flag]') !== null;
 
       if (e.key === 'Enter') {
         if (onOpener) return;
@@ -43,7 +51,9 @@ export function useGlobalKeys(
         // scrolls the tiles' top edge into view in Chromium and WebKit,
         // leaving the well above the screen at a phone's width, and Firefox
         // doesn't scroll at all.
-        if (onOpener) tiles.current?.focus({ preventScroll: true });
+        if (onOpener || onRefusedFlag) {
+          tiles.current?.focus({ preventScroll: true });
+        }
         g.addLetter(e.key.toLowerCase());
       }
     };

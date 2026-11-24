@@ -139,6 +139,31 @@ export function pickerNote(mode: 'daily' | 'endless'): string {
 }
 
 /**
+ * The refused word's flag, at the well's trailing edge: its spoken name, the
+ * popup's question and buttons, and the line that takes the refusal's place
+ * once the word is suggested. "Sent" only once the server has it; anything
+ * else is saved here and goes later, so the line says that.
+ */
+export const SUGGEST_LABEL = 'Suggest this word';
+export const SUGGEST_CANCEL = 'Cancel';
+export const SUGGEST_SEND = 'Suggest';
+
+export function suggestQuestion(word: string): string {
+  return `Suggest “${word}” for the dictionary?`;
+}
+
+export function suggestedLine(sent: boolean): string {
+  return sent
+    ? '✓ Suggestion sent.'
+    : "✓ Suggestion saved. It'll send when you're online.";
+}
+
+/** What the live region says: "Suggested.", then the state, as a card's flag says it. */
+export function suggestedSpoken(sent: boolean): string {
+  return sent ? 'Suggested. Sent.' : 'Suggested. Waiting to send.';
+}
+
+/**
  * The date of a daily board, as the server reads it back: the day whose
  * `dayIndex` is `index`, from the calendar's Y/M/D components, never from
  * milliseconds, so a clock change can't move it.

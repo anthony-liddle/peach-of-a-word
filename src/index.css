@@ -1106,6 +1106,74 @@ button {
 .stick[data-tone='success'] .message {
   color: var(--good);
 }
+/* The refused word's flag (step 3), laid over the well's trailing edge, out of
+   the line's flow, so "Not in the word list." stays centred exactly where it is
+   with no flag, at every text size (Antoine, 21 November). A 44px target, held
+   at 44 so the largest text size has the room it needs at a 320px phone's
+   width; the card flag's glyph, which grows with the text, in the refusal's
+   own colour. */
+.stick__flag {
+  position: absolute;
+  top: 50%;
+  right: 0.15rem;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--error-deep);
+  cursor: pointer;
+}
+.stick__flag svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* Its popup: the quiet card, small, with the picker's Cancel and the game's
+   primary button for Suggest. The two wrap to a column at the largest text
+   sizes rather than squeeze. */
+.suggest-ask {
+  max-width: 20rem;
+}
+.suggest-ask__question {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.suggest-ask__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+.suggest-ask__cancel,
+.suggest-ask__send {
+  flex: 1 1 7rem;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 1.4rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.suggest-ask__cancel {
+  border: 1px solid var(--accent);
+  background: none;
+  color: var(--accent);
+}
+.suggest-ask__send {
+  border: 1px solid var(--button);
+  background: var(--button);
+  color: var(--paper);
+}
+[data-theme='cute'] .suggest-ask__send {
+  color: var(--on-accent);
+}
 
 /* ---- Tier meter --------------------------------------------------------- */
 

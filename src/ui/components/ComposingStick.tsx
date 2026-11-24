@@ -4,6 +4,9 @@ import { useTheme } from '../useTheme.ts';
 import { copy } from '../themeCopy.ts';
 import { Mark } from './Mark.tsx';
 import { OPENS_CARD_HINT } from '../cardHint.ts';
+import { useFlagList, useFlagsUI } from '@/flags/context.ts';
+import { SUGGEST_LABEL } from '@/flags/model.ts';
+import { FlagIcon } from './FlagControl.tsx';
 
 /**
  * The stick: the letters placed so far, in order, **and the feedback message**.
@@ -60,20 +63,43 @@ import { OPENS_CARD_HINT } from '../cardHint.ts';
  * live region, as it lands. Enter on it is its own, which the page's Enter,
  * the one that submits a word, would otherwise take: the line is gone the
  * moment a letter is placed, so there is never a word for it to submit.
+ *
+ * **"Not in the word list." has a flag at the well's trailing edge** (step 3),
+ * which asks, through `onSuggest`, whether to suggest the word. The refusal is
+ * drawn exactly as it is without one, centred: the flag is laid over the
+ * well's edge, outside the line's flow, so it can never move the words, at
+ * any text size (Antoine, 21 November). It goes when the refusal does, since
+ * it is read from the refusal's own message.
+ *
+ * There's no flag where there's no flag to make: where `Game` provides no
+ * flags or no board, while the waiting list is full, and on a word this
+ * device has already suggested, which is refused as before. That last one
+ * holds from the moment Suggest is pressed, so while the suggestion is on its
+ * way the refusal shows alone, and its confirmation comes when the send has
+ * answered (`suggested`), never a guess before.
+ *
+ * The flag is a plain button to the page's keys: Space opens it, Enter still
+ * sets the stick, and a letter typed on it hands focus back to the tiles
+ * (`useGlobalKeys`, by `data-refused-flag`).
  */
 export function ComposingStick({
   game,
   glint = null,
   onWordTap,
+  onSuggest,
 }: {
   game: PlayApi;
   /** A Mythic find to glint, from `Game`: null whenever nothing should. */
   glint?: Glint | null;
   /** What a tap on a find's line does, which is what a tap on its chip does. */
   onWordTap?: (word: string, trigger: HTMLElement) => void;
+  /** What a tap on the refused word's flag does: ask whether to suggest it. */
+  onSuggest?: (word: string, trigger: HTMLElement) => void;
 }) {
   const { state, composedWord } = game;
   const [theme] = useTheme();
+  const flagsUI = useFlagsUI();
+  const flagList = useFlagList(flagsUI?.flags ?? null);
   const hintId = useId();
   const empty = composedWord.length === 0;
   const body = state.message?.body;
@@ -89,6 +115,15 @@ export function ComposingStick({
     empty && (body?.kind === 'find' || body?.kind === 'source-found')
       ? body.word
       : null;
+  // The word the refusal on show refused, if a flag can suggest it.
+  const refused = empty && body?.kind === 'refused' ? body.word : null;
+  const suggestable =
+    refused !== null &&
+    onSuggest !== undefined &&
+    flagsUI !== null &&
+    flagsUI.board !== null &&
+    !flagsUI.flags.full() &&
+    !flagList.some((f) => f.word === refused && f.reason === 'should-count');
   const line =
     state.message &&
     (body?.kind === 'find' && body.line.mark ? (
@@ -136,6 +171,22 @@ export function ComposingStick({
         (line ?? (
           <span className="stick__empty">{copy(theme).inputPlaceholder}</span>
         ))
+      )}
+      {suggestable && (
+        <button
+          type="button"
+          className="stick__flag"
+          aria-label={SUGGEST_LABEL}
+          data-refused-flag
+          onClick={(e) => {
+            // Safari doesn't focus a button on a click; Cancel brings the
+            // focus back here.
+            e.currentTarget.focus({ preventScroll: true });
+            onSuggest(refused, e.currentTarget);
+          }}
+        >
+          <FlagIcon />
+        </button>
       )}
     </div>
   );
