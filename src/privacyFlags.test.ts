@@ -3,18 +3,15 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /*
- * What the privacy page says about a flag, held to what the flag is.
+ * What the privacy page says about flagging, held to what the game does.
  *
- * The server keeps the fields in `src/flags/wire.ts` for 60 days; the
- * device keeps them under `e8-flags`. If either changes, this page has to
- * change with it, so these are pinned here. The wording is Antoine's (the
- * wording pass, 22 November; his lines on 23 November, and his rewording of
- * the step 2 lines the same day).
+ * WHILE THE FLAG IS HIDDEN (Antoine, 24 November) the website neither shows a
+ * flag nor sends one, so the page says nothing about flagging. The one trace
+ * is the key `e8-flags` in What It Keeps, since a browser may still hold a
+ * flag made before. The Hosting sentence stays, without "flags included".
  *
- * WHILE THE FLAG IS HIDDEN (Antoine, 24 November), Flagging a Word says so:
- * the game shows no flag, a flag already waiting in a browser still sends, and
- * a take-back is by email, since Your flags is hidden too. That wording is
- * proposed, and waits on Antoine's line before it ships.
+ * Turning flagging back on brings back the text Antoine approved for it (22
+ * and 23 November; web #208 to #210), and these tests with it.
  */
 
 const html = readFileSync(
@@ -31,68 +28,26 @@ const text = html
   .replace(/\s+/g, ' ')
   .replace(/ ([.,])/g, '$1');
 
-const section = (heading: string) => {
-  const at = text.indexOf(heading);
-  expect(at, `no section "${heading}"`).toBeGreaterThan(-1);
-  return text.slice(at, at + 2000);
-};
-
-describe('the privacy page on flagging a word', () => {
-  it('has a section for it, after the website and before what neither collects', () => {
-    const flag = text.indexOf('Flagging a Word');
-    expect(flag).toBeGreaterThan(text.indexOf('The Website Counts Visits'));
-    expect(flag).toBeLessThan(text.indexOf('What Neither One Collects'));
+describe('the privacy page while flagging is off', () => {
+  it('has no Flagging a Word section, and says nothing about flagging but the key a browser may still hold', () => {
+    expect(text).not.toContain('Flagging a Word');
+    expect(text).not.toContain('Upstash');
+    const rest = text
+      .replace("the words you've flagged", '')
+      .replace('e8-flags', '');
+    expect(rest).not.toMatch(/flag/i);
+    expect(html).not.toMatch(/content="[^"]*flag/i);
   });
 
-  it('names every field a flag carries, and that nothing about the player goes', () => {
-    const s = section('Flagging a Word');
-    for (const part of [
-      'the word',
-      "its board's day",
-      "from the website's Endless, the board's long word",
-      'your reason',
-      'whether it came from the app or the website, which version sent it,',
-      'a random ID made for that flag alone',
-      'The server adds the day it arrived',
-      'The flag itself carries nothing about you',
-    ]) {
-      expect(s, part).toContain(part);
-    }
-  });
-
-  it('says flagging is off and the game shows no flag, and that a flag already waiting still sends', () => {
-    expect(section('Flagging a Word')).toContain(
-      "Flagging a word is switched off for now, and the game shows no flag. A flag made before then that hasn't gone yet still sends from your browser the next time you open the game. A flag sends the word,",
+  it('names e8-flags among the keys a browser keeps, with no copy anywhere else', () => {
+    expect(text).toContain(
+      "and your progress, theme, text size, appearance, word counts setting and the words you've flagged live in your browser's local storage under the keys eight-letters/v1, e8-theme, e8-text-size, e8-appearance, e8-length-counts and e8-flags. Clearing your browser storage clears them. There is no account and no copy of them anywhere else.",
     );
-  });
-
-  it('keeps them 60 days, and says how to have one taken back while Your flags is hidden', () => {
-    const s = section('Flagging a Word');
-    expect(s).toContain(
-      'Flags are kept for 60 days and read by hand. While flagging is off, Your flags is too, so to have a flag taken back in those 60 days, write to Antoine at anthony@anthonyliddle.dev.',
-    );
-    expect(s).not.toContain('take one back from Your flags');
-  });
-
-  it('names who stores flags, and where', () => {
-    const s = section('Flagging a Word');
-    expect(s).toContain(
-      'Upstash, a database service, stores flags for the game',
-    );
-    expect(s).toContain('United States');
-  });
-
-  it("promises no flag in the app while the website's is off", () => {
-    // It said "The app's flag comes in a later update." (web #210), and the
-    // app's flag is held too (Antoine, 24 November).
-    const s = section('Flagging a Word');
-    expect(s).toContain('its terms let it use them to improve its service.');
-    expect(text).not.toMatch(/app's flag comes/);
   });
 
   it('says Vercel sees the IP address of every request, and never suggests it acts only for the game', () => {
     expect(text).toContain(
-      'Vercel hosts the site. Like any web host, it sees the IP address of every request, flags included, and keeps request logs that it uses for its own purposes under its own privacy notice. Peach of a Word itself never stores your address.',
+      'Vercel hosts the site. Like any web host, it sees the IP address of every request, and keeps request logs that it uses for its own purposes under its own privacy notice. Peach of a Word itself never stores your address.',
     );
     expect(html).toMatch(
       /<a\s+href="https:\/\/vercel\.com\/legal\/privacy-notice"\s*>privacy notice<\/a\s*>/,
@@ -103,15 +58,18 @@ describe('the privacy page on flagging a word', () => {
     expect(text).not.toMatch(/processor|on our behalf/i);
   });
 
-  it('says the flags you send are the one copy of what the browser keeps', () => {
+  it('says in its description and its opening that no server holds anything about you', () => {
+    expect(html).toContain(
+      'content="What Peach of a Word collects: nothing in the iOS app, and aggregate page views on the website."',
+    );
     expect(text).toContain(
-      'Clearing your browser storage clears them. There is no account, and apart from the flags you send, no copy of them anywhere else.',
+      'No server anywhere holds anything about you. There are two versions,',
     );
   });
 
-  it('says in its description that it collects the words you flag', () => {
-    expect(html).toContain(
-      'content="What Peach of a Word collects: the words you flag, with nothing about you, and aggregate page views on the website."',
+  it('says nothing that identifies anyone is collected from children', () => {
+    expect(text).toContain(
+      'Nothing that identifies anyone is collected, children included, so there is nothing held about a child to ask about or to have deleted.',
     );
   });
 });
