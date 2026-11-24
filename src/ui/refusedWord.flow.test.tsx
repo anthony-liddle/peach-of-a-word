@@ -94,6 +94,7 @@ function renderGame() {
   };
   return render(
     <Game
+      flagging
       data={data}
       audio={new NullAudioEngine()}
       storage={

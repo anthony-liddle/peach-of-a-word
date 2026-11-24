@@ -39,6 +39,7 @@ import { deviceFlags } from '@/flags/device.ts';
 import type { Board } from '@/flags/flags.ts';
 import { dayOfIndex } from '@/flags/model.ts';
 import { YourFlags } from './components/YourFlags.tsx';
+import { FLAGGING_SHOWN } from '@/flags/shown.ts';
 import { SuggestAsk } from './components/SuggestAsk.tsx';
 
 interface QuietState {
@@ -65,9 +66,19 @@ interface Props {
   data: GameData;
   audio: AudioEngine;
   storage: GameStorage;
+  /**
+   * Whether the game shows its ways into flagging. `FLAGGING_SHOWN` as it
+   * ships; the tests that hold the flag's behaviour turn it on.
+   */
+  flagging?: boolean;
 }
 
-export function Game({ data, audio, storage }: Props) {
+export function Game({
+  data,
+  audio,
+  storage,
+  flagging = FLAGGING_SHOWN,
+}: Props) {
   const game = useGame(data, audio, storage);
 
   // The "How the words work" explainer. Its open flag is lifted here so the
@@ -142,7 +153,10 @@ export function Game({ data, audio, storage }: Props) {
   );
   // Flags still waiting go on load, when the network comes back, and when
   // the tab is seen again; the sender keeps those to once every 10 minutes.
+  // Only while flagging is shown: hidden, the website sends nothing, and a
+  // flag already waiting stays in the browser until it's back.
   useEffect(() => {
+    if (!flagging) return;
     void flags.send('load');
     const online = () => void flags.send('online');
     const visible = () => {
@@ -154,7 +168,7 @@ export function Game({ data, audio, storage }: Props) {
       window.removeEventListener('online', online);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [flags]);
+  }, [flags, flagging]);
 
   // Your flags opens on its own (Antoine, 22 November): from Settings' row,
   // which closes Settings, or over a card from its line. Closing it goes back
@@ -338,7 +352,9 @@ export function Game({ data, audio, storage }: Props) {
   }, [glinting]);
 
   return (
-    <FlagsContext.Provider value={flagsUI}>
+    // With flagging hidden there is no flags context, so no card, no well and
+    // no Your flags offers a way in, and the sending above doesn't run.
+    <FlagsContext.Provider value={flagging ? flagsUI : null}>
       <div className="app">
         <Decorations celebrate={state.editionOpen} />
         <Masthead />

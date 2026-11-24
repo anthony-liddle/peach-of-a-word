@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { DEFAULT_THEME } from './ui/useTheme.ts';
 import { faviconHref } from './ui/favicon.ts';
+import { FLAGS_KEY } from './flags/flags.ts';
+import { FLAGGING_SHOWN } from './flags/shown.ts';
 
 /**
  * The standalone documents under public/, copied verbatim by Vite rather than
@@ -354,6 +356,9 @@ describe('privacy.html', () => {
    */
   test('names every key the game keeps in local storage', () => {
     const keys = new Set<string>();
+    // While flagging is hidden the game writes nothing under the flag's key
+    // (`flagHidden.flow.test.tsx`), so the page doesn't name it (Antoine, 24
+    // November). Turned back on, the key must be named again.
     const dir = resolve(process.cwd(), 'src');
     for (const file of readdirSync(dir, { recursive: true }) as string[]) {
       if (!/\.tsx?$/.test(file) || /\.test\.|^testing\//.test(file)) continue;
@@ -366,6 +371,7 @@ describe('privacy.html', () => {
     expect([...keys].sort()).toEqual(
       expect.arrayContaining(['e8-theme', 'eight-letters/v1']),
     );
+    if (!FLAGGING_SHOWN) keys.delete(FLAGS_KEY);
     for (const key of keys) expect(html).toContain(`<code>${key}</code>`);
   });
 
