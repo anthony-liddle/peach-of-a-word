@@ -153,7 +153,10 @@ export function Game({
   );
   // Flags still waiting go on load, when the network comes back, and when
   // the tab is seen again; the sender keeps those to once every 10 minutes.
+  // Only while flagging is shown: hidden, the website sends nothing, and a
+  // flag already waiting stays in the browser until it's back.
   useEffect(() => {
+    if (!flagging) return;
     void flags.send('load');
     const online = () => void flags.send('online');
     const visible = () => {
@@ -165,7 +168,7 @@ export function Game({
       window.removeEventListener('online', online);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [flags]);
+  }, [flags, flagging]);
 
   // Your flags opens on its own (Antoine, 22 November): from Settings' row,
   // which closes Settings, or over a card from its line. Closing it goes back
@@ -350,7 +353,7 @@ export function Game({
 
   return (
     // With flagging hidden there is no flags context, so no card, no well and
-    // no Your flags offers a way in. The sending above runs either way.
+    // no Your flags offers a way in, and the sending above doesn't run.
     <FlagsContext.Provider value={flagging ? flagsUI : null}>
       <div className="app">
         <Decorations celebrate={state.editionOpen} />

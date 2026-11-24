@@ -14,9 +14,9 @@ import { FLAGGING_SHOWN } from '@/flags/shown.ts';
 
 /*
  * The flag, hidden (Antoine, 24 November): until it's hooked up the way he
- * wants, the game shows no way into flagging, through the whole game as it
- * ships, with the switch at its default. The server and the sender stay, so a
- * flag already waiting in a browser still goes.
+ * wants, the game shows no way into flagging and sends nothing, through the
+ * whole game as it ships, with the switch at its default. A flag already
+ * waiting in a browser stays there, and goes once flagging is back.
  *
  * A made-up board; every request goes to a fetch held here.
  */
@@ -68,7 +68,7 @@ beforeEach(() => {
 const ENABLE = ['serenade', 'sea', 'near', 'sane', 'dean', 'erase'];
 
 /** The game as it ships: no `flagging`, so the switch decides. */
-function renderGame() {
+function renderGame(flagging?: boolean) {
   const map = new Map<string, string>();
   const data: GameData = {
     dictionary: createListDictionary(ENABLE),
@@ -83,6 +83,7 @@ function renderGame() {
   };
   return render(
     <Game
+      {...(flagging === undefined ? {} : { flagging })}
       data={data}
       audio={new NullAudioEngine()}
       storage={
@@ -160,10 +161,28 @@ describe('the flag, hidden', () => {
     expect(screen.queryByRole('dialog', { name: 'Your flags' })).toBeNull();
   });
 
-  it('still sends a flag already waiting in the browser, as the page loads', async () => {
+  it('sends nothing, on load, online or when the tab is seen again, and a flag already waiting stays', async () => {
     aFlagWaiting();
     await act(async () => {
       renderGame();
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(sent).toEqual([]);
+    const saved = JSON.parse(storage.get(FLAGS_KEY)!) as {
+      flags: { id: string; state: string }[];
+    };
+    expect(saved.flags.map((f) => [f.id, f.state])).toEqual([
+      [WAITING, 'waiting'],
+    ]);
+  });
+
+  it('sends that flag once flagging is back', async () => {
+    aFlagWaiting();
+    await act(async () => {
+      renderGame(true);
     });
     expect(sent).toEqual([{ method: 'POST', ids: [WAITING] }]);
   });
