@@ -77,6 +77,16 @@ describe('the privacy page on flagging a word', () => {
     expect(s).toContain('United States');
   });
 
+  it("says the app's flag comes in a later update, never its next", () => {
+    // 1.3 ships without the flag, which waits for 1.4 (Antoine, 24
+    // November), so "its next update" would be false while 1.3 is in review.
+    const s = section('Flagging a Word');
+    expect(s).toContain(
+      "improve its service. The app's flag comes in a later update.",
+    );
+    expect(text).not.toContain('its next update');
+  });
+
   it('says Vercel sees the IP address of every request, and never suggests it acts only for the game', () => {
     expect(text).toContain(
       'Vercel hosts the site. Like any web host, it sees the IP address of every request, flags included, and keeps request logs that it uses for its own purposes under its own privacy notice. Peach of a Word itself never stores your address.',
