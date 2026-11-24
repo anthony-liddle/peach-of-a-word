@@ -4,9 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 /*
  * What the support page says about flagging, held to what the game can flag.
- * A word that should count is the refused word's flag (step 3), and one that
- * shouldn't is the card's. The wording is Antoine's (22 November), shipped in
- * step 2 without "should or" until the refused word's flag existed.
+ *
+ * While the flag is hidden (Antoine, 24 November), the page doesn't send
+ * anyone to it: Get in Touch is its line from before the flag, which sends a
+ * word that should or shouldn't count to the address. Antoine's line for the
+ * flag (22 November, with "should or" from step 3) comes back with the flag.
  */
 
 const html = readFileSync(
@@ -20,10 +22,15 @@ const text = html
   .replace(/\s+/g, ' ')
   .replace(/ ([.,])/g, '$1');
 
-describe('the support page on flagging a word', () => {
-  it('says a word that should or shouldn’t count can be flagged in the game', () => {
+describe('the support page while the flag is hidden', () => {
+  it('sends a word that should or should not count to the address, as before the flag', () => {
     expect(text).toContain(
-      "A word that should or shouldn't count, or a definition that's wrong: flag it in the game, and it reaches Antoine with nothing about you. Something broken, or anything else: write to Antoine at anthony@anthonyliddle.dev.",
+      'Something broken, a word you think should or should not count, or anything else: write to Antoine at anthony@anthonyliddle.dev.',
     );
+  });
+
+  it("doesn't send anyone to a flag the game doesn't show", () => {
+    expect(text).not.toMatch(/flag it in the game/i);
+    expect(text).not.toMatch(/\bflag/i);
   });
 });

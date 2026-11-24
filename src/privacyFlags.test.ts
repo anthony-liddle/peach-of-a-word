@@ -10,6 +10,11 @@ import { describe, expect, it } from 'vitest';
  * change with it, so these are pinned here. The wording is Antoine's (the
  * wording pass, 22 November; his lines on 23 November, and his rewording of
  * the step 2 lines the same day).
+ *
+ * WHILE THE FLAG IS HIDDEN (Antoine, 24 November), Flagging a Word says so:
+ * the game shows no flag, a flag already waiting in a browser still sends, and
+ * a take-back is by email, since Your flags is hidden too. That wording is
+ * proposed, and waits on Antoine's line before it ships.
  */
 
 const html = readFileSync(
@@ -55,18 +60,18 @@ describe('the privacy page on flagging a word', () => {
     }
   });
 
-  it('says a flag beside a refused word suggests it, right after what the card flag is for', () => {
-    // Step 3 builds that flag (Antoine's comma version, 23 November).
+  it('says flagging is off and the game shows no flag, and that a flag already waiting still sends', () => {
     expect(section('Flagging a Word')).toContain(
-      "Each word's card has a flag. Use it to say a word isn't real, is offensive, has a wrong or missing definition, or is rarer or more common than the game says. When the game refuses a word, a flag beside the refusal suggests it for the dictionary. A flag sends the word,",
+      "Flagging a word is switched off for now, and the game shows no flag. A flag made before then that hasn't gone yet still sends from your browser the next time you open the game. A flag sends the word,",
     );
   });
 
-  it('keeps them 60 days, and says how to take one back', () => {
+  it('keeps them 60 days, and says how to have one taken back while Your flags is hidden', () => {
     const s = section('Flagging a Word');
     expect(s).toContain(
-      'Flags are kept for 60 days and read by hand, and for those 60 days you can take one back from Your flags, in Settings.',
+      'Flags are kept for 60 days and read by hand. While flagging is off, Your flags is too, so to have a flag taken back in those 60 days, write to Antoine at anthony@anthonyliddle.dev.',
     );
+    expect(s).not.toContain('take one back from Your flags');
   });
 
   it('names who stores flags, and where', () => {
@@ -77,14 +82,12 @@ describe('the privacy page on flagging a word', () => {
     expect(s).toContain('United States');
   });
 
-  it("says the app's flag comes in a later update, never its next", () => {
-    // 1.3 ships without the flag, which waits for 1.4 (Antoine, 24
-    // November), so "its next update" would be false while 1.3 is in review.
+  it("promises no flag in the app while the website's is off", () => {
+    // It said "The app's flag comes in a later update." (web #210), and the
+    // app's flag is held too (Antoine, 24 November).
     const s = section('Flagging a Word');
-    expect(s).toContain(
-      "improve its service. The app's flag comes in a later update.",
-    );
-    expect(text).not.toContain('its next update');
+    expect(s).toContain('its terms let it use them to improve its service.');
+    expect(text).not.toMatch(/app's flag comes/);
   });
 
   it('says Vercel sees the IP address of every request, and never suggests it acts only for the game', () => {
