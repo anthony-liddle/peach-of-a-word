@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { useGame } from './useGame.ts';
+import { messageText, useGame } from './useGame.ts';
 import { dayIndex, STORAGE_EPOCH } from '@/engine/index.ts';
 import {
   createListDictionary,
@@ -323,6 +323,106 @@ describe('a reload', () => {
     expect(entered.current.state.message?.body).toEqual({
       kind: 'plain',
       text: LINE,
+    });
+  });
+});
+
+describe('a refused word', () => {
+  // On a board of SERENADE whose list holds only SEA and NEAR: RAND spells
+  // from the rack and isn't in the list, so the game refuses it.
+  function play() {
+    const { result } = renderHook(() =>
+      useGame(
+        dataAnchoredAt({ year: 2026, month: 6, day: 23 }),
+        new NullAudioEngine(),
+        new GameStorage(capturingStore().store),
+      ),
+    );
+    const type = (word: string) => {
+      for (const letter of word) act(() => result.current.addLetter(letter));
+      act(() => result.current.submit());
+    };
+    return { result, type };
+  }
+
+  it('carries the word, and still reads and says "Not in the word list."', () => {
+    const { result, type } = play();
+    type('rand');
+    const { message, announcement } = result.current.state;
+    expect(message?.body).toEqual({ kind: 'refused', word: 'rand' });
+    expect(message?.tone).toBe('error');
+    expect(messageText(message!, 'cute')).toBe('Not in the word list.');
+    expect(announcement.body).toEqual({
+      kind: 'plain',
+      text: 'Not in the word list.',
+    });
+  });
+
+  it('leaves the other refusals plain, with no word to suggest', () => {
+    const { result, type } = play();
+    type('se');
+    expect(result.current.state.message?.body).toEqual({
+      kind: 'plain',
+      text: 'Three letters or more.',
+    });
+    type('sea');
+    type('sea');
+    expect(result.current.state.message?.body).toEqual({
+      kind: 'plain',
+      text: 'Already found.',
+    });
+  });
+
+  it('becomes the confirmation once suggested and sent, and says so', () => {
+    const { result, type } = play();
+    type('rand');
+    act(() => result.current.suggested('rand', true));
+    const { message, announcement } = result.current.state;
+    expect(message).toEqual({
+      body: { kind: 'plain', text: '✓ Suggestion sent.' },
+      tone: 'success',
+    });
+    expect(announcement.body).toEqual({
+      kind: 'plain',
+      text: 'Suggested. Sent.',
+    });
+  });
+
+  it("says saved, not sent, when the suggestion couldn't go yet", () => {
+    const { result, type } = play();
+    type('rand');
+    act(() => result.current.suggested('rand', false));
+    expect(result.current.state.message?.body).toEqual({
+      kind: 'plain',
+      text: "✓ Suggestion saved. It'll send later.",
+    });
+    expect(result.current.state.announcement.body).toEqual({
+      kind: 'plain',
+      text: 'Suggested. Waiting to send.',
+    });
+  });
+
+  it('changes nothing once the player has started the next word, even after deleting back', () => {
+    // The send answers after a letter has landed: a confirmation set then
+    // would come back when the stick is emptied, answering nothing.
+    const { result, type } = play();
+    type('rand');
+    const seq = result.current.state.announcement.seq;
+    act(() => result.current.addLetter('s'));
+    act(() => result.current.suggested('rand', true));
+    act(() => result.current.removeLast());
+    expect(result.current.state.message).toBeNull();
+    expect(result.current.state.announcement.seq).toBe(seq);
+  });
+
+  it('changes nothing for a word that is no longer the refusal on show', () => {
+    const { result, type } = play();
+    type('rand');
+    type('dens');
+    act(() => result.current.suggested('rand', true));
+    expect(result.current.state.message?.body).toEqual({
+      kind: 'refused',
+      word: 'dens',
     });
   });
 });

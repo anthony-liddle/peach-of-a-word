@@ -156,7 +156,7 @@ export function FlagControl({
 }
 
 /** A pennant on a pole, drawn in the text's colour. */
-function FlagIcon() {
+export function FlagIcon() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
       <path

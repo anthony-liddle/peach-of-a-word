@@ -1068,8 +1068,10 @@ describe("Game the well's line", () => {
  */
 describe("Game the well's line opens its card", () => {
   const stick = () => document.querySelector('.stick') as HTMLElement;
+  // The line itself, as a button. "Not in the word list." also has the
+  // refused word's flag in the well, which opens no card.
   const lineButton = () =>
-    document.querySelector<HTMLButtonElement>('.stick button');
+    document.querySelector<HTMLButtonElement>('.stick .stick__open');
   const find = (word: string) => {
     type(word);
     fireEvent.keyDown(window, { key: 'Enter' });
@@ -1188,8 +1190,14 @@ describe("Game the well's line, to a screen reader", () => {
   it('stays out of the tree on the placeholder, a rejection and a word being composed', () => {
     renderGame();
     expect(within(stick()).queryByRole('button')).toBeNull();
-    find('sen'); // not a word
+    find('se'); // too short
     expect(within(stick()).queryByRole('button')).toBeNull();
+    find('sen'); // not a word: its only button is the flag that suggests it
+    expect(
+      within(stick())
+        .getAllByRole('button')
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual(['Suggest this word']);
     expect(
       stick().querySelector('.message')!.closest('[aria-hidden="true"]'),
     ).toBeTruthy();

@@ -55,6 +55,13 @@ describe('the privacy page on flagging a word', () => {
     }
   });
 
+  it('says a flag beside a refused word suggests it, right after what the card flag is for', () => {
+    // Step 3 builds that flag (Antoine's comma version, 23 November).
+    expect(section('Flagging a Word')).toContain(
+      "Each word's card has a flag. Use it to say a word isn't real, is offensive, has a wrong or missing definition, or is rarer or more common than the game says. When the game refuses a word, a flag beside the refusal suggests it for the dictionary. A flag sends the word,",
+    );
+  });
+
   it('keeps them 60 days, and says how to take one back', () => {
     const s = section('Flagging a Word');
     expect(s).toContain(
