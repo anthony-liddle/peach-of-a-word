@@ -162,12 +162,14 @@ function clipboard() {
   return { copied: () => writeText.mock.calls.map(([text]) => text) };
 }
 
-function renderGame(store = fakeStore()) {
+/** The game; `flagging` shows the flag, which ships hidden (`FLAGGING_SHOWN`). */
+function renderGame(store = fakeStore(), { flagging = false } = {}) {
   return render(
     <Game
       data={fakeData()}
       audio={new NullAudioEngine()}
       storage={new GameStorage(store)}
+      flagging={flagging}
     />,
   );
 }
@@ -1188,7 +1190,8 @@ describe("Game the well's line, to a screen reader", () => {
   });
 
   it('stays out of the tree on the placeholder, a rejection and a word being composed', () => {
-    renderGame();
+    // With the flag shown, so its one button in the well is held too.
+    renderGame(fakeStore(), { flagging: true });
     expect(within(stick()).queryByRole('button')).toBeNull();
     find('se'); // too short
     expect(within(stick()).queryByRole('button')).toBeNull();

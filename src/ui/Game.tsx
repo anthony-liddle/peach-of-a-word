@@ -39,6 +39,7 @@ import { deviceFlags } from '@/flags/device.ts';
 import type { Board } from '@/flags/flags.ts';
 import { dayOfIndex } from '@/flags/model.ts';
 import { YourFlags } from './components/YourFlags.tsx';
+import { FLAGGING_SHOWN } from '@/flags/shown.ts';
 import { SuggestAsk } from './components/SuggestAsk.tsx';
 
 interface QuietState {
@@ -65,9 +66,19 @@ interface Props {
   data: GameData;
   audio: AudioEngine;
   storage: GameStorage;
+  /**
+   * Whether the game shows its ways into flagging. `FLAGGING_SHOWN` as it
+   * ships; the tests that hold the flag's behaviour turn it on.
+   */
+  flagging?: boolean;
 }
 
-export function Game({ data, audio, storage }: Props) {
+export function Game({
+  data,
+  audio,
+  storage,
+  flagging = FLAGGING_SHOWN,
+}: Props) {
   const game = useGame(data, audio, storage);
 
   // The "How the words work" explainer. Its open flag is lifted here so the
@@ -338,7 +349,9 @@ export function Game({ data, audio, storage }: Props) {
   }, [glinting]);
 
   return (
-    <FlagsContext.Provider value={flagsUI}>
+    // With flagging hidden there is no flags context, so no card, no well and
+    // no Your flags offers a way in. The sending above runs either way.
+    <FlagsContext.Provider value={flagging ? flagsUI : null}>
       <div className="app">
         <Decorations celebrate={state.editionOpen} />
         <Masthead />

@@ -112,6 +112,8 @@ function mountGame(theme: Theme, textSize: TextSize) {
   flushSync(() =>
     root!.render(
       createElement(Game, {
+        // The flag ships hidden (`FLAGGING_SHOWN`); these tests hold it shown.
+        flagging: true,
         data: fakeData(),
         audio: new NullAudioEngine(),
         storage: new GameStorage(fakeStore()),
