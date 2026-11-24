@@ -309,23 +309,45 @@ describe('the popup, by key and by pointer', () => {
     await answersAsWithNoFlag();
   });
 
-  test('Space on the focused flag opens it; Enter there sets the stick, as with no flag', async () => {
+  for (const key of ['{Enter}', ' '] as const) {
+    const name = key === ' ' ? 'Space' : 'Enter';
+    test(`${name} on the focused flag opens it, as on any button; a second ${name} cancels, and nothing sends`, async () => {
+      // Antoine, 23 November: Enter on the flag is the flag's, as Space is.
+      // Cancel has the focus as it opens, so the same key twice cancels.
+      await page.viewport(390, 800);
+      mountGame('cute', 'regular');
+      await refuse();
+      const flag = await until(flagButton);
+      flag.focus();
+      await userEvent.keyboard(key);
+      await until(ask);
+      expect(document.activeElement).toBe(cancel());
+      expect(stick().textContent).toContain('Not in the word list.');
+
+      await userEvent.keyboard(key);
+      await until(() => (ask() ? null : true));
+      expect(document.activeElement, 'focus back on the flag').toBe(
+        flagButton(),
+      );
+      await answersAsWithNoFlag();
+    });
+  }
+
+  test('typing and setting words never moves the focus to the flag', async () => {
     await page.viewport(390, 800);
     mountGame('cute', 'regular');
+    await until(() => stick());
+    const tiles = host!.querySelector<HTMLElement>('.case')!;
+    tiles.focus();
+    for (const word of [REFUSED, 'se', REFUSED, 'sure', 'rues', 'sure']) {
+      await userEvent.keyboard(`${word}{Enter}`);
+      await settled();
+      expect(document.activeElement, `after ${word}`).not.toBe(flagButton());
+      expect(document.activeElement, `after ${word}`).toBe(tiles);
+    }
     await refuse();
-    const flag = await until(flagButton);
-    flag.focus();
-    await userEvent.keyboard('{Enter}');
-    await until(() =>
-      stick().textContent === 'Three letters or more.' ? true : null,
-    );
-    expect(ask()).toBeNull();
-
-    await refuse();
-    (await until(flagButton)).focus();
-    await userEvent.keyboard(' ');
-    await until(ask);
-    expect(document.activeElement).toBe(cancel());
+    expect(flagButton()).not.toBeNull();
+    expect(document.activeElement).toBe(tiles);
     expect(requests).toEqual([]);
   });
 

@@ -33,7 +33,8 @@ let release: (() => void) | null = null;
 function makeDevice({
   online = true,
   hold = false,
-}: { online?: boolean; hold?: boolean } = {}) {
+  status = 202,
+}: { online?: boolean; hold?: boolean; status?: number } = {}) {
   posted.length = 0;
   release = null;
   const store = new Map<string, string>();
@@ -49,7 +50,7 @@ function makeDevice({
       }
       if (hold) await new Promise<void>((r) => (release = r));
       return new Response(null, {
-        status: init?.method === 'DELETE' ? 204 : 202,
+        status: init?.method === 'DELETE' ? 204 : status,
       });
     }) as unknown as typeof fetch,
     now: () => Date.now(),
@@ -221,6 +222,34 @@ describe('the flag beside a refused word', () => {
     expect(screen.getByRole('group', { name: 'Letter tiles' })).toHaveFocus();
   });
 
+  it("leaves Enter on the focused flag to the flag, so the page doesn't set the stick", () => {
+    // The browser turns that Enter into a press, which opens the popup as
+    // Space does (Antoine, 23 November); see the browser test.
+    renderGame();
+    type('rand');
+    fireEvent.click(flag()!);
+    fireEvent.keyDown(ask()!, { key: 'Escape' });
+    expect(flag()).toHaveFocus();
+    fireEvent.keyDown(flag()!, { key: 'Enter' });
+    expect(stick()).toHaveTextContent('Not in the word list.');
+    expect(stick()).not.toHaveTextContent('Three letters or more.');
+  });
+
+  it('never moves the focus to the flag while words are typed and set', async () => {
+    renderGame();
+    const tiles = screen.getByRole('group', { name: 'Letter tiles' });
+    tiles.focus();
+    for (const word of ['rand', 'se', 'rand', 'sea', 'dens', 'sea', 'rand']) {
+      type(word);
+      expect(document.activeElement).not.toBe(flag());
+      expect(document.activeElement).toBe(tiles);
+    }
+    await suggest('dens');
+    type('rand');
+    expect(flag()).toBeInTheDocument();
+    expect(document.activeElement).not.toBe(flag());
+  });
+
   it("on Suggest, sends should-count with the board's day, and the line says sent", async () => {
     renderGame();
     await suggest('rand');
@@ -259,14 +288,31 @@ describe('the flag beside a refused word', () => {
     renderGame();
     await suggest('rand');
     expect(posted).toEqual([]);
-    expect(stick()).toHaveTextContent(
-      "✓ Suggestion saved. It'll send when you're online.",
-    );
+    expect(stick()).toHaveTextContent("✓ Suggestion saved. It'll send later.");
     expect(spoken()).toBe('Suggested. Waiting to send.');
     expect(device.list()).toMatchObject([
       { word: 'rand', reason: 'should-count', state: 'waiting' },
     ]);
   });
+
+  it.each([
+    ['busy', 429],
+    ['switched off', 403],
+    ['down', 503],
+  ])(
+    "online, with the server %s, says saved and sends later, never 'when you're online'",
+    async (_why, status) => {
+      makeDevice({ status });
+      renderGame();
+      await suggest('rand');
+      expect(posted).toHaveLength(1);
+      expect(stick()).toHaveTextContent(
+        "✓ Suggestion saved. It'll send later.",
+      );
+      expect(stick()).not.toHaveTextContent(/online/);
+      expect(spoken()).toBe('Suggested. Waiting to send.');
+    },
+  );
 
   it('goes when the next letter lands, as the refusal would', async () => {
     renderGame();

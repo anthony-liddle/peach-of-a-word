@@ -394,7 +394,7 @@ describe('a refused word', () => {
     act(() => result.current.suggested('rand', false));
     expect(result.current.state.message?.body).toEqual({
       kind: 'plain',
-      text: "✓ Suggestion saved. It'll send when you're online.",
+      text: "✓ Suggestion saved. It'll send later.",
     });
     expect(result.current.state.announcement.body).toEqual({
       kind: 'plain',

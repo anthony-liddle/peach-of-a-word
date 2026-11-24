@@ -78,9 +78,9 @@ import { FlagIcon } from './FlagControl.tsx';
  * way the refusal shows alone, and its confirmation comes when the send has
  * answered (`suggested`), never a guess before.
  *
- * The flag is a plain button to the page's keys: Space opens it, Enter still
- * sets the stick, and a letter typed on it hands focus back to the tiles
- * (`useGlobalKeys`, by `data-refused-flag`).
+ * The flag is a button like any other: Enter and Space open it, and a letter
+ * typed on it hands focus back to the tiles (`useGlobalKeys`, by
+ * `data-refused-flag`). Only Tab, or a tap, gives it the focus.
  */
 export function ComposingStick({
   game,

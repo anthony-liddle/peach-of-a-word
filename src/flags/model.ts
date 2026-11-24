@@ -152,10 +152,13 @@ export function suggestQuestion(word: string): string {
   return `Suggest “${word}” for the dictionary?`;
 }
 
+/**
+ * One not-sent line for every case a suggestion didn't go, offline or not:
+ * "when you're online" would be false with the server busy or switched off
+ * (Antoine, 23 November). The app uses the same line.
+ */
 export function suggestedLine(sent: boolean): string {
-  return sent
-    ? '✓ Suggestion sent.'
-    : "✓ Suggestion saved. It'll send when you're online.";
+  return sent ? '✓ Suggestion sent.' : "✓ Suggestion saved. It'll send later.";
 }
 
 /** What the live region says: "Suggested.", then the state, as a card's flag says it. */

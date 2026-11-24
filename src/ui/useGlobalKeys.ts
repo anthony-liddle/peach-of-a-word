@@ -9,10 +9,13 @@ import type { PlayApi } from './useGame.ts';
  * typed on one hands focus back to the letter tiles, so the next Enter sets
  * the word. Every other button leaves Enter to the page.
  *
- * The refused word's flag, marked `data-refused-flag`, leaves Enter to the
- * page, so Enter there sets the stick as it would with no flag. A letter typed
- * on it hands focus back to the tiles too, since the flag goes with the
- * refusal the letter clears.
+ * The refused word's flag, marked `data-refused-flag`, keeps its own Enter
+ * too, so Enter on it opens its popup as Space does, as with any button
+ * (Antoine, 23 November). Cancel has the focus there, so a second Enter
+ * cancels and nothing sends by accident. The flag only has focus once the
+ * player has gone to it: typing and setting words never moves focus there.
+ * A letter typed on it hands focus back to the tiles, since the flag goes
+ * with the refusal the letter clears.
  */
 export function useGlobalKeys(
   game: PlayApi,
@@ -38,7 +41,7 @@ export function useGlobalKeys(
         e.target.closest('[data-refused-flag]') !== null;
 
       if (e.key === 'Enter') {
-        if (onOpener) return;
+        if (onOpener || onRefusedFlag) return;
         e.preventDefault();
         g.submit();
       } else if (e.key === 'Backspace') {
