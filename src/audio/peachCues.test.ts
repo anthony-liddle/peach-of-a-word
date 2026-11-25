@@ -18,7 +18,7 @@ import { DEPARTURES, departed } from './departures.ts';
 import { MIX, gainOf } from './mix.ts';
 
 /**
- * peach.cues.json, the game's 35 sounds as Soundscape cues, held to what the
+ * peach.cues.json, the game's 37 sounds as Soundscape cues, held to what the
  * game's old engine schedules. scripts/build-sound-cues.ts wrote it from the
  * engine's note() calls; this reads the engine back independently, through the
  * recording context, so a change on either side fails here.
@@ -96,7 +96,7 @@ describe('the cue document', () => {
     expect(Object.keys(document.cues).sort()).toEqual(
       SOUNDS.map((s) => s.id).sort(),
     );
-    expect(SOUNDS).toHaveLength(35);
+    expect(SOUNDS).toHaveLength(37);
   });
 
   test('names each cute mythic cue with its theme, beside a letterpress twin', () => {
@@ -114,8 +114,19 @@ describe('the cue document', () => {
   });
 });
 
+/** The departures the game plays, both tiles: the tick and Shuffle. */
+const CLICKS = ['tick', 'shuffle'];
+/** Peach rush's two, which only the app plays. */
+const RUSH = ['rush-ten', 'rush-end'];
+
 describe('each departure', () => {
-  test.each(Object.keys(DEPARTURES))(
+  test("is a tile the game plays, or one of Peach rush's two, which only the app plays", () => {
+    expect(Object.keys(DEPARTURES).sort()).toEqual([...CLICKS, ...RUSH].sort());
+    for (const id of RUSH) expect(DEPARTURES[id]!.appOnly, id).toBe(true);
+    for (const id of CLICKS) expect(DEPARTURES[id]!.appOnly, id).toBe(false);
+  });
+
+  test.each(CLICKS)(
     '%s is a cue of clicks, every partial a quarter tone between two semitones',
     (id) => {
       const notes = document.cues[id]!.notes;
@@ -146,11 +157,49 @@ describe('each departure', () => {
     },
   );
 
-  test('only the departures play the click', () => {
+  test('only the tick and Shuffle play the click', () => {
     const clicking = Object.entries(document.cues)
       .filter(([, cue]) => cue.notes.some((n) => n.instrument === 'click'))
       .map(([name]) => name);
-    expect(clicking.sort()).toEqual(Object.keys(DEPARTURES).sort());
+    expect(clicking.sort()).toEqual(CLICKS.sort());
+  });
+
+  test.each(RUSH)(
+    "%s is notes on the finds' sine, each on a semitone, over within a second, and no note louder than a find's",
+    (id) => {
+      const notes = document.cues[id]!.notes;
+      const find = Math.max(
+        ...document.cues['found-5-set']!.notes.map((n) => n.level),
+      );
+      expect(notes.length).toBeGreaterThan(0);
+      for (const note of notes) {
+        expect(note.instrument).toBe('sine');
+        expect(Number.isInteger(note.pitch)).toBe(true);
+        expect(note.level).toBeLessThan(find);
+      }
+      expect(
+        Math.max(...notes.map((n) => n.start + n.duration)) + 0.02,
+      ).toBeLessThan(1);
+    },
+  );
+
+  test('rush-ten is two notes at most, and played once, never a tick: none as short as one', () => {
+    const notes = document.cues['rush-ten']!.notes;
+    expect(notes.length).toBeLessThanOrEqual(2);
+    const tick = Math.max(...document.cues.tick!.notes.map((n) => n.duration));
+    for (const note of notes) expect(note.duration).toBeGreaterThan(tick * 10);
+  });
+
+  test("rush-end comes to rest lower than it starts, and isn't the miss: it ends on the peach of a word's first note", () => {
+    const notes = document.cues['rush-end']!.notes;
+    // Its notes, not the faint octave over the last, as the finds carry one
+    const loudest = Math.max(...notes.map((n) => n.level));
+    const main = notes.filter((n) => n.level > loudest / 2);
+    expect(main.at(-1)!.pitch).toBeLessThan(main[0]!.pitch);
+    const source = document.cues.source!.notes[0]!.pitch;
+    expect(Math.round(main.at(-1)!.pitch)).toBe(Math.round(source));
+    const miss = document.cues.invalid!.notes.map((n) => Math.round(n.pitch));
+    for (const note of notes) expect(miss).not.toContain(note.pitch);
   });
 });
 

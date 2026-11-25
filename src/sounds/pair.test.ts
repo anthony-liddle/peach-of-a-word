@@ -64,6 +64,9 @@ describe('lengthOf', () => {
     // The tick, two clicks since 5 November, the second ringing 8 ms from 9 ms
     expect(lengthOf('tick')).toBeCloseTo(0.037, 12);
     expect(lengthOf('shuffle')).toBeCloseTo(0.146, 12);
+    // Peach rush's two: the second ping ending at 0.35 s, the C at 0.86 s
+    expect(lengthOf('rush-ten')).toBeCloseTo(0.37, 12);
+    expect(lengthOf('rush-end')).toBeCloseTo(0.88, 12);
     expect(lengthOf('found-5-rare')).toBeCloseTo(0.3, 12);
     expect(lengthOf('invalid')).toBeCloseTo(0.26, 12);
     expect(lengthOf('source')).toBeCloseTo(0.82, 12);

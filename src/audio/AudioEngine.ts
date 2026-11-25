@@ -23,6 +23,13 @@ export interface AudioEngine {
   tick(): void;
   /** Shuffle pressed: a few tiles knocking together, softly. */
   playShuffle(): void;
+  /**
+   * Peach rush, in the app: 10 seconds left, once a run. The web game has no
+   * run and never calls it; the sounds page does, so it can be heard here.
+   */
+  playRushTen(): void;
+  /** Peach rush, in the app: time's up. The web game never calls it either. */
+  playRushEnd(): void;
   /** Mute or unmute all cues. */
   setMuted(muted: boolean): void;
   readonly muted: boolean;
@@ -43,6 +50,8 @@ export class NullAudioEngine implements AudioEngine {
   playInvalid(): void {}
   tick(): void {}
   playShuffle(): void {}
+  playRushTen(): void {}
+  playRushEnd(): void {}
   setMuted(muted: boolean): void {
     this.muted = muted;
   }
