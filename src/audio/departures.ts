@@ -17,10 +17,10 @@
  * both play in Bea's mix (mix.ts), louder by the click's gain; `heard` stays
  * as they were measured when chosen, and the tests add the gain.
  *
- * Peach rush's two, at 10 seconds left and at time's up, are drafts, written
- * on 24 November 2026 for Antoine to hear on the sounds page and keep or
- * change. Only the app plays them: the web game has no run. They were drafted
- * in Bea's mix, so `heard` is as they play, and the tests add nothing.
+ * Peach rush's two, at 10 seconds left and at time's up, were drafted on 24
+ * November 2026 and kept by Antoine on the sounds page's preview on 25
+ * November. Only the app plays them: the web game has no run. They were
+ * drafted in Bea's mix, so `heard` is as they play, and the tests add nothing.
  */
 export interface Departure {
   /** The day it was chosen, or null while it is a draft, not yet heard and kept. */
@@ -68,7 +68,7 @@ export const DEPARTURES: Record<string, Departure> = {
     heard: { durationMs: 123.23, peakDbfs: -37.61, lufs: -63.03 },
   },
   'rush-ten': {
-    chosen: null,
+    chosen: '2026-11-25',
     is: 'Ten seconds left: two soft A5 pings, the second a little softer.',
     was: null,
     appOnly: true,
@@ -76,7 +76,7 @@ export const DEPARTURES: Record<string, Departure> = {
     heard: { durationMs: 255.81, peakDbfs: -18.53, lufs: -35.19 },
   },
   'rush-end': {
-    chosen: null,
+    chosen: '2026-11-25',
     is: "Time's up: G, E and C, falling to rest on the C, with a faint octave over it, as a find has.",
     was: null,
     appOnly: true,
