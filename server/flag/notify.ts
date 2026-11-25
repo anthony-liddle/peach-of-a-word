@@ -1,9 +1,10 @@
 /**
- * The offensive notification: a Discord webhook into a private channel.
+ * The day's unusual count, to Discord: a webhook into a private channel.
  *
  * It carries only the sentence it is given, never a word, a day or anything
- * from the flag, so no flag's content passes through Discord. The URL is set
- * for Production only, so a preview sends nothing.
+ * from the flag, so no flag's content passes through Discord. The handler
+ * gives it one fixed sentence, held by a test. The URL is set for Production
+ * only, so a preview sends nothing.
  */
 export function notifierFromEnv(
   env: Record<string, string | undefined>,

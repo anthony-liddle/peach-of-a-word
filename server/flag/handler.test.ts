@@ -1,4 +1,7 @@
 // @vitest-environment node
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleFlagRequest, type FlagDeps } from './handler.ts';
 import { ID, ID2, MemoryStore, aFlag, del, post, testData } from './testing.ts';
@@ -293,35 +296,88 @@ describe('POST /api/flag, when the store is missing or down', () => {
   });
 });
 
-describe('POST /api/flag, the offensive notification', () => {
-  const offensive = (id = ID) => aFlag({ id, reason: 'offensive' });
+describe('POST /api/flag, what Discord hears', () => {
+  // Discord carries no flag's content: no word, day, reason, platform or
+  // version (Antoine, 24 November). "A word was flagged as offensive." named
+  // a reason, so it's gone; orchard's count says a word is up instead. The
+  // one sentence left is the day's unusual count.
+  const FIXED = ['Unusual number of flags today.'];
+  const id = (n: number) =>
+    `${n.toString(16).padStart(8, '0')}-e5f6-4a7b-8c9d-0e1f2a3b4c5d`;
+  // Every reason, on a word it fits on 23 June's made-up board.
+  const everyReason = () => [
+    ...['not-a-word', 'offensive', 'definition', 'rarer', 'more-common'].map(
+      (reason, i) => aFlag({ id: id(i + 1), reason }),
+    ),
+    aFlag({ id: id(6), word: 'abdeghil', reason: 'offensive' }),
+    aFlag({ id: id(7), word: 'abdeghil', reason: 'definition' }),
+    aFlag({ id: id(8), word: 'dab', reason: 'should-count' }),
+  ];
 
-  it('sends one message that names no word', async () => {
-    const { notify } = await send(offensive());
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify).toHaveBeenCalledWith('A word was flagged as offensive.');
-  });
-
-  it('sends at most one an hour', async () => {
-    const t = deps();
-    await handleFlagRequest(post({ flags: [offensive()] }), t.d);
-    await handleFlagRequest(post({ flags: [offensive(ID2)] }), t.d);
-    expect(t.notify).toHaveBeenCalledTimes(1);
-    expect(t.store.ttls.get('notify:offensive')).toBe(60 * 60);
-  });
-
-  it('sends nothing for any other reason', async () => {
-    const { notify } = await send(aFlag({ reason: 'not-a-word' }));
+  it('POSTS NOTHING FOR AN OFFENSIVE FLAG, AND KEEPS NO HOUR FOR ONE', async () => {
+    const { notify, store } = await send(aFlag({ reason: 'offensive' }));
+    expect(store.flagKeys()).toHaveLength(1);
     expect(notify).not.toHaveBeenCalled();
+    expect(store.values.has('notify:offensive')).toBe(false);
   });
 
-  it('keeps the flag when the message fails', async () => {
+  it('posts nothing for any reason, on an ordinary day', async () => {
+    const t = deps();
+    const res = await handleFlagRequest(post({ flags: everyReason() }), t.d);
+    expect(res.status).toBe(202);
+    expect(t.store.flagKeys()).toHaveLength(8);
+    expect(t.notify).not.toHaveBeenCalled();
+  });
+
+  it('says "Unusual number of flags today." once, as the day passes 200', async () => {
+    const t = deps();
+    t.store.values.set('count:2026-06-23', '199');
+    await handleFlagRequest(post({ flags: [aFlag({ id: id(1) })] }), t.d);
+    await handleFlagRequest(post({ flags: [aFlag({ id: id(2) })] }), t.d);
+    expect(t.notify.mock.calls).toEqual([['Unusual number of flags today.']]);
+  });
+
+  it('HOLDS EVERY MESSAGE TO ITS FIXED SENTENCE, WHATEVER ARRIVES', async () => {
+    // An ordinary day, the day that passes 200 with every reason in the
+    // request that crosses it, and a day past its cap.
+    const notify = vi.fn(async (_text: string) => {});
+    const ordinary = deps({ notify });
+    await handleFlagRequest(post({ flags: everyReason() }), ordinary.d);
+    const crossing = deps({ notify });
+    crossing.store.values.set('count:2026-06-23', '195');
+    await handleFlagRequest(post({ flags: everyReason() }), crossing.d);
+    const capped = deps({ notify, cap: 3 });
+    await handleFlagRequest(post({ flags: everyReason() }), capped.d);
+    expect(notify).toHaveBeenCalled();
+    for (const [text] of notify.mock.calls) expect(FIXED).toContain(text);
+  });
+
+  it('sends Discord nothing but that sentence, by the code itself', () => {
+    // A new message would need a new call, and a call with anything but the
+    // fixed sentence fails here before it can reach the channel.
+    const dir = join(dirname(fileURLToPath(import.meta.url)));
+    const sources = readdirSync(dir)
+      .filter(
+        (f) =>
+          f.endsWith('.ts') && !f.endsWith('.test.ts') && f !== 'testing.ts',
+      )
+      .map((f) => readFileSync(join(dir, f), 'utf8'));
+    const calls = sources.flatMap((src) =>
+      [...src.matchAll(/\bnotify\(([^)]*)\)/g)].map((m) => m[1]),
+    );
+    expect(calls).toEqual(['UNUSUAL_MESSAGE']);
+  });
+
+  it('keeps the flags when the message fails', async () => {
     const notify = vi.fn(async () => {
       throw new Error('discord down');
     });
-    const { res, store } = await send(offensive(), { notify });
+    const t = deps({ notify });
+    t.store.values.set('count:2026-06-23', '199');
+    const res = await handleFlagRequest(post({ flags: [aFlag()] }), t.d);
     expect(res.status).toBe(202);
-    expect(store.flagKeys()).toHaveLength(1);
+    expect(t.store.flagKeys()).toHaveLength(1);
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 });
 

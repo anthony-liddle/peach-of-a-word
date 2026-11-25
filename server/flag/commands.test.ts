@@ -160,12 +160,13 @@ describe('what one request costs in store commands, above the daily cap', () => 
 });
 
 describe('what the other requests cost, for the budget', () => {
-  it('costs one more for a stored offensive flag, which tries the hourly gate', async () => {
+  it('costs an offensive flag what any flag costs, since it posts nothing', async () => {
+    // It tried an hourly gate for "A word was flagged as offensive." until
+    // that message went (Antoine, 24 November).
     const { postFlags } = setup();
     await postFlags(1);
     expect((await postFlags(1, 'offensive')).commands).toEqual([
       'INCRBY',
-      'SET',
       'SET',
     ]);
   });

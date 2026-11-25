@@ -44,10 +44,14 @@ export interface FlagDeps {
 export const KEEP_SECONDS = 60 * 24 * 60 * 60;
 export const DAILY_CAP = 20_000;
 const COUNT_SECONDS = 2 * 24 * 60 * 60;
-const NOTIFY_SECONDS = 60 * 60;
-export const OFFENSIVE_MESSAGE = 'A word was flagged as offensive.';
 /** The day's count at which Antoine hears that flags are unusually many. */
 export const UNUSUAL_AT = 200;
+/**
+ * The one thing this function says to Discord. Discord carries no flag's
+ * content: no word, day, reason, platform or version (Antoine, 24 November).
+ * So there's no message for an offensive flag: it named a reason, and
+ * orchard's count says a word is up for review instead.
+ */
 export const UNUSUAL_MESSAGE = 'Unusual number of flags today.';
 
 /** A flag that passed the shape check in `src/flags/wire.ts`. */
@@ -98,7 +102,6 @@ async function handlePost(body: unknown, deps: FlagDeps): Promise<Response> {
   // budget is $2 a month, so past the day's cap a request costs that one
   // INCRBY and nothing else, however many flags it carries. Below the cap,
   // each flag that fits in the room left is one SET more.
-  let offensive = false;
   let count: number;
   try {
     count = await store.increment(
@@ -111,12 +114,11 @@ async function handlePost(body: unknown, deps: FlagDeps): Promise<Response> {
       (deps.cap ?? DAILY_CAP) - (count - fitting.length),
     );
     for (const flag of fitting.slice(0, room)) {
-      const stored = await store.setIfAbsent(
+      await store.setIfAbsent(
         `flag:${flag.id}`,
         JSON.stringify({ ...flag, arrived: today }),
         KEEP_SECONDS,
       );
-      if (stored && flag.reason === 'offensive') offensive = true;
     }
   } catch {
     return empty(503);
@@ -135,19 +137,6 @@ async function handlePost(body: unknown, deps: FlagDeps): Promise<Response> {
       await deps.notify(UNUSUAL_MESSAGE);
     } catch {
       // The flags are kept; the message is a convenience.
-    }
-  }
-
-  if (offensive && deps.notify) {
-    // At most one an hour, whatever the word: the message names none, so a
-    // second one would tell Antoine nothing more, and a flood can't fill the
-    // channel. A failure here never fails the flags already kept.
-    try {
-      if (await store.setIfAbsent('notify:offensive', '1', NOTIFY_SECONDS)) {
-        await deps.notify(OFFENSIVE_MESSAGE);
-      }
-    } catch {
-      // The flag is kept; the message is a convenience.
     }
   }
   return empty(202);
