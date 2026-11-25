@@ -12,7 +12,7 @@ import type { Theme } from '@/ui/useTheme.ts';
  * Every sound the game makes today, built from the engine's own tables so the
  * list cannot fall behind it.
  *
- * Six cues, but not six sounds. A found word's pitch comes from its length and
+ * Eight cues, but not eight sounds. A found word's pitch comes from its length and
  * its sparkle from its rung, and the mythic sparkle also depends on the theme
  * the engine is given. So the mythic rows are played once per theme, each
  * giving the engine its theme first.
@@ -54,6 +54,8 @@ const CUES: Record<SoundCue, { title: string; call: string }> = {
   playInvalid: { title: 'Rejected guess', call: 'playInvalid()' },
   tick: { title: 'Tile tap', call: 'tick()' },
   playShuffle: { title: 'Shuffle', call: 'playShuffle()' },
+  playRushTen: { title: 'Peach rush, 10 seconds left', call: 'playRushTen()' },
+  playRushEnd: { title: "Peach rush, time's up", call: 'playRushEnd()' },
 };
 
 /** Keyed rather than listed, so a new theme fails the typecheck here too. */
@@ -101,7 +103,10 @@ export const FOUND_ROWS: LengthRow[] = FOUND_NOTES.map((hz, i) => {
   return { length, hz, sounds };
 });
 
-/** The other cues take no arguments, so each is one sound: playSource is "source". */
+/**
+ * The other cues take no arguments, so each is one sound, named for its call:
+ * playSource is "source", playRushTen "rush-ten".
+ */
 export const SECTIONS: CueSection[] = (Object.keys(CUES) as SoundCue[]).map(
   (cue) => ({
     cue,
@@ -111,7 +116,10 @@ export const SECTIONS: CueSection[] = (Object.keys(CUES) as SoundCue[]).map(
         ? FOUND_ROWS.flatMap((row) => row.sounds)
         : [
             {
-              id: cue.replace(/^play/, '').toLowerCase(),
+              id: cue
+                .replace(/^play/, '')
+                .replace(/([a-z])([A-Z])/g, '$1-$2')
+                .toLowerCase(),
               cue,
               label: CUES[cue].title,
               params: {},

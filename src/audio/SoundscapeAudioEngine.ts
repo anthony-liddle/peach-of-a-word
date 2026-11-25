@@ -5,11 +5,21 @@ import type { AudioEngine } from './AudioEngine.ts';
 import cues from './peach.cues.json';
 
 /**
+ * A cue file shaped as the game's is: its instruments, and cues by name. Not
+ * the game's own cue names, so the store art's frozen copy, from before
+ * Peach rush's two, is one too.
+ */
+type CueFile = Omit<typeof cues, 'cues'> & {
+  cues: Record<string, (typeof cues.cues)[keyof typeof cues.cues]>;
+};
+
+/**
  * The game's audio on Soundscape, Antoine's engine: every sound is a cue in
  * peach.cues.json, written from the game's previous engine,
  * ReferenceAudioEngine, which stays as the reference the cues are held to. All
  * but the departures (departures.ts), chosen by ear since: the tick and
- * Shuffle. Every cue plays in Bea's mix (mix.ts).
+ * Shuffle, and Peach rush's two, which only the app plays. Every cue plays in
+ * Bea's mix (mix.ts).
  *
  * It keeps that engine's lifecycle. Nothing exists until the first cue, which
  * must come from a gesture: that cue creates the AudioContext and resumes it in
@@ -33,7 +43,7 @@ export class SoundscapeAudioEngine implements AudioEngine {
    */
   constructor(
     private readonly given?: BaseAudioContext,
-    private readonly document: typeof cues = cues,
+    private readonly document: CueFile = cues,
   ) {}
 
   setMuted(muted: boolean): void {
@@ -71,6 +81,14 @@ export class SoundscapeAudioEngine implements AudioEngine {
 
   playShuffle(): void {
     this.play('shuffle');
+  }
+
+  playRushTen(): void {
+    this.play('rush-ten');
+  }
+
+  playRushEnd(): void {
+    this.play('rush-end');
   }
 
   private play(cue: string): void {

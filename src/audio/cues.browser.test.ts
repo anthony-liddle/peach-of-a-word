@@ -142,7 +142,7 @@ describe(`every sound's cue against the game's engine, in this browser`, () => {
   });
 
   test('covers every sound the game makes but the departures, each once in a group', () => {
-    expect(SOUNDS).toHaveLength(35);
+    expect(SOUNDS).toHaveLength(37);
     expect(
       GROUPS.flat()
         .map((s) => s.id)
@@ -259,8 +259,9 @@ describe.runIf(server.browser === 'chromium')(
 
 /**
  * The departures, which leave the old engine on purpose, held to their own
- * numbers instead: as each was measured when it was chosen, in Chromium, and
- * raised since by the click's gain in Bea's mix. Every browser is held to
+ * numbers instead: as each was measured when it was chosen, in Chromium. The
+ * tick and Shuffle were chosen before Bea's mix and are raised since by the
+ * click's gain; Peach rush's two were drafted in it. Every browser is held to
  * them, to a tenth of a dB and a millisecond.
  */
 describe(`each departure against its own numbers, in this browser`, () => {
@@ -269,7 +270,7 @@ describe(`each departure against its own numbers, in this browser`, () => {
       const full = await render(soundscape, [{ sound, at: 0 }], 2);
       const m = measure(full, RATE);
       const { heard } = DEPARTURES[sound.id]!;
-      const gain = cueGainDb(sound.id);
+      const gain = DEPARTURES[sound.id]!.inTheMix ? 0 : cueGainDb(sound.id);
       expect(Math.abs(m.duration * 1000 - heard.durationMs)).toBeLessThan(1);
       expect(Math.abs(m.peakDbfs - (heard.peakDbfs + gain))).toBeLessThan(0.15);
       expect(
@@ -277,4 +278,17 @@ describe(`each departure against its own numbers, in this browser`, () => {
       ).toBeLessThan(0.15);
     });
   }
+
+  test("Peach rush's two stay under the peach of a word and the full basket", async () => {
+    const loudness = async (id: string) => {
+      const sound = SOUNDS.find((s) => s.id === id)!;
+      return momentaryLoudness(
+        await render(soundscape, [{ sound, at: 0 }], 2),
+        RATE,
+      );
+    };
+    const top = Math.min(await loudness('source'), await loudness('edition'));
+    for (const id of ['rush-ten', 'rush-end'])
+      expect(await loudness(id), id).toBeLessThan(top);
+  });
 });

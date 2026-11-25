@@ -221,4 +221,13 @@ export class ReferenceAudioEngine implements AudioEngine {
    * held to its own numbers instead (src/audio/departures.ts).
    */
   playShuffle(): void {}
+
+  /**
+   * Peach rush's two, which the app plays and the web game never has: before
+   * Soundscape there was no run. Like Shuffle, each makes no context and
+   * schedules nothing, and is held to its own numbers instead.
+   */
+  playRushTen(): void {}
+
+  playRushEnd(): void {}
 }

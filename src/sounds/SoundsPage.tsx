@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Decorations } from '@/ui/components/Decorations.tsx';
 import { FOUND_ROWS, SECTIONS, SOUNDS, type Sound } from './inventory.ts';
 import { lengthOf, type Pair } from './pair.ts';
-import { DEPARTURES } from '@/audio/departures.ts';
+import { DEPARTURES, type Departure } from '@/audio/departures.ts';
 import { MIX } from '@/audio/mix.ts';
 
 /**
@@ -31,6 +31,16 @@ const ON = new Intl.DateTimeFormat('en-GB', {
 });
 /** The pause between the two, after the first has finished. */
 const GAP_S = 0.4;
+
+/** What the page says above a sound that leaves the old engine. */
+function departureNote({ chosen, is, was, appOnly }: Departure): string {
+  const on = chosen && ON.format(new Date(chosen));
+  if (appOnly)
+    return `${on ? `For the app's Peach rush, chosen on ${on}.` : "A draft for the app's Peach rush, not chosen yet."} ${is} The web game has no run, so it never plays this, and the game before Soundscape made nothing for it: a tap here plays silence, then the cue.`;
+  return was === null
+    ? `New with Soundscape, chosen on ${on}. ${is} The game made no sound for it before, so a tap here plays silence, then the cue.`
+    : `Changed on ${on}. ${is} Before, it was ${was} So a tap here plays two different sounds, on purpose.`;
+}
 
 interface Played {
   sound: Sound;
@@ -162,17 +172,11 @@ export function SoundsPage({
           </p>
           {section.sounds
             .filter((sound) => DEPARTURES[sound.id])
-            .map((sound) => {
-              const { is, was } = DEPARTURES[sound.id]!;
-              const chosen = ON.format(new Date(DEPARTURES[sound.id]!.chosen));
-              return (
-                <p key={sound.id} className="sounds__note sounds__departure">
-                  {was === null
-                    ? `New with Soundscape, chosen on ${chosen}. ${is} The game made no sound for it before, so a tap here plays silence, then the cue.`
-                    : `Changed on ${chosen}. ${is} Before, it was ${was} So a tap here plays two different sounds, on purpose.`}
-                </p>
-              );
-            })}
+            .map((sound) => (
+              <p key={sound.id} className="sounds__note sounds__departure">
+                {departureNote(DEPARTURES[sound.id]!)}
+              </p>
+            ))}
           {section.cue === 'playFound' ? (
             <>
               <p className="sounds__note">

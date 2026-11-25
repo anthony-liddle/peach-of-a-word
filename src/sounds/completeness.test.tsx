@@ -176,7 +176,7 @@ describe('the sounds page is complete', () => {
   });
 
   test('Shuffle, new with Soundscape, has its button, which plays its cue and nothing on the old engine', () => {
-    expect(NEW_WITH_SOUNDSCAPE).toEqual(['shuffle']);
+    expect(NEW_WITH_SOUNDSCAPE).toEqual(['shuffle', 'rush-ten', 'rush-end']);
     const { presses } = pressEverything();
     const shuffle = presses.filter((p) => p.sound === 'shuffle');
     expect(shuffle).toHaveLength(1);
@@ -185,6 +185,22 @@ describe('the sounds page is complete', () => {
     expect(shuffle[0]!.calls.map((c) => c.method)).toEqual(['playShuffle']);
     expect(shuffle[0]!.signature, 'the old engine played a note').toBe('');
   });
+
+  test.each([
+    ['rush-ten', 'Peach rush, 10 seconds left', 'playRushTen'],
+    ['rush-end', "Peach rush, time's up", 'playRushEnd'],
+  ])(
+    '%s, which only the app plays, has its button, which plays its cue and nothing on the old engine',
+    (id, label, method) => {
+      const { presses } = pressEverything();
+      const rush = presses.filter((p) => p.sound === id);
+      expect(rush).toHaveLength(1);
+      expect(rush[0]!.label).toBe(label);
+      expect(rush[0]!.cues).toEqual([id]);
+      expect(rush[0]!.calls.map((c) => c.method)).toEqual([method]);
+      expect(rush[0]!.signature, 'the old engine played a note').toBe('');
+    },
+  );
 
   test('each found button names the length and rung it plays, and the theme where the engine hears it', () => {
     // Where the sweep put the cute and letterpress plays of one length and rung

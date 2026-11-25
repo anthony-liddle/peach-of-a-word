@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { MIX, gainOf } from '@/audio/mix.ts';
+import { DEPARTURES } from '@/audio/departures.ts';
 
 /**
  * The store art's cues, frozen: the game's cue file as it was when the store
@@ -25,7 +26,7 @@ describe("the store art's cues", () => {
     );
   });
 
-  test("are the game's cues without Bea's mix: its gains on them make the game's file", () => {
+  test("are the game's cues without Bea's mix: its gains on them make the game's file, but for the cues written in the mix since", () => {
     const doc = JSON.parse(frozen) as Doc;
     for (const name of Object.keys(MIX.gains)) {
       doc.instruments[name]!.envelopeFloor *= gainOf(name);
@@ -33,6 +34,13 @@ describe("the store art's cues", () => {
         for (const note of cue.notes)
           if (note.instrument === name) note.level *= gainOf(name);
     }
-    expect(doc).toEqual(JSON.parse(game));
+    // Peach rush's two, drafted in the mix, long after the store art's sound
+    const now = JSON.parse(game) as Doc;
+    const since = Object.keys(DEPARTURES).filter(
+      (id) => DEPARTURES[id]!.inTheMix,
+    );
+    expect(since.sort()).toEqual(['rush-end', 'rush-ten']);
+    for (const id of since) delete now.cues[id];
+    expect(doc).toEqual(now);
   });
 });

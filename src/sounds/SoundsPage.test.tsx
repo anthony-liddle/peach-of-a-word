@@ -129,6 +129,24 @@ describe('the sounds page', () => {
     expect(localStorage.getItem('e8-theme')).toBeNull();
   });
 
+  test("says each of Peach rush's two is for the app, chosen on 25 November 2026, and that the web game never plays it", () => {
+    const { pair } = recordingPair();
+    render(<SoundsPage pair={pair} />);
+    for (const title of [
+      'Peach rush, 10 seconds left',
+      "Peach rush, time's up",
+    ]) {
+      const section = screen.getByRole('region', { name: title });
+      expect(
+        within(section).getByText(
+          /^For the app's Peach rush, chosen on 25 November 2026\./,
+        ),
+      ).toHaveTextContent(
+        'The web game has no run, so it never plays this, and the game before Soundscape made nothing for it: a tap here plays silence, then the cue.',
+      );
+    }
+  });
+
   test("says the cue plays in the mix chosen since, by the mix's own numbers", () => {
     const { pair } = recordingPair();
     render(<SoundsPage pair={pair} />);

@@ -166,6 +166,18 @@ describe('the cue each call plays', () => {
     expect(played()).toEqual(['playCue shuffle']);
   });
 
+  test("Peach rush's two play their cues, and nothing while muted", () => {
+    installFakeAudio();
+    const engine = new SoundscapeAudioEngine();
+    engine.playRushTen();
+    engine.playRushEnd();
+    expect(played()).toEqual(['playCue rush-ten', 'playCue rush-end']);
+    engine.setMuted(true);
+    engine.playRushTen();
+    engine.playRushEnd();
+    expect(played()).toEqual(['playCue rush-ten', 'playCue rush-end']);
+  });
+
   test('a length outside 3 to 8 plays the nearest found note, as before', () => {
     installFakeAudio();
     const engine = new SoundscapeAudioEngine();
