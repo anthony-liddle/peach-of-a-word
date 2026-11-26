@@ -171,6 +171,12 @@ export class GameStorage {
     const state = this.read();
     const { lastClearedDayIndex } = state.streak;
     if (lastClearedDayIndex === dayIndex) return;
+    // An earlier day cleared after a later one, as a page left open past
+    // midnight keeps the day it opened on and can clear it after another tab
+    // cleared the next: the later day's streak stands, and nothing moves back.
+    // Before this, the count went back to 1 on the earlier day, and the next
+    // day the streak read 0.
+    if (lastClearedDayIndex !== null && dayIndex < lastClearedDayIndex) return;
     if (lastClearedDayIndex === dayIndex - 1) state.streak.count += 1;
     else state.streak.count = 1;
     state.streak.lastClearedDayIndex = dayIndex;

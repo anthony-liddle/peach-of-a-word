@@ -228,6 +228,29 @@ describe('GameStorage streak', () => {
   });
 });
 
+// A page left open past midnight keeps the day it opened on, so it can clear
+// that day after another tab has cleared the next.
+describe('GameStorage streak, an earlier day cleared late', () => {
+  it("leaves a later day's streak as it stands", () => {
+    const storage = new GameStorage(fakeStore());
+    storage.recordDailyCleared(11);
+    storage.recordDailyCleared(10);
+    expect(storage.currentStreak(12)).toBe(1);
+    expect(storage.savedStreak()).toEqual({
+      count: 1,
+      lastClearedDayIndex: 11,
+    });
+  });
+
+  it('keeps a longer streak going through the next day', () => {
+    const storage = new GameStorage(fakeStore());
+    storage.recordDailyCleared(10);
+    storage.recordDailyCleared(11);
+    storage.recordDailyCleared(9);
+    expect(storage.currentStreak(12)).toBe(2);
+  });
+});
+
 describe('GameStorage migration: calendar reshuffle preserves play history', () => {
   let storage: GameStorage;
   beforeEach(() => {
