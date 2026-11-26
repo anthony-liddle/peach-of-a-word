@@ -403,6 +403,7 @@ export class GameStorage {
     if (
       !Number.isSafeInteger(r.dayIndex) ||
       typeof r.sourceWord !== 'string' ||
+      !SOURCE_WORD.test(r.sourceWord) ||
       !Array.isArray(r.words) ||
       typeof r.leftMs !== 'number' ||
       typeof r.clockMs !== 'number' ||
@@ -432,6 +433,7 @@ function readRun(entry: unknown): RunRecord | null {
   const r = entry as Record<string, unknown>;
   if (
     typeof r.sourceWord !== 'string' ||
+    !SOURCE_WORD.test(r.sourceWord) ||
     !Array.isArray(r.words) ||
     typeof r.points !== 'number' ||
     typeof r.leftMs !== 'number' ||

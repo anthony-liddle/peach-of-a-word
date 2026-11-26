@@ -100,8 +100,8 @@ const MONTHS = [
   'Dec',
 ];
 
-/** Short calendar date, "Jun 18", from the date's local components. */
-function shortDate(date: Date): string {
+/** Short calendar date, "Jun 18", from the date's local components. Peach rush's share dates its block the same way. */
+export function shortDate(date: Date): string {
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
 
