@@ -108,6 +108,145 @@ describe('useGame daily day-key', () => {
   });
 });
 
+/*
+ * Two tabs on today's board, sharing one save, as two tabs share a browser's
+ * local storage. Each is opened before either finds a word.
+ */
+describe('two tabs on the same day', () => {
+  const data = () => dataAnchoredAt({ year: 2026, month: 6, day: 23 });
+
+  function twoTabs() {
+    const cap = capturingStore();
+    const open = () =>
+      renderHook(() =>
+        useGame(data(), new NullAudioEngine(), new GameStorage(cap.store)),
+      ).result;
+    return { cap, a: open(), b: open() };
+  }
+
+  function find(tab: { current: ReturnType<typeof useGame> }, word: string) {
+    for (const letter of word) act(() => tab.current.addLetter(letter));
+    act(() => tab.current.submit());
+  }
+
+  /** The browser's word to every other tab that the save changed. */
+  function anotherTabSaved() {
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: 'eight-letters/v1' }),
+      );
+    });
+  }
+
+  function savedToday(cap: ReturnType<typeof capturingStore>) {
+    const saved = cap.read() as {
+      days: Record<number, { found: string[] }>;
+    };
+    return saved.days[dayIndex(new Date(), STORAGE_EPOCH)]?.found;
+  }
+
+  it("keeps the first tab's find when the second tab finds one", () => {
+    const { cap, a, b } = twoTabs();
+    find(a, 'sea');
+    find(b, 'near');
+    expect(savedToday(cap)).toEqual(['sea', 'near']);
+  });
+
+  /** The points for these words, found in one tab on a save of its own. */
+  function pointsFor(...words: string[]) {
+    const tab = renderHook(() =>
+      useGame(
+        data(),
+        new NullAudioEngine(),
+        new GameStorage(capturingStore().store),
+      ),
+    ).result;
+    for (const word of words) find(tab, word);
+    return tab.current.state.totalScore;
+  }
+
+  it("shows the second tab the first tab's find once it saves its own", () => {
+    const { a, b } = twoTabs();
+    find(a, 'sea');
+    find(b, 'near');
+    expect(b.current.state.found).toEqual(['sea', 'near']);
+    expect(b.current.state.totalScore).toBe(pointsFor('sea', 'near'));
+  });
+
+  it("shows the first tab the second tab's find as it's saved, with its points", () => {
+    const { a, b } = twoTabs();
+    find(a, 'sea');
+    find(b, 'near');
+    anotherTabSaved();
+    expect(a.current.state.found).toEqual(['sea', 'near']);
+    expect(a.current.state.totalScore).toBe(pointsFor('sea', 'near'));
+  });
+
+  it('calls a word the other tab found already found', () => {
+    const { a, b } = twoTabs();
+    find(b, 'near');
+    anotherTabSaved();
+    find(a, 'near');
+    expect(messageText(a.current.state.message!, 'cute')).toBe(
+      'Already found.',
+    );
+  });
+
+  it('leaves the letters being typed, the rack and the line where they were', () => {
+    const { a, b } = twoTabs();
+    find(a, 'sea');
+    act(() => a.current.shuffle());
+    act(() => a.current.addLetter('n'));
+    act(() => a.current.addLetter('e'));
+    const before = a.current.state;
+    find(b, 'near');
+    anotherTabSaved();
+    const after = a.current.state;
+    expect(after.found).toEqual(['sea', 'near']);
+    expect(after.composing).toEqual(before.composing);
+    expect(after.rackOrder).toEqual(before.rackOrder);
+    expect(after.message).toBe(before.message);
+    expect(after.announcement).toBe(before.announcement);
+  });
+
+  it("doesn't open the card or announce when the other tab finds the peach of a word", () => {
+    const { a, b } = twoTabs();
+    find(b, 'serenade');
+    const announcement = a.current.state.announcement;
+    anotherTabSaved();
+    expect(a.current.state.sourceRevealed).toBe(true);
+    expect(a.current.state.revealOpen).toBe(false);
+    expect(a.current.state.announcement).toBe(announcement);
+  });
+
+  it('never takes a word away, whatever the save says', () => {
+    const { cap, a } = twoTabs();
+    find(a, 'sea');
+    cap.store.setItem(
+      'eight-letters/v1',
+      JSON.stringify({
+        version: 1,
+        days: {},
+        streak: { count: 0, lastClearedDayIndex: null },
+        endless: null,
+      }),
+    );
+    anotherTabSaved();
+    expect(a.current.state.found).toEqual(['sea']);
+  });
+
+  it('reads the save again when the page comes back from the back-forward cache', () => {
+    const { a, b } = twoTabs();
+    find(b, 'near');
+    act(() => {
+      window.dispatchEvent(
+        new PageTransitionEvent('pageshow', { persisted: true }),
+      );
+    });
+    expect(a.current.state.found).toEqual(['near']);
+  });
+});
+
 const CALENDAR = [
   'serenade',
   'lemonade',
@@ -522,5 +661,9 @@ describe('a denied word already saved in progress', () => {
     expect(result.current.state.found).not.toContain('near');
     // And it is not scored: the score is recomputed from the surviving finds.
     expect(result.current.state.foundSet.has('near')).toBe(false);
+    // And the save forgets it too, so the transfer page never hands it to
+    // the app: a save keeps another tab's finds, but only ones the board takes.
+    const saved = cap.read() as { days: Record<number, { found: string[] }> };
+    expect(saved.days[dayIndex(today, STORAGE_EPOCH)]?.found).toEqual(['sea']);
   });
 });

@@ -39,7 +39,8 @@ interface PersistedState {
   endlessOpenOn?: number | null;
 }
 
-const STORAGE_KEY = 'eight-letters/v1';
+/** The save's one key, for telling another tab's save from other keys. */
+export const STORAGE_KEY = 'eight-letters/v1';
 
 /** A source word as the calendar holds one: eight lowercase letters. */
 const SOURCE_WORD = new RegExp(`^[a-z]{${SOURCE_WORD_LENGTH}}$`);
@@ -132,14 +133,34 @@ export class GameStorage {
     return [];
   }
 
+  /**
+   * Save a day's found words, merged with what the save already holds for
+   * that day and word: the saved ones first, then the new ones. Two tabs open
+   * on the same board each save their own list, and a tab that hasn't heard
+   * about the other's find must not write over it, so a basket only grows.
+   *
+   * `keep` drops a saved word the board no longer takes, such as a denied
+   * word, so the save forgets it as the board does and the transfer page
+   * never hands it to the app. A new word for the day starts the list over.
+   *
+   * Returns the list as saved, so the tab can show finds it hadn't heard of.
+   */
   saveDayProgress(
     dayIndex: number,
     sourceWord: string,
     found: readonly string[],
-  ): void {
+    keep: (word: string) => boolean = () => true,
+  ): string[] {
     const state = this.read();
-    state.days[dayIndex] = { sourceWord, found: [...found] };
+    const day = state.days[dayIndex];
+    const saved =
+      day?.sourceWord === sourceWord && Array.isArray(day.found)
+        ? day.found.filter((w) => typeof w === 'string' && keep(w))
+        : [];
+    const merged = [...new Set([...saved, ...found])];
+    state.days[dayIndex] = { sourceWord, found: merged };
     this.write(state);
+    return merged;
   }
 
   /**
