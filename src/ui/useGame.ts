@@ -121,7 +121,20 @@ export function announcementText(
  * Keyed by the announcement itself, which the reducer already counts. The count
  * is per mode (each slice starts its own at zero), so the key names the mode
  * too, or a fresh Endless would read as the daily's last event.
+ *
+ * The key comes back with the text, for the live region to key the line's
+ * node on. A region says its line when it changes, and the same text set
+ * again changes nothing, so a second "Not in the word list." or "Already
+ * found." went unsaid (W1, the accessibility report's 26 November update). A
+ * new node for each announcement is a change every time.
  */
+export interface AnnouncedText {
+  /** The line, as it was when it happened. */
+  text: string;
+  /** The announcement it says, for keying the line's node. */
+  key: string;
+}
+
 export function useAnnouncedText(
   announcement: Announcement,
   /**
@@ -133,8 +146,8 @@ export function useAnnouncedText(
    */
   scope: string,
   theme: Theme,
-): string {
-  const [spoken, setSpoken] = useState({ key: '', text: '' });
+): AnnouncedText {
+  const [spoken, setSpoken] = useState<AnnouncedText>({ key: '', text: '' });
   const key = `${scope}:${announcement.seq}`;
   // Settling this during render (React's own adjust-state-on-change pattern)
   // keeps the region and the visible message in one paint, so the two never
@@ -142,7 +155,7 @@ export function useAnnouncedText(
   if (spoken.key !== key) {
     setSpoken({ key, text: announcementText(announcement, theme) });
   }
-  return spoken.text;
+  return spoken;
 }
 
 /**
