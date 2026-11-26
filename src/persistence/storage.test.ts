@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GameStorage, type KeyValueStore } from './storage.ts';
+import {
+  GameStorage,
+  type KeyValueStore,
+  type RunInFlight,
+  type RunRecord,
+} from './storage.ts';
 
 function fakeStore(): KeyValueStore {
   const map = new Map<string, string>();
@@ -335,5 +340,126 @@ describe('history survives the Phase 2 calendar regeneration', () => {
     // word, since a past day is never replayed.
     expect(storage.loadDayProgress(40, 'oldcrown')).toEqual(['sea', 'near']);
     expect(storage.loadDayProgress(40, 'newcrown')).toEqual([]);
+  });
+});
+
+// A browser's first day: no start and no run on it, from the save as the page
+// opened, since the board saves today's day as it opens.
+describe('GameStorage, the days before today', () => {
+  function seeded(days: number[]): KeyValueStore {
+    const store = fakeStore();
+    const setup = new GameStorage(store);
+    for (const day of days) setup.saveDayProgress(day, 'serenade', []);
+    return store;
+  }
+
+  it('says a browser with nothing saved opened no day before', () => {
+    expect(new GameStorage(fakeStore()).openedBefore(10)).toBe(false);
+  });
+
+  it('counts an earlier day opened with no word found', () => {
+    expect(new GameStorage(seeded([9])).openedBefore(10)).toBe(true);
+  });
+
+  it("doesn't count today, or a day saved after the page opened", () => {
+    const store = seeded([10]);
+    const storage = new GameStorage(store);
+    new GameStorage(store).saveDayProgress(8, 'serenade', ['sea']);
+    expect(storage.openedBefore(10)).toBe(false);
+  });
+});
+
+describe('GameStorage, Peach rush', () => {
+  const run = (over: Partial<RunRecord> = {}): RunRecord => ({
+    sourceWord: 'serenade',
+    words: ['sea', 'near'],
+    points: 4,
+    peach: false,
+    best: { word: 'near', points: 3 },
+    endedEarly: false,
+    leftMs: 0,
+    clockMs: 90_000,
+    peachCardOwed: false,
+    ...over,
+  });
+  const flight = (over: Partial<RunInFlight> = {}): RunInFlight => ({
+    dayIndex: 10,
+    sourceWord: 'serenade',
+    words: ['sea'],
+    leftMs: 48_000,
+    clockMs: 90_000,
+    phase: 'paused',
+    tab: 'a',
+    ...over,
+  });
+
+  it("keeps the day's run, for that day's word only", () => {
+    const storage = new GameStorage(fakeStore());
+    expect(storage.saveRun(10, run())).toBe(true);
+    expect(storage.loadRun(10, 'serenade')).toEqual(run());
+    expect(storage.loadRun(10, 'absolute')).toBeNull();
+    expect(storage.loadRun(11, 'serenade')).toBeNull();
+  });
+
+  it('refuses a second run for a day that has one', () => {
+    const storage = new GameStorage(fakeStore());
+    storage.saveRun(10, run());
+    expect(storage.saveRun(10, run({ words: ['sea'], points: 1 }))).toBe(false);
+    expect(storage.loadRun(10, 'serenade')?.words).toEqual(['sea', 'near']);
+  });
+
+  it('replaces the same run when asked, as its card is shown', () => {
+    const storage = new GameStorage(fakeStore());
+    storage.saveRun(10, run({ peach: true, peachCardOwed: true }));
+    storage.saveRun(10, run({ peach: true, peachCardOwed: false }), true);
+    expect(storage.loadRun(10, 'serenade')?.peachCardOwed).toBe(false);
+  });
+
+  it("clears the day's run in flight once the run is kept", () => {
+    const storage = new GameStorage(fakeStore());
+    storage.saveRunInFlight(flight());
+    storage.saveRun(10, run());
+    expect(storage.loadRunInFlight()).toBeNull();
+  });
+
+  it("leaves another day's run in flight alone", () => {
+    const storage = new GameStorage(fakeStore());
+    storage.saveRunInFlight(flight({ dayIndex: 11 }));
+    storage.saveRun(10, run());
+    expect(storage.loadRunInFlight()?.dayIndex).toBe(11);
+  });
+
+  it('round-trips the run in flight, and clears it', () => {
+    const storage = new GameStorage(fakeStore());
+    storage.saveRunInFlight(flight());
+    expect(storage.loadRunInFlight()).toEqual(flight());
+    storage.saveRunInFlight(null);
+    expect(storage.loadRunInFlight()).toBeNull();
+  });
+
+  it("reads a run or a flight that isn't one as none", () => {
+    const store = fakeStore();
+    store.setItem(
+      'eight-letters/v1',
+      JSON.stringify({
+        version: 1,
+        days: {},
+        streak: { count: 0, lastClearedDayIndex: null },
+        endless: null,
+        runs: { 10: { sourceWord: 'serenade' }, 11: run(), x: run() },
+        runInFlight: { dayIndex: 10, words: 'sea' },
+      }),
+    );
+    const storage = new GameStorage(store);
+    expect(storage.loadRun(10, 'serenade')).toBeNull();
+    expect(Object.keys(storage.allRuns())).toEqual(['11']);
+    expect(storage.loadRunInFlight()).toBeNull();
+  });
+
+  it('reads a save from before Peach rush as no runs', () => {
+    const storage = new GameStorage(fakeStore());
+    storage.saveDayProgress(10, 'serenade', ['sea']);
+    expect(storage.allRuns()).toEqual({});
+    expect(storage.loadRunInFlight()).toBeNull();
   });
 });

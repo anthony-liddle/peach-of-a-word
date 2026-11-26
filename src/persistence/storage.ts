@@ -37,6 +37,51 @@ interface PersistedState {
    * no new version.
    */
   endlessOpenOn?: number | null;
+  /**
+   * Each day's Peach rush, by day index. Inside this key, so a run adds no key
+   * to the browser, and a save from before it reads as no runs.
+   */
+  runs?: Record<number, RunRecord>;
+  /**
+   * The run started and not yet ended, at most one. Saved at Start, at each
+   * find, at each pause and as the page goes, and shared by every tab, so a
+   * second tab sees the run the first one started and never starts another.
+   */
+  runInFlight?: RunInFlight | null;
+}
+
+/** A day's one Peach rush, once it has ended. */
+export interface RunRecord {
+  sourceWord: string;
+  words: string[];
+  points: number;
+  /** Whether the run found the peach of a word. */
+  peach: boolean;
+  best: { word: string; points: number } | null;
+  /** Ended with End, or by a run left waiting on an earlier day. */
+  endedEarly: boolean;
+  /** Milliseconds left when it ended: 0 when the clock ran out. */
+  leftMs: number;
+  /** The run's own length, read at Start: 1:30, or Longer clock's 3:00. */
+  clockMs: number;
+  /**
+   * The peach of a word's card is owed: the run found it and the card hasn't
+   * opened by itself yet. It opens once, then this is false.
+   */
+  peachCardOwed: boolean;
+}
+
+/** A run started and not yet ended. */
+export interface RunInFlight {
+  dayIndex: number;
+  sourceWord: string;
+  words: string[];
+  leftMs: number;
+  clockMs: number;
+  /** 'running' only while a tab has it going; every pause writes 'paused'. */
+  phase: 'running' | 'paused';
+  /** The tab that wrote it, so a tab knows its own run from another's. */
+  tab: string;
 }
 
 /** The save's one key, for telling another tab's save from other keys. */
@@ -87,6 +132,12 @@ export class GameStorage {
    * disabled) and will not survive a reload or crash.
    */
   readonly persistent: boolean;
+  /**
+   * The days the save held as the page opened, read before the board saves
+   * today's. Every visit saves its day, found words or none, so a day here is
+   * a day this browser opened the game.
+   */
+  private readonly daysAtOpen: readonly number[];
 
   constructor(store?: KeyValueStore, persistent = true) {
     if (store) {
@@ -97,6 +148,21 @@ export class GameStorage {
       this.store = fallback.store;
       this.persistent = fallback.persistent;
     }
+    const days: unknown = this.read().days;
+    this.daysAtOpen =
+      days && typeof days === 'object'
+        ? Object.keys(days)
+            .filter((k) => /^\d+$/.test(k))
+            .map(Number)
+        : [];
+  }
+
+  /**
+   * Whether this browser opened the game on a day before `todayIndex`, as the
+   * save stood when the page opened. False on a browser's first day.
+   */
+  openedBefore(todayIndex: number): boolean {
+    return this.daysAtOpen.some((d) => d < todayIndex);
   }
 
   private read(): PersistedState {
@@ -296,4 +362,95 @@ export class GameStorage {
     state.endless = { sourceWord, found: [...found] };
     this.write(state);
   }
+
+  /** The day's Peach rush, if one was played on this board. */
+  loadRun(dayIndex: number, sourceWord: string): RunRecord | null {
+    const run = readRun(this.read().runs?.[dayIndex]);
+    return run && run.sourceWord === sourceWord ? run : null;
+  }
+
+  /**
+   * Keep the day's run. One a day: a second run for a day that has one is
+   * refused, so two tabs can never each keep one, unless `replace` says this
+   * is the same run changed (its card shown). Ending the day's run in flight
+   * clears it. Returns whether the run was kept.
+   */
+  saveRun(dayIndex: number, run: RunRecord, replace = false): boolean {
+    const state = this.read();
+    const had = readRun(state.runs?.[dayIndex]);
+    if (had && had.sourceWord === run.sourceWord && !replace) return false;
+    state.runs = { ...(state.runs ?? {}), [dayIndex]: run };
+    if (state.runInFlight?.dayIndex === dayIndex) state.runInFlight = null;
+    this.write(state);
+    return true;
+  }
+
+  /** Every day's kept run, by day index, leaving out any that can't be read. */
+  allRuns(): Record<number, RunRecord> {
+    const out: Record<number, RunRecord> = {};
+    for (const [key, entry] of Object.entries(this.read().runs ?? {})) {
+      const run = readRun(entry);
+      if (/^\d+$/.test(key) && run) out[Number(key)] = run;
+    }
+    return out;
+  }
+
+  /** The run in flight, or null when there is none or it can't be read. */
+  loadRunInFlight(): RunInFlight | null {
+    const f: unknown = this.read().runInFlight;
+    if (!f || typeof f !== 'object') return null;
+    const r = f as Record<string, unknown>;
+    if (
+      !Number.isSafeInteger(r.dayIndex) ||
+      typeof r.sourceWord !== 'string' ||
+      !Array.isArray(r.words) ||
+      typeof r.leftMs !== 'number' ||
+      typeof r.clockMs !== 'number' ||
+      (r.phase !== 'running' && r.phase !== 'paused') ||
+      typeof r.tab !== 'string'
+    )
+      return null;
+    return {
+      ...(f as RunInFlight),
+      words: r.words.filter((w): w is string => typeof w === 'string'),
+    };
+  }
+
+  saveRunInFlight(run: RunInFlight | null): void {
+    const state = this.read();
+    state.runInFlight = run;
+    this.write(state);
+  }
+}
+
+/**
+ * A kept run as the save holds it, or null when it isn't one. The save is
+ * only as trustworthy as the browser it sits in, so a run is read, not cast.
+ */
+function readRun(entry: unknown): RunRecord | null {
+  if (!entry || typeof entry !== 'object') return null;
+  const r = entry as Record<string, unknown>;
+  if (
+    typeof r.sourceWord !== 'string' ||
+    !Array.isArray(r.words) ||
+    typeof r.points !== 'number' ||
+    typeof r.leftMs !== 'number' ||
+    typeof r.clockMs !== 'number'
+  )
+    return null;
+  const best = r.best as { word?: unknown; points?: unknown } | null;
+  return {
+    sourceWord: r.sourceWord,
+    words: r.words.filter((w): w is string => typeof w === 'string'),
+    points: r.points,
+    peach: r.peach === true,
+    best:
+      best && typeof best.word === 'string' && typeof best.points === 'number'
+        ? { word: best.word, points: best.points }
+        : null,
+    endedEarly: r.endedEarly === true,
+    leftMs: r.leftMs,
+    clockMs: r.clockMs,
+    peachCardOwed: r.peachCardOwed === true,
+  };
 }
