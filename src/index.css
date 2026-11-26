@@ -2790,3 +2790,18 @@ footer.colophon a {
     letter-spacing: 0.06em;
   }
 }
+/* Shorter than the SE's Safari, as the narrowest phone at the largest text
+   (320 by 460), the run doesn't fit: its header stays pinned, so the clock
+   stays on screen while the rest scrolls under it. Its background is the
+   page's own, fixed as the page's is, so it lines up with it. */
+@media (max-height: 540px) {
+  .runhead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-bottom: 0.3rem;
+    background-color: var(--paper);
+    background-image: var(--page-bg);
+    background-attachment: fixed;
+  }
+}
