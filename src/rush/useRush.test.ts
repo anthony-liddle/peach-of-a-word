@@ -414,6 +414,18 @@ describe('two tabs, with the browser lock', () => {
     expect(b.current.slice.found).toEqual(['near']);
   });
 
+  it('starts without the lock when the browser refuses the request', async () => {
+    const refusing: RushLock = {
+      take: () => Promise.reject(new Error('refused')),
+      held: async () => false,
+      whenFree: () => new Promise(() => {}),
+    };
+    const tab = openTab(sharedStore(), { lock: refusing });
+    act(() => tab.current.start());
+    await settle();
+    expect(tab.current.phase).toBe('running');
+  });
+
   it('reads a run the save calls running, with no lock held, as paused', async () => {
     const store = sharedStore();
     const { lock } = fakeLocks();

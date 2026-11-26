@@ -427,18 +427,26 @@ export function useRush({
       return;
     }
     starting.current = true;
-    void lock.take().then((release) => {
-      starting.current = false;
-      if (coreRef.current !== c) {
-        // Something moved while the lock was asked for: a pause, another
-        // tab's end. The press is spent.
-        void release?.();
-        return;
-      }
-      if (release) go(release);
-      // Another tab has it going.
-      else commit({ ...from, phase: 'elsewhere' });
-    });
+    lock.take().then(
+      (release) => {
+        starting.current = false;
+        if (coreRef.current !== c) {
+          // Something moved while the lock was asked for: a pause, another
+          // tab's end. The press is spent.
+          void release?.();
+          return;
+        }
+        if (release) go(release);
+        // Another tab has it going.
+        else commit({ ...from, phase: 'elsewhere' });
+      },
+      () => {
+        // The browser refused the request itself: the run starts without
+        // the lock, as in a browser that has none.
+        starting.current = false;
+        if (coreRef.current === c) go(null);
+      },
+    );
   }, [
     storage,
     dayIndex,

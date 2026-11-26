@@ -10,8 +10,8 @@
  * - `?seedRun=end`: today's run kept and carried, as a played run leaves it.
  * - `?flight=paused&runAt=48`: a run waiting.
  *
- * The seeded words are 14 November's board, `clearing`, a day that has
- * passed, as the app's pictures use.
+ * The seeded words are a past day's board, as the app's pictures use, so
+ * each picture can sit beside the discovery's mocks.
  */
 import {
   createPuzzle,
