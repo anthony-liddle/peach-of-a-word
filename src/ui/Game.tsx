@@ -6,6 +6,8 @@ import {
   useAnnouncedText,
   useGame,
   type GameApi,
+  type Message,
+  type PlayApi,
   type Glint,
 } from './useGame.ts';
 import { useTheme } from './useTheme.ts';
@@ -47,7 +49,17 @@ import { rushStanding } from '@/rush/offer.ts';
 import { owedOldPeach } from '@/rush/settle.ts';
 import { debugRunKind } from '@/rush/debug.ts';
 import { useLongerClock } from './useLongerClock.ts';
-import { EndAsk, RunChip, RunEndCard, RunView } from './components/Rush.tsx';
+import {
+  EndAsk,
+  RunChip,
+  RunEndCard,
+  RunView,
+  StartChoice,
+} from './components/Rush.tsx';
+import { useRushOffer } from './useRushOffer.ts';
+
+/** The well's line while today's letters wait for Play or Peach rush. */
+const START_WELL = 'Letters show when you choose.';
 
 interface QuietState {
   word: string;
@@ -122,7 +134,14 @@ export function Game({
     const kind = rush ? debugRunKind() : null;
     return kind === 'end' || kind === 'end-nopeach';
   });
-  const [asking, setAsking] = useState(() => rush && debugRunKind() === 'ask');
+  // End's question: from End on the run, or from Play over a waiting run.
+  const [asking, setAsking] = useState<'run' | 'play' | null>(() =>
+    rush && debugRunKind() === 'ask' ? 'run' : null,
+  );
+  // Play chosen on this page: the start steps aside until a reload, and the
+  // run stays a tap away in the toolbar until the basket's first find.
+  const [chosen, setChosen] = useState(false);
+  const [offerOn] = useRushOffer();
   // The peach of a word's card over the result: opened by itself, or from
   // the result's word, which gets the focus back.
   const [runPeach, setRunPeach] = useState<HTMLElement | 'auto' | null>(null);
@@ -137,8 +156,17 @@ export function Game({
         basketFound: game.daily.found.length,
         openedBefore: storage.openedBefore(game.daily.dayIndex ?? 0),
         canSave: storage.persistent,
+        offerOn,
       })
     : null;
+  // The start, in the board: the daily, while the run is offered or a run
+  // waits, until Play is chosen on this page. Off in Settings, no start.
+  const startUp =
+    view === 'board' &&
+    game.state.mode === 'daily' &&
+    offerOn &&
+    !chosen &&
+    (standing === 'offered' || standing === 'waiting');
 
   // The "How the words work" explainer. Its open flag is lifted here so the
   // global key handler can stand down while it is up (the same precedent as the
@@ -290,7 +318,9 @@ export function Game({
       settingsOpen ||
       yourFlags !== null ||
       suggesting !== null ||
-      view === 'run',
+      view === 'run' ||
+      startUp ||
+      asking !== null,
     tilesRef,
   );
 
@@ -401,17 +431,51 @@ export function Game({
     setRunEndOpen(false);
     setRunPeach(null);
     setView('board');
+    setChosen(true);
     game.setMode('daily');
     // Where typing goes, as Keep playing on the completion card does.
     setTimeout(() => tilesRef.current?.focus({ preventScroll: true }), 0);
   }, [game]);
+  // Play on the start: the letters, and the focus on them, where typing
+  // goes. Over a run paused here, End's question first, so Play never ends
+  // the day's one run unasked; over a run going in another tab there's
+  // nothing here to end.
+  const focusBoardTiles = useCallback(
+    () => setTimeout(() => tilesRef.current?.focus({ preventScroll: true }), 0),
+    [],
+  );
+  const onPlay = useCallback(() => {
+    if (runPhase === 'paused') {
+      setAsking('play');
+      return;
+    }
+    setChosen(true);
+    focusBoardTiles();
+  }, [runPhase, focusBoardTiles]);
+  const { cardShown: runCardShown } = run;
+  const runFoundPeach = run.slice.found.includes(run.slice.puzzle.sourceWord);
   const endAsked = useCallback(() => {
-    setAsking(false);
+    const from = asking;
+    setAsking(null);
     endRun();
-  }, [endRun]);
-  // Back where typing goes; a paused run's view puts Resume first.
+    if (from !== 'play') return;
+    // Over a waiting run from the start: the board opens, and a peach of a
+    // word the run found opens there as the basket's own card, once.
+    setChosen(true);
+    if (runFoundPeach) {
+      game.openReveal();
+      runCardShown();
+    } else focusBoardTiles();
+  }, [asking, endRun, runFoundPeach, game, runCardShown, focusBoardTiles]);
+  // Keep playing: from the start, into the run, paused, with Resume first;
+  // from the run, back where typing goes.
   const keepAsked = useCallback(() => {
-    setAsking(false);
+    const from = asking;
+    setAsking(null);
+    if (from === 'play') {
+      setView('run');
+      return;
+    }
     setTimeout(
       () =>
         document
@@ -419,7 +483,33 @@ export function Game({
           ?.focus({ preventScroll: true }),
       0,
     );
-  }, []);
+  }, [asking]);
+
+  // The board's letters while the start is up: blank tiles, a line, and no
+  // action reaches the basket.
+  const waitingBoard = useMemo<PlayApi>(() => {
+    const line: Message = {
+      body: { kind: 'plain', text: START_WELL },
+      tone: 'info',
+    };
+    const none = () => {};
+    return {
+      state: {
+        tiles: game.state.tiles.map((t) => ({ id: t.id, letter: '' })),
+        rackOrder: game.state.rackOrder,
+        composing: [],
+        message: line,
+        revealOpen: false,
+      },
+      composedWord: '',
+      addTile: none,
+      addLetter: none,
+      removeLast: none,
+      clear: none,
+      shuffle: none,
+      submit: none,
+    };
+  }, [game.state.tiles, game.state.rackOrder]);
 
   // One Share, built once, wherever it is offered: the found list, and the two
   // cards that open for the big finds, quiet on a card under its own button.
@@ -510,7 +600,7 @@ export function Game({
             onOpenFlags={openYourFlagsFromSettings}
             rush={rush}
             chip={
-              standing && state.mode === 'daily' ? (
+              standing && state.mode === 'daily' && !startUp ? (
                 <RunChip
                   standing={standing}
                   elsewhere={runPhase === 'elsewhere'}
@@ -530,12 +620,12 @@ export function Game({
             keysOff={
               runEndOpen ||
               runPeach !== null ||
-              asking ||
+              asking !== null ||
               quiet !== null ||
               oldPeach !== null
             }
             onBack={backToBoard}
-            onAskEnd={() => setAsking(true)}
+            onAskEnd={() => setAsking('run')}
           />
         ) : (
           <div className="board">
@@ -549,21 +639,45 @@ export function Game({
               arrives later: it would shove the well and the rack down mid-play,
               on the first word of the day. Zeros on an empty board are honest;
               furniture that materialises under a thumb is not. */}
-              {!wide && (
-                <TierMeter
-                  tier={state.tier}
-                  theme={theme}
-                  streak={game.streak}
+              {/* The start takes the meter's place while it's up, and the
+                  letters wait blank and out of reach behind it. */}
+              {startUp ? (
+                <StartChoice
+                  phase={runPhase}
+                  leftMs={run.leftMs}
+                  clockMs={run.clockMs}
+                  onPlay={onPlay}
+                  onRush={() => setView('run')}
                 />
+              ) : (
+                !wide && (
+                  <TierMeter
+                    tier={state.tier}
+                    theme={theme}
+                    streak={game.streak}
+                  />
+                )
               )}
-              <ComposingStick
-                game={game}
-                glint={glinting}
-                onWordTap={onWordTap}
-                onSuggest={(word, back) => setSuggesting({ word, back })}
-              />
-              <TypeCase game={game} ref={tilesRef} />
-              <Controls game={game} />
+              {startUp ? (
+                <>
+                  <ComposingStick game={waitingBoard} />
+                  <div inert>
+                    <TypeCase game={waitingBoard} />
+                    <Controls game={waitingBoard} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <ComposingStick
+                    game={game}
+                    glint={glinting}
+                    onWordTap={onWordTap}
+                    onSuggest={(word, back) => setSuggesting({ word, back })}
+                  />
+                  <TypeCase game={game} ref={tilesRef} />
+                  <Controls game={game} />
+                </>
+              )}
             </div>
 
             <FoundList

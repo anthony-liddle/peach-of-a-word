@@ -160,6 +160,8 @@ export interface ThemeCopy {
   readonly rushName: string;
   /** The run's result, its way out to the board. */
   readonly runToBasket: string;
+  /** The start's line, under Play and Peach rush. */
+  readonly startLine: string;
 }
 
 export const THEME_COPY: Record<Theme, ThemeCopy> = {
@@ -182,6 +184,8 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     completionLine: 'Every common word the rack can spell, found.',
     rushName: 'Deadline',
     runToBasket: 'On to the case',
+    startLine:
+      'One run a day against the clock, before you set your first word. Every word you find goes into the case.',
   },
   cute: {
     mastheadSubline: 'Pick the peaches',
@@ -204,6 +208,8 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     completionLine: 'Every common word these letters can grow, picked.',
     rushName: 'Peach rush',
     runToBasket: `On to the ${BASKET}`,
+    // Antoine's own, 25 November.
+    startLine: `One run a day against the clock, before your first word in the ${BASKET}. Every word you find goes into your ${BASKET}.`,
   },
 };
 

@@ -111,9 +111,14 @@ describe('the way in', () => {
     expect(rushButton()).toBeNull();
   });
 
-  it('is in the toolbar from the second day, until the first word', () => {
+  it('is on the start from the second day, then in the toolbar after Play, until the first word', () => {
     renderGame();
     expect(rushButton()).toHaveAccessibleName(
+      'Peach rush, 1 minute 30 seconds on the clock',
+    );
+    expect(document.querySelector('.runchip')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    expect(document.querySelector('.runchip')).toHaveAccessibleName(
       'Peach rush, 1 minute 30 seconds on the clock',
     );
     type('sea');

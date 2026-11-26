@@ -174,7 +174,7 @@ describe('the settings popover', () => {
     );
   });
 
-  test('with Peach rush shown, Longer clock follows Word counts by length, with its line', async () => {
+  test('with Peach rush shown, its two rows follow Word counts by length, each with its line', async () => {
     await page.viewport(1280, 800);
     mount(null, true);
     button()!.click();
@@ -187,12 +187,21 @@ describe('the settings popover', () => {
     const names = [...d!.querySelectorAll('input')].map(
       (i) => i.labels?.[0]?.textContent?.trim() ?? i.getAttribute('aria-label'),
     );
-    expect(names.slice(-2)).toEqual(['Word counts by length', 'Longer clock']);
-    const clock = [...d!.querySelectorAll('input')].at(-1)!;
-    const line = document.getElementById(
-      clock.getAttribute('aria-describedby') ?? '',
+    expect(names.slice(-3)).toEqual([
+      'Word counts by length',
+      'Offer Peach rush',
+      'Longer clock',
+    ]);
+    const lineOf = (input: HTMLInputElement) =>
+      document
+        .getElementById(input.getAttribute('aria-describedby') ?? '')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim();
+    const [offer, clock] = [...d!.querySelectorAll('input')].slice(-2);
+    expect(lineOf(offer!)).toBe(
+      'Turn off to go straight to the board each day.',
     );
-    expect(line?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(lineOf(clock!)).toBe(
       'Runs against the clock last 3:00 instead of 1:30.',
     );
   });
