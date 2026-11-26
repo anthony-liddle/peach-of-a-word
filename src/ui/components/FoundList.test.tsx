@@ -93,13 +93,16 @@ describe('FoundList score composition', () => {
     expect(screen.getByText(/off-page\s+4/i)).toBeInTheDocument();
   });
 
-  it('hosts the single progress bar in the glossary, not a subordinate breakdown', () => {
+  it('hosts the single meter in the glossary, not a subordinate breakdown', () => {
     renderList(['serenade', 'sane']);
     const glossary = screen.getByRole('region', { name: /words found/i });
-    // One bar, and it is the real progressbar (the merged tier meter), living in
-    // the glossary. The old role="img" composition bar is gone.
-    const bars = within(glossary).getAllByRole('progressbar');
-    expect(bars).toHaveLength(1);
+    // One meter (the merged tier meter), living in the glossary. Its bar is
+    // hidden from screen readers, which read its percentage beside it. The old
+    // role="img" composition bar is gone.
+    expect(
+      within(glossary).getAllByRole('region', { name: 'Progress' }),
+    ).toHaveLength(1);
+    expect(within(glossary).queryByRole('progressbar')).toBeNull();
     expect(
       within(glossary).queryByRole('img', { name: /score breakdown/i }),
     ).toBeNull();

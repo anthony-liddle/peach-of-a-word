@@ -744,9 +744,10 @@ export function Game({
         )}
 
         {/* Screen-reader announcements: found words, tier changes, the crown.
-          Settled when the find happens, never re-resolved under it. */}
+          Settled when the find happens, never re-resolved under it. Each one
+          a node of its own, so the same line twice is said twice. */}
         <div className="visually-hidden" role="status" aria-live="polite">
-          {spokenAnnouncement}
+          <span key={spokenAnnouncement.key}>{spokenAnnouncement.text}</span>
         </div>
 
         {!wide && view === 'board' && editionCard}

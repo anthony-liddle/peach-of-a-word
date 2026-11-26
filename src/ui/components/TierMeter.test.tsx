@@ -20,6 +20,13 @@ function standing(over: Partial<TierStanding> = {}): TierStanding {
   };
 }
 
+/** Whether a screen reader reaches this node: nothing above it hides it. */
+function readable(node: Element | null, root: Element): boolean {
+  for (let n = node; n && n !== root; n = n.parentElement)
+    if (n.getAttribute('aria-hidden') === 'true') return false;
+  return node !== null;
+}
+
 describe('TierMeter', () => {
   it('shows the themed rank name for the active theme', () => {
     const { rerender, container } = render(
@@ -47,12 +54,23 @@ describe('TierMeter', () => {
     expect(off!.style.flexGrow).toBe('12');
   });
 
-  it('reports points progress toward reachable on the progressbar', () => {
+  // TalkBack read the bar's new value, a bare "3", before each find's line
+  // (Antoine, 26 November). The percentage beside it says the same, so the bar
+  // is hidden from screen readers and the percentage and the next rank are
+  // read instead, as the app does since its fix 4.
+  it('hides the bar from screen readers, and reads the percentage and the next rank', () => {
     const { container } = render(
       <TierMeter tier={standing()} theme="letterpress" />,
     );
-    const bar = container.querySelector('[role="progressbar"]');
-    expect(bar?.getAttribute('aria-valuenow')).toBe('30');
+    expect(within(container).queryByRole('progressbar')).toBeNull();
+    expect(readable(container.querySelector('.tier__track'), container)).toBe(
+      false,
+    );
+    const caption = container.querySelector('.tier__ticks') as HTMLElement;
+    expect(readable(within(caption).getByText('30%'), container)).toBe(true);
+    const next = container.querySelector('.tier__next')!;
+    expect(next.textContent).toMatch(/^Next: .+ at 40%$/);
+    expect(readable(next, container)).toBe(true);
   });
 
   it('prints the explicit set and off-page point numbers beneath the bar', () => {
@@ -132,11 +150,10 @@ describe('TierMeter streak', () => {
     ) {
       expect(node.getAttribute('aria-hidden')).not.toBe('true');
     }
-    // The two that stay hidden are still hidden: the progressbar's valuetext
-    // already speaks the percent and the rank, so reading them here says it
-    // all twice.
-    expect(
-      container.querySelector('.tier__next')?.getAttribute('aria-hidden'),
-    ).toBe('true');
+    // And the percent and the next rank beside it are read, now that the bar
+    // is hidden.
+    expect(readable(container.querySelector('.tier__next'), container)).toBe(
+      true,
+    );
   });
 });

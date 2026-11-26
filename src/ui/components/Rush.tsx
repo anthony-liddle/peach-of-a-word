@@ -165,7 +165,8 @@ export function RunView({
       {/* Finds, as the basket says them; and the time, at its marks, in a
         region of its own so neither speaks over the other's text. */}
       <div className="visually-hidden" role="status" aria-live="polite">
-        {spokenFind}
+        {/* Each find its own node, so the same line twice is said twice. */}
+        <span key={spokenFind.key}>{spokenFind.text}</span>
       </div>
       <div className="visually-hidden" aria-live="polite" aria-atomic="true">
         {run.timeSpoken}
