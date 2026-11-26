@@ -12,6 +12,11 @@ export type QuietCategory = 'set' | 'uncommon' | 'rare' | 'mythic';
 type RevealProps = {
   onClose: () => void;
   returnFocusTo?: HTMLElement | null;
+  /**
+   * The close button's words in place of the theme's: "Close" for a card
+   * opened from a run's result, which closes onto the result, not the basket.
+   */
+  closeLabel?: string | undefined;
   // Both registers now: the close button speaks the theme's vocabulary, and
   // that button is shared. The kicker below is still crown-only.
   theme: Theme;
@@ -195,7 +200,7 @@ export function Reveal(props: RevealProps) {
         ) : null}
         <div className="reveal__way-out">
           <button ref={closeRef} className="reveal__close" onClick={onClose}>
-            {copy(props.theme).revealClose}
+            {props.closeLabel ?? copy(props.theme).revealClose}
           </button>
           {props.register === 'crown' ? props.share : null}
         </div>

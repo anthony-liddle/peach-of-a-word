@@ -3,6 +3,7 @@ import { useTheme, type Theme } from '../useTheme.ts';
 import { useAppearance, type Appearance } from '../useAppearance.ts';
 import { useTextSize, type TextSize } from '../useTextSize.ts';
 import { useLengthCounts } from '../useLengthCounts.ts';
+import { useLongerClock } from '../useLongerClock.ts';
 import { useFlagList, useFlagsUI } from '@/flags/context.ts';
 
 /**
@@ -35,6 +36,7 @@ export function SettingsMenu({
   muted,
   onToggleMute,
   onOpenFlags,
+  rush = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,6 +44,8 @@ export function SettingsMenu({
   onToggleMute: () => void;
   /** Opens Your flags on its own, over the game. */
   onOpenFlags?: () => void;
+  /** Peach rush is shown, so its Longer clock is too. */
+  rush?: boolean;
 }) {
   const flagsUI = useFlagsUI();
   const flagList = useFlagList(flagsUI?.flags ?? null);
@@ -54,6 +58,8 @@ export function SettingsMenu({
   const panelId = useId();
   const noteId = useId();
   const countsNoteId = useId();
+  const [longerClock, setLongerClock] = useLongerClock();
+  const clockNoteId = useId();
 
   const close = (returnFocus: boolean) => {
     onOpenChange(false);
@@ -218,6 +224,24 @@ export function SettingsMenu({
               Turn off to hide each length until you find a word that long.
             </p>
           </div>
+          {/* Longer clock, the app's, after Word counts by length, while Peach
+              rush is shown. Read at Start, so a run keeps its length. */}
+          {rush && (
+            <div className="settings__counts">
+              <label className="settings__choice">
+                <input
+                  type="checkbox"
+                  checked={longerClock}
+                  aria-describedby={clockNoteId}
+                  onChange={() => setLongerClock(!longerClock)}
+                />
+                Longer clock
+              </label>
+              <p className="settings__note" id={clockNoteId}>
+                Runs against the clock last 3:00 instead of 1:30.
+              </p>
+            </div>
+          )}
           {/* Your flags: the row and its count, never the words (Antoine, 22
               November). It opens the list on its own, so the list can never
               push these settings out of view. There once anything is flagged. */}

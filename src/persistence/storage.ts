@@ -148,13 +148,25 @@ export class GameStorage {
       this.store = fallback.store;
       this.persistent = fallback.persistent;
     }
-    const days: unknown = this.read().days;
-    this.daysAtOpen =
-      days && typeof days === 'object'
+    this.daysAtOpen = this.readDays();
+  }
+
+  /**
+   * The day keys in the save. A storage that throws on reading counts as no
+   * days, here at construction, so a browser that blocks it still reaches the
+   * game's own screens.
+   */
+  private readDays(): number[] {
+    try {
+      const days: unknown = this.read().days;
+      return days && typeof days === 'object'
         ? Object.keys(days)
             .filter((k) => /^\d+$/.test(k))
             .map(Number)
         : [];
+    } catch {
+      return [];
+    }
   }
 
   /**

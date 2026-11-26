@@ -90,6 +90,7 @@ export function useRush({
   longerClock,
   onCarry,
   lock: givenLock,
+  shown = true,
 }: {
   puzzle: Puzzle;
   sourceEntry: SourceEntry | undefined;
@@ -101,6 +102,11 @@ export function useRush({
   onCarry: (words: string[]) => void;
   /** The browser's locks by default; null for none, as in a browser without. */
   lock?: RushLock | null;
+  /**
+   * Peach rush is shown. Hidden, a debug address opens no run and writes
+   * nothing; the hook still runs, as hooks must, and starts nothing itself.
+   */
+  shown?: boolean;
 }): RushApi {
   const [lock] = useState(() =>
     givenLock === undefined ? browserLock() : givenLock,
@@ -148,7 +154,7 @@ export function useRush({
   );
 
   const [core, setCore] = useState<Core>(() => {
-    const seeded = debugCore(blank(), storage, dayIndex);
+    const seeded = shown ? debugCore(blank(), storage, dayIndex) : null;
     if (seeded) return seeded;
     const kept = storage.loadRun(dayIndex, puzzle.sourceWord);
     if (kept) return fromRecord(kept);
