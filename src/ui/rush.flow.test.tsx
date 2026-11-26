@@ -328,6 +328,30 @@ describe("time's up, and the peach of a word's card", () => {
     expect(screen.getByRole('timer').textContent).not.toBe(before);
   });
 
+  it('says nothing old when the result is opened again from the toolbar', () => {
+    // Found in TalkBack (26 November): the run's view mounts again, and its
+    // two live regions came back holding the last find and Time's up, which
+    // Chrome then read out a second time.
+    renderGame();
+    fireEvent.click(rushButton()!);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    type('sea');
+    runOut();
+    // The run's two regions, the finds' and the time's, right after its view.
+    const runRegions = () => {
+      const first = document.querySelector('.board--run')!.nextElementSibling!;
+      return [first.textContent, first.nextElementSibling!.textContent];
+    };
+    expect(runRegions()).toEqual([
+      expect.stringMatching(/^sea, \d+ points?\.$/),
+      expect.stringMatching(/^Time's up\./),
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'On to the basket' }));
+    fireEvent.click(rushButton()!);
+    expect(result()).not.toBeNull();
+    expect(runRegions()).toEqual(['', '']);
+  });
+
   it('opens the result as the clock runs out', () => {
     renderGame();
     fireEvent.click(rushButton()!);
