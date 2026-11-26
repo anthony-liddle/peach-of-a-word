@@ -120,6 +120,30 @@ describe('the way in', () => {
     expect(rushButton()).toBeNull();
   });
 
+  it('says when the run is going in another tab, with no time', () => {
+    const save = secondDay();
+    renderGame(save);
+    new GameStorage(save).saveRunInFlight({
+      dayIndex: today(),
+      sourceWord: 'serenade',
+      words: ['sea'],
+      leftMs: 48_000,
+      clockMs: 90_000,
+      phase: 'running',
+      tab: 'another',
+    });
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: 'eight-letters/v1' }),
+      );
+    });
+    expect(rushButton()).toHaveAccessibleName(
+      'Peach rush, going in another tab',
+    );
+    expect(rushButton()).toHaveTextContent('In another tab');
+    expect(rushButton()).not.toHaveTextContent('0:48');
+  });
+
   it("isn't there on Endless", () => {
     renderGame();
     fireEvent.click(screen.getByRole('button', { name: 'Endless' }));

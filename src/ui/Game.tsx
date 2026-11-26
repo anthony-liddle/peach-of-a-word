@@ -513,6 +513,7 @@ export function Game({
               standing && state.mode === 'daily' ? (
                 <RunChip
                   standing={standing}
+                  elsewhere={runPhase === 'elsewhere'}
                   record={run.record}
                   leftMs={run.leftMs}
                   clockMs={run.clockMs}

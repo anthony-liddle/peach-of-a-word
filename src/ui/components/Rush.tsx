@@ -432,17 +432,24 @@ function RushGlyph() {
 
 /**
  * The run in the toolbar, on the daily only, while there's a run to reach:
- * offered (1:30), waiting (0:48 left), or played (57 points), which opens its
- * result again. Gone once the basket has started with no run, and on Endless.
+ * offered (1:30), waiting (0:48 left), going in another tab, or played (57
+ * points), which opens its result again. Gone once the basket has started
+ * with no run, and on Endless.
+ *
+ * Going in another tab it shows no time: the time saved there is running
+ * down in that tab, and the run isn't paused (Antoine, 26 November).
  */
 export function RunChip({
   standing,
+  elsewhere,
   record,
   leftMs,
   clockMs,
   onOpen,
 }: {
   standing: RushStanding;
+  /** Another tab has the run going. */
+  elsewhere: boolean;
   record: RunRecord | null;
   leftMs: number;
   clockMs: number;
@@ -451,20 +458,25 @@ export function RunChip({
   const [theme] = useTheme();
   const name = copy(theme).rushName;
   const played = standing === 'played' && record;
+  const away = standing === 'waiting' && elsewhere;
   const detail = played
     ? `${record.points} ${record.points === 1 ? 'point' : 'points'}`
-    : standing === 'waiting'
-      ? `${clockText(leftMs)} left`
-      : clockText(clockMs);
+    : away
+      ? 'In another tab'
+      : standing === 'waiting'
+        ? `${clockText(leftMs)} left`
+        : clockText(clockMs);
   const spoken = played
     ? `${name}, ${runTally(record).replace(' · ', ', ')}`
-    : standing === 'waiting'
-      ? `${name}, paused, ${clockSpoken(leftMs)} left`
-      : `${name}, ${clockSpoken(clockMs)} on the clock`;
+    : away
+      ? `${name}, going in another tab`
+      : standing === 'waiting'
+        ? `${name}, paused, ${clockSpoken(leftMs)} left`
+        : `${name}, ${clockSpoken(clockMs)} on the clock`;
   return (
     <button
       type="button"
-      className="runchip"
+      className={away ? 'runchip runchip--away' : 'runchip'}
       aria-label={spoken}
       title={spoken}
       onClick={onOpen}

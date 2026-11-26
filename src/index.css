@@ -2772,11 +2772,13 @@ footer.colophon a {
 }
 /* At the largest text on a phone, the button, the peach's card and Settings
    share the toolbar's second row only if the button drops its name. It keeps
-   the glyph and the points, and its spoken name keeps everything. */
+   the glyph and the points, and its spoken name keeps everything. So does
+   "In another tab", the button's longest line, beside Settings alone. */
 @media (max-width: 30em) {
   :root[data-text-size='largest']
     .toolbar__right:has(.iconbtn--crown)
-    .runchip__name {
+    .runchip__name,
+  :root[data-text-size='largest'] .runchip--away .runchip__name {
     display: none;
   }
 }
