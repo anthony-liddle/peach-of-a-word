@@ -116,14 +116,14 @@ describe('the cue document', () => {
 
 /** The departures the game plays, both tiles: the tick and Shuffle. */
 const CLICKS = ['tick', 'shuffle'];
-/** Peach rush's two, which only the app plays. */
+/** Peach rush's two, which the run plays. */
 const RUSH = ['rush-ten', 'rush-end'];
 
 describe('each departure', () => {
-  test("is a tile the game plays, or one of Peach rush's two, which only the app plays", () => {
+  test("is a tile the game plays, or one of Peach rush's two", () => {
     expect(Object.keys(DEPARTURES).sort()).toEqual([...CLICKS, ...RUSH].sort());
-    for (const id of RUSH) expect(DEPARTURES[id]!.appOnly, id).toBe(true);
-    for (const id of CLICKS) expect(DEPARTURES[id]!.appOnly, id).toBe(false);
+    for (const id of RUSH) expect(DEPARTURES[id]!.rush, id).toBe(true);
+    for (const id of CLICKS) expect(DEPARTURES[id]!.rush, id).toBe(false);
   });
 
   test.each(CLICKS)(

@@ -190,7 +190,7 @@ describe('the sounds page is complete', () => {
     ['rush-ten', 'Peach rush, 10 seconds left', 'playRushTen'],
     ['rush-end', "Peach rush, time's up", 'playRushEnd'],
   ])(
-    '%s, which only the app plays, has its button, which plays its cue and nothing on the old engine',
+    "%s, one of Peach rush's two, has its button, which plays its cue and nothing on the old engine",
     (id, label, method) => {
       const { presses } = pressEverything();
       const rush = presses.filter((p) => p.sound === id);

@@ -38,7 +38,7 @@ describe('the privacy page while flagging is off', () => {
 
   it('names the keys a browser keeps without e8-flags, with no copy anywhere else', () => {
     expect(text).toContain(
-      "and your progress, theme, text size, appearance and word counts setting live in your browser's local storage under the keys eight-letters/v1, e8-theme, e8-text-size, e8-appearance and e8-length-counts. Clearing your browser storage clears them. There is no account and no copy of them anywhere else.",
+      "and your progress, theme, text size, appearance, word counts setting and Peach rush settings live in your browser's local storage under the keys eight-letters/v1, e8-theme, e8-text-size, e8-appearance, e8-length-counts, e8-longer-clock and e8-rush-offer. Clearing your browser storage clears them. There is no account and no copy of them anywhere else.",
     );
   });
 

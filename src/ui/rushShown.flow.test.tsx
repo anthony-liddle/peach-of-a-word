@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Game } from './Game.tsx';
 import {
@@ -14,11 +14,10 @@ import { useDefinitions } from './useDefinitions.ts';
 import { createFlags, type Flags } from '@/flags/flags.ts';
 
 /*
- * Peach rush, hidden (Antoine, 25 November): until PR 4 turns it on after the
- * phone checks, the game as it ships shows no way into the run, no Longer
- * clock, and writes nothing under the run's keys, with the switch at its
- * default. A made-up board, SERENADE, on a browser's second day, where the
- * run would be offered.
+ * Peach rush, shown (Antoine's go, after the phone checks on PR 4's preview):
+ * the game as it ships, with the switch at its default and no `rush` given.
+ * A made-up board, SERENADE. A browser's second day is offered the run; its
+ * first day opens on the board, as before Peach rush.
  */
 
 let device: Flags;
@@ -41,17 +40,18 @@ const data: GameData = {
 let map: Map<string, string>;
 
 /** The game as it ships: no `rush`, so the switch decides. */
-function renderGame() {
+function renderGame({ firstDay = false } = {}) {
   map = new Map<string, string>();
   const save: KeyValueStore = {
     getItem: (k) => map.get(k) ?? null,
     setItem: (k, v) => void map.set(k, v),
   };
-  new GameStorage(save).saveDayProgress(
-    dayIndex(new Date(), STORAGE_EPOCH) - 1,
-    'serenade',
-    [],
-  );
+  if (!firstDay)
+    new GameStorage(save).saveDayProgress(
+      dayIndex(new Date(), STORAGE_EPOCH) - 1,
+      'serenade',
+      [],
+    );
   return render(
     <Game
       data={data}
@@ -80,38 +80,48 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => {
-  window.history.replaceState(null, '', '/');
-});
+const start = () => screen.queryByRole('region', { name: 'Today' });
+const tileLetters = () =>
+  [...document.querySelectorAll<HTMLElement>('.case button')]
+    .map((b) => b.textContent)
+    .join('');
 
-describe('Peach rush, hidden', () => {
-  it('is off as the game ships', () => {
-    expect(RUSH_SHOWN).toBe(false);
-    expect(rushByDefault()).toBe(false);
+describe('Peach rush, shown', () => {
+  it('is on as the game ships', () => {
+    expect(RUSH_SHOWN).toBe(true);
+    expect(rushByDefault()).toBe(true);
   });
 
-  it('offers no run in the toolbar, where it would be offered', () => {
+  it("offers the run on the start, on a browser's second day", () => {
     renderGame();
-    expect(rushButton()).toBeNull();
-    expect(document.querySelector('.runchip')).toBeNull();
+    expect(start()).not.toBeNull();
+    expect(rushButton()).toHaveAccessibleName(
+      'Peach rush, 1 minute 30 seconds on the clock',
+    );
+    expect(tileLetters()).toBe('');
   });
 
-  it('shows no Longer clock in Settings', () => {
+  it("opens on the board on a browser's first day, the letters on load", () => {
+    renderGame({ firstDay: true });
+    expect(start()).toBeNull();
+    expect(rushButton()).toBeNull();
+    expect(tileLetters()).toHaveLength(8);
+  });
+
+  it('has Offer Peach rush and Longer clock in Settings', () => {
     renderGame();
     fireEvent.click(screen.getAllByRole('button', { name: 'Settings' })[0]!);
-    expect(screen.queryByRole('checkbox', { name: 'Longer clock' })).toBeNull();
+    expect(
+      screen.getByRole('checkbox', { name: 'Offer Peach rush' }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole('checkbox', { name: 'Longer clock' }),
+    ).not.toBeChecked();
   });
 
-  it('opens on the board even from a debug address, and writes no run', () => {
-    window.history.replaceState(null, '', '/?run=end');
+  it("writes nothing under the run's keys until a run is started", () => {
     renderGame();
-    expect(document.querySelector('.board--run')).toBeNull();
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(JSON.parse(map.get('eight-letters/v1')!).runs).toBeUndefined();
-  });
-
-  it("writes nothing under the run's keys through a day of play", () => {
-    renderGame();
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
     for (const key of 'sea') fireEvent.keyDown(window, { key });
     fireEvent.keyDown(window, { key: 'Enter' });
     act(() => void window.dispatchEvent(new Event('pagehide')));
@@ -119,10 +129,5 @@ describe('Peach rush, hidden', () => {
     expect(saved.runs).toBeUndefined();
     expect(saved.runInFlight).toBeUndefined();
     expect(localStorage.getItem('e8-longer-clock')).toBeNull();
-  });
-
-  it('is on in a development build with ?rush, for its pictures', () => {
-    window.history.replaceState(null, '', '/?rush');
-    expect(rushByDefault()).toBe(true);
   });
 });

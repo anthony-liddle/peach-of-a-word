@@ -129,7 +129,7 @@ describe('the sounds page', () => {
     expect(localStorage.getItem('e8-theme')).toBeNull();
   });
 
-  test("says each of Peach rush's two is for the app, chosen on 25 November 2026, and that the web game never plays it", () => {
+  test("says each of Peach rush's two is for Peach rush, chosen on 25 November 2026", () => {
     const { pair } = recordingPair();
     render(<SoundsPage pair={pair} />);
     for (const title of [
@@ -139,10 +139,10 @@ describe('the sounds page', () => {
       const section = screen.getByRole('region', { name: title });
       expect(
         within(section).getByText(
-          /^For the app's Peach rush, chosen on 25 November 2026\./,
+          /^For Peach rush, chosen on 25 November 2026\./,
         ),
       ).toHaveTextContent(
-        'The web game has no run, so it never plays this, and the game before Soundscape made nothing for it: a tap here plays silence, then the cue.',
+        'The game before Soundscape made nothing for it, so a tap here plays silence, then the cue.',
       );
     }
   });

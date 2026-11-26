@@ -23,12 +23,9 @@ export interface AudioEngine {
   tick(): void;
   /** Shuffle pressed: a few tiles knocking together, softly. */
   playShuffle(): void;
-  /**
-   * Peach rush, in the app: 10 seconds left, once a run. The web game has no
-   * run and never calls it; the sounds page does, so it can be heard here.
-   */
+  /** Peach rush: 10 seconds left, once a run. The sounds page plays it too. */
   playRushTen(): void;
-  /** Peach rush, in the app: time's up. The web game never calls it either. */
+  /** Peach rush: time's up. */
   playRushEnd(): void;
   /** Mute or unmute all cues. */
   setMuted(muted: boolean): void;

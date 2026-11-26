@@ -19,8 +19,9 @@
  *
  * Peach rush's two, at 10 seconds left and at time's up, were drafted on 24
  * November 2026 and kept by Antoine on the sounds page's preview on 25
- * November. Only the app plays them: the web game has no run. They were
- * drafted in Bea's mix, so `heard` is as they play, and the tests add nothing.
+ * November. The app plays them, and the web game too since Peach rush came
+ * to it. They were drafted in Bea's mix, so `heard` is as they play, and the
+ * tests add nothing.
  */
 export interface Departure {
   /** The day it was chosen, or null while it is a draft, not yet heard and kept. */
@@ -29,8 +30,8 @@ export interface Departure {
   is: string;
   /** What the old engine played for it, to follow "it was", or null where it played nothing. */
   was: string | null;
-  /** Played by the app alone, never by the web game. */
-  appOnly: boolean;
+  /** One of Peach rush's two, which the run plays, in the app and on the web. */
+  rush: boolean;
   /**
    * Whether `heard` was measured in Bea's mix (mix.ts). The tick and Shuffle
    * were chosen before it, so the tests add their instrument's gain to theirs.
@@ -55,7 +56,7 @@ export const DEPARTURES: Record<string, Departure> = {
     chosen: '2026-11-05',
     is: 'A tile moved: two bright clicks about 9 ms apart, each a tile ringing in three sine partials from 3 to 8 kHz.',
     was: 'an 880 Hz square, 30 ms long.',
-    appOnly: false,
+    rush: false,
     inTheMix: false,
     heard: { durationMs: 14.17, peakDbfs: -35.93, lufs: -63.55 },
   },
@@ -63,7 +64,7 @@ export const DEPARTURES: Record<string, Departure> = {
     chosen: '2026-11-05',
     is: 'A few tiles knocking together: four bright clicks spread over about 120 ms.',
     was: null,
-    appOnly: false,
+    rush: false,
     inTheMix: false,
     heard: { durationMs: 123.23, peakDbfs: -37.61, lufs: -63.03 },
   },
@@ -71,7 +72,7 @@ export const DEPARTURES: Record<string, Departure> = {
     chosen: '2026-11-25',
     is: 'Ten seconds left: two soft A5 pings, the second a little softer.',
     was: null,
-    appOnly: true,
+    rush: true,
     inTheMix: true,
     heard: { durationMs: 255.81, peakDbfs: -18.53, lufs: -35.19 },
   },
@@ -79,7 +80,7 @@ export const DEPARTURES: Record<string, Departure> = {
     chosen: '2026-11-25',
     is: "Time's up: G, E and C, falling to rest on the C, with a faint octave over it, as a find has.",
     was: null,
-    appOnly: true,
+    rush: true,
     inTheMix: true,
     heard: { durationMs: 581.33, peakDbfs: -18.01, lufs: -30.47 },
   },

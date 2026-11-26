@@ -5,9 +5,6 @@ import { DEFAULT_THEME } from './ui/useTheme.ts';
 import { faviconHref } from './ui/favicon.ts';
 import { FLAGS_KEY } from './flags/flags.ts';
 import { FLAGGING_SHOWN } from './flags/shown.ts';
-import { RUSH_SHOWN } from './rush/shown.ts';
-import { LONGER_CLOCK_KEY } from './ui/useLongerClock.ts';
-import { RUSH_OFFER_KEY } from './ui/useRushOffer.ts';
 
 /**
  * The standalone documents under public/, copied verbatim by Vite rather than
@@ -375,14 +372,6 @@ describe('privacy.html', () => {
       expect.arrayContaining(['e8-theme', 'eight-letters/v1']),
     );
     if (!FLAGGING_SHOWN) keys.delete(FLAGS_KEY);
-    // Longer clock and Offer Peach rush are only in Settings while Peach rush
-    // is shown, so hidden, nothing writes their keys and the page doesn't name
-    // them yet. PR 4 of "Peach
-    // Rush On The Web" turns the run on and names the key in the same change.
-    if (!RUSH_SHOWN) {
-      keys.delete(LONGER_CLOCK_KEY);
-      keys.delete(RUSH_OFFER_KEY);
-    }
     for (const key of keys) expect(html).toContain(`<code>${key}</code>`);
   });
 

@@ -45,6 +45,21 @@ export function RunView({
   // only while the clock runs.
   useGlobalKeys(run, keysOff || run.phase !== 'running', tilesRef);
   const spokenFind = useAnnouncedText(run.slice.announcement, 'run', theme);
+  // The view mounts again each time the run is opened, as its result is from
+  // the toolbar. Its two live regions say only what changes after that, so a
+  // screen reader isn't read the run's last find and its Time's up a second
+  // time (found with TalkBack, 26 November). Each region speaks again from
+  // its first change.
+  const [findAtMount, setFindAtMount] = useState<number | null>(
+    run.slice.announcement.seq,
+  );
+  if (findAtMount !== null && run.slice.announcement.seq !== findAtMount)
+    setFindAtMount(null);
+  const [timeAtMount, setTimeAtMount] = useState<string | null>(run.timeSpoken);
+  if (timeAtMount !== null && run.timeSpoken !== timeAtMount)
+    setTimeAtMount(null);
+  const findSaid = findAtMount === null ? spokenFind.text : '';
+  const timeSaid = timeAtMount === null ? run.timeSpoken : '';
   const { slice, phase, leftMs, clockMs } = run;
   const last = phase === 'running' && leftMs <= 10_000;
   const words = [...slice.found].reverse();
@@ -166,10 +181,10 @@ export function RunView({
         region of its own so neither speaks over the other's text. */}
       <div className="visually-hidden" role="status" aria-live="polite">
         {/* Each find its own node, so the same line twice is said twice. */}
-        <span key={spokenFind.key}>{spokenFind.text}</span>
+        <span key={spokenFind.key}>{findSaid}</span>
       </div>
       <div className="visually-hidden" aria-live="polite" aria-atomic="true">
-        {run.timeSpoken}
+        {timeSaid}
       </div>
     </>
   );

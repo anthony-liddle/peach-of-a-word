@@ -18,7 +18,7 @@ type CueFile = Omit<typeof cues, 'cues'> & {
  * peach.cues.json, written from the game's previous engine,
  * ReferenceAudioEngine, which stays as the reference the cues are held to. All
  * but the departures (departures.ts), chosen by ear since: the tick and
- * Shuffle, and Peach rush's two, which only the app plays. Every cue plays in
+ * Shuffle, and Peach rush's two. Every cue plays in
  * Bea's mix (mix.ts).
  *
  * It keeps that engine's lifecycle. Nothing exists until the first cue, which
