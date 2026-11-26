@@ -287,6 +287,18 @@ describe("time's up, and the peach of a word's card", () => {
       act(() => vi.advanceTimersByTime(250));
   }
 
+  it("keeps the clock running under End's question", () => {
+    renderGame();
+    fireEvent.click(rushButton()!);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    act(() => vi.advanceTimersByTime(250));
+    fireEvent.click(screen.getByRole('button', { name: 'End' }));
+    const before = screen.getByRole('timer').textContent;
+    for (let t = 0; t < 2_000; t += 250) act(() => vi.advanceTimersByTime(250));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(screen.getByRole('timer').textContent).not.toBe(before);
+  });
+
   it('opens the result as the clock runs out', () => {
     renderGame();
     fireEvent.click(rushButton()!);

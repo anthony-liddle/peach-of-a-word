@@ -39,13 +39,16 @@ export const SEED_TWELVE = [
   'angle',
 ];
 
+/** The address's parameters, in a development build. */
 function params(): URLSearchParams | null {
-  if (!import.meta.env.DEV || typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') return null;
   return new URLSearchParams(window.location.search);
 }
 
 /** Which run state the address asks to open on, if any. */
 export function debugRunKind(): string | null {
+  // Each entry point checks the build itself, so the bundler drops its body.
+  if (!import.meta.env.DEV) return null;
   return params()?.get('run') ?? null;
 }
 
@@ -65,6 +68,7 @@ export function debugCore(
   storage: GameStorage,
   day: number,
 ): Core | null {
+  if (!import.meta.env.DEV) return null;
   const p = params();
   const kind = p?.get('run');
   if (!p || !kind) return null;
@@ -132,6 +136,7 @@ export function debugCore(
  * the board after a run and of a run waiting.
  */
 export function seedForPictures(data: GameData, storage: GameStorage): void {
+  if (!import.meta.env.DEV) return;
   const p = params();
   if (!p) return;
   const seedRun = p.get('seedRun');
