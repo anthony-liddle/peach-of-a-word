@@ -617,6 +617,15 @@ export interface GameApi {
    * lives per slice and toggles on a mode switch, which would re-fire a burst.
    */
   editionPulse: number;
+  /** Today's board, whichever board is on show: Peach rush plays its puzzle. */
+  daily: Slice;
+  /**
+   * A run's words, into today's basket: merged into the save first, after
+   * what it holds, so no find is lost to a stale tab, then onto the board.
+   * Like another tab's finds, they move the list, the points and the rank,
+   * and nothing is said or celebrated; the run said its own finds.
+   */
+  carry: (words: readonly string[]) => void;
 }
 
 export function useGame(
@@ -827,6 +836,20 @@ export function useGame(
     if (kind === 'edition-complete') setEditionPulse((p) => p + 1);
   }, []);
 
+  const carry = useCallback(
+    (words: readonly string[]) => {
+      if (dailyDayIndex === null) return;
+      const saved = storage.saveDayProgress(
+        dailyDayIndex,
+        dailyWord,
+        [...dailyFound, ...words],
+        (w) => dailyWords.has(w),
+      );
+      dispatch({ type: 'SYNC_DAILY', saved });
+    },
+    [dailyDayIndex, dailyWord, dailyFound, dailyWords, storage],
+  );
+
   const submit = useCallback(() => {
     const word = normalizeGuess(composedWord);
     const result = validateGuess(word, active.puzzle, active.foundSet);
@@ -933,5 +956,7 @@ export function useGame(
     muted,
     streak: storage.currentStreak(game.daily.dayIndex ?? 0),
     editionPulse,
+    daily: game.daily,
+    carry,
   };
 }

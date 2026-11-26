@@ -67,7 +67,7 @@ afterEach(() => {
   delete el.dataset.appearance;
 });
 
-function mount(textSize: 'largest' | null = null) {
+function mount(textSize: 'largest' | null = null, rush = false) {
   const style = document.createElement('style');
   style.id = 'game-css';
   style.textContent = css;
@@ -80,6 +80,7 @@ function mount(textSize: 'largest' | null = null) {
   flushSync(() =>
     root!.render(
       createElement(Game, {
+        rush,
         data: fakeData(),
         audio: new NullAudioEngine(),
         storage: new GameStorage(fakeStore()),
@@ -170,6 +171,29 @@ describe('the settings popover', () => {
     );
     expect(line?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Turn off to hide each length until you find a word that long.',
+    );
+  });
+
+  test('with Peach rush shown, Longer clock follows Word counts by length, with its line', async () => {
+    await page.viewport(1280, 800);
+    mount(null, true);
+    button()!.click();
+    let d = dialog();
+    for (let i = 0; i < 100 && !d; i++) {
+      await new Promise((r) => setTimeout(r, 10));
+      d = dialog();
+    }
+    expect(d).not.toBeNull();
+    const names = [...d!.querySelectorAll('input')].map(
+      (i) => i.labels?.[0]?.textContent?.trim() ?? i.getAttribute('aria-label'),
+    );
+    expect(names.slice(-2)).toEqual(['Word counts by length', 'Longer clock']);
+    const clock = [...d!.querySelectorAll('input')].at(-1)!;
+    const line = document.getElementById(
+      clock.getAttribute('aria-describedby') ?? '',
+    );
+    expect(line?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Runs against the clock last 3:00 instead of 1:30.',
     );
   });
 

@@ -2531,3 +2531,307 @@ footer.colophon a {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ---- Peach rush ----------------------------------------------------------- */
+
+/* The run's header, one row: the way back or End, the name over the tally,
+   the clock. One reserved height, so the last seconds change a colour and
+   nothing moves. Then the bar. */
+.board--run {
+  margin-top: 0;
+}
+/* The fit, for the SE's Safari at the largest text: the run's own spacing is
+   tighter than the board's, its well is shorter, and its clock stops growing
+   at the large size, as the app holds its clock's row. */
+.board--run .play {
+  gap: 0.45rem;
+}
+.board--run .stick {
+  height: 3.25rem;
+}
+.runhead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.runhead__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+}
+.runhead__back {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  margin-left: -0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 2rem;
+  line-height: 1;
+  display: grid;
+  place-content: center;
+}
+.runhead__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+.runhead__tally {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+.runhead__tally strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+}
+.runhead__clock {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: min(2.2rem, 38px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.runhead__clock--last {
+  color: var(--error);
+}
+.runhead .runhead__end {
+  flex: 0 0 auto;
+}
+.runhead__track {
+  height: 8px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+.runhead__fill {
+  display: block;
+  height: 100%;
+  background: var(--good);
+}
+.runhead__fill--last {
+  background: var(--error);
+}
+
+/* The rack, covered by Start or Resume while its letters are hidden. */
+.runrack {
+  position: relative;
+}
+.runrack__cover {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.runrack__start {
+  min-height: 52px;
+  min-width: 9rem;
+  font-size: 1rem;
+  flex: 0 0 auto;
+}
+.runfound .found__words {
+  margin-top: 0;
+}
+
+/* The run's result: the reveal card's frame, in the page's own accent. */
+.runend {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 6px var(--paper),
+    0 0 0 7px var(--accent-deep),
+    0 24px 50px rgba(0, 0, 0, 0.4);
+}
+.runend .reveal__kicker {
+  color: var(--accent-deep);
+}
+.runend .reveal__sep {
+  background: var(--accent);
+}
+.runend__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.8rem, 8vw, 2.6rem);
+  line-height: 1.1;
+  margin: 0;
+  color: var(--ink);
+}
+.runend__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.6rem;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+.runend__stat strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 2rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.runend__line {
+  margin: 0 0 0.4rem;
+  color: var(--ink-soft);
+}
+.runend__peach {
+  margin-bottom: 0.8rem;
+}
+.runend__best {
+  margin: 0.4rem 0 0.8rem;
+  color: var(--ink);
+}
+.runend__words {
+  justify-content: center;
+}
+.runend .reveal__close {
+  border-color: var(--button);
+  background: var(--button);
+  color: var(--on-accent, var(--paper));
+}
+.runend__way-out {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.runend__way-out .share--quiet {
+  margin-top: 0.2rem;
+}
+
+/* End's question: a small card over the run. */
+.endask {
+  max-width: 20rem;
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: var(--card-radius);
+  padding: 1.4rem 1.2rem 1.2rem;
+  text-align: center;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.4);
+}
+.endask__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  margin: 0 0 0.35rem;
+}
+.endask__msg {
+  margin: 0 0 1.1rem;
+  color: var(--ink-soft);
+}
+.endask__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.endask__buttons .btn {
+  min-height: 44px;
+}
+
+/* The run in the toolbar: offered, waiting, or played. */
+.runchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: var(--control-h);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--accent-deep);
+  padding: 0 0.7rem 0 0.55rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rush-glyph {
+  flex: 0 0 auto;
+}
+.runchip .rush-glyph {
+  width: 16px;
+  height: 16px;
+}
+.runchip__detail {
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+/* At the largest text on a phone, the button, the peach's card and Settings
+   share the toolbar's second row only if the button drops its name. It keeps
+   the glyph and the points, and its spoken name keeps everything. So does
+   "In another tab", the button's longest line, beside Settings alone. */
+@media (max-width: 30em) {
+  :root[data-text-size='largest']
+    .toolbar__right:has(.iconbtn--crown)
+    .runchip__name,
+  :root[data-text-size='largest'] .runchip--away .runchip__name {
+    display: none;
+  }
+}
+/* Paused at the largest text on a phone, the header holds the way back, the
+   name, the clock and End, and letterpress's one word can't wrap: its letters
+   close up so it keeps its gap from the clock. */
+@media (max-width: 30em) {
+  :root[data-text-size='largest']
+    .runhead__row:has(.runhead__back):has(.runhead__end)
+    .runhead__name {
+    letter-spacing: 0.06em;
+  }
+}
+/* Shorter than the SE's Safari, as the narrowest phone at the largest text
+   (320 by 460), the run doesn't fit: its header stays pinned, so the clock
+   stays on screen while the rest scrolls under it. Its background is the
+   page's own, fixed as the page's is, so it lines up with it. */
+@media (max-height: 540px) {
+  .runhead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-bottom: 0.3rem;
+    background-color: var(--paper);
+    background-image: var(--page-bg);
+    background-attachment: fixed;
+  }
+}
+/* The narrowest phones, under 336px: the header's row holds the name, the
+   clock and End, and the way back too before Start and while paused.
+   Letterpress's name is one word and can't wrap, so the name's letters close
+   up and the clock is a size smaller, keeping a gap between the two. */
+@media (max-width: 21em) {
+  .runhead__name {
+    letter-spacing: 0.06em;
+  }
+  .runhead__clock {
+    font-size: min(1.8rem, 30px);
+  }
+}
+/* Paused at the largest text on those phones, the row holds the way back,
+   the name, the clock and End, and there's no room for all four: letterpress
+   ran 19px past at 320 wide. The name steps aside there, the section's own
+   label still names the run, and the clock takes the name's place. */
+@media (max-width: 21em) {
+  :root[data-text-size='largest']
+    .runhead__row:has(.runhead__back):has(.runhead__end)
+    .runhead__name {
+    display: none;
+  }
+  :root[data-text-size='largest']
+    .runhead__row:has(.runhead__back):has(.runhead__end)
+    .runhead__clock {
+    margin-left: auto;
+  }
+}

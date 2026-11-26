@@ -7,6 +7,9 @@ import {
 } from '@/data/gameData.ts';
 import { SoundscapeAudioEngine } from '@/audio/SoundscapeAudioEngine.ts';
 import { GameStorage } from '@/persistence/storage.ts';
+import { rushByDefault } from '@/rush/shown.ts';
+import { settleOldRun } from '@/rush/settle.ts';
+import { seedForPictures } from '@/rush/debug.ts';
 import { Game } from '@/ui/Game.tsx';
 import { useTheme } from '@/ui/useTheme.ts';
 import { copy } from '@/ui/themeCopy.ts';
@@ -71,7 +74,14 @@ export function App() {
   useEffect(() => {
     let active = true;
     loadGameData()
-      .then((data) => active && setLoad({ status: 'ready', data }))
+      .then((data) => {
+        // Before the game reads the save: a debug picture's state, and a
+        // Peach rush left waiting on an earlier day, ended and carried into
+        // its own day (`settleOldRun`), which writes nothing without one.
+        if (rushByDefault()) seedForPictures(data, storage);
+        settleOldRun(data, storage);
+        if (active) setLoad({ status: 'ready', data });
+      })
       .catch((err: unknown) => {
         console.error('Game data failed to load.', err);
         if (isStaleBundleError(err) && reloadForStaleBundle()) return;
@@ -80,7 +90,7 @@ export function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [storage]);
 
   if (load.status === 'loading') {
     return (

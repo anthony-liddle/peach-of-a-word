@@ -156,6 +156,10 @@ export interface ThemeCopy {
   readonly typeCredit: string;
   /** The completion card's one line. */
   readonly completionLine: string;
+  /** Peach rush's name, the app's. */
+  readonly rushName: string;
+  /** The run's result, its way out to the board. */
+  readonly runToBasket: string;
 }
 
 export const THEME_COPY: Record<Theme, ThemeCopy> = {
@@ -176,6 +180,8 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     ladderPeak: 'Top rung',
     typeCredit: 'Set in Fraunces and Spectral.',
     completionLine: 'Every common word the rack can spell, found.',
+    rushName: 'Deadline',
+    runToBasket: 'On to the case',
   },
   cute: {
     mastheadSubline: 'Pick the peaches',
@@ -196,6 +202,8 @@ export const THEME_COPY: Record<Theme, ThemeCopy> = {
     ladderPeak: 'Top rung',
     typeCredit: 'Set in Fredoka and Nunito.',
     completionLine: 'Every common word these letters can grow, picked.',
+    rushName: 'Peach rush',
+    runToBasket: `On to the ${BASKET}`,
   },
 };
 

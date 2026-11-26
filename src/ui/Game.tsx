@@ -41,6 +41,13 @@ import { dayOfIndex } from '@/flags/model.ts';
 import { YourFlags } from './components/YourFlags.tsx';
 import { FLAGGING_SHOWN } from '@/flags/shown.ts';
 import { SuggestAsk } from './components/SuggestAsk.tsx';
+import { rushByDefault } from '@/rush/shown.ts';
+import { useRush } from '@/rush/useRush.ts';
+import { rushStanding } from '@/rush/offer.ts';
+import { owedOldPeach } from '@/rush/settle.ts';
+import { debugRunKind } from '@/rush/debug.ts';
+import { useLongerClock } from './useLongerClock.ts';
+import { EndAsk, RunChip, RunEndCard, RunView } from './components/Rush.tsx';
 
 interface QuietState {
   word: string;
@@ -48,7 +55,15 @@ interface QuietState {
   status: 'loading' | 'ready';
   definition: string | null;
   trigger: HTMLElement | null;
+  /** Opened from a run's result, so it says Close and closes onto it. */
+  fromRun?: boolean;
 }
+
+/**
+ * The peach of a word's card opens by itself this long after a run's result,
+ * so Time's up and its beat come first.
+ */
+export const RUN_PEACH_MS = 1200;
 
 /** How long a Mythic's glint stays drawn: its sweep, and a little after. */
 export const GLINT_MS = 1200;
@@ -71,6 +86,11 @@ interface Props {
    * ships; the tests that hold the flag's behaviour turn it on.
    */
   flagging?: boolean;
+  /**
+   * Whether the game shows Peach rush. `RUSH_SHOWN` as it ships, or `?rush`
+   * in a development build (`rushByDefault`); the run's tests turn it on.
+   */
+  rush?: boolean;
 }
 
 export function Game({
@@ -78,8 +98,47 @@ export function Game({
   audio,
   storage,
   flagging = FLAGGING_SHOWN,
+  rush = rushByDefault(),
 }: Props) {
   const game = useGame(data, audio, storage);
+
+  // Peach rush, on today's board. The hook runs either way, as hooks must,
+  // and writes nothing until a run is started, which only its screen does.
+  const [longerClock] = useLongerClock();
+  const run = useRush({
+    puzzle: game.daily.puzzle,
+    sourceEntry: game.daily.sourceEntry,
+    dayIndex: game.daily.dayIndex ?? 0,
+    storage,
+    audio,
+    longerClock,
+    onCarry: game.carry,
+    shown: rush,
+  });
+  const [view, setView] = useState<'board' | 'run'>(() =>
+    rush && debugRunKind() ? 'run' : 'board',
+  );
+  const [runEndOpen, setRunEndOpen] = useState(() => {
+    const kind = rush ? debugRunKind() : null;
+    return kind === 'end' || kind === 'end-nopeach';
+  });
+  const [asking, setAsking] = useState(() => rush && debugRunKind() === 'ask');
+  // The peach of a word's card over the result: opened by itself, or from
+  // the result's word, which gets the focus back.
+  const [runPeach, setRunPeach] = useState<HTMLElement | 'auto' | null>(null);
+  const runPhase = run.phase;
+  const standing = rush
+    ? rushStanding({
+        played: run.record !== null,
+        waiting:
+          runPhase === 'paused' ||
+          runPhase === 'elsewhere' ||
+          runPhase === 'running',
+        basketFound: game.daily.found.length,
+        openedBefore: storage.openedBefore(game.daily.dayIndex ?? 0),
+        canSave: storage.persistent,
+      })
+    : null;
 
   // The "How the words work" explainer. Its open flag is lifted here so the
   // global key handler can stand down while it is up (the same precedent as the
@@ -230,7 +289,8 @@ export function Game({
       quiet !== null ||
       settingsOpen ||
       yourFlags !== null ||
-      suggesting !== null,
+      suggesting !== null ||
+      view === 'run',
     tilesRef,
   );
 
@@ -261,9 +321,10 @@ export function Game({
   }, [suggesting, board, flags, suggested]);
 
   const onWordTap = useCallback(
-    (word: string, trigger: HTMLElement) => {
+    (word: string, trigger: HTMLElement, fromRun = false) => {
       if (word === state.puzzle.sourceWord) {
-        game.openReveal();
+        if (fromRun) setRunPeach(trigger);
+        else game.openReveal();
         return;
       }
       const category = classifyWord(word, state.puzzle) as QuietCategory;
@@ -273,6 +334,7 @@ export function Game({
         status: 'loading',
         definition: null,
         trigger,
+        fromRun,
       });
       void getDefinition(word).then((definition) => {
         setQuiet((q) =>
@@ -284,6 +346,80 @@ export function Game({
   );
 
   const closeQuiet = useCallback(() => setQuiet(null), []);
+
+  // The clock running out, or End, opens the result.
+  const lastRunPhase = useRef(runPhase);
+  useEffect(() => {
+    if (
+      lastRunPhase.current !== 'over' &&
+      runPhase === 'over' &&
+      view === 'run'
+    )
+      setRunEndOpen(true);
+    lastRunPhase.current = runPhase;
+  }, [runPhase, view]);
+
+  // The peach of a word's card opens by itself on the result, once, a moment
+  // after Time's up, with Close and no Share, as the app decided.
+  const owed = run.record?.peachCardOwed ?? false;
+  const { cardShown } = run;
+  useEffect(() => {
+    if (!runEndOpen || !owed || runPeach) return;
+    const wait = debugRunKind() === 'end' ? 0 : RUN_PEACH_MS;
+    const id = setTimeout(() => {
+      setRunPeach('auto');
+      cardShown();
+    }, wait);
+    return () => clearTimeout(id);
+  }, [runEndOpen, owed, runPeach, cardShown]);
+
+  // An earlier day's run that found its peach of a word and ended unseen,
+  // settled at this load (`settleOldRun`): its card opens once, now.
+  const [oldPeach, setOldPeach] = useState(() =>
+    rush ? owedOldPeach(storage, game.daily.dayIndex ?? 0) : null,
+  );
+  const closeOldPeach = useCallback(() => {
+    if (oldPeach)
+      storage.saveRun(
+        oldPeach.dayIndex,
+        { ...oldPeach.record, peachCardOwed: false },
+        true,
+      );
+    setOldPeach(null);
+  }, [oldPeach, storage]);
+
+  const openRun = useCallback(() => {
+    setView('run');
+    if (run.record) setRunEndOpen(true);
+  }, [run.record]);
+  const { pause: pauseRun, end: endRun } = run;
+  const backToBoard = useCallback(() => {
+    pauseRun();
+    setView('board');
+  }, [pauseRun]);
+  const toBasket = useCallback(() => {
+    setRunEndOpen(false);
+    setRunPeach(null);
+    setView('board');
+    game.setMode('daily');
+    // Where typing goes, as Keep playing on the completion card does.
+    setTimeout(() => tilesRef.current?.focus({ preventScroll: true }), 0);
+  }, [game]);
+  const endAsked = useCallback(() => {
+    setAsking(false);
+    endRun();
+  }, [endRun]);
+  // Back where typing goes; a paused run's view puts Resume first.
+  const keepAsked = useCallback(() => {
+    setAsking(false);
+    setTimeout(
+      () =>
+        document
+          .querySelector<HTMLElement>('.board--run .case')
+          ?.focus({ preventScroll: true }),
+      0,
+    );
+  }, []);
 
   // One Share, built once, wherever it is offered: the found list, and the two
   // cards that open for the big finds, quiet on a card under its own button.
@@ -356,24 +492,55 @@ export function Game({
     // no Your flags offers a way in, and the sending above doesn't run.
     <FlagsContext.Provider value={flagging ? flagsUI : null}>
       <div className="app">
-        <Decorations celebrate={state.editionOpen} />
-        <Masthead />
+        {/* The run takes the page: the masthead, the toolbar, the ornaments
+            and the footer step aside, so it fits a phone at the largest text. */}
+        {view === 'board' && <Decorations celebrate={state.editionOpen} />}
+        {view === 'board' && <Masthead />}
         {!storage.persistent && (
           <p className="storage-note">
             This browser is not saving progress. Your words will be lost when
             you leave or reload.
           </p>
         )}
-        <Toolbar
-          game={game}
-          settingsOpen={settingsOpen}
-          onSettingsOpenChange={setSettingsOpen}
-          onOpenFlags={openYourFlagsFromSettings}
-        />
+        {view === 'board' && (
+          <Toolbar
+            game={game}
+            settingsOpen={settingsOpen}
+            onSettingsOpenChange={setSettingsOpen}
+            onOpenFlags={openYourFlagsFromSettings}
+            rush={rush}
+            chip={
+              standing && state.mode === 'daily' ? (
+                <RunChip
+                  standing={standing}
+                  elsewhere={runPhase === 'elsewhere'}
+                  record={run.record}
+                  leftMs={run.leftMs}
+                  clockMs={run.clockMs}
+                  onOpen={openRun}
+                />
+              ) : null
+            }
+          />
+        )}
 
-        <div className="board">
-          <div className="play">
-            {/* Narrow widths only: the meter sits above the well, the way the app
+        {view === 'run' ? (
+          <RunView
+            run={run}
+            keysOff={
+              runEndOpen ||
+              runPeach !== null ||
+              asking ||
+              quiet !== null ||
+              oldPeach !== null
+            }
+            onBack={backToBoard}
+            onAskEnd={() => setAsking(true)}
+          />
+        ) : (
+          <div className="board">
+            <div className="play">
+              {/* Narrow widths only: the meter sits above the well, the way the app
               has it. At two-column widths it stays in the glossary in the right
               column, in exactly the place it has always been.
 
@@ -382,43 +549,85 @@ export function Game({
               arrives later: it would shove the well and the rack down mid-play,
               on the first word of the day. Zeros on an empty board are honest;
               furniture that materialises under a thumb is not. */}
-            {!wide && (
-              <TierMeter tier={state.tier} theme={theme} streak={game.streak} />
-            )}
-            <ComposingStick
-              game={game}
+              {!wide && (
+                <TierMeter
+                  tier={state.tier}
+                  theme={theme}
+                  streak={game.streak}
+                />
+              )}
+              <ComposingStick
+                game={game}
+                glint={glinting}
+                onWordTap={onWordTap}
+                onSuggest={(word, back) => setSuggesting({ word, back })}
+              />
+              <TypeCase game={game} ref={tilesRef} />
+              <Controls game={game} />
+            </div>
+
+            <FoundList
+              puzzle={state.puzzle}
+              found={state.found}
+              tier={state.tier}
+              theme={theme}
+              costume={costume}
               glint={glinting}
+              lengthCounts={lengthCounts}
+              showTier={wide}
               onWordTap={onWordTap}
-              onSuggest={(word, back) => setSuggesting({ word, back })}
+              summaryExtra={share()}
             />
-            <TypeCase game={game} ref={tilesRef} />
-            <Controls game={game} />
-          </div>
 
-          <FoundList
-            puzzle={state.puzzle}
-            found={state.found}
-            tier={state.tier}
-            theme={theme}
-            costume={costume}
-            glint={glinting}
-            lengthCounts={lengthCounts}
-            showTier={wide}
-            onWordTap={onWordTap}
-            summaryExtra={share()}
-          />
-
-          {/* Two-column widths only: the completion card lands over the top of
+            {/* Two-column widths only: the completion card lands over the top of
             the glossary's column, beside the well and the rack rather than on
             them, since play goes on under it. On a phone it is over the page,
             below. One node, placed here like the meter. */}
-          {wide && editionCard}
-        </div>
+            {wide && editionCard}
+          </div>
+        )}
 
-        <Colophon
-          triggerRef={howTriggerRef}
-          onOpenHow={() => setHowOpen(true)}
-        />
+        {view === 'board' && (
+          <Colophon
+            triggerRef={howTriggerRef}
+            onOpenHow={() => setHowOpen(true)}
+          />
+        )}
+
+        {asking && <EndAsk onEnd={endAsked} onKeep={keepAsked} />}
+
+        {view === 'run' && runEndOpen && run.record && (
+          <RunEndCard
+            record={run.record}
+            slice={run.slice}
+            date={new Date()}
+            onBasket={toBasket}
+            onOpenWord={(w, t) => onWordTap(w, t, true)}
+          />
+        )}
+        {runPeach && (
+          <Reveal
+            register="crown"
+            theme={theme}
+            word={run.slice.puzzle.sourceWord}
+            entry={run.slice.sourceEntry}
+            costume={costume}
+            closeLabel="Close"
+            returnFocusTo={runPeach === 'auto' ? null : runPeach}
+            onClose={() => setRunPeach(null)}
+          />
+        )}
+        {oldPeach && !runPeach && (
+          <Reveal
+            register="crown"
+            theme={theme}
+            word={oldPeach.record.sourceWord}
+            entry={data.sourceEntry(oldPeach.record.sourceWord)}
+            costume={null}
+            closeLabel="Close"
+            onClose={closeOldPeach}
+          />
+        )}
 
         {/* Screen-reader announcements: found words, tier changes, the crown.
           Settled when the find happens, never re-resolved under it. */}
@@ -426,7 +635,7 @@ export function Game({
           {spokenAnnouncement}
         </div>
 
-        {!wide && editionCard}
+        {!wide && view === 'board' && editionCard}
 
         {confettiOn && <Confetti onDone={endConfetti} costume={costume} />}
 
@@ -460,6 +669,7 @@ export function Game({
             status={quiet.status}
             definition={quiet.definition}
             returnFocusTo={quiet.trigger}
+            closeLabel={quiet.fromRun ? 'Close' : undefined}
             onClose={closeQuiet}
           />
         ) : null}
@@ -505,11 +715,17 @@ function Toolbar({
   settingsOpen,
   onSettingsOpenChange,
   onOpenFlags,
+  rush,
+  chip,
 }: {
   game: GameApi;
   settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
   onOpenFlags: () => void;
+  /** Peach rush is shown, so Settings has Longer clock. */
+  rush: boolean;
+  /** Peach rush's button, while there's a run to reach. */
+  chip: React.ReactNode;
 }) {
   const { state } = game;
   // The streak has one home at any given width, never two at the same one. At
@@ -538,6 +754,7 @@ function Toolbar({
       </div>
 
       <div className="toolbar__right">
+        {chip}
         {state.mode === 'daily' ? (
           wide && (
             <span className="chip" title="Days cleared in a row">
@@ -567,6 +784,7 @@ function Toolbar({
           muted={game.muted}
           onToggleMute={game.toggleMute}
           onOpenFlags={onOpenFlags}
+          rush={rush}
         />
       </div>
     </div>

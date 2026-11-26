@@ -705,3 +705,50 @@ describe('a page left open past midnight', () => {
     expect(storage.currentStreak(fifteenth + 1)).toBe(1);
   });
 });
+
+describe("a run's words, carried into today's basket", () => {
+  const data = () => dataAnchoredAt({ year: 2026, month: 6, day: 23 });
+  const open = (cap: ReturnType<typeof capturingStore>) =>
+    renderHook(() =>
+      useGame(data(), new NullAudioEngine(), new GameStorage(cap.store)),
+    ).result;
+  const find = (tab: { current: ReturnType<typeof useGame> }, word: string) => {
+    for (const letter of word) act(() => tab.current.addLetter(letter));
+    act(() => tab.current.submit());
+  };
+
+  it('go in after what the basket had, with their points', () => {
+    const cap = capturingStore();
+    const tab = open(cap);
+    find(tab, 'sea');
+    const one = tab.current.state.totalScore;
+    act(() => tab.current.carry(['near', 'sea']));
+    expect(tab.current.state.found).toEqual(['sea', 'near']);
+    expect(tab.current.state.totalScore).toBeGreaterThan(one);
+    const saved = cap.read() as { days: Record<number, { found: string[] }> };
+    expect(saved.days[dayIndex(new Date(), STORAGE_EPOCH)]?.found).toEqual([
+      'sea',
+      'near',
+    ]);
+  });
+
+  it("keep a find another tab saved that this one hadn't heard of", () => {
+    const cap = capturingStore();
+    const a = open(cap);
+    const b = open(cap);
+    find(b, 'near');
+    act(() => a.current.carry(['sea']));
+    expect(a.current.state.found).toEqual(['near', 'sea']);
+  });
+
+  it('say nothing and open no card, even with the peach of a word', () => {
+    const cap = capturingStore();
+    const tab = open(cap);
+    const announcement = tab.current.state.announcement;
+    act(() => tab.current.carry(['serenade', 'sea']));
+    expect(tab.current.state.sourceRevealed).toBe(true);
+    expect(tab.current.state.revealOpen).toBe(false);
+    expect(tab.current.state.editionOpen).toBe(false);
+    expect(tab.current.state.announcement).toBe(announcement);
+  });
+});
