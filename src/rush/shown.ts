@@ -1,22 +1,21 @@
 /**
- * Whether the game shows Peach rush: the run, its button in the toolbar, and
- * Longer clock in Settings.
+ * Whether the game shows Peach rush: the start, the run, its button in the
+ * toolbar, and Offer Peach rush and Longer clock in Settings.
  *
- * **Off until it's built and checked on phones (Antoine, 25 November).** The
- * run is built across PRs 2 and 3 of "Peach Rush On The Web", and PR 4 turns
- * this on, on his go after VoiceOver and TalkBack. Off, the website shows none
- * of it and writes nothing under the run's keys.
+ * **On since "Peach Rush On The Web" PR 4,** on Antoine's go after VoiceOver
+ * on his iPhone and TalkBack in the emulator, on its preview. Built off across
+ * PRs 2 and 3 (#217, #219) so each could merge alone.
  *
- * `Game` reads `rushByDefault()` as the default of its `rush` prop, so the
- * run's tests turn it on there, and `rushHidden.flow.test.tsx` holds the game
- * as it ships.
+ * `Game` reads `rushByDefault()` as the default of its `rush` prop, so a test
+ * can still render the game without it, and `rushShown.flow.test.tsx` holds
+ * the game as it ships.
  */
-export const RUSH_SHOWN = false;
+export const RUSH_SHOWN = true;
 
 /**
- * The switch, or in a development build `?rush` in the address, so the run
- * can be looked at and pictured before it's shown. The address does nothing in
- * a production build, where this is the switch alone.
+ * The switch, or in a development build `?rush` in the address, which let the
+ * run be looked at and pictured while the switch was off. The address does
+ * nothing in a production build, where this is the switch alone.
  */
 export function rushByDefault(): boolean {
   if (RUSH_SHOWN) return true;
