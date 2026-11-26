@@ -667,3 +667,41 @@ describe('a denied word already saved in progress', () => {
     expect(saved.days[dayIndex(today, STORAGE_EPOCH)]?.found).toEqual(['sea']);
   });
 });
+
+/*
+ * The streak, with a page left open past midnight. The page keeps the day it
+ * opened on, so it can clear that day after another tab, opened the next
+ * morning, has cleared the next. Both share one save, as tabs share a browser.
+ */
+describe('a page left open past midnight', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("clears its own day without breaking the next day's streak", () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    const cap = capturingStore();
+    const data = dataAnchoredAt({ year: 2026, month: 6, day: 23 });
+    const open = () =>
+      renderHook(() =>
+        useGame(data, new NullAudioEngine(), new GameStorage(cap.store)),
+      ).result;
+    const clear = (tab: { current: ReturnType<typeof useGame> }) => {
+      for (const word of ['sea', 'near', 'serenade']) {
+        for (const letter of word) act(() => tab.current.addLetter(letter));
+        act(() => tab.current.submit());
+      }
+    };
+
+    vi.setSystemTime(new Date(2026, 10, 14, 23, 50));
+    const lateNight = open();
+    vi.setSystemTime(new Date(2026, 10, 15, 9, 0));
+    const morning = open();
+    clear(morning);
+    // Back to the page from last night, which still plays the 14th.
+    clear(lateNight);
+
+    const storage = new GameStorage(cap.store);
+    const fifteenth = dayIndex(new Date(2026, 10, 15), STORAGE_EPOCH);
+    expect(storage.savedStreak()?.lastClearedDayIndex).toBe(fifteenth);
+    expect(storage.currentStreak(fifteenth + 1)).toBe(1);
+  });
+});
