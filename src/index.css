@@ -2805,3 +2805,31 @@ footer.colophon a {
     background-attachment: fixed;
   }
 }
+/* The narrowest phones, under 336px: the header's row holds the name, the
+   clock and End, and the way back too before Start and while paused.
+   Letterpress's name is one word and can't wrap, so the name's letters close
+   up and the clock is a size smaller, keeping a gap between the two. */
+@media (max-width: 21em) {
+  .runhead__name {
+    letter-spacing: 0.06em;
+  }
+  .runhead__clock {
+    font-size: min(1.8rem, 30px);
+  }
+}
+/* Paused at the largest text on those phones, the row holds the way back,
+   the name, the clock and End, and there's no room for all four: letterpress
+   ran 19px past at 320 wide. The name steps aside there, the section's own
+   label still names the run, and the clock takes the name's place. */
+@media (max-width: 21em) {
+  :root[data-text-size='largest']
+    .runhead__row:has(.runhead__back):has(.runhead__end)
+    .runhead__name {
+    display: none;
+  }
+  :root[data-text-size='largest']
+    .runhead__row:has(.runhead__back):has(.runhead__end)
+    .runhead__clock {
+    margin-left: auto;
+  }
+}
