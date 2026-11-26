@@ -703,6 +703,8 @@ describe('a page left open past midnight', () => {
     const fifteenth = dayIndex(new Date(2026, 10, 15), STORAGE_EPOCH);
     expect(storage.savedStreak()?.lastClearedDayIndex).toBe(fifteenth);
     expect(storage.currentStreak(fifteenth + 1)).toBe(1);
+  });
+});
 
 describe("a run's words, carried into today's basket", () => {
   const data = () => dataAnchoredAt({ year: 2026, month: 6, day: 23 });

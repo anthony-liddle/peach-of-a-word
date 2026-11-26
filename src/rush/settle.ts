@@ -2,8 +2,9 @@
  * A run left waiting on an earlier day, settled before the game reads the
  * save: it ends with what it had, is kept as that day's run, and carries its
  * words into that day's basket. Its day counts for the streak by the same rule
- * a find on that day would, and a peach of a word it found is owed its card,
- * which opens once on the first screen after.
+ * a find on that day would, so a day older than the last one cleared moves
+ * nothing and a later streak stands (`recordDailyCleared`). A peach of a word
+ * it found is owed its card, which opens once on the first screen after.
  *
  * A page left open past midnight keeps the day it opened on, as the board
  * does, so this only ever settles a run at the next load.
