@@ -403,6 +403,66 @@ export function EndAsk({
   );
 }
 
+/**
+ * Where today starts while Peach rush is offered: in the board, where the
+ * meter goes, with the tiles blank (Antoine, 25 November). Play shows the
+ * letters; Peach rush opens the run. With a run waiting, it says the time
+ * left, or that another tab has it. In the page, not over it, so it leaves
+ * the focus where the page has it.
+ */
+export function StartChoice({
+  phase,
+  leftMs,
+  clockMs,
+  onPlay,
+  onRush,
+}: {
+  phase: RushApi['phase'];
+  leftMs: number;
+  clockMs: number;
+  onPlay: () => void;
+  onRush: () => void;
+}) {
+  const [theme] = useTheme();
+  const t = copy(theme);
+  const away = phase === 'elsewhere';
+  const waiting = phase === 'paused' || phase === 'running';
+  const detail = away
+    ? 'In another tab'
+    : waiting
+      ? `${clockText(leftMs)} left`
+      : clockText(clockMs);
+  const spoken = away
+    ? `${t.rushName}, going in another tab`
+    : waiting
+      ? `${t.rushName}, paused, ${clockSpoken(leftMs)} left`
+      : `${t.rushName}, ${clockSpoken(clockMs)} on the clock`;
+  return (
+    <section className="start" aria-label="Today">
+      <div className="start__buttons">
+        <button
+          type="button"
+          className="btn btn--primary start__play"
+          onClick={onPlay}
+        >
+          Play
+        </button>
+        <button
+          type="button"
+          className="start__rush"
+          aria-label={spoken}
+          onClick={onRush}
+        >
+          <RushGlyph />
+          <span className="start__rushname">{t.rushName}</span>
+          <span className="start__rushdetail">{detail}</span>
+        </button>
+      </div>
+      <p className="start__line">{t.startLine}</p>
+    </section>
+  );
+}
+
 function RushGlyph() {
   return (
     <svg

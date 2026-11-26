@@ -171,6 +171,7 @@ describe("where today's run stands", () => {
     basketFound: 0,
     openedBefore: true,
     canSave: true,
+    offerOn: true,
   };
 
   it('is offered until the basket has a find', () => {
@@ -180,6 +181,16 @@ describe("where today's run stands", () => {
 
   it("isn't offered on a browser's first day", () => {
     expect(rushStanding({ ...base, openedBefore: false })).toBeNull();
+  });
+
+  it("isn't offered with Offer Peach rush off, but a run waiting or played stays", () => {
+    expect(rushStanding({ ...base, offerOn: false })).toBeNull();
+    expect(rushStanding({ ...base, offerOn: false, waiting: true })).toBe(
+      'waiting',
+    );
+    expect(rushStanding({ ...base, offerOn: false, played: true })).toBe(
+      'played',
+    );
   });
 
   it("isn't offered where the browser can't save", () => {

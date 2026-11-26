@@ -8,8 +8,9 @@
  *   the basket holds.
  * - **Offered:** none played or waiting, the basket has no find yet, it isn't
  *   the browser's first day (Antoine, 25 November: a new player meets the game
- *   first), and the browser can save, since one run a day needs a save to
- *   hold the day's one.
+ *   first), the browser can save, since one run a day needs a save to hold
+ *   the day's one, and Settings' Offer Peach rush is on. Off, a played or
+ *   waiting run stays reachable; only the offer goes.
  * - **None:** otherwise, and there's no way in.
  */
 export type RushStanding = 'played' | 'waiting' | 'offered';
@@ -20,15 +21,18 @@ export function rushStanding({
   basketFound,
   openedBefore,
   canSave,
+  offerOn,
 }: {
   played: boolean;
   waiting: boolean;
   basketFound: number;
   openedBefore: boolean;
   canSave: boolean;
+  /** Settings' Offer Peach rush. */
+  offerOn: boolean;
 }): RushStanding | null {
   if (played) return 'played';
   if (waiting) return 'waiting';
-  if (basketFound > 0 || !openedBefore || !canSave) return null;
+  if (basketFound > 0 || !openedBefore || !canSave || !offerOn) return null;
   return 'offered';
 }

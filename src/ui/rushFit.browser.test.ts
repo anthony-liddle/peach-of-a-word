@@ -129,7 +129,10 @@ async function into(state: State, theme: Theme) {
     });
   }
   mount(theme, save);
-  (await until(() => document.querySelector<HTMLElement>('.runchip'))).click();
+  // On a second day the start offers the run, a run waiting too.
+  (
+    await until(() => document.querySelector<HTMLElement>('.start__rush'))
+  ).click();
   await until(() => document.querySelector('.board--run'));
   if (state === 'running' || state === 'paused') {
     (await until(() => button('Start'))).click();

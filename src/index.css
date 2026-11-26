@@ -2835,3 +2835,48 @@ footer.colophon a {
     margin-left: auto;
   }
 }
+
+/* The start: Play, and Peach rush beside it, where the meter goes while the
+   run is offered, with the line under them. */
+.start {
+  margin-bottom: 1.1rem;
+}
+.start__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.start__play {
+  flex: 1 1 8rem;
+  min-height: 52px;
+  font-size: 1rem;
+}
+.start__rush {
+  flex: 1 1 11rem;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--accent-deep);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.start__rushdetail {
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.start__line {
+  margin: 0.7rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}

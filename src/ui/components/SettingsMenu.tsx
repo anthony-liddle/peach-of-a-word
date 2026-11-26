@@ -4,6 +4,8 @@ import { useAppearance, type Appearance } from '../useAppearance.ts';
 import { useTextSize, type TextSize } from '../useTextSize.ts';
 import { useLengthCounts } from '../useLengthCounts.ts';
 import { useLongerClock } from '../useLongerClock.ts';
+import { useRushOffer } from '../useRushOffer.ts';
+import { copy } from '../themeCopy.ts';
 import { useFlagList, useFlagsUI } from '@/flags/context.ts';
 
 /**
@@ -60,6 +62,8 @@ export function SettingsMenu({
   const countsNoteId = useId();
   const [longerClock, setLongerClock] = useLongerClock();
   const clockNoteId = useId();
+  const [rushOffer, setRushOffer] = useRushOffer();
+  const offerNoteId = useId();
 
   const close = (returnFocus: boolean) => {
     onOpenChange(false);
@@ -224,8 +228,26 @@ export function SettingsMenu({
               Turn off to hide each length until you find a word that long.
             </p>
           </div>
-          {/* Longer clock, the app's, after Word counts by length, while Peach
-              rush is shown. Read at Start, so a run keeps its length. */}
+          {/* Offer Peach rush, on by default, then Longer clock, the app's, so
+              the run's two rows sit together after Word counts by length,
+              while Peach rush is shown. Its line says what turning it off
+              does, and is its description, as Word counts' is. */}
+          {rush && (
+            <div className="settings__counts">
+              <label className="settings__choice">
+                <input
+                  type="checkbox"
+                  checked={rushOffer}
+                  aria-describedby={offerNoteId}
+                  onChange={() => setRushOffer(!rushOffer)}
+                />
+                Offer {copy(theme).rushName}
+              </label>
+              <p className="settings__note" id={offerNoteId}>
+                Turn off to go straight to the board each day.
+              </p>
+            </div>
+          )}
           {rush && (
             <div className="settings__counts">
               <label className="settings__choice">
