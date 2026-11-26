@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { createElement } from 'react';
 import { flushSync } from 'react-dom';
@@ -18,7 +18,10 @@ import type { Theme } from './useTheme.ts';
 
 /**
  * The start and the toolbar, in a real browser with the game's stylesheet
- * and each engine's fallback fonts.
+ * and its own web fonts, loaded from `public/fonts` as the page loads them.
+ * Measured with each engine's fallback fonts instead, a Linux machine's wider
+ * sans wrapped the toolbar's "PEACH RUSH 0:48 LEFT" at Largest where the
+ * game's own Nunito doesn't, so the fonts are loaded and checked first.
  *
  * - The start's Play and Peach rush are on screen as the page loads, on the
  *   SE's Safari (375 by 548) and at 390 by 664, at the largest text.
@@ -94,6 +97,23 @@ function saveFor(state: State): KeyValueStore {
 
 let root: Root | null = null;
 let host: HTMLElement | null = null;
+
+/** The game's four families, at the weights its type uses. */
+const FACES = ['Nunito', 'Fredoka', 'Spectral', 'Fraunces'].flatMap((family) =>
+  [400, 600].map((weight) => `${weight} 16px ${family}`),
+);
+
+beforeAll(async () => {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/fonts/fonts.css';
+  const loaded = new Promise((r) => (link.onload = r));
+  document.head.append(link);
+  await loaded;
+  await Promise.all(FACES.map((face) => document.fonts.load(face)));
+  // The measurements below mean nothing in a fallback font: say so here.
+  for (const face of FACES) expect(document.fonts.check(face), face).toBe(true);
+});
 
 afterEach(() => {
   root?.unmount();
