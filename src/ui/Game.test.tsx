@@ -399,8 +399,9 @@ describe('Game', () => {
     // The completion count is the single honest "X of Y" in the totals, but the
     // bar is points, no longer tied to it.
     expect(screen.getByText(/2 of 6 words/i)).toBeInTheDocument();
+    // Points, not the 2 of 6.
     const meter = screen.getByRole('region', { name: 'Progress' });
-    expect(within(meter).getByText('4 points')).toBeInTheDocument(); // not the 2 of 6
+    expect(within(meter).getByText('4 points')).toBeInTheDocument();
   });
 
   // The meter is REPARENTED across the two-column breakpoint, not merely moved:

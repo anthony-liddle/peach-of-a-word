@@ -20,7 +20,7 @@ function standing(over: Partial<TierStanding> = {}): TierStanding {
   };
 }
 
-/** Whether a screen reader reaches this node: nothing on its way up hides it. */
+/** Whether a screen reader reaches this node: nothing above it hides it. */
 function readable(node: Element | null, root: Element): boolean {
   for (let n = node; n && n !== root; n = n.parentElement)
     if (n.getAttribute('aria-hidden') === 'true') return false;
