@@ -30,7 +30,7 @@ import type { Theme } from './useTheme.ts';
 import type { GameData } from '@/data/gameData.ts';
 import type { SourceEntry } from '@/data/types.ts';
 import type { AudioEngine } from '@/audio/AudioEngine.ts';
-import { GameStorage } from '@/persistence/storage.ts';
+import { GameStorage, STORAGE_KEY } from '@/persistence/storage.ts';
 
 export type Mode = 'daily' | 'endless';
 
@@ -205,7 +205,9 @@ export type Action =
   | { type: 'OPEN_REVEAL' }
   | { type: 'CLOSE_REVEAL' }
   | { type: 'CLOSE_EDITION' }
-  | { type: 'PREVIEW'; kind: string };
+  | { type: 'PREVIEW'; kind: string }
+  /** Today's basket as saved, with finds another tab made. */
+  | { type: 'SYNC_DAILY'; saved: readonly string[] };
 
 function shuffled<T>(items: readonly T[]): T[] {
   const out = [...items];
@@ -502,6 +504,38 @@ export function reduceSlice(slice: Slice, action: Action): Slice {
   }
 }
 
+/**
+ * Another tab's finds, into the daily. Only what the finds decide moves: the
+ * list, the points, the rank and whether the peach of a word is out. The rack,
+ * the letters being typed, the line in the well and any open card stay as
+ * they are, and nothing is said or celebrated, since the find was made and
+ * heard in the other tab.
+ *
+ * The list takes the save's order, which a reload would show, then anything
+ * this tab holds that the save doesn't. A word is only ever added, and a save
+ * that adds nothing returns the same game, so the two tabs settle rather than
+ * answer each other's saves.
+ */
+function syncDaily(game: Game, saved: readonly string[]): Game {
+  const d = game.daily;
+  const known = saved.filter((w) => d.puzzle.validationWords.has(w));
+  if (known.every((w) => d.foundSet.has(w))) return game;
+  const found = [...new Set([...known, ...d.found])];
+  const foundSet = new Set(found);
+  const tier = computeTier(foundSet, d.puzzle);
+  return {
+    ...game,
+    daily: {
+      ...d,
+      found,
+      foundSet,
+      tier,
+      totalScore: tier.score,
+      sourceRevealed: d.sourceRevealed || foundSet.has(d.puzzle.sourceWord),
+    },
+  };
+}
+
 function reduce(game: Game, action: Action): Game {
   switch (action.type) {
     // The toggle is a view change only: it never regenerates either puzzle.
@@ -511,6 +545,10 @@ function reduce(game: Game, action: Action): Game {
     // First entry into Endless, and New Puzzle, both replace only this slice.
     case 'SET_ENDLESS':
       return { ...game, endless: action.slice, endlessLost: false };
+
+    // The daily's, whichever board is on show.
+    case 'SYNC_DAILY':
+      return syncDaily(game, action.saved);
 
     default: {
       if (game.mode === 'endless') {
@@ -705,13 +743,46 @@ export function useGame(
   // Persist daily progress only when durable state changes. The composing word
   // is transient, so keying on found (plus the puzzle identity) keeps tile taps,
   // backspace, clear, and shuffle off the synchronous disk-write path.
+  // The save keeps another tab's finds, and hands back the list it saved, so
+  // a find this tab hadn't heard about shows here too.
   const dailyDayIndex = game.daily.dayIndex;
   const dailyFound = game.daily.found;
+  const dailyWords = game.daily.puzzle.validationWords;
   useEffect(() => {
-    if (dailyDayIndex !== null) {
-      storage.saveDayProgress(dailyDayIndex, dailyWord, dailyFound);
-    }
-  }, [dailyFound, dailyDayIndex, dailyWord, storage]);
+    if (dailyDayIndex === null) return;
+    const saved = storage.saveDayProgress(
+      dailyDayIndex,
+      dailyWord,
+      dailyFound,
+      (w) => dailyWords.has(w),
+    );
+    dispatch({ type: 'SYNC_DAILY', saved });
+  }, [dailyFound, dailyDayIndex, dailyWord, dailyWords, storage]);
+
+  // Another tab saved: read today's basket again, so this tab's points, list
+  // and Share are current, and a word found there is already found here. A
+  // page back from the browser's back-forward cache missed the saves made
+  // while it was away, so it reads again as well.
+  useEffect(() => {
+    if (dailyDayIndex === null) return;
+    const reread = () =>
+      dispatch({
+        type: 'SYNC_DAILY',
+        saved: storage.loadDayProgress(dailyDayIndex, dailyWord),
+      });
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY || e.key === null) reread();
+    };
+    const onShow = (e: PageTransitionEvent) => {
+      if (e.persisted) reread();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('pageshow', onShow);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('pageshow', onShow);
+    };
+  }, [dailyDayIndex, dailyWord, storage]);
 
   // Same for endless: persist identity plus progress, never the composing word.
   const endlessFound = game.endless?.found;

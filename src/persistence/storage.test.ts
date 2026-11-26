@@ -26,6 +26,51 @@ describe('GameStorage day progress', () => {
   });
 });
 
+// Two tabs open on the same board each save their own found list. A tab that
+// hasn't heard about the other's find must not write over it.
+describe('GameStorage day progress from two tabs', () => {
+  let storage: GameStorage;
+  beforeEach(() => {
+    storage = new GameStorage(fakeStore());
+  });
+
+  it("keeps a find another tab saved, when this tab's list doesn't have it", () => {
+    storage.saveDayProgress(10, 'serenade', ['sea']);
+    storage.saveDayProgress(10, 'serenade', ['near']);
+    expect(storage.loadDayProgress(10, 'serenade')).toEqual(['sea', 'near']);
+  });
+
+  it('returns the basket as saved, so the tab can catch up', () => {
+    storage.saveDayProgress(10, 'serenade', ['sea']);
+    expect(storage.saveDayProgress(10, 'serenade', ['near'])).toEqual([
+      'sea',
+      'near',
+    ]);
+  });
+
+  it('saves each word once, in the order the save first had it', () => {
+    storage.saveDayProgress(10, 'serenade', ['sea', 'near']);
+    storage.saveDayProgress(10, 'serenade', ['near', 'sea', 'ease']);
+    expect(storage.loadDayProgress(10, 'serenade')).toEqual([
+      'sea',
+      'near',
+      'ease',
+    ]);
+  });
+
+  it('drops a saved word the board no longer takes', () => {
+    storage.saveDayProgress(10, 'serenade', ['sea', 'near']);
+    storage.saveDayProgress(10, 'serenade', ['sea'], (w) => w !== 'near');
+    expect(storage.loadDayProgress(10, 'serenade')).toEqual(['sea']);
+  });
+
+  it('starts over when the day has a new word', () => {
+    storage.saveDayProgress(10, 'oldcrown', ['cat', 'cot']);
+    storage.saveDayProgress(10, 'serenade', ['sea']);
+    expect(storage.loadDayProgress(10, 'serenade')).toEqual(['sea']);
+  });
+});
+
 // Every day's words stay, so a player moving to the app can bring them all.
 // The save used to keep only the fourteen newest days, which dropped the
 // fifteenth on every write after it.
