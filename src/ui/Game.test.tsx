@@ -399,8 +399,8 @@ describe('Game', () => {
     // The completion count is the single honest "X of Y" in the totals, but the
     // bar is points, no longer tied to it.
     expect(screen.getByText(/2 of 6 words/i)).toBeInTheDocument();
-    const bar = screen.getByRole('progressbar');
-    expect(bar).toHaveAttribute('aria-valuenow', '4'); // points, not the 2 of 6
+    const meter = screen.getByRole('region', { name: 'Progress' });
+    expect(within(meter).getByText('4 points')).toBeInTheDocument(); // not the 2 of 6
   });
 
   // The meter is REPARENTED across the two-column breakpoint, not merely moved:
@@ -420,17 +420,19 @@ describe('Game', () => {
     type('sea');
     fireEvent.keyDown(window, { key: 'Enter' });
 
-    // One bar on the screen, not two.
-    const bars = screen.getAllByRole('progressbar');
-    expect(bars).toHaveLength(1);
+    // One meter on the screen, not two.
+    const meters = screen.getAllByRole('region', { name: 'Progress' });
+    expect(meters).toHaveLength(1);
 
-    // The surviving bar sits in the glossary, where the totals live.
+    // The surviving meter sits in the glossary, where the totals live.
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).getByRole('progressbar')).toBe(bars[0]);
+    expect(within(glossary).getByRole('region', { name: 'Progress' })).toBe(
+      meters[0],
+    );
 
     // The play column has none: desktop is unchanged by the narrow-width move.
     const play = document.querySelector('.play') as HTMLElement;
-    expect(play.querySelector('[role="progressbar"]')).toBeNull();
+    expect(play.querySelector('.tier')).toBeNull();
   });
 
   it('at narrow widths moves the one bar above the compose well', () => {
@@ -440,8 +442,8 @@ describe('Game', () => {
     fireEvent.keyDown(window, { key: 'Enter' });
 
     // Still exactly one, on the other side of the breakpoint.
-    const bars = screen.getAllByRole('progressbar');
-    expect(bars).toHaveLength(1);
+    const meters = screen.getAllByRole('region', { name: 'Progress' });
+    expect(meters).toHaveLength(1);
 
     // In the play column, and ABOVE the well rather than below the controls:
     // the app's placement, which is the whole point of the move.
@@ -449,14 +451,16 @@ describe('Game', () => {
     const meter = play.querySelector('.tier') as HTMLElement;
     const stick = play.querySelector('.stick') as HTMLElement;
     expect(meter).not.toBeNull();
-    expect(meter.contains(bars[0]!)).toBe(true);
+    expect(meter).toBe(meters[0]);
     expect(
       meter.compareDocumentPosition(stick) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
     // And the glossary no longer carries one, so the move is a move.
     const glossary = screen.getByRole('region', { name: /words found/i });
-    expect(within(glossary).queryByRole('progressbar')).toBeNull();
+    expect(
+      within(glossary).queryByRole('region', { name: 'Progress' }),
+    ).toBeNull();
   });
 
   // The defect this forecloses: `.summary` appears with the first find, so a
@@ -468,8 +472,9 @@ describe('Game', () => {
     renderGame();
 
     const play = document.querySelector('.play') as HTMLElement;
-    const bar = within(play).getByRole('progressbar');
-    expect(bar).toHaveAttribute('aria-valuenow', '0');
+    const meter = within(play).getByRole('region', { name: 'Progress' });
+    expect(within(meter).getByText('0 points')).toBeInTheDocument();
+    expect(within(meter).getByText('0%')).toBeInTheDocument();
 
     // The glossary summary really is still absent: the meter is not riding in
     // on something that was there all along.
@@ -484,9 +489,7 @@ describe('Game', () => {
 
     // The bar lives in the glossary now, appearing with the first find. The old
     // set-fraction bar ignored off-page finds; the points bar climbs.
-    const bar = screen.getByRole('progressbar');
     const meter = screen.getByRole('region', { name: /progress/i });
-    expect(bar).toHaveAttribute('aria-valuenow', '9');
     expect(within(meter).getByText('9 points')).toBeInTheDocument();
   });
 
@@ -781,10 +784,8 @@ describe('Game edition complete', () => {
     fireEvent.click(closeReveal());
     // Heavy off-page points push well past par (the top named rank) ...
     ['denar', 'sneer', 'sane'].forEach(findWord);
-    const bar = screen.getByRole('progressbar');
-    expect(Number(bar.getAttribute('aria-valuenow'))).toBeGreaterThanOrEqual(
-      Number(bar.getAttribute('aria-valuemax')),
-    );
+    const meter = screen.getByRole('region', { name: 'Progress' });
+    expect(within(meter).getByText('100%')).toBeInTheDocument();
     // ... but only one of the six common words is found, so no completion.
     expect(editionCard()).not.toBeInTheDocument();
     // The honest completion count lives in the totals now, distinct from the bar.
