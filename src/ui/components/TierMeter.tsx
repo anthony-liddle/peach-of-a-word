@@ -66,14 +66,11 @@ export function TierMeter({ tier, theme, streak = 0 }: Props) {
           {tier.score} {tier.score === 1 ? 'point' : 'points'}
         </span>
       </div>
-      <div
-        className="tier__track"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={tier.reachable}
-        aria-valuenow={Math.min(tier.score, tier.reachable)}
-        aria-valuetext={`${pct} percent, ${label}`}
-      >
+      {/* Hidden from screen readers: the percentage under it says the same.
+          As a progress bar, TalkBack read its new value, a bare "3", before
+          each find's line (Antoine, 26 November). The app hides its bar for
+          the same reason, its fix 4. */}
+      <div className="tier__track" aria-hidden="true">
         {/* Three flex segments fill the track: on-page set points, off-page
             discovery points, then the transparent remainder. Set plus off-page
             is the score, so the coloured fill is exactly the fraction reached. */}
@@ -104,27 +101,20 @@ export function TierMeter({ tier, theme, streak = 0 }: Props) {
           />
         ))}
       </div>
-      {/* The caption row. The percent and the next-rank note are hidden per
-          child rather than on the row, which is the load-bearing detail once
-          the streak joins them: aria-hidden on the row would take the streak
-          down with it, and the toolbar pill it replaces is readable text today.
-          A silent accessibility regression behind a visual parity win is the
-          worst trade available here.
-
-          The two that stay hidden are hidden for the reason they always were:
-          the progressbar's aria-valuetext already speaks the percent and the
-          rank, so reading this row too would say it all twice. */}
+      {/* The caption row, read as it shows: the percent, the next rank and
+          the streak. With the bar hidden, the percent and the next rank are
+          what a screen reader has of the climb, as in the app. Nothing on the
+          row is hidden, so the streak, whose toolbar pill was readable text,
+          stays read. */}
       <div className="tier__ticks">
-        <span aria-hidden="true">{pct}%</span>
+        <span>{pct}%</span>
         {tier.next ? (
-          <span className="tier__next" aria-hidden="true">
+          <span className="tier__next">
             Next: {tierName(theme, tier.next.index)} at{' '}
             {Math.round(tier.next.threshold * 100)}%
           </span>
         ) : (
-          <span className="tier__next" aria-hidden="true">
-            {copy(theme).ladderPeak}
-          </span>
+          <span className="tier__next">{copy(theme).ladderPeak}</span>
         )}
         {streak > 0 && (
           <span className="tier__streak">

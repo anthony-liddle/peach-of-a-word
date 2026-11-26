@@ -19,8 +19,8 @@ export const TWO_COLUMN_QUERY = '(min-width: 51.25em)';
  * Because a CSS-hidden node is fully present to `getByRole`. jsdom implements
  * neither `matchMedia` nor media-query evaluation over a stylesheet the tests
  * never load, so the twin would be live in every test: `Game.test.tsx` asserts
- * there is exactly ONE progressbar on the screen, and that assertion is the
- * thing keeping a second bar from creeping back. Any responsive pattern that
+ * there is exactly ONE meter (its "Progress" region) on the screen, and that
+ * assertion is the thing keeping a second bar from creeping back. Any responsive pattern that
  * relies on CSS to make one of two nodes not exist is invisible to the layer
  * that guards it. One node, and JS picks where it goes.
  */
